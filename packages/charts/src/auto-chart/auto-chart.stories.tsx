@@ -99,7 +99,7 @@ export const LineInferred: Story = {
       title: "Monthly Revenue vs Expenses",
       description: "Revenue and expenses, Jan–Jun 2024.",
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
 };
 
@@ -125,7 +125,7 @@ export const WithAnalytics: Story = {
         { kind: "trend", id: "trend" },
       ],
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
   play: async ({ canvasElement }) => {
     await waitFor(() => {
@@ -153,7 +153,7 @@ export const BarGrouped: Story = {
       title: "Sales by Region and Quarter",
       stacked: false,
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
 };
 
@@ -172,7 +172,7 @@ export const BarStacked: Story = {
       title: "Stacked Regional Sales",
       stacked: true,
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
 };
 
@@ -187,7 +187,7 @@ export const Donut: Story = {
       title: "Traffic by Channel",
       donut: true,
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
 };
 
@@ -203,7 +203,7 @@ export const Scatter: Story = {
       title: "Ad Spend vs Conversions",
       legend: false,
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
   play: async ({ canvasElement }) => {
     // RM-127 (a-4): the rows are NOT sorted by spend, so tick rows chosen in
@@ -238,7 +238,7 @@ export const Radar: Story = {
       title: "Team Performance Radar",
       description: "Five performance metrics across two teams.",
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
 };
 
@@ -253,7 +253,7 @@ export const Funnel: Story = {
       title: "Conversion Funnel",
       orientation: "horizontal",
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
 };
 
@@ -271,7 +271,7 @@ export const CurrencyFormatted: Story = {
       title: "Revenue vs Expenses (USD)",
       valueFormat: "currency",
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
 };
 
@@ -295,7 +295,7 @@ export const CopyExactValue: Story = {
       series: [{ key: "revenue", label: "Revenue" }],
       title: "Revenue by region",
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -326,7 +326,7 @@ export const CopyExactValueDisabled: Story = {
       series: [{ key: "revenue", label: "Revenue" }],
       title: "Revenue by region",
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
     copyValueOnActivate: false,
   },
   play: async ({ canvasElement }) => {
@@ -354,7 +354,7 @@ export const UnsupportedFallback: Story = {
       x: "quarter",
       series: [{ key: "north", label: "North" }],
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
   play: async ({ canvasElement }) => {
     const fallback = canvasElement.querySelector('[data-slot="chart-fallback"]');
@@ -373,7 +373,7 @@ export const EmptyData: Story = {
       x: "date",
       series: [{ key: "revenue", label: "Revenue" }],
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
 };
 
@@ -385,7 +385,7 @@ export const Loading: Story = {
       x: "date",
       series: [{ key: "revenue", label: "Revenue" }],
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
     loading: true,
   },
 };
@@ -433,7 +433,7 @@ export const InChatConversation: Story = {
             <div className="mb-1 text-meta font-medium text-muted-foreground">
               Tool: generate_chart
             </div>
-            <AutoChart spec={chartSpec} height={240} />
+            <AutoChart spec={chartSpec} plotHeight={240} />
           </div>
           <div className="max-w-prose text-body text-foreground">
             Here is the monthly revenue for Q1 2024. Revenue grew steadily from $42K in January to
@@ -468,7 +468,7 @@ const inferenceCaptionId = "auto-chart-inference";
  */
 function inferenceStory(spec: ChartSpec, expected: ChartType, rule: string): Story {
   return {
-    args: { spec, height: 280 },
+    args: { spec, plotHeight: 280 },
     render: (args) => {
       const explained = explainChartType(args.spec);
       return (
@@ -558,7 +558,7 @@ export const TreemapInferred: Story = inferenceStory(
  */
 export const TreemapPalette: Story = {
   args: {
-    height: 280,
+    plotHeight: 280,
     spec: {
       type: "treemap",
       data: [],
@@ -858,7 +858,7 @@ export const LineLegendFromColumnKeys: Story = {
       x: "date",
       series: [{ key: "ebikes" }, { key: "cargo" }],
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
 };
 
@@ -885,7 +885,7 @@ export const LineFacetedLegend: Story = {
       facet: { by: "region" },
       legend: true,
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -936,7 +936,7 @@ export const BarFacetedLegend: Story = {
       facet: { by: "region" },
       legend: true,
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -995,7 +995,7 @@ export const PieFacetedLegend: Story = {
       facet: { by: "region" },
       legend: true,
     } satisfies ChartSpec,
-    height: 280,
+    plotHeight: 280,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

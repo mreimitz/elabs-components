@@ -20,7 +20,8 @@ touches:
   - packages/charts/src/charts/heatmap/heatmap-scale.ts (dot radius through `areaRadius`)
   - packages/charts/src/sparkline/sparkline.tsx (its private `mergeRefs` copy goes)
   - the ~28 files that hand-roll ref merging (ui `mergeRefs`); the 13 module-level warn-once sets
-  - .changeset/*.md (minor — internal)
+  - packages/charts/src/charts/pie-chart.tsx, ring-chart.tsx (the two datapoint-target builders and the duplicated fixed-size / `ParentSize` branches; handed on from RM-202)
+  - .changeset/*.md (patch — internal)
 source: docs/review/2026-09-25-charts-unification-review.md F13, F31, F34
 ---
 
@@ -36,6 +37,7 @@ source: docs/review/2026-09-25-charts-unification-review.md F13, F31, F34
 
 - Each duplicate goes to the one existing helper (or a small new one next to it), and the copies are deleted.
 - The datapoint gate becomes the provider's own `disabled` computation.
+- PieChart and RingChart share one datapoint-target builder and one sizing branch (the rest of F28 RM-202 left out). The `displayName`/`name` matching copies (`chart-defs.ts`, `facet-scope.tsx`, `pie-ring-engine.ts`) use one helper that matches either name.
 
 ## Acceptance
 

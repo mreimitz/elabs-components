@@ -1,7 +1,15 @@
 /** Plain YAML value → normalized ArchDiagram + structural issues. Sugar is expanded here. React-free. */
 import { validateProps, type SpecIssue } from "@elabs-ai/components-ui/definition";
 import { FLOW_DEF, NODE_DEF, ROOT_DEF, STYLE_DEF, ZONE_DEF } from "./definitions";
-import { ARROW_DIRECTION, ARROW_RE, ID_RE, REF_RE, refForm } from "./ids";
+import {
+  ARROW_DIRECTION,
+  ARROW_RE,
+  CATALOG_REF_ROOT,
+  ID_RE,
+  REF_RE,
+  WORKSPACE_REF_ROOT,
+  refForm,
+} from "./ids";
 import { isArchIssueCode, issue, type ArchIssue } from "./issues";
 import { aliasPaths, indexPath, joinPath, type SourceMap } from "./source-map";
 import {
@@ -60,23 +68,61 @@ function pick<T>(rec: Rec, key: string, bad: Set<string>): T | undefined {
   return bad.has(key) || rec[key] === undefined || rec[key] === null ? undefined : (rec[key] as T);
 }
 
-// DG-26 — why a `ref:` is not a reference path; null when it is one (ids.ts REF_RE).
+/** The old shelf-only root (`workspace/README.md` rule 1, before the amendment). */
+const COMPONENTS_ROOT = "components";
+/** `<vendor>/<name>`, lowercase-kebab both sides — the shape of a catalog ref missing its root. */
+const VENDOR_NAME_RE = /^[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/;
+
+// DG-26 — why a `ref:` is not a reference path; null when it is one (ids.ts REF_RE). Each wrong
+// shape gets its own reason, and a suggestion where the fix is unambiguous (maintainer ruling
+// 2026-09-27).
 function badRef(ref: string): { message: string; suggestion?: string } | null {
   if (REF_RE.test(ref)) return null;
-  const bare = ref.replace(/\.ya?ml$/i, "");
-  if (bare !== ref) {
+
+  const form = refForm(ref);
+  if (form === "diagram") {
+    // The root is right ("ws"); a segment, or the lack of one, is not.
+    const rest = ref === WORKSPACE_REF_ROOT ? "" : ref.slice(WORKSPACE_REF_ROOT.length + 1);
+    return rest === ""
+      ? {
+          message: `"${ref}" needs at least one folder or file after "ws": ws/<folder>/…/<file name>.`,
+        }
+      : {
+          message:
+            `"${ref}" names a folder or file the workspace itself would refuse: a name cannot ` +
+            `be empty or blank, be "." or "..", or start with "_" or ".".`,
+        };
+  }
+  if (form === "catalog") {
     return {
-      message: `"${ref}" names a file; write the path without ".yaml".`,
-      ...(REF_RE.test(bare) && { suggestion: bare }),
+      message: `"${ref}" is not a valid catalog reference: write catalog/<pack>/<entry>, lowercase (catalog/aws/rds).`,
     };
   }
-  if (refForm(ref) === undefined) {
+
+  // No recognized root. The common old and mistaken forms get their own hint.
+  if (ref === "workspace" || ref.startsWith("workspace/")) {
+    const suggestion = `${WORKSPACE_REF_ROOT}${ref.slice("workspace".length)}`;
     return {
-      message: `"${ref}" needs a root: catalog/<pack>/<entry> for a catalog item, or ws/<folder>/<file name> for another diagram.`,
+      message: `"workspace" is not a reference root; the diagram form starts with "ws": write "${suggestion}".`,
+      suggestion,
+    };
+  }
+  if (ref === COMPONENTS_ROOT || ref.startsWith(`${COMPONENTS_ROOT}/`)) {
+    const suggestion = `${WORKSPACE_REF_ROOT}/${ref}`;
+    return {
+      message: `"${ref}" needs a root: write "${suggestion}" for a diagram, or "${CATALOG_REF_ROOT}/<pack>/<entry>" for a catalog item.`,
+      suggestion,
+    };
+  }
+  if (VENDOR_NAME_RE.test(ref)) {
+    const suggestion = `${CATALOG_REF_ROOT}/${ref}`;
+    return {
+      message: `"${ref}" needs a root: write "${suggestion}" for a catalog item, or "${WORKSPACE_REF_ROOT}/${ref}" for a diagram.`,
+      suggestion,
     };
   }
   return {
-    message: `"${ref}" is not a reference path: write catalog/<pack>/<entry> in lowercase (catalog/aws/rds) or ws/<folder>/<file name> (ws/components/qlik-cloud-tenant).`,
+    message: `"${ref}" needs a root: catalog/<pack>/<entry> for a catalog item, or ws/<folder>/…/<file name> for another diagram.`,
   };
 }
 // end DG-26
@@ -109,8 +155,23 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
   }
 
   const issues: ArchIssue[] = [];
+  // DG-26 — a leftover `use:` key (the pre-amendment draft's key) is not just "not a prop":
+  // point straight at `ref:` and, when the old value looks like a workspace path, suggest it.
+  const useHint = (rec: unknown, path: string, i: ArchIssue): ArchIssue => {
+    if (i.code !== "unknown-prop" || !isRecord(rec) || i.path !== joinPath(path, "use")) return i;
+    const old = rec.use;
+    return {
+      ...i,
+      message:
+        '"use" is now "ref": write ref: ws/<folder>/…/<file name> for another diagram, or ' +
+        "ref: catalog/<pack>/<entry> for a catalog item.",
+      ...(typeof old === "string" ? { suggestion: `${WORKSPACE_REF_ROOT}/${old}` } : {}),
+    };
+  };
   const check = (def: Parameters<typeof validateProps>[0], rec: unknown, path: string) => {
-    const found = fromDefinition(validateProps(def, rec, { path }).issues);
+    const found = fromDefinition(validateProps(def, rec, { path }).issues).map((i) =>
+      useHint(rec, path, i),
+    );
     issues.push(...found);
     return badKeys(found, path);
   };

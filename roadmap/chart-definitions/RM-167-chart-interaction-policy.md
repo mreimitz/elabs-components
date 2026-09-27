@@ -1,7 +1,7 @@
 ---
 id: RM-167
 title: "`useChartInteractionPolicy`: host `interactions` honoured by `ChartTooltipBox` and every gesture owner"
-status: in-progress
+status: done
 priority: P0
 effort: L (3–4 days)
 wave: 1

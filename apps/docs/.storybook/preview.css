@@ -58,6 +58,20 @@
   align-items: center;
 }
 
+/* A docs page has the same trap one level down: for a centered story it
+   shrink-wraps the story's box, so the same `w-full` wrappers drew nothing there
+   (half the LineChart docs page, 2026-09-27). `withDocsCentered` (preview.tsx)
+   marks those stories; their box gets the page's width and the story is centred
+   inside it, exactly as the canvas rule above does. */
+.docs-story > div:has(.sb-docs-centered) {
+  width: 100%;
+}
+.sb-docs-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 /* Docs pages paint on the brand surface tokens so the Mode toolbar (and every
    theme family) is visible on a docs page, not only on a story canvas. The
    docs container's own theme is switched in preview.tsx (ThemedDocsContainer). */

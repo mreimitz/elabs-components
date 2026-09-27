@@ -70,6 +70,11 @@ const SAME_AST = [
 ] as const;
 
 const EXPECT = /^# expect: (.+)$/gm;
+/**
+ * DG-26 — `# expect-suggestion: <code @ line:col> = <value>` pins an issue's `suggestion`
+ * (the bad-ref fixture's quick fixes), the same "code @ line:col" label `EXPECT` matches.
+ */
+const EXPECT_SUGGESTION = /^# expect-suggestion: (\S+ @ \S+) = (.+)$/gm;
 
 interface FixtureRow {
   name: string;
@@ -112,10 +117,18 @@ function runFixtures(): FixtureRow[] {
       const sources = { catalog: bundledCatalog() }; // DG-26 (1b.12) — deterministic, never live
       const result = checkArchYaml(text, ICON_NAMES, sources);
       const actual = result.issues.map(label);
+      // DG-26 — every pinned suggestion must land on the issue with that exact label.
+      const expectedSuggestions = [...text.matchAll(EXPECT_SUGGESTION)].map(
+        (m) => [(m[1] ?? "").trim(), (m[2] ?? "").trim()] as const,
+      );
+      const suggestionsOk = expectedSuggestions.every(
+        ([lbl, want]) => result.issues.find((i) => label(i) === lbl)?.suggestion === want,
+      );
       const compiled = compileText(text, sources); // DG-10
       const roundTrip = roundTrips(compiled); // DG-10
       const pass =
         JSON.stringify([...actual].sort()) === JSON.stringify([...expected].sort()) &&
+        suggestionsOk && // DG-26
         !compiled.issues.some((i) => i.stage === "flow-spec") && // DG-10
         roundTrip !== false; // DG-10
       return { name, expected, actual, pass, result, compiled, roundTrip };

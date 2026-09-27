@@ -21,7 +21,7 @@ import {
 } from "@storybook/addon-docs/blocks";
 import { Intent } from "./intent-block";
 import { withExpandFit } from "./expand-fit";
-import { enhanceArgTypes, stripCustomTags, unwrapInlineCode } from "./docgen";
+import { backtickHtmlTags, enhanceArgTypes, stripCustomTags, unwrapInlineCode } from "./docgen";
 import { themes } from "storybook/theming";
 import a11yBaseline from "../../../scripts/a11y-baseline.json";
 import "./preview.css";
@@ -198,6 +198,24 @@ const withDecoration: Decorator = (Story, context) => {
 };
 
 /**
+ * A docs page shrink-wraps a `layout: "centered"` story's box to its content,
+ * just as the canvas did before the `.sb-main-centered #storybook-root` rule in
+ * preview.css: a `w-full max-w-[…]` wrapper resolves to 0 px there, and every
+ * measure-driven component (each chart) draws nothing — half the LineChart docs
+ * page was blank. This marks such a story so preview.css can give its box the
+ * page's width and centre the story inside it, as the canvas rule does. The
+ * canvas and the test runner (both `viewMode: "story"`) are untouched.
+ */
+const withDocsCentered: Decorator = (Story, context) => {
+  if (context.viewMode !== "docs" || context.parameters.layout !== "centered") return <Story />;
+  return (
+    <div className="sb-docs-centered">
+      <Story />
+    </div>
+  );
+};
+
+/**
  * Writes `data-density` onto the iframe root, exactly as ThemeProvider does —
  * "comfortable" removes the attribute (identity; Tailwind default) so default
  * stories are pixel-identical to pre-density builds. Lets any real story be
@@ -358,7 +376,15 @@ const preview: Preview = {
     }
   },
   // `withExpandFit` first, so it is innermost: it measures the story alone.
-  decorators: [withExpandFit, withDensity, withDecoration, withMotionPreference, withTheme],
+  // `withDocsCentered` last, so its box is the story's outermost element.
+  decorators: [
+    withExpandFit,
+    withDensity,
+    withDecoration,
+    withMotionPreference,
+    withTheme,
+    withDocsCentered,
+  ],
   // `theme` + `mode` are driven by the custom toolbar in `manager.tsx`, so they
   // are declared here without a built-in `toolbar` entry. Empty = Default family,
   // light (or `STORYBOOK_THEME`). `expand` is set only by the website's enlarged
@@ -442,11 +468,14 @@ const preview: Preview = {
       components: { Markdown: DocsMarkdown },
       // react-docgen hands over the whole JSDoc block, `@dataShape`/`@avoidWhen`
       // included; the Intent block above already renders those two as "Best for"
-      // and "Avoid when", so they are not also prose. See ./docgen.ts.
+      // and "Avoid when", so they are not also prose. A bare tag in it is made
+      // literal, as in the props table. See ./docgen.ts.
       extractComponentDescription: (component: unknown) =>
-        stripCustomTags(
-          (component as { __docgenInfo?: { description?: string } })?.__docgenInfo?.description ??
-            "",
+        backtickHtmlTags(
+          stripCustomTags(
+            (component as { __docgenInfo?: { description?: string } })?.__docgenInfo?.description ??
+              "",
+          ),
         ) || null,
     },
     // #78 AC3 / #316: axe FAILS the build. addon-a11y's default is `"todo"`

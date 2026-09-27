@@ -20,6 +20,11 @@ const { module } = await runnerImport(
   { root, configFile: false, logLevel: "error" },
 );
 const { upgradeText, refFirstText, catalogLookupOf, ICON_NAMES } = module;
+const { module: typesModule } = await runnerImport(
+  fileURLToPath(new URL("../src/spec/dialect/types.ts", import.meta.url)),
+  { root, configFile: false, logLevel: "error" },
+);
+const { DIALECT_VERSION } = typesModule;
 
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
@@ -51,9 +56,14 @@ function walk(dir) {
 }
 
 const files = [];
+let missingTarget = false;
 for (const r of roots) {
   const st = statSync(r, { throwIfNoEntry: false });
-  if (!st) continue;
+  if (!st) {
+    console.log(`${relative(workspace, r)}: cannot read (not found)`);
+    missingTarget = true;
+    continue;
+  }
   if (st.isDirectory()) files.push(...walk(r));
   else if (/\.yaml$/i.test(r)) files.push(r);
 }
@@ -64,7 +74,7 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 let changedCount = 0;
 let totalRefs = 0;
 let totalDropped = 0;
-let failed = false;
+let failed = missingTarget;
 for (const rel of rels) {
   const full = join(workspace, rel);
   let text;
@@ -96,7 +106,9 @@ for (const rel of rels) {
     continue;
   }
   const result = upgradeText(text);
-  if (result.from === null) {
+  // Any reason at all (unreadable, or a version bump that could not be made exactly, DG-26
+  // 1a.9) is a failure — never reported as a quiet "unchanged".
+  if (result.reason !== undefined) {
     console.log(`${rel}: cannot read (${result.reason})`);
     failed = true;
     continue;
@@ -105,7 +117,7 @@ for (const rel of rels) {
     console.log(`${rel}: unchanged (${result.from})`);
     continue;
   }
-  console.log(`${rel}: ${result.from} → 1 (lines ${result.lines.join(", ")})`);
+  console.log(`${rel}: ${result.from} → ${DIALECT_VERSION} (lines ${result.lines.join(", ")})`);
   changedCount += 1;
   if (!dryRun) writeFileSync(full, result.text);
 }

@@ -3,6 +3,8 @@ import {
   ArrowDown,
   ArrowRight,
   EllipsisVertical,
+  LayoutGrid,
+  Network,
   PanelRightClose,
   PanelRightOpen,
   RectangleHorizontal,
@@ -37,6 +39,7 @@ import { SEVERITY_STATUS } from "../panes/issues-panel";
 import { toHash, useRoute, type Route } from "../routes/use-hash"; // catalog crumbs (maintainer 2026-09-27)
 import { diagramActions, editActions, useDiagram } from "../state/diagram-store";
 import { folderOf, useWorkspace } from "../workspace/workspace-store";
+import { lensActions, useLens, type Lens } from "./lens-store"; // maintainer 2026-09-27 (lens switch)
 import { modeActions, useDocMode } from "./mode-store";
 import { WithTooltip } from "./with-tooltip";
 // Wave 3: one import line per item under its marker; blank lines keep parallel merges clean.
@@ -69,6 +72,14 @@ const TOP_BAR_LABELS = {
   iconsTip: "Icon nodes",
   cards: "Cards",
   cardsTip: "Card nodes",
+  // lens switch (maintainer 2026-09-27): technical (today's diagram) vs. the derived,
+  // coarser-grained visual lens (`src/visual/`) — the shortcut is `L` either way, since it
+  // toggles between the two.
+  lens: "Lens",
+  technical: "Technical",
+  technicalTip: "Technical view (L)",
+  visual: "Visual",
+  visualTip: "Visual view (L)",
   inspector: "Inspector",
   options: "Diagram options",
   theme: "Theme",
@@ -161,7 +172,9 @@ export function TopBar() {
         {/* No `min-w-0`: the centre keeps its controls' width, so the breadcrumb truncates
             instead of the controls running over their neighbours. */}
         <div className="flex flex-1 items-center justify-center gap-2">
-          {/* View mode: DG-31's story bar goes here. */}
+          {/* View mode: DG-31's story bar goes here. Lens switch (maintainer 2026-09-27):
+              works in both view and edit mode, so it sits outside the `edit` gate below. */}
+          {onDoc && !compact ? <LensToggle /> : null}
           {edit && !compact ? (
             <>
               <DiagramToggles direction={direction} nodeStyle={nodeStyle} disabled={disabled} />
@@ -441,6 +454,62 @@ function DiagramToggles({ direction, nodeStyle, disabled }: DiagramTogglesProps)
 }
 
 /**
+ * Technical | Visual (maintainer 2026-09-27, "the switch from technical to visual"): a
+ * segmented control, the direction/node-style toggles' own pattern, wired to `lens-store.ts`
+ * instead of the text (view-only — nothing here reaches `diagram-store`/`workspace-store`).
+ * `L` toggles it either way; the tooltip on each item says so (WCAG: the shortcut is not the
+ * only route to it — the control is always reachable by click/tap).
+ */
+function LensToggle() {
+  const lens = useLens((s) => s.target);
+  return (
+    <ToggleGroup
+      type="single"
+      variant="segmented"
+      size="sm"
+      aria-label={TOP_BAR_LABELS.lens}
+      value={lens}
+      onValueChange={(value) => value && lensActions.setLens(value as Lens)}
+    >
+      <WithTooltip label={TOP_BAR_LABELS.technicalTip}>
+        <ToggleGroupItem value={"technical" satisfies Lens}>
+          <Network aria-hidden="true" />
+        </ToggleGroupItem>
+      </WithTooltip>
+      <WithTooltip label={TOP_BAR_LABELS.visualTip}>
+        <ToggleGroupItem value={"visual" satisfies Lens}>
+          <LayoutGrid aria-hidden="true" />
+        </ToggleGroupItem>
+      </WithTooltip>
+    </ToggleGroup>
+  );
+}
+
+/** The compact bar's lens entry (DG-68-style menu section, always shown — the lens works in
+ * both view and edit mode, unlike the direction/node-style section right below it). */
+function LensMenuItems() {
+  const lens = useLens((s) => s.target);
+  return (
+    <>
+      <DropdownMenuLabel>{TOP_BAR_LABELS.lens}</DropdownMenuLabel>
+      <DropdownMenuRadioGroup
+        aria-label={TOP_BAR_LABELS.lens}
+        value={lens}
+        onValueChange={(value) => lensActions.setLens(value as Lens)}
+      >
+        <DropdownMenuRadioItem value={"technical" satisfies Lens}>
+          {TOP_BAR_LABELS.technical}
+        </DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value={"visual" satisfies Lens}>
+          {TOP_BAR_LABELS.visual}
+        </DropdownMenuRadioItem>
+      </DropdownMenuRadioGroup>
+      <DropdownMenuSeparator />
+    </>
+  );
+}
+
+/**
  * DG-14's inspector switch: a pressed toggle, icon-only with the name as its tooltip. The glyph
  * flips as a second, non-colour cue (wave-3 review F3).
  * P4: library gap — `IconButton` has no pressed look (docs/findings/DG-14-inspector-write-back.md).
@@ -489,6 +558,8 @@ function DiagramOptionsMenu({ direction, nodeStyle, disabled, edit }: DiagramOpt
         className="max-h-(--radix-dropdown-menu-content-available-height) overflow-y-auto"
       >
         <DocumentMenuItems />
+
+        <LensMenuItems />
 
         {edit ? (
           <>

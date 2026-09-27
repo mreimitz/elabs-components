@@ -92,8 +92,9 @@ export type VocabularyParity = [
   Assert<CompiledCompositeData extends ArchNodeData ? true : false>,
 ];
 
-// DG-26 — "<title>, component" plus, when broken, the reason in words (N11).
-const COMPOSITE_ARIA = { kind: "component" } as const;
+// DG-26 — "<title>, Component" (matches ARCH_KIND_LABEL's capitalization) plus, when broken,
+// the reason in words (N11).
+const COMPOSITE_ARIA = { kind: "Component" } as const;
 
 /** `arch/<kind>` → the kind, for every type that draws a mark (all but `arch/note`). */
 const MARKED_KIND = new Map<string, ArchMarkedKind>(

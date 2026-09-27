@@ -200,6 +200,16 @@ export interface ChartSpecSelection {
 
 export interface ChartSpec {
   /**
+   * The spec shape's version. Optional — an absent `version` reads as `1`,
+   * today's only shape, so every spec written before this field existed keeps
+   * validating and rendering unchanged. A version this build does not
+   * recognise is reported by `validateChartSpec` as an issue, never a throw:
+   * an older AutoChart in a newer spec's path should still draw what it can
+   * rather than refuse the whole chart.
+   */
+  version?: 1;
+
+  /**
    * Chart type. Optional — AutoChart infers the best type when omitted.
    * Explicit type ALWAYS wins over inference.
    */
@@ -266,7 +276,14 @@ export interface ChartSpec {
   /** How loud the picture should be. See {@link ChartSpecEmphasis}. */
   emphasis?: ChartSpecEmphasis;
 
-  /** Chart title — rendered as a heading above the chart and as the accessible label. */
+  /**
+   * Chart title — always the accessible label; visibly, either a heading
+   * above the chart (bare, a tile with its own `headerSlot`, or a
+   * `ChartFrame` with its own explicit `title` — which keeps both), or
+   * handed up to fill a `ChartFrame`'s own header where the frame is the one
+   * drawing it (a `chrome="card"`, or a `chrome="tile"` with no
+   * `headerSlot`) — never both at once there.
+   */
   title?: string;
 
   /** Supplemental description for screen readers (e.g. "Revenue 2024, 3 series"). */
@@ -343,7 +360,12 @@ export interface ChartSpec {
    * `useContainerLegend` — a hook — could safely be called without moving
    * `AutoChart`'s type resolution earlier than its loading/empty-data early
    * returns): an object here is currently read as "truthy → show", same as
-   * `true`. Default: shown when `series.length > 1`, hidden for one series.
+   * `true`. Default depends on the family: `heatmap`/`calendar`/`choropleth`/
+   * `unit` always draw their own in-container key and never read this field;
+   * the six types with no legend group of their own (`candlestick`/
+   * `waterfall`/`histogram`/`box`/`strip`/`bump`) fall back to a plain key
+   * list, shown for 2+ series or an explicit `true`, hidden otherwise; every
+   * other type follows its own container's legend (`useContainerLegend`).
    *
    * WHEN TO USE. Prefer direct labels (`labels.series`) and leave the legend
    * off — a legend costs the reader a round trip for every series. Turn it on

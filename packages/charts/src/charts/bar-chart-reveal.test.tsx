@@ -195,3 +195,11 @@ describe("BarChart revealOn / replayOnClick (#175)", () => {
     });
   });
 });
+
+describe("BarChart onPhaseChange", () => {
+  it('reports "loading" once while loading, even after the enter timer ends', () => {
+    const { advance, phases } = renderBarChart({ status: "loading" });
+    advance(PAST_REVEAL_MS);
+    expect(phases).toEqual(["loading"]);
+  });
+});

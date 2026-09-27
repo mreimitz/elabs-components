@@ -28,22 +28,23 @@ const NAME_SOURCE = "[a-z0-9][a-z0-9-]*"; // the catalog's own names (server/cat
 export const CATALOG_REF_SOURCE = `${CATALOG_REF_ROOT}/${NAME_SOURCE}/${NAME_SOURCE}`;
 /**
  * A workspace path segment: what the workspace tree itself accepts (maintainer ruling
- * 2026-09-27: "any characters except /", no leading "_" (keeps `_trash` out), and never
- * exactly "." or ".." (no relative paths). No length bound: a real file or folder name may
- * hold spaces, punctuation or unicode.
+ * 2026-09-27: any character except "/" — spaces, capitals, dots and unicode are fine — except
+ * no leading "_" (keeps `_trash` out), no leading "." (also excludes "." and ".." on their
+ * own, which are never a segment), and no empty or whitespace-only segment. No length bound: a
+ * real file or folder name may hold spaces, punctuation or unicode.
  */
-const SEGMENT_SOURCE = "(?!_|\\.\\.?(?:/|$))[^/]+";
+const SEGMENT_SOURCE = "(?!_)(?!\\.)(?=[^/]*[^/\\s])[^/]+";
 /**
- * The last segment: a file name, so (unlike a folder segment) it never itself ends in
- * ".yaml"/".yml" — that is a common mistake (typing the real file name); `badRef` below
- * catches it and suggests the same path with the extension stripped.
+ * `ws/<folder>/…/<file name>`: the last segment is the file name. A trailing ".yaml"/".yml"
+ * (any case) is legal there — the natural way to copy a real file name — and is stripped in
+ * `refFileOf` before ".yaml" is appended back, so it never doubles up.
  */
-const FILE_SEGMENT_SOURCE = "(?!_|\\.\\.?$)(?!.*\\.ya?ml$)[^/]+";
-/** `ws/<folder>/…/<file name>`: the last segment is the file name, written without ".yaml". */
-export const DIAGRAM_REF_SOURCE = `${WORKSPACE_REF_ROOT}(?:/${SEGMENT_SOURCE})*/${FILE_SEGMENT_SOURCE}`;
+export const DIAGRAM_REF_SOURCE = `${WORKSPACE_REF_ROOT}(?:/${SEGMENT_SOURCE})+`;
 export const REF_RE = new RegExp(`^(?:${CATALOG_REF_SOURCE}|${DIAGRAM_REF_SOURCE})$`);
 const CATALOG_REF_RE = new RegExp(`^${CATALOG_REF_SOURCE}$`);
 const DIAGRAM_REF_RE = new RegExp(`^${DIAGRAM_REF_SOURCE}$`);
+/** A trailing ".yaml"/".yml" (any case) on the last segment. */
+const TRAILING_YAML_RE = /\.ya?ml$/i;
 export type RefForm = "catalog" | "diagram";
 /** The form a ref claims by its first segment, valid or not; undefined without a known root. */
 export function refForm(ref: string): RefForm | undefined {
@@ -54,9 +55,15 @@ export function refForm(ref: string): RefForm | undefined {
 /** `catalog/aws/glue` → `aws/glue` (the CatalogEntry name); undefined unless a valid catalog ref. */
 export const catalogNameOf = (ref: string): string | undefined =>
   CATALOG_REF_RE.test(ref) ? ref.slice(CATALOG_REF_ROOT.length + 1) : undefined;
-/** `ws/components/x` → `components/x.yaml`, the workspace file; undefined unless a valid diagram ref. */
+/**
+ * `ws/components/x` → `components/x.yaml`, the workspace file; `ws/components/x.yaml` (or
+ * `.yml`, any case) resolves the same way — the trailing extension is stripped, not doubled.
+ * Undefined unless a valid diagram ref.
+ */
 export const refFileOf = (ref: string): string | undefined =>
-  DIAGRAM_REF_RE.test(ref) ? `${ref.slice(WORKSPACE_REF_ROOT.length + 1)}.yaml` : undefined;
+  DIAGRAM_REF_RE.test(ref)
+    ? `${ref.slice(WORKSPACE_REF_ROOT.length + 1).replace(TRAILING_YAML_RE, "")}.yaml`
+    : undefined;
 /** The id before the first dot: `tenant.qca` → `tenant`. */
 export const endHead = (end: string): string => end.split(".", 1)[0] ?? end;
 /** The part after the first dot, or undefined. */
