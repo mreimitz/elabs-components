@@ -17,26 +17,38 @@
  *     the `<Id>Props` interface with all its merged declarations, plus the interfaces of the same
  *     module it extends (directly or through `Omit` / `Pick` / `Partial` / `Required` /
  *     `Readonly`);
- *   - reading the FIRST `Default:` / `Default` / `Defaults to` / `@default` statement in that
- *     TSDoc, and only when it states a literal: a backticked JS literal (`` `1100` ``,
- *     `` `"none"` ``, `` `[4, 22]` ``, `` `{ start: "hollow" }` ``), or a bare number,
- *     `true` / `false` / `null`, quoted string, `[…]` array or `var(--token)` that ends the
- *     clause (`.`, `,`, `;`, `:`, `)`, ` (`, ` —`, or the end of the comment).
- * Not compared (declared gaps): a prose default ("the family's own default", "solid line"), a
- * constant's name (`CHART_HAIRLINE_WIDTH`, `{@link DEFAULT_HEATMAP_STEPS}`), and a prop whose
- * TSDoc lives in another module — a shared group or commons interface documents one default for
- * many kinds, and a kind may override it on purpose.
- * Measured on 2026-09-27: 224 documented defaults read, 212 parsed as literals, 1 drift (Area
- * `loadingStroke`, fixed in RM-190). One TypeScript parse per definition module (~40 files).
+ *   - reading the first statement in that TSDoc that states a literal, in either spelling:
+ *       - leading: `Default:` / `Default` / `Defaults to` / `@default`, then a backticked JS
+ *         literal (`` `1100` ``, `` `"none"` ``, `` `[4, 22]` ``, `` `{ start: "hollow" }` ``) or
+ *         a bare number, `true` / `false` / `null`, quoted string, `[…]` array or
+ *         `var(--token)` that ends the clause (`.`, `,`, `;`, `:`, `)`, ` (`, ` —`, or the end
+ *         of the comment). A leading statement that names no literal ("Default: solid line")
+ *         is passed over and the next one is read;
+ *       - marked: a backticked or quoted literal right before `(default)` / `(default, …)`
+ *         (`` `"outside"` (default) ``), or inside `(default `true`)`.
+ *   - a charts entry whose module no longer declares `<Id>Props` is a finding — the rule could
+ *     not read that component's TSDoc at all, and saying so beats a silent pass.
+ * Not compared (declared gaps): a prose default ("the family's own default", "Rows (default)"),
+ * a constant's name (`CHART_HAIRLINE_WIDTH`, `{@link DEFAULT_HEATMAP_STEPS}`), an expression
+ * (`-PI/2`), and a prop whose TSDoc lives in another module — a shared group or commons
+ * interface documents one default for many kinds, and a kind may override it on purpose.
+ * Measured on 2026-09-27: on the `<Id>Props` interfaces alone, 244 literal defaults read (214
+ * `Default` statements, 30 `(default)` marks); 1 drift (Area `loadingStroke`, fixed in RM-190).
+ * One TypeScript parse per definition module (~40 files).
  */
 import ts from "typescript";
 
 import { chartsSnapshot, missingSnapshot } from "./charts-deprecated-usage.mjs";
 
 const CONTAINERS = /^(Omit|Pick|Partial|Required|Readonly)$/;
-const DEFAULT_STATEMENT = /(?:\bDefault(?:s to)?\b:?|@default\b)\s*(.{0,120})/;
+/** The statement's tail is a lookahead, so a later statement in the same doc is still matched. */
+const DEFAULT_STATEMENT = /(?:\bDefault(?:s to)?\b:?|@default\b)\s*(?=(.{0,120}))/g;
 const BARE_LITERAL =
   /^(-?\d+(?:\.\d+)?(?!\.?\d)|true|false|null|"[^"]*"|'[^']*'|\[[^\]]*\]|var\(--[\w-]+\))(?=$|[.,;:)]|\s[(—–-])/;
+/** `` `"outside"` (default) ``, `"center" (default)`, `` `"dumbbell"` (default, one track …) ``. */
+const MARKED_BEFORE = /(?:`([^`]+)`|("[^"]*"))\s*\(default\b[,)]/g;
+/** `` (default `true`) ``, `` (default: `"sm"`) ``. */
+const MARKED_INSIDE = /\(default:?\s+`([^`]+)`\)/g;
 
 /** A TSDoc block's text without the comment markers, whitespace collapsed. */
 function docText(raw) {
@@ -44,6 +56,7 @@ function docText(raw) {
     .trim()
     .replace(/^\/\*\*|\*\/$/g, "")
     .replace(/^\s*\*/gm, "")
+    .replace(/\\`/g, "`")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -65,15 +78,31 @@ export function parseLiteral(text) {
   return undefined;
 }
 
-/** The default a TSDoc text states, `{ text, value }`, or undefined (no statement, or prose). */
+/** The literal a statement names, `{ text, value }`, or undefined when it names none. */
+function literalOf(text) {
+  if (text === undefined) return undefined;
+  const parsed = parseLiteral(text);
+  return parsed && { text, value: parsed.value };
+}
+
+/**
+ * The default a TSDoc text states, `{ text, value }`, or undefined (no statement, or prose only).
+ * The first statement, in document order, that names a literal wins.
+ */
 export function statedDefault(doc) {
-  const hit = DEFAULT_STATEMENT.exec(doc);
-  if (!hit) return undefined;
-  const tick = /^`([^`]+)`/.exec(hit[1]);
-  const literal = tick ? tick[1] : BARE_LITERAL.exec(hit[1])?.[1];
-  if (literal === undefined) return undefined;
-  const parsed = parseLiteral(literal);
-  return parsed && { text: literal, value: parsed.value };
+  const hits = [];
+  for (const hit of doc.matchAll(DEFAULT_STATEMENT)) {
+    const tick = /^`([^`]+)`/.exec(hit[1]);
+    hits.push({ at: hit.index, text: tick ? tick[1] : BARE_LITERAL.exec(hit[1])?.[1] });
+  }
+  for (const hit of doc.matchAll(MARKED_BEFORE))
+    hits.push({ at: hit.index, text: hit[1] ?? hit[2] });
+  for (const hit of doc.matchAll(MARKED_INSIDE)) hits.push({ at: hit.index, text: hit[1] });
+  for (const { text } of hits.sort((a, b) => a.at - b.at)) {
+    const stated = literalOf(text);
+    if (stated) return stated;
+  }
+  return undefined;
 }
 
 /** Order-independent JSON, so `{ a, b }` equals `{ b, a }`. */
@@ -93,7 +122,10 @@ const isContextDefault = (value) =>
   !Array.isArray(value) &&
   value.defaultFrom === "context";
 
-/** `prop → PropertySignature` of `<id>Props` and its same-module bases, first declaration wins. */
+/**
+ * `prop → PropertySignature` of `<id>Props` and its same-module bases, first declaration wins;
+ * null when the module declares no `<id>Props` interface.
+ */
 function propsMembers(sf, id) {
   const interfaces = new Map();
   for (const statement of sf.statements) {
@@ -129,6 +161,7 @@ function propsMembers(sf, id) {
             visit(inner.typeName.text);
         }
   };
+  if (!interfaces.has(`${id}Props`)) return null;
   visit(`${id}Props`);
   return members;
 }
@@ -156,6 +189,14 @@ export function proseDrift(id, entry, src) {
     ts.ScriptKind.TSX,
   );
   const members = propsMembers(sf, id);
+  if (!members)
+    return [
+      {
+        file: entry.module,
+        line: 1,
+        msg: `${id}: this module declares no \`${id}Props\` interface, so its documented defaults cannot be read — declare the props here, or point the definition's module at the file that does`,
+      },
+    ];
   const findings = [];
   for (const prop of props) {
     const member = members.get(prop);
@@ -248,6 +289,21 @@ export default {
             "export interface CandlestickChartProps {\n  /** Default: 1500 */\n  gap?: number;\n}",
         },
       }, // a documented default the definition does not hold is not this rule's business
+      {
+        files: {
+          [SNAPSHOT]: snapshot({
+            placement: { kind: "enum", default: "outside", group: null },
+            labelAlign: { kind: "enum", default: "center", group: null },
+            higherIsBetter: { kind: "boolean", default: true, group: null },
+            variant: { kind: "enum", default: "dumbbell", group: null },
+            width: num(80),
+            steps: num(5),
+          }),
+          [MODULE]: props(
+            '  /** `"outside"` (default) sits beyond the ticks; `"inside"` overlaps them. */\n  placement?: string;\n  /** - "center" (default), "start", "end" */\n  labelAlign?: string;\n  /** Higher reads better (default `true`). */\n  higherIsBetter?: boolean;\n  /** `"dumbbell"` (default, one track per row) or `"slope"`. */\n  variant?: string;\n  /** Pixel width when `fit="fixed"` (default). */\n  width?: number;\n  /** Default {@link DEFAULT_STEPS} for most data; the definition default is `5`. Default: `5`. */\n  steps?: number;',
+          ),
+        },
+      }, // the "(default)" marks; a non-literal mark and a non-literal first statement are passed over
     ],
     fail: [
       {
@@ -275,6 +331,36 @@ export default {
           [MODULE]: props("  /** Defaults to true (dashboards opt out). */\n  reveal?: boolean;"),
         },
       }, // a code-only default
+      {
+        files: {
+          [SNAPSHOT]: snapshot({ placement: { kind: "enum", default: "outside", group: null } }),
+          [MODULE]: props(
+            '  /** `"inside"` (default) overlaps the ticks; `"outside"` sits beyond them. */\n  placement?: string;',
+          ),
+        },
+      }, // a literal marked "(default)" that is not the default
+      {
+        files: {
+          [SNAPSHOT]: snapshot({ higherIsBetter: { kind: "boolean", default: true, group: null } }),
+          [MODULE]: props(
+            "  /** Higher reads better (default `false`). */\n  higherIsBetter?: boolean;",
+          ),
+        },
+      }, // "(default `x`)" that is not the default
+      {
+        files: {
+          [SNAPSHOT]: snapshot({ steps: num(5) }),
+          [MODULE]: props(
+            "  /** Default {@link DEFAULT_STEPS} for most data. Default: `7` when dense. */\n  steps?: number;",
+          ),
+        },
+      }, // the first statement names no literal; the next one is read, and it drifts
+      {
+        files: {
+          [SNAPSHOT]: snapshot({ animationDuration: num(1100) }),
+          [MODULE]: "export type CandlestickChartProps = { animationDuration?: number };",
+        },
+      }, // the module no longer declares `CandlestickChartProps` as an interface: said, not skipped
       { files: { [MODULE]: "export {};" } }, // no snapshot
     ],
   },

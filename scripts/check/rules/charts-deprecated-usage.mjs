@@ -4,10 +4,10 @@
  *
  * Why: a rename keeps the old name working until 6.0.0 and warns once in development. If the
  * repo's own code still passes the old name — WaterfallChart rendering `<Bar showValues>`,
- * AutoChart rendering a family, a story, a template a consumer copies — every consumer app gets a
- * deprecation warning for code it never wrote, and every reader copies the old name. ADR 0042 §8
- * has each rename item migrate its internal callers in the same PR; this rule holds that at zero
- * findings (baseline none).
+ * AutoChart writing `<YAxis orientation="right">` literally, a story, a template a consumer
+ * copies — every consumer app gets a deprecation warning for code it never wrote, and every
+ * reader copies the old name. ADR 0042 §8 has each rename item migrate its internal callers in
+ * the same PR; this rule holds that at zero findings (baseline none).
  *
  * The old names are the alias rows of the committed definition snapshot
  * (`packages/cli/lib/definitions.generated.json`, charts package), read at run time and never
@@ -16,13 +16,20 @@
  * row for `showValues`, `<HeatmapChart showValues>` is flagged and `<Bar showValues>` is not, and
  * BulletChart's old `labels` never flags Pie's current `labels`.
  *
- * A use is the old name as a JSX attribute on that component's tag (`<Bar showValues />`,
- * `<YAxis orientation="left">`, `<Charts.Bar …>`), a key of an object literal spread onto the
- * tag, or a key of the props literal in `createElement(Bar, { showValues: true })`. Files are
- * read with the TypeScript parser, so a comment (the `@deprecated` TSDoc), a string (a Storybook
- * autodocs note) and the alias row itself (`{ from: "showValues", … }`, plain data) are never a
- * use. Markdown is read only inside fenced code blocks: a fence is code a reader copies, while
- * prose and inline code may name the old prop to explain the rename.
+ * A use is the old name as
+ *   - a JSX attribute on that component's tag (`<Bar showValues />`, `<YAxis orientation="left">`,
+ *     `<Charts.Bar …>`), or a key of an object literal spread onto the tag (also either branch
+ *     of `{...(on ? { showValues: true } : {})}` and the right side of `{...(on && {…})}`);
+ *   - a key of the props literal in `createElement(Bar, { showValues: true })`;
+ *   - in a story file, a key of any `args: { … }` literal when the CSF meta's `component:` is
+ *     that component (`component: HeatmapChart` + `args: { showValues: true }`). `argTypes` is
+ *     never read — it is where a story documents the deprecation.
+ * A tag whose name the file declares itself (`function Sparkline() {…}`, a `const` or a class)
+ * or imports from a third-party package (lucide's `Gauge`) is some other component and is
+ * skipped. Files are read with the TypeScript parser, so a comment (the `@deprecated` TSDoc), a
+ * string (a Storybook autodocs note) and the alias row itself (`{ from: "showValues", … }`, plain
+ * data) are never a use. Markdown is read only inside fenced code blocks: a fence is code a
+ * reader copies, while prose and inline code may name the old prop to explain the rename.
  *
  * Read: stories anywhere, `*.md` / `*.mdx` fences, templates (`docs/**` code,
  * `registry/blocks/**`, `skills/**`) and the non-test source of every package — the charts
@@ -34,10 +41,13 @@
  * §8), and history — ADRs, reviews, plans, the roadmap, changelogs, changesets, the ledger and
  * `parked/**` record what the names were.
  *
- * Declared gaps: props spread from a variable (`<Bar {...props} />`), a renamed import
- * (`import { Bar as B }`) and live JSX in MDX outside a fence are not read.
+ * Declared gaps — each rename item checks these by hand or by test:
+ *   - props spread from a variable: AutoChart's `<YAxis {...axisProps} />` and
+ *     `<Bar {...props} />` are not read, so a name built in `resolveAxisSpecProps` escapes;
+ *   - a prop READ, not passed (`props.orientation` in `facet-scope.tsx`), and `cloneElement`;
+ *   - a renamed import (`import { Bar as B }`) and live JSX in MDX outside a fence.
  * Cost: nothing while the snapshot has no alias rows; after that only a file holding both a
- * renamed component's tag and one of its old names is parsed.
+ * renamed component's tag (or story meta) and one of its old names is parsed.
  */
 import ts from "typescript";
 
@@ -91,12 +101,15 @@ export function aliasRowsByComponent(entries) {
 
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** Cheap text pre-filter per component: its tag or `createElement` call, and one of its old names. */
+/**
+ * Cheap text pre-filter per component: its tag, `createElement` call or story meta, and one of its
+ * old names.
+ */
 function prefilters(rowsByComponent) {
   return [...rowsByComponent].map(([id, rows]) => ({
     id,
     tag: new RegExp(
-      String.raw`<(?:[\w$]+\.)?${escape(id)}[\s/>]|createElement\(\s*(?:[\w$]+\.)?${escape(id)}\b`,
+      String.raw`<(?:[\w$]+\.)?${escape(id)}[\s/>]|(?:createElement\(|component:)\s*(?:[\w$]+\.)?${escape(id)}\b`,
     ),
     name: new RegExp(String.raw`\b(?:${[...rows.keys()].map(escape).join("|")})\b`),
   }));
@@ -144,37 +157,139 @@ const keyOf = (prop) =>
     ? prop.name.text
     : null;
 
-/** Every use of an old name in one parsed source → `[{ id, row, pos }]`. */
-function usesIn(sf, rowsByComponent) {
+/** `x as T`, `x satisfies T`, `(x)` → `x`. */
+const unwrap = (node) => {
+  while (
+    node &&
+    (ts.isParenthesizedExpression(node) ||
+      ts.isAsExpression(node) ||
+      ts.isSatisfiesExpression(node))
+  )
+    node = node.expression;
+  return node;
+};
+
+/** The object literals a spread can yield: `{…}`, `(on ? {…} : {…})`, `(on && {…})`. */
+const literalObjects = (node) => {
+  node = unwrap(node);
+  if (!node) return [];
+  if (ts.isObjectLiteralExpression(node)) return [node];
+  if (ts.isConditionalExpression(node))
+    return [...literalObjects(node.whenTrue), ...literalObjects(node.whenFalse)];
+  if (
+    ts.isBinaryExpression(node) &&
+    node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+  )
+    return literalObjects(node.right);
+  return [];
+};
+
+/** `Charts.Bar` → `Charts`, `Bar` → `Bar`. */
+const rootOf = (node) => {
+  while (node && ts.isPropertyAccessExpression(node)) node = node.expression;
+  return node && ts.isIdentifier(node) ? node.text : null;
+};
+
+/** A module a chart never comes from: a bare third-party specifier (`lucide-react`). */
+const FOREIGN_MODULE = /^(?![.~#/]|@\/|@elabs-ai\/)/;
+
+/**
+ * Names this file binds to something that is not a chart: its own function / class / variable
+ * declarations and imports from a third-party package.
+ */
+function otherComponents(sf) {
+  const names = new Set();
+  const visit = (node) => {
+    if (
+      (ts.isFunctionDeclaration(node) ||
+        ts.isClassDeclaration(node) ||
+        ts.isVariableDeclaration(node)) &&
+      node.name &&
+      ts.isIdentifier(node.name)
+    )
+      names.add(node.name.text);
+    else if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      FOREIGN_MODULE.test(node.moduleSpecifier.text)
+    ) {
+      const clause = node.importClause;
+      if (clause?.name) names.add(clause.name.text);
+      const bindings = clause?.namedBindings;
+      if (bindings && ts.isNamespaceImport(bindings)) names.add(bindings.name.text);
+      if (bindings && ts.isNamedImports(bindings))
+        for (const element of bindings.elements) names.add(element.name.text);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  return names;
+}
+
+/** The CSF meta object: `export default { … }` or `const meta = { … }; export default meta`. */
+function storyMeta(sf) {
+  const exported = sf.statements.find((s) => ts.isExportAssignment(s) && !s.isExportEquals);
+  let meta = exported && unwrap(exported.expression);
+  if (meta && ts.isIdentifier(meta)) {
+    const name = meta.text;
+    meta = null;
+    for (const s of sf.statements)
+      if (ts.isVariableStatement(s))
+        for (const d of s.declarationList.declarations)
+          if (ts.isIdentifier(d.name) && d.name.text === name) meta = unwrap(d.initializer);
+  }
+  return meta && ts.isObjectLiteralExpression(meta) ? meta : null;
+}
+
+/** The node a story meta's `component:` names (`HeatmapChart`, `Charts.HeatmapChart`), or null. */
+function storyComponent(sf) {
+  const meta = storyMeta(sf);
+  const prop = meta?.properties.find((p) => ts.isPropertyAssignment(p) && keyOf(p) === "component");
+  return prop ? unwrap(prop.initializer) : null;
+}
+
+/**
+ * Every use of an old name in one parsed source → `[{ id, row, pos, jsx }]`. `story`: the file is
+ * a CSF story, so its `args` literals belong to the meta's component.
+ */
+function usesIn(sf, rowsByComponent, story) {
   const uses = [];
-  const fromObject = (id, rows, object) => {
+  const others = otherComponents(sf);
+  /** The component a tag or call names, or null when it is not a renamed chart. */
+  const renamed = (node) => {
+    const id = nameOf(node);
+    if (!rowsByComponent.has(id) || others.has(rootOf(node))) return null;
+    return id;
+  };
+  const fromObject = (id, object, jsx = false) => {
+    const rows = rowsByComponent.get(id);
     for (const prop of object.properties) {
       const row = rows.get(keyOf(prop));
-      if (row) uses.push({ id, row, pos: prop.getStart(sf) });
+      if (row) uses.push({ id, row, pos: prop.getStart(sf), jsx });
     }
   };
+  const metaId = story ? renamed(storyComponent(sf)) : null;
   const visit = (node) => {
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
-      const id = nameOf(node.tagName);
-      const rows = rowsByComponent.get(id);
-      if (rows) {
+      const id = renamed(node.tagName);
+      if (id) {
+        const rows = rowsByComponent.get(id);
         for (const attr of node.attributes.properties) {
           if (ts.isJsxAttribute(attr) && ts.isIdentifier(attr.name)) {
             const row = rows.get(attr.name.text);
-            if (row) uses.push({ id, row, pos: attr.getStart(sf) });
-          } else if (
-            ts.isJsxSpreadAttribute(attr) &&
-            ts.isObjectLiteralExpression(attr.expression)
-          ) {
-            fromObject(id, rows, attr.expression);
+            if (row) uses.push({ id, row, pos: attr.getStart(sf), jsx: true });
+          } else if (ts.isJsxSpreadAttribute(attr)) {
+            for (const object of literalObjects(attr.expression)) fromObject(id, object);
           }
         }
       }
     } else if (ts.isCallExpression(node) && nameOf(node.expression) === "createElement") {
-      const id = nameOf(node.arguments[0]);
-      const rows = rowsByComponent.get(id);
+      const id = renamed(node.arguments[0]);
       const props = node.arguments[1];
-      if (rows && props && ts.isObjectLiteralExpression(props)) fromObject(id, rows, props);
+      if (id && props && ts.isObjectLiteralExpression(props)) fromObject(id, props);
+    } else if (metaId && ts.isPropertyAssignment(node) && keyOf(node) === "args") {
+      const args = unwrap(node.initializer);
+      if (ts.isObjectLiteralExpression(args)) fromObject(metaId, args);
     }
     ts.forEachChild(node, visit);
   };
@@ -182,13 +297,21 @@ function usesIn(sf, rowsByComponent) {
   return uses;
 }
 
+/** The new name as the caller writes it: `labels`, or `empty={{ title }}` / `empty: { title }`. */
+function spelling(to, jsx) {
+  const [head, ...rest] = to.split(".");
+  if (rest.length === 0) return to;
+  return jsx ? `${head}={{ ${rest.join(".")} }}` : `${head}: { ${rest.join(".")} }`;
+}
+
 /** Findings for one piece of code (a source file, or one fence starting at `firstLine`). */
 function findingsIn(file, code, firstLine, rowsByComponent, kind) {
   const sf = ts.createSourceFile(file, code, ts.ScriptTarget.Latest, false, kind);
-  return usesIn(sf, rowsByComponent).map(({ id, row, pos }) => ({
+  const story = /\.stories\.[jt]sx?$/.test(file);
+  return usesIn(sf, rowsByComponent, story).map(({ id, row, pos, jsx }) => ({
     file,
     line: firstLine + sf.getLineAndCharacterOfPosition(pos).line,
-    msg: `\`<${id} ${row.from}>\` uses a deprecated prop — write \`${row.to}\` (alias row${
+    msg: `\`<${id} ${row.from}>\` uses a deprecated prop — write \`${spelling(row.to, jsx)}\` (alias row${
       row.since ? ` since ${row.since}` : ""
     }, removed in ${row.removeIn})`,
   }));
@@ -238,11 +361,17 @@ const row = (from, to, transform = "identity", precedence = "new-wins") => ({
   since: "5.6.0",
   removeIn: "6.0.0",
 });
-/** The seeded row every fixture below reads: HeatmapChart `showValues` → `labels` (A.3 row 14). */
+/** The seeded rows every fixture below reads, taken from ADR 0042 Appendix A. */
 const SEEDED = snapshotWith({
-  HeatmapChart: [row("showValues", "labels", "boolean-to-labels")],
+  HeatmapChart: [
+    row("showValues", "labels", "boolean-to-labels"),
+    row("emptyTitle", "empty.title"),
+  ],
   Bar: [row("showValues", "labels")],
   YAxis: [row("orientation", "position")],
+  BulletChart: [row("labels", "messages")],
+  Sparkline: [row("label", "accessibleLabel")],
+  Gauge: [row("labels", "messages")],
 });
 const HEATMAP_STORY = "packages/charts/src/charts/heatmap/heatmap-chart.stories.tsx";
 
@@ -282,7 +411,7 @@ export default {
           "packages/charts/src/charts/heatmap/heatmap-chart.test.tsx":
             'it("aliases showValues", () => { render(<HeatmapChart data={d} showValues />); });',
           "packages/charts/src/test/doubles.tsx":
-            "export const read = (p) => p.labels ?? p.showValues; // both names until 6.0",
+            "export const read = (p) => p.labels ?? p.showValues; // both names until 6.0\nexport const Probe = () => <HeatmapChart data={d} showValues />;",
         },
       }, // the alias row, the @deprecated declaration, a string, a comment, the per-alias test, the double
       {
@@ -297,6 +426,27 @@ export default {
             "export const B = () => <HeatmapChart data={rows} showValues />;",
         },
       }, // history is exempt; prose and inline code may name the old prop; fences use the new one; app source is the repo's own site
+      {
+        files: {
+          [SNAPSHOT]: SEEDED,
+          "packages/charts/src/charts/pie-chart.stories.tsx":
+            'export const S = () => (\n  <>\n    <PieChart data={d} labels />\n    <BulletChart data={d} messages={{ empty: "None" }} />\n  </>\n);',
+        },
+      }, // BulletChart's old `labels` is Pie's current `labels`: rows are per component
+      {
+        files: {
+          [SNAPSHOT]: SEEDED,
+          [HEATMAP_STORY]:
+            'const meta = {\n  component: HeatmapChart,\n  args: { labels: true },\n  argTypes: {\n    showValues: { description: "Deprecated — use `labels`.", table: { category: "Deprecated" } },\n  },\n} satisfies Meta<typeof HeatmapChart>;\nexport default meta;\nexport const Values = { args: { labels: true } };',
+        },
+      }, // story `args` with the new name; `argTypes` documents the old one and is never read
+      {
+        files: {
+          [SNAPSHOT]: SEEDED,
+          "apps/docs/stories/metric-card-sparkline.stories.tsx":
+            'import { Gauge } from "lucide-react";\nimport * as Icons from "lucide-react";\nfunction Sparkline({ label }) {\n  return <span>{label}</span>;\n}\nconst meta = { component: Sparkline, args: { label: "Revenue" } };\nexport default meta;\nexport const S = () => (\n  <>\n    <Sparkline label="Revenue" />\n    <Gauge labels="x" />\n    <Icons.Gauge labels="x" />\n  </>\n);',
+        },
+      }, // a Sparkline the file declares itself and lucide's Gauge are other components
     ],
     fail: [
       {
@@ -350,10 +500,31 @@ export default {
       {
         files: {
           [SNAPSHOT]: SEEDED,
+          "registry/blocks/heat-01/heat.tsx":
+            "export const B = () => <HeatmapChart data={rows} {...(dense ? { showValues: true } : {})} />;",
+        },
+      }, // a conditional literal spread
+      {
+        files: {
+          [SNAPSHOT]: SEEDED,
           "packages/process/src/variants/variant-heatmap.tsx":
             "export const V = () => <HeatmapChart data={rows} showValues />;",
         },
       }, // another package rendering a chart
+      {
+        files: {
+          [SNAPSHOT]: SEEDED,
+          [HEATMAP_STORY]:
+            'const meta = {\n  component: HeatmapChart,\n  argTypes: { labels: { control: "boolean" } },\n} satisfies Meta<typeof HeatmapChart>;\nexport default meta;\nexport const Values: Story = { args: { data: rows, showValues: true } };',
+        },
+      }, // story `args` on the meta's component — no tag in sight
+      {
+        files: {
+          [SNAPSHOT]: SEEDED,
+          "registry/blocks/stat-cards-01/spark-stat-cards.tsx":
+            'import { Sparkline } from "@elabs-ai/components-charts";\nimport { Gauge } from "lucide-react";\nconst rows = [1, 2, 3];\nexport const Card = () => <Sparkline data={rows} label="Revenue" icon={<Gauge />} />;',
+        },
+      }, // a Sparkline imported from the charts package is the chart, beside other locals
       { files: { [HEATMAP_STORY]: "export const S = () => <HeatmapChart />;" } }, // no snapshot
     ],
   },

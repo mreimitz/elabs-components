@@ -8,22 +8,40 @@
  * `align` — either copies the group and drifts from it, or reuses the group's name for something
  * else. New family props must not re-introduce what a group already owns. The ones that exist
  * today are a KEYS BASELINE THAT ONLY SHRINKS: a family applies the group, or a rename item
- * (RM-191 … RM-196) moves the prop off the name, and `pnpm check --rule charts-group-drift
- * --update-baseline` drops the key. A new key fails.
+ * (RM-191 … RM-196) moves the prop off the name, and `pnpm check:update --rule
+ * charts-group-drift` drops the key. A new key fails.
  *
  * Read from the committed definition snapshot (`packages/cli/lib/definitions.generated.json`,
  * charts package) — no source parsing. A GROUP KEY is any field key that some definition takes
- * from a group (its `group` is set). A finding is, on any definition:
- *   - a field under a group key with `group: null` and no `overrides` — an
- *     `overrides: "<group>"` field is a declared per-kind narrowing of the group's own field, not
- *     drift;
+ * from a group (its `group` is set) or overrides (its `overrides` names the group), so a family
+ * that moves to an override never shrinks the key set. A finding is, on any definition:
+ *   - a field under a group key with `group: null` and no `overrides`. The fix is to apply the
+ *     group; an own field of the same name then overrides it (the snapshot derives `overrides`
+ *     from exactly that, so it is never written by hand);
  *   - a `codeOnly` prop under a group key: a group describes that key as a field, so a code-only
  *     prop of the same name never came from it.
  * Key: `<package>::<Id>::<prop>`. The finding points at the family's definition file.
+ *
+ * NOT DRIFT — the one exception list, each entry a frozen, maintainer-approved decision:
+ *   - `zoom` on ChoroplethChart, TreeChart and DensityScatterChart. ADR 0042 Appendix A.5
+ *     renames Choropleth `zoomEnabled` and Tree `zoomable` to `zoom` (RM-195), matching
+ *     DensityScatter. Only the navigator groups own `zoom` — a window over an ordered axis —
+ *     and none of these charts can apply them: a map, a tree and a density plot zoom their own
+ *     viewport. Same word, same user meaning, no shared group.
  * Declared gap: a group's own code-only members (callbacks, nodes) are not in the snapshot's
  * group data, so a family callback named like one is not seen.
  */
 import { CHARTS_PKG, chartsSnapshot, missingSnapshot } from "./charts-deprecated-usage.mjs";
+
+/** `Id::prop` → why it is not drift (ADR 0042 A.5). Grows only by a maintainer decision. */
+export const NOT_DRIFT = new Map([
+  ["ChoroplethChart::zoom", "a map viewport zoom (ADR 0042 A.5), not the navigator window"],
+  ["TreeChart::zoom", "a tree viewport zoom (ADR 0042 A.5), not the navigator window"],
+  [
+    "DensityScatterChart::zoom",
+    "a plot viewport zoom, wheel + drag pan (ADR 0042 A.5 cites it), not the navigator window",
+  ],
+]);
 
 const DEFINITIONS = "packages/charts/src/definitions";
 
@@ -34,14 +52,15 @@ const kebab = (id) =>
     .replace(/([A-Z])([A-Z][a-z])/g, "$1-$2")
     .toLowerCase();
 
-/** `key → [group, …]` for every field some definition takes from a group. */
+/** `key → [group, …]` for every field some definition takes from, or overrides in, a group. */
 export function groupKeys(entries) {
   const keys = new Map();
   for (const entry of Object.values(entries))
     for (const [key, field] of Object.entries(entry.fields ?? {})) {
-      if (!field.group) continue;
+      const group = field.group ?? field.overrides;
+      if (!group) continue;
       const groups = keys.get(key) ?? new Set();
-      groups.add(field.group);
+      groups.add(group);
       keys.set(key, groups);
     }
   return keys;
@@ -51,13 +70,14 @@ export function groupKeys(entries) {
 export function groupDrift(entries) {
   const keys = groupKeys(entries);
   const drift = [];
+  const drifts = (id, prop) => keys.has(prop) && !NOT_DRIFT.has(`${id}::${prop}`);
   for (const id of Object.keys(entries).sort()) {
     const entry = entries[id];
     for (const [prop, field] of Object.entries(entry.fields ?? {}))
-      if (keys.has(prop) && !field.group && !field.overrides)
+      if (drifts(id, prop) && !field.group && !field.overrides)
         drift.push({ id, prop, groups: [...keys.get(prop)].sort(), codeOnly: false });
     for (const prop of entry.codeOnly ?? [])
-      if (keys.has(prop))
+      if (drifts(id, prop))
         drift.push({ id, prop, groups: [...keys.get(prop)].sort(), codeOnly: true });
   }
   return drift;
@@ -93,7 +113,7 @@ const BAR = {
 export default {
   id: "charts-group-drift",
   scope: "components",
-  doc: "A chart definition takes a prop named like a prop-group key (`palette`, `status`, `align`, `plotHeight`, …) from that group, or declares it as an `overrides` of the group's field — never as a family field of its own; the keys that drift today only shrink.",
+  doc: "A chart definition takes a prop named like a prop-group key (`palette`, `status`, `align`, `plotHeight`, …) from that group — apply the group; an own field of the same name then overrides it — never as a family field of its own; the keys that drift today only shrink, and the one exception list (`zoom` on Choropleth, Tree and DensityScatter, ADR 0042 A.5) grows only by a maintainer decision.",
   baseline: "keys",
   run(ctx) {
     const entries = chartsSnapshot(ctx);
@@ -103,7 +123,9 @@ export default {
       key: `${CHARTS_PKG}::${id}::${prop}`,
       msg: `${id}.${prop} is ${codeOnly ? "a code-only prop" : "a family field"} named like the ${groups
         .map((g) => `"${g}"`)
-        .join(" / ")} group key — apply the group (or declare \`overrides\`), or rename the prop`,
+        .join(
+          " / ",
+        )} group key — apply the group (an own field then overrides it), or rename the prop`,
     }));
   },
   fixtures: {
@@ -136,6 +158,20 @@ export default {
         },
         baseline: ["@elabs-ai/components-charts::PieChart::align"],
       }, // today's drift is held by the baseline
+      {
+        files: {
+          [SNAPSHOT]: snap({
+            LineChart: { id: "LineChart", fields: { zoom: f("navigator") }, codeOnly: [] },
+            ChoroplethChart: { id: "ChoroplethChart", fields: { zoom: f(null) }, codeOnly: [] },
+            TreeChart: { id: "TreeChart", fields: { zoom: f(null) }, codeOnly: [] },
+            DensityScatterChart: {
+              id: "DensityScatterChart",
+              fields: { zoom: f(null) },
+              codeOnly: [],
+            },
+          }),
+        },
+      }, // ADR 0042 A.5: a map, tree or plot viewport `zoom` is on the exception list
     ],
     fail: [
       {
@@ -164,6 +200,26 @@ export default {
         },
         baseline: ["@elabs-ai/components-charts::PieChart::align"],
       }, // a new drifting key beyond the baseline
+      {
+        files: {
+          [SNAPSHOT]: snap({
+            PieChart: {
+              id: "PieChart",
+              fields: { plotHeight: f(null, { overrides: "frame-size" }) },
+              codeOnly: [],
+            },
+            TreemapChart: { id: "TreemapChart", fields: { plotHeight: f(null) }, codeOnly: [] },
+          }),
+        },
+      }, // the only group-derived `plotHeight` is an override: the key still counts
+      {
+        files: {
+          [SNAPSHOT]: snap({
+            LineChart: { id: "LineChart", fields: { zoom: f("navigator") }, codeOnly: [] },
+            SankeyChart: { id: "SankeyChart", fields: { zoom: f(null) }, codeOnly: [] },
+          }),
+        },
+      }, // the `zoom` exception names three charts, not the key
       { files: {} }, // no snapshot
     ],
   },

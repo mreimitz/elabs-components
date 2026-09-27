@@ -31,7 +31,6 @@
     "@elabs-ai/components-charts::DensityScatterChart::selectionGestures",
     "@elabs-ai/components-charts::DensityScatterChart::selectionToolbar",
     "@elabs-ai/components-charts::DensityScatterChart::status",
-    "@elabs-ai/components-charts::DensityScatterChart::zoom",
     "@elabs-ai/components-charts::DistributionChart::palette",
     "@elabs-ai/components-charts::DistributionChart::status",
     "@elabs-ai/components-charts::DumbbellChart::analytics",

@@ -85,7 +85,7 @@
   },
   {
     "id": "charts-group-drift",
-    "doc": "A chart definition takes a prop named like a prop-group key (`palette`, `status`, `align`, `plotHeight`, …) from that group, or declares it as an `overrides` of the group's field — never as a family field of its own; the keys that drift today only shrink.",
+    "doc": "A chart definition takes a prop named like a prop-group key (`palette`, `status`, `align`, `plotHeight`, …) from that group — apply the group; an own field of the same name then overrides it — never as a family field of its own; the keys that drift today only shrink, and the one exception list (`zoom` on Choropleth, Tree and DensityScatter, ADR 0042 A.5) grows only by a maintainer decision.",
     "category": "components",
     "source": "scripts/check/rules/charts-group-drift.mjs"
   },
