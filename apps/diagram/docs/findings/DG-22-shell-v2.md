@@ -137,8 +137,10 @@ What each action now does with focus, checked keyboard-only in the browser:
 - **Closing the last tab** (Delete, ⌥W or the close button): the workspace
   (`shell/mode-store.ts`, `closeTab`). The strip is gone, so no tab can take it.
 
-Fixed afterwards by the orchestrator (`90b35a07`), checked in the browser with a forced
-failed autosave and forced share-link edits:
+Fixed afterwards by the orchestrator (`90b35a07`). **Correction (review 2):** this was
+checked with a forced store flag only (`pendingClose` set directly), not with a real failed
+autosave — which is why it missed should-fix 1 below. Re-checked properly this round with
+real blocked writes:
 
 - **The close-tab confirmation** (`shell/doc-tabs.tsx`). "Keep it open" and Esc go back to
   the kept tab; "Close without saving" goes to the tab shown next (`focusSelectedTab`).
@@ -269,3 +271,89 @@ reader over the mode store. It can go once DG-17's menu reads `useDocMode()`.
 - **The palette ranks "Qlik Cloud (SaaS)…" above "Home" for the query "Home".** cmdk's fuzzy
   score matches the letters across the long title. A strict substring `filter` would fix it.
   Not changed.
+
+## UI re-review 2 (2026-09-27, branch `diagram/wave0-review2-fixes`)
+
+Fixed should-fix 1 (closing a tab whose autosave failed could close a DIFFERENT, neighbour
+tab instead, and repeat) and should-fix 2 (a dialect Atlas cannot read yet showed as "the text
+is not a diagram", inviting an edit to a curated template); n3, n5, n6, n7, n9, n10, n11, n12,
+n13 from the nits list. Checked against the dev server with Playwright (the repo's own copy
+under `apps/docs/node_modules/playwright`, driven from a scratch script — no new dependency),
+reading `activeElement`, the tab list, the route and `GET /api/workspace/file` on disk, unless
+noted.
+
+- **Should-fix 1** — real blocked writes (a Playwright network route on
+  `/api/workspace/file*` returning 500), two tabs open, edited the scratch until "not saved",
+  then Delete → Tab → Enter on "Close without saving". Before the fix: the OTHER tab closed,
+  the scratch stayed open and dirty, focus landed on `<body>`, and the toast blamed the wrong
+  document. Cause: `closeTab` (`shell/mode-store.ts`) navigated to the neighbour before the
+  failed save/dirty state was cleared, `workspaceActions.open` threw `UnsavedEditsError`, and
+  `app.tsx`'s error branch closed the tab the person had just tried to reach — not the one
+  with the edits — and skipped re-syncing the mode. Fixed with an explicit
+  `workspaceActions.discard(path)` (drops the edits in memory, never writes) that "Close
+  without saving" now calls before `closeTab` navigates anywhere, plus removing the wrong
+  `closeTab` call from the `UnsavedEditsError` branch and adding the missed `setMode`. Re-ran
+  the same repro after the fix: the neighbour opens with its tab focused, `GET
+/api/workspace/file?path=…` for the scratch still returns the text from before the edit
+  (unwritten), and the last-tab variant reaches Home with focus on the workspace and opening
+  another diagram works on the first try.
+- **Should-fix 2** — opened a dialect-1 fixture; the editor's Problems panel showed
+  `unsupported-version`, and the canvas showed the generic error. `panes/canvas-pane.tsx` now
+  reads the first compile issue: `unsupported-version` gets its own non-error, no-Edit-button
+  state ("This diagram uses a newer format…"); every other failure keeps the error kind but
+  states the issue's own message. Re-checked both branches: the dialect-1 file shows the new
+  copy with no Edit action (only the shell's own Edit/Done toggle remains); a bad-YAML file
+  still shows "The text is not a diagram" with its own message and an Edit action.
+- **n3, n5, n6, n7, n9, n10, n11, n12, n13** — each re-checked directly: a title with `/`
+  (n3) creates and opens a document instead of disabling Create; Present and Export are
+  disabled on a title-only document (n9); a dirty tab's accessible name reads "‹title› (not
+  saved)" with the space in place (n5); the tree's load-failure panel gives a plain sentence
+  and its text changes on a same-error retry so assistive tech re-announces it (n7); no
+  "Missing resize handle for PanelGroup" warning on a normal load (n11); a `refreshTree()`
+  failing right after a successful create/move/trash/mkdir raises no uncaught rejection (n12);
+  closing the last tab hands focus to the workspace in well under the old 800 ms ceiling (n13,
+  measured ~130 ms); the trash-confirmation dialog names a document by its title, not its file
+  slug, when the two differ (n10). n6 (the wordmark's icon at its default size, not
+  `height={20}`) was confirmed by reading the rendered chrome.
+
+### 18. `CommandDialog` renders no `DialogDescription`
+
+- **Where:** `packages/ui/src/components/command/command.tsx:240`. `CommandDialog` renders
+  `DialogContent` and an optional `DialogTitle`, never a `DialogDescription`, and does not set
+  `aria-describedby={undefined}` on `DialogContent` to opt out.
+- **Evidence:** Radix logs "Missing `Description`" to the console every time the ⌘K palette
+  opens.
+- **App:** no workaround; commented at the call site (`shell/diagram-shell.tsx`,
+  `CommandPalette`).
+- **Proposed API:** `CommandDialog` takes an optional `description`, rendered as a
+  `DialogDescription` (`sr-only` when there is a visible one already, as `title` is), and sets
+  `aria-describedby={undefined}` on `DialogContent` when neither is given.
+
+### 19. ui `Tree`'s accessory slot stays in the tab order
+
+- **Where:** `packages/ui/src/components/tree/tree.tsx`, the `data-slot="tree-item-accessory"`
+  span (~L406–423). It stops the accessory's click, keydown and focus from reaching the row,
+  but does not remove an interactive child from the page's natural tab order.
+- **Evidence:** a Tab-only pass through a tree with a per-row action (a menu trigger, in the
+  accessory) stops at every row's accessory as its own tab stop, not just at the active row —
+  arrow keys move the roving `tabIndex` between rows, but Tab still visits every accessory.
+- **App:** `shell/workspace-tree.tsx`'s folder tree is hand-built on `SidebarMenuSub` instead
+  of ui `Tree`, in part for this — its own row menu trigger is reachable, but the tree has no
+  arrow-key row navigation at all yet (deferred, see below).
+- **Proposed API:** a dedicated row-action slot (`node.actions`?) rendered with `tabIndex={-1}`
+  by default, or documented guidance to set it on every interactive child of `accessory`.
+
+### Deferred after review 2
+
+Not built — recorded so a later pass has the exact ask, not a rediscovery:
+
+- **should-fix 3** — the workspace tree has no arrow-key/roving-focus navigation between rows.
+  Waits for §19 above (a ui `Tree` row-action slot) or for DG-23's own tree work.
+- **n1** — renaming a file does not move focus to the tree row afterwards.
+- **n2** — "New diagram" opens the editor but does not focus it.
+- **n4** — a tab's and a tree row's title could use a ui `Tooltip` instead of the native
+  `title` attribute (hover-only, no keyboard/touch equivalent).
+- **n8** — the breadcrumb and `document.title` show the file slug for a document that cannot
+  be drawn (not a diagram, or a newer format), instead of its known title.
+- **n14** — a brand-new, not-yet-written document that fails to compile shows no inspector;
+  left for the maintainer's list.
