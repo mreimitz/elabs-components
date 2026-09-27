@@ -10,7 +10,9 @@ import {
   SidebarProvider,
   SkipLink,
 } from "@elabs-ai/components-ui";
-import { SidebarNav } from "./sidebar-nav";
+import { useLiveReload } from "../workspace/live-reload";
+import { useAutosave } from "../workspace/use-autosave";
+import { RailNav } from "./rail-nav";
 import { TopBar } from "./top-bar";
 
 export interface DiagramShellProps {
@@ -33,6 +35,14 @@ const SHELL_LABELS = {
   appName: "Diagram",
 } as const;
 
+// DG-22 — the workspace services (DG-21's autosave and live reload), mounted exactly once by
+// the always-mounted shell rather than by the navigation list that used to own them.
+export function ShellServices() {
+  useAutosave();
+  useLiveReload();
+  return null;
+}
+
 export function DiagramShell({ children }: DiagramShellProps) {
   return (
     // Starts on the icon rail (wave-2 review M1): the expanded sidebar costs the canvas 208 px,
@@ -42,6 +52,7 @@ export function DiagramShell({ children }: DiagramShellProps) {
     // back, so an opened sidebar does not survive a reload; the app builds no persistence
     // of its own (docs/findings/DG-02-shell-a11y.md, wave-2 additions).
     <SidebarProvider defaultOpen={false}>
+      <ShellServices />
       {/*
        * The app routes on `location.hash` (`#icons`, `#edges`, …), so the skip link's own
        * `href="#diagram-workspace"` would navigate away from the current route: focus the
@@ -69,7 +80,7 @@ export function DiagramShell({ children }: DiagramShellProps) {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarNav />
+          <RailNav />
         </SidebarContent>
         <SidebarFooter>
           <NavUser user={{ name: "Avery Rao", email: "avery@example.com" }} />

@@ -9,7 +9,7 @@ import {
   useIsMobile,
 } from "@elabs-ai/components-ui";
 import { DiagramShell } from "./shell/diagram-shell";
-import { EditorVisibilityProvider, useEditorVisibility } from "./shell/editor-visibility";
+import { useEditorVisibility } from "./shell/editor-visibility";
 import { EditorPane } from "./panes/editor-pane";
 import { CanvasPane } from "./panes/canvas-pane";
 import { InspectorPane } from "./panes/inspector-pane"; // DG-14
@@ -70,7 +70,6 @@ function SplitWorkspace() {
       <ResizablePanel
         id="editor"
         order={1}
-        {...visibility.editorPanel}
         defaultSize={30}
         minSize={25}
         collapsible
@@ -185,10 +184,10 @@ export function App() {
   // Next item: add a gallery file under ./galleries and one branch here.
 
   return (
-    <EditorVisibilityProvider>
+    <>
       <DiagramShell>
         <Workspace />
       </DiagramShell>
-    </EditorVisibilityProvider>
+    </>
   );
 }
