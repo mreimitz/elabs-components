@@ -33,14 +33,19 @@ const AUTOSAVE_LABELS = {
   failedDetail: (reason: string) => `${reason} Your text is still here; the next edit tries again.`,
 } as const;
 
-/** The picture, scaled to fit `THUMB_WIDTH`×`THUMB_HEIGHT` (its `viewBox` keeps the ratio). */
+/**
+ * The picture, scaled to fit `THUMB_WIDTH`×`THUMB_HEIGHT` (its `viewBox` keeps the ratio).
+ * The embedded web fonts are dropped: at thumbnail scale text is a few pixels tall, and they
+ * were ~38 % of the file (112 of 297 KB on the Qlik Cloud example), which Git keeps (§9.2).
+ */
 export function thumbnailSvg(picture: Picture): string {
   const end = picture.svg.indexOf(">");
   const open = picture.svg
     .slice(0, end)
     .replace(/\swidth="[^"]*"/, ` width="${THUMB_WIDTH}"`)
     .replace(/\sheight="[^"]*"/, ` height="${THUMB_HEIGHT}"`);
-  return `${open} preserveAspectRatio="xMidYMid meet"${picture.svg.slice(end)}`;
+  const rest = picture.svg.slice(end).replace(/@font-face\s*\{[^}]*\}/g, "");
+  return `${open} preserveAspectRatio="xMidYMid meet"${rest}`;
 }
 
 /**

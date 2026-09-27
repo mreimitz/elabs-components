@@ -131,18 +131,22 @@ export interface WriteOptions {
   overwrite?: boolean;
   /** Replace the file only if its mtime is still this one (else 409 `changed`). */
   base?: number | null;
+  /** A new file only: any existing file is a 409 `exists`, even one with the same text. */
+  create?: boolean;
 }
 
 /**
- * `PUT /file`. Without options it only creates: an existing different file is a 409 `exists`.
+ * `PUT /file`. Without options an existing file is left alone (409 `exists`) unless it
+ * already holds exactly `text`.
  */
 export function writeFile(
   path: string,
   text: string,
   options: WriteOptions = {},
 ): Promise<WorkspaceWriteResult> {
+  const { overwrite, base, create } = options;
   return json<WorkspaceWriteResult>(
-    fetch(`${BASE}/file?${query({ path, overwrite: options.overwrite, base: options.base })}`, {
+    fetch(`${BASE}/file?${query({ path, overwrite, base, create })}`, {
       method: "PUT",
       headers: { "Content-Type": "text/yaml; charset=utf-8" },
       body: text,
@@ -151,8 +155,8 @@ export function writeFile(
 }
 
 /**
- * Write `text` to a new file `<folder>/<name>.yaml`, adding `-2`, `-3`, … while a different
- * file already has the name (create-only `PUT`, never an overwrite). Returns the path.
+ * Write `text` to a new file `<folder>/<name>.yaml`, adding `-2`, `-3`, … while the name is
+ * taken (`create`: never an overwrite, never an existing file). Returns the path.
  */
 export async function createUniqueFile(
   folder: string,
@@ -164,7 +168,7 @@ export async function createUniqueFile(
     const file = `${n === 1 ? stem : `${stem}-${n}`}.yaml`;
     const path = folder === "" ? file : `${folder}/${file}`;
     try {
-      await writeFile(path, text);
+      await writeFile(path, text, { create: true });
       return path;
     } catch (error) {
       if (!(error instanceof WorkspaceApiError && error.code === "exists")) throw error;

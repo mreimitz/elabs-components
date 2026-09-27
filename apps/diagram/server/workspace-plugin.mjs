@@ -7,7 +7,8 @@
  * Routes (JSON errors `{ error, code? }` with 400 / 404 / 409 / 413 / 500):
  *   GET  /api/workspace/tree                     → { folders, files }
  *   GET  /api/workspace/file?path=               → the raw text, header `X-Workspace-Mtime`
- *   PUT  /api/workspace/file?path=[&overwrite=1][&base=<mtime>]  body: text → { path, mtime, size }
+ *   PUT  /api/workspace/file?path=[&overwrite=1|&base=<mtime>|&create=1]  body: text
+ *                                                → { path, mtime, size }
  *   POST /api/workspace/mkdir   { path }         → { path }
  *   POST /api/workspace/move    { from, to, overwrite? } → { from, to }
  *   POST /api/workspace/trash   { path }         → { path, trashedTo }
@@ -174,7 +175,8 @@ async function route(req, res, url, events) {
         throw new workspace.WorkspaceError(400, "base must be an mtime (a number).");
       }
       const overwrite = flag(url.searchParams.get("overwrite"));
-      return send(res, 200, await workspace.write(at, text, { overwrite, base }));
+      const exclusive = flag(url.searchParams.get("create"));
+      return send(res, 200, await workspace.write(at, text, { overwrite, base, exclusive }));
     }
     case "POST /mkdir":
       return send(res, 200, await workspace.mkdir((await readJson(req)).path));

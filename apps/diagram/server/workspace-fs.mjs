@@ -205,11 +205,12 @@ export async function read(rel) {
  * `overwrite` is set, or when `base` equals its current mtime (the autosave's check that
  * nobody else wrote it since); otherwise 409 `{ error, code: "exists" | "changed", mtime }`.
  * With `base` and no file on disk: 409 `code: "missing"` (it was moved or trashed meanwhile).
+ * `exclusive` (a new file): any existing file is a 409 `exists`, even with the same text.
  * @param {string} rel
  * @param {string} text
- * @param {{ overwrite?: boolean, base?: number | null }} [options]
+ * @param {{ overwrite?: boolean, base?: number | null, exclusive?: boolean }} [options]
  */
-export async function write(rel, text, { overwrite = false, base = null } = {}) {
+export async function write(rel, text, { overwrite = false, base = null, exclusive = false } = {}) {
   const { abs, rel: clean } = await safe(rel);
   if (!DIAGRAM_FILE.test(clean)) throw refuse("Only .yaml and .yml files can be written.");
   refuseTrash(clean);
@@ -219,6 +220,12 @@ export async function write(rel, text, { overwrite = false, base = null } = {}) 
   }
   const stat = await statOrNull(abs);
   if (stat && !stat.isFile()) throw new WorkspaceError(409, `${clean} is a folder.`);
+  if (stat && exclusive) {
+    throw new WorkspaceError(409, `${clean} already exists.`, {
+      code: "exists",
+      mtime: stat.mtimeMs,
+    });
+  }
   if (!stat && base !== null) {
     throw new WorkspaceError(409, `${clean} is no longer on disk.`, { code: "missing" });
   }
