@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from "react";
+import { useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import { AppIcon } from "@elabs-ai/components-icons";
 import {
   CommandDialog,
@@ -22,9 +22,18 @@ import { navigate, useRoute, type Route } from "../routes/use-hash";
 import { useLiveReload } from "../workspace/live-reload";
 import { useAutosave } from "../workspace/use-autosave";
 import { useWorkspace } from "../workspace/workspace-store";
-import { docTabId, DocTabs } from "./doc-tabs";
-import { displayKeys, useRegisteredCommands, useShellKeymap, type PaletteCommand } from "./keymap";
-import { fileTitle, modeActions, openDoc, useMode, useOpenDocs } from "./mode-store";
+import { DocTabs } from "./doc-tabs";
+import {
+  activeElement,
+  docTabId,
+  focusDocTab,
+  focusSoon,
+  focusWorkspace,
+  workspaceElement,
+  WORKSPACE_ID,
+} from "./focus";
+import { shortcutText, useRegisteredCommands, useShellKeymap, type PaletteCommand } from "./keymap";
+import { fileTitle, modeActions, modeStore, openDoc, useMode, useOpenDocs } from "./mode-store";
 import { RailNav } from "./rail-nav";
 import { TopBar } from "./top-bar";
 
@@ -33,7 +42,7 @@ export interface DiagramShellProps {
 }
 
 /** Target of the skip link: the workspace (or whichever page replaces it). */
-export const WORKSPACE_ID = "diagram-workspace";
+export { WORKSPACE_ID };
 
 /** The shell's strings, in one place (`conventions/i18n-strings`). */
 const SHELL_LABELS = {
@@ -110,13 +119,10 @@ export function DiagramShell({ children }: DiagramShellProps) {
           navigation role goes on its container, which receives the spread props. */}
       <Sidebar collapsible="icon" role="navigation" aria-label={SHELL_LABELS.navigation}>
         {/* `h-header` so the brand row shares the top bar's band (wave-0 review m7). */}
+        {/* `title` is the lockup's wordmark and its accessible name; on the icon rail it
+            morphs to the mark alone. */}
         <SidebarHeader className="h-header justify-center px-3">
-          <div className="flex items-center gap-2">
-            <AppIcon height={20} aria-hidden />
-            <span className="truncate font-semibold group-data-[collapsible=icon]:hidden">
-              {SHELL_LABELS.appName}
-            </span>
-          </div>
+          <AppIcon title={SHELL_LABELS.appName} height={20} />
         </SidebarHeader>
         <SidebarContent>
           <RailNav />
@@ -173,17 +179,44 @@ function CommandPalette() {
   const openSet = new Set(docs.map((doc) => doc.path));
   const closedFiles = (files ?? []).filter((file) => !openSet.has(file.path));
 
-  const run = (action: () => void) => {
-    modeActions.setPaletteOpen(false);
-    action();
+  // The palette has no trigger, so it closes onto `<body>` (H-24). Remember what had focus as
+  // it opens (a layout effect runs before the dialog moves focus into itself), and hand focus
+  // back there, or on to what the chosen item put on screen.
+  const returnTo = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    if (open) returnTo.current = activeElement();
+  }, [open]);
+  const restoreFocus = () => {
+    const target = returnTo.current;
+    focusSoon(() => (target?.isConnected ? target : workspaceElement()));
   };
+
+  const close = () => modeActions.setPaletteOpen(false);
+  const run = (action: () => void, focusAfter: () => void = restoreFocus) => {
+    close();
+    action();
+    focusAfter();
+  };
+  /** A document: its tab, unless `openDoc` is asking "Replace your edits?" first. */
+  const runOpen = (path: string) =>
+    run(
+      () => openDoc(path),
+      () => {
+        if (modeStore.get().pendingOpen === null) focusDocTab(path);
+      },
+    );
 
   return (
     <CommandDialog
       open={open}
-      onOpenChange={modeActions.setPaletteOpen}
+      onOpenChange={(next) => {
+        modeActions.setPaletteOpen(next);
+        if (!next) restoreFocus();
+      }}
       title={SHELL_LABELS.palette}
     >
+      {/* P4: library gap — CommandDialog does not forward cmdk's label, so the search box has
+          no accessible name of its own (docs/findings/DG-22-shell-v2.md §16). */}
       <CommandInput placeholder={SHELL_LABELS.paletteSearch} />
       <CommandList>
         <CommandEmpty>{SHELL_LABELS.paletteEmpty}</CommandEmpty>
@@ -194,7 +227,7 @@ function CommandPalette() {
                 key={doc.path}
                 value={`open ${doc.path}`}
                 keywords={[doc.title]}
-                onSelect={() => run(() => openDoc(doc.path))}
+                onSelect={() => runOpen(doc.path)}
               >
                 <span className="min-w-0 truncate">{doc.title}</span>
                 <span className="ms-auto truncate text-meta text-muted-foreground">{doc.path}</span>
@@ -211,7 +244,7 @@ function CommandPalette() {
                   key={file.path}
                   value={`file ${file.path}`}
                   keywords={[title]}
-                  onSelect={() => run(() => openDoc(file.path))}
+                  onSelect={() => runOpen(file.path)}
                 >
                   <span className="min-w-0 truncate">{title}</span>
                   <span className="ms-auto truncate text-meta text-muted-foreground">
@@ -227,7 +260,7 @@ function CommandPalette() {
             <CommandItem
               key={page.label}
               value={`go ${page.label}`}
-              onSelect={() => run(() => navigate(page.route))}
+              onSelect={() => run(() => navigate(page.route), focusWorkspace)}
             >
               {page.label}
             </CommandItem>
@@ -244,7 +277,7 @@ function CommandPalette() {
               >
                 {command.label}
                 {command.shortcut ? (
-                  <CommandShortcut>{displayKeys(command.shortcut).join("")}</CommandShortcut>
+                  <CommandShortcut>{shortcutText(command.shortcut)}</CommandShortcut>
                 ) : null}
               </CommandItem>
             ))}

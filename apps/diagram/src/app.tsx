@@ -36,7 +36,7 @@ import {
   useDocMode,
   useMode,
 } from "./shell/mode-store";
-import { SHORTCUTS, displayKeys } from "./shell/keymap";
+import { SHORTCUTS, displayKeys, shortcutText } from "./shell/keymap"; // DG-22 review: shortcutText
 import { MOTION_CLASS, motionMs } from "./motion";
 // Dev routes — one gallery per work package, each in its own file so parallel items
 // merge without touching each other's code. DG-22 moved them under `#dev/<name>`.
@@ -56,7 +56,9 @@ const APP_LABELS = {
   editor: "Editor",
   canvas: "Canvas",
   home: "Home",
-  homeHint: "Open a diagram from the Workspace in the sidebar, or press ⌘K to find one.",
+  // DG-22 review: the palette's keys as this platform writes them (⌘K, Ctrl+K).
+  homeHint: (keys: string) =>
+    `Open a diagram from the Workspace in the sidebar, or press ${keys} to find one.`,
   catalog: "Catalog",
   catalogHint: "Icons and components, by vendor.",
   iconSheet: "Open the icon sheet",
@@ -327,7 +329,7 @@ function HomePage() {
         kind="empty"
         titleAs="h2"
         title={APP_LABELS.home}
-        description={APP_LABELS.homeHint}
+        description={APP_LABELS.homeHint(shortcutText(["Mod", "K"]))} // DG-22 review
       />
     </PlaceholderPage>
   );

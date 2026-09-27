@@ -62,6 +62,11 @@ export function displayKeys(keys: readonly string[]): string[] {
   return keys.map((key) => KEY_GLYPH[key] ?? key);
 }
 
+/** A binding as one string for running text: `⌘K` on macOS, `Ctrl+K` elsewhere. */
+export function shortcutText(keys: readonly string[]): string {
+  return displayKeys(keys).join(IS_MAC ? "" : "+");
+}
+
 // ── Story keys (DG-31 mounts the story bar) ────────────────────────────────────────────
 
 export interface StoryKeys {
