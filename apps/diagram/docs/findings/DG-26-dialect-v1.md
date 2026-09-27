@@ -17,18 +17,29 @@ items; nothing here builds them.
   via `write-back.ts`'s `setEntryKeys`, never a YAML `Document` round trip).
 - **Reference-first nodes.** A node's identity can now be `id` + `ref:`, a path: `ref:
 catalog/<pack>/<entry>` for a catalog item, `ref: ws/<folder>/…/<file name>` for another
-  diagram (the literal root `ws`, the maintainer's ruling; the last segment is the file name
-  without `.yaml`). Any key written beside `ref:` overrides what the reference supplies; a
-  custom node without `ref` stays valid. `ids.ts`'s `REF_RE` rejects a last segment ending in
-  `.yaml`/`.yml` on purpose — `badRef()` catches that specific mistake and suggests the path
-  with the extension stripped, rather than silently accepting a typed-out filename.
+  diagram (the literal root `ws`, the maintainer's ruling; the last segment is the file name,
+  written with or without `.yaml`/`.yml`). Any key written beside `ref:` overrides what the
+  reference supplies; a custom node without `ref` stays valid. A path segment accepts any
+  character the workspace tree itself accepts — spaces, capitals, dots, unicode — except no
+  leading `_` (keeps `_trash` out), no leading `.` and no `.`/`..` segment, and no empty or
+  whitespace-only segment (maintainer ruling 2026-09-27). A trailing `.yaml`/`.yml` (any case)
+  on the last segment is **stripped, not rejected** — `refFileOf` strips it before appending
+  `.yaml` back on, so `ref: ws/components/qlik-cloud-tenant.yaml` resolves the same file as
+  the form without the extension; `badRef()` gives each wrong shape (a bad segment, an old
+  `workspace/…` or `components/…` root, a bare vendor/name pair, an unrecognized root) its own
+  reason, with a `suggestion` where the fix is unambiguous.
 - **Dotted flow ends.** `tenant.qtdi` reaches inside a node whose `ref` names a diagram — grammar
-  `END_SOURCE = ID(\.ID)*`. `validate.ts` allows a dotted end only through such a node
-  (`unknown-endpoint` otherwise, with a message naming the reason), flags a note that dots into
-  one (`unknown-note-target`, dotted notes are not resolved yet), and flags a loop where both
-  ends land inside the same reference (`inner-flow`, warning).
-  `expand-not-diagram` (warning) catches `expand:` on a node whose `ref` is not a diagram, or
-  with no `ref` at all.
+  `END_SOURCE = ID(\.ID)*`. `validate.ts` allows a dotted end only through such a node, or
+  through a node whose `ref` is already flagged `bad-ref` (so a broken reference does not also
+  cascade `unknown-endpoint` on every dotted flow through it — round-0 finding, the old
+  `workspace/…` root case); a genuine miss is still `unknown-endpoint`, with a message naming
+  the reason. A dotted note that dots into a real diagram reference says so
+  (`unknown-note-target`); into anything else (a plain node, or nothing) it says "No node or
+  zone has the id …" instead. `inner-flow` (warning) flags a loop where both ends land inside
+  the same reference. `expand-not-diagram` (warning) catches `expand:` on a node whose `ref` is
+  not a diagram (or has no `ref` at all) — again skipped when the ref is already `bad-ref`.
+  `ref-type-not-drawn` (info) says when a `type:` written on a diagram reference is kept (the
+  maintainer's override rule) but not drawn until Part 2's composite renderer.
 - **Composite nodes, interim.** A node whose `ref` is a diagram compiles to one
   `arch/composite` node (`ARCH_COMPOSITE_TYPE`, `CompiledCompositeData`: `component`, `ports`,
   `pending`/`broken`), rendered for now by the existing `ServiceNode` (DG-27 replaces this).
@@ -36,12 +47,16 @@ catalog/<pack>/<entry>` for a catalog item, `ref: ws/<folder>/…/<file name>` f
 - **Vocabulary parity.** Two new compile-time `Assert<Equals<…>>` checks in `registry.ts` keep
   `COMPOSITE_TYPE_KEY`/`ARCH_COMPOSITE_TYPE` and the dialect/component unions in sync; a drift
   fails `typecheck:local`.
-- **Fixtures and the dev check page.** Nine new fixtures under `src/spec/dialect/__fixtures__/`
-  cover the new grammar's edges; `issue-unsupported-version.yaml` moved to `diagram: "2"` now
-  that `"1"` is real. `#dev/spec-check` gained two tables: the seven workspace files (dialect,
-  shape, round trip, and — for the customer-landscape template — the collapsed `tenant`
-  reference's port list and inner-flow edge counts) and the 0→1 upgrade over the ten `valid-*`
-  fixtures. Total: **63 of 63** (44 fixture rows + 2 pairs + 7 workspace rows + 10 upgrade rows).
+- **Fixtures and the dev check page.** Eleven new fixtures under `src/spec/dialect/__fixtures__/`
+  cover the new grammar's edges (round-0 review added `valid-ref-segments.yaml` and
+  `issue-ref-type-not-drawn.yaml`, and extended `issue-bad-ref.yaml` and
+  `issue-unknown-note-target.yaml`); `issue-unsupported-version.yaml` moved to `diagram: "2"`
+  now that `"1"` is real. `#dev/spec-check` gained two tables: the seven workspace files
+  (dialect, shape, round trip, and — for the customer-landscape template — the collapsed
+  `tenant` reference's port list and inner-flow edge counts) and the 0→1 upgrade over the
+  eleven `valid-*` fixtures, plus a `# expect-suggestion:` assertion so a pinned `suggestion`
+  is checked, not just the issue code. Total: **66 of 66** (46 fixture rows + 2 pairs + 7
+  workspace rows + 11 upgrade rows).
 - **Workspace text.** Every place the app, its docs, the MCP tools or the workspace files said
   `use:`/`workspace/…` for a reference now says `ref:`/`ws/…`; `workspace/README.md`'s rule 1 no
   longer claims `components/` is the only root a reference resolves from (it can name any
@@ -88,7 +103,7 @@ All from `apps/diagram` in the worktree unless noted; logs under
   removed one baseline warning along the way).
 - From the worktree root: `pnpm brand-ui audit --strict apps/diagram/src` — "scanned 52 file(s):
   0 style issue(s), 0 content-slop (blocking), 0 advisory", "--strict: exiting 0".
-- `#dev/spec-check` — "63 of 63 checks pass", 0 failing rows.
+- `#dev/spec-check` — "66 of 66 checks pass", 0 failing rows.
 - `node scripts/upgrade-workspace.mjs --dry-run workspace` — "0 of 7 files would change", exit 0.
 - `pnpm run schema:build && git diff --exit-code -- schema/` — the rebuild picked up the
   `ids.ts` grammar fix (see Decisions below) and needed one commit to stay idempotent; clean
@@ -104,13 +119,20 @@ All from `apps/diagram` in the worktree unless noted; logs under
 
 ## Decisions and deviations
 
-- **The `ref:` grammar had a real gap, found while writing the `issue-bad-ref` fixture.** The
-  first draft's segment regex (`[^/]+` minus a leading `_` and minus a bare `.`/`..`) let a last
-  segment end in `.yaml` — so `ref: ws/components/tenant.yaml` parsed as a VALID path instead of
-  triggering `badRef`'s "write the path without .yaml" message. Fixed by giving the last segment
-  its own pattern (`FILE_SEGMENT_SOURCE`) that also excludes a trailing `.yaml`/`.yml`; folder
-  segments in between keep the fully permissive grammar. This changed the generated JSON Schema
-  pattern too (`schema:build`), committed separately so the schema-build gate stays idempotent.
+- **Round-0 review correction: a trailing `.yaml` is stripped, not rejected.** The first pass
+  read the maintainer's ruling backwards — it gave the last segment its own pattern
+  (`FILE_SEGMENT_SOURCE`) that rejected a trailing `.yaml`/`.yml` as a `bad-ref` mistake, and
+  the findings here said so "on purpose". The maintainer's actual final wording (relayed for
+  this fix) is the opposite: a trailing `.yaml`/`.yml` (any case) on a `ws/` path's last
+  segment is **stripped**, not rejected — `ref: ws/components/qlik-cloud-tenant.yaml` is a
+  valid path, and `refFileOf` resolves it to the same file as the form without the extension.
+  `FILE_SEGMENT_SOURCE` is gone; one `SEGMENT_SOURCE` now covers every segment (dots are legal
+  anywhere in a name, so the last segment needs no special case), and `refFileOf` strips a
+  trailing extension before appending `.yaml` back on. `badRef()` was rewritten at the same
+  time to give each wrong shape (a bad segment, the old `workspace/…`/`components/…` roots, a
+  bare `<vendor>/<name>` pair, an unrecognized root) its own message and, where the fix is
+  unambiguous, a `suggestion`. This changed the generated JSON Schema pattern (`schema:build`),
+  committed separately so the schema-build gate stays idempotent.
 - **The `workspace/README.md` "two rules" section** used to say `components/` is the only root a
   reference resolves from; that stopped being true once a `ref:` can point at any workspace file
   (reference-first nodes, this item). Rule 1 now says a reference resolves from the workspace
@@ -121,17 +143,70 @@ All from `apps/diagram` in the worktree unless noted; logs under
 - **`issue-unsupported-version.yaml`** moved from `diagram: "1"` to `diagram: "2"` — `"1"` is a
   real, accepted dialect now, so the fixture needed a version genuinely past what the app reads.
 
+## Round-0 review fixes (this pass)
+
+Two review lanes (`brand-ui-reviewer`, `verify-1a-r0`) ran against the first pass and failed it;
+`.evidence/ref-syntax/1a-r0-findings.json` has both lanes in full. Every in-scope must-fix and
+should-fix is fixed here except **F2** (four commits' trailer text) — the branch's existing
+commits are not rewritten (no rebase, no amend), by this task's own hard rule; new commits use
+the correct trailer.
+
+- **F1 / yaml-not-stripped / yaml-uppercase / yml-message** — the grammar, `refFileOf` and the
+  v1 schema pattern now strip a trailing `.yaml`/`.yml` (any case) instead of rejecting it; see
+  "Round-0 review correction" above.
+- **F3 / old-root-no-hint / old-use-generic** — `badRef()` gives the diagram form, the catalog
+  form, the old `workspace/…` and `components/…` roots, and a bare `<vendor>/<name>` pair each
+  their own message, with a `suggestion` for the unambiguous rewrites (`workspace/x` →
+  `ws/x`, `components/x` → `ws/components/x`, `aws/rds` → `catalog/aws/rds`). A leftover `use:`
+  key gets a message naming `ref:` directly, with the same rewrite as its `suggestion`.
+- **F4 / migration-script-edges** — `upgrade-workspace.mjs` now fails (`cannot read (<reason>)`,
+  exit 1) for any `reason` `upgradeText` returns (not only `from === null`), including
+  `no-exact-edit`, and for a target path that does not exist; it prints
+  `${from} → ${DIALECT_VERSION}` (imported through the same `runnerImport`), not a hard-coded
+  `→ 1`.
+- **F5 / docs-wrong-part / findings-standin-name** — this findings doc and the changelog now say
+  **Part 2** for the referenced diagram's title/icon, and name the lakehouse stand-in `nat`
+  (not `nia`); the changelog no longer says the app "still" writes only v1 (it wrote v0 before
+  this item).
+- **F6 / odd-segments** — `valid-ref-segments.yaml` pins the maintainer's permissive grammar
+  (spaces, capitals, dots, unicode); `issue-bad-ref.yaml` gained rows for a leading `_`, a `..`
+  segment, a leading `.` segment, a whitespace-only segment, the old `workspace/…` root, the old
+  `components/…` root, a bare `ws`, an unrooted `<vendor>/<name>` pair and an uppercase catalog
+  pack; three of those rows assert `suggestion` via a new `# expect-suggestion:` fixture
+  comment `spec-check-view.tsx` checks.
+- **F7** — a `type:` written on a diagram reference is kept (`overrideType` on
+  `CompiledCompositeData`) and flagged at info severity (`ref-type-not-drawn`) rather than
+  silently dropped; still not drawn until Part 2 (`issue-ref-type-not-drawn.yaml`).
+- **write-overwrites-newer-dialect** — `diagram_write` (`server/mcp/tools/workspace.mjs`) now
+  reads the file's current dialect before writing and refuses with the same message
+  `compose.mjs`'s `editFile` uses when it is newer than this app reads; confirmed live over MCP
+  (a `diagram: "2"` scratch file, `diagram_write` with valid v1 text over it, `isError: true`,
+  file confirmed unchanged byte-for-byte).
+- **F9** — the dotted-note wording ("… is inside a referenced diagram") is used only when the
+  head really is a diagram reference (`diagramRefOf.has(head)`); otherwise "No node or zone has
+  the id …" (`issue-unknown-note-target.yaml` pins both).
+- **F10** — `COMPOSITE_ARIA.kind` is now `"Component"` (was `"component"`), matching
+  `ARCH_KIND_LABEL`'s capitalization; the inner `ServiceNode`'s own "Service" text stays interim
+  until DG-27's composite renderer (unchanged, noted here).
+- **F8** — `ref` moved to directly after `id` in `NODE_DEF.fields`, so it leads the inspector's
+  essential group (confirmed live: Id, Title, **Ref**, Type, Icon, Tone, …).
+- **Nits** — `readme-extra-lines`: `workspace/README.md` rule 1 is back to 3 lines.
+  `index-comment-use-component`: `server/mcp/tools/index.mjs`'s header comment no longer names
+  the never-built `compose_use_component`.
+
 ## The interim look, and what is deferred to later parts
 
 A diagram reference still draws as a plain `ServiceNode`-shaped box titled by its id (`tenant`),
-with no component icon and no drill-down — Part 1b gives it the referenced diagram's real title,
-icon and description; DG-27 gives it its own composite renderer with drill-down. `expand: true`
+with no component icon and no drill-down — **Part 2** gives it the referenced diagram's real
+title, icon and description; DG-27 gives it its own composite renderer with drill-down. A
+`type:` written on a diagram reference is kept (`overrideType` on the compiled composite data,
+`ref-type-not-drawn` says so at info severity) but not drawn until Part 2 either. `expand: true`
 is accepted by the grammar and read from YAML, but nothing draws an expanded reference inline
 yet (Part 3). Editor completion for either path form (`ref: catalog/…` or `ref: ws/…`) is
 DG-28's recorded requirement, not built here. Migrating the seven workspace files themselves to
 be reference-first (dropping the duplicated `title`/`icon`/`description` that a catalog entry
-would supply) is Part 1b's job — the stand-in custom nodes the earlier draft named (lakehouse
-`nia`, `replicate`, on-prem `licensing`) are explicitly out of this Part's scope.
+would supply) is Part 1b's job — the stand-in custom nodes the maintainer named (lakehouse
+`nat`, pipeline `replicate`, on-prem `licensing`) are explicitly out of this Part's scope.
 
 ## Demo script (`docs/demo-script.md`)
 
@@ -160,3 +235,11 @@ DG-23's, not built yet).
   (an internal dev-only diagnostics page) and one string in `editor-pane.tsx`; this Part added
   two new tables to that same page without adding to the pile, but did not clean up the
   pre-existing 11.
+- **F2 (commit trailer wording) is deliberately not fixed.** Four already-pushed commits end
+  with the wrong "Claude Sonnet 5" trailer instead of "Claude Opus 5.5 (1M context)"; fixing it
+  would need rewording those commits (rebase or filter-branch), which this round's hard rule
+  forbids ("Do NOT rewrite history — no rebase, no amend of existing commits"). Every new commit
+  in this round uses the correct trailer.
+- The branch was behind `origin/main` (`stale-base`); `git fetch && git merge --no-edit
+origin/main` brought in the chart-spec-version work with no conflicts before any of the above
+  fixes, so `git diff --stat origin/main -- packages/` is empty again.
