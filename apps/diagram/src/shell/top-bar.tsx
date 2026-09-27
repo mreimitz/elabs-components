@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -30,7 +31,6 @@ import {
   ToggleGroup,
   ToggleGroupItem,
   TooltipProvider,
-  useIsMobile,
 } from "@elabs-ai/components-ui";
 import { SEVERITY_STATUS } from "../panes/issues-panel";
 import { useRoute, type Route } from "../routes/use-hash";
@@ -79,11 +79,27 @@ const TOP_BAR_LABELS = {
 } as const;
 
 /**
- * Below this width the diagram controls fold into one "Diagram options" menu (wave-2 review
- * m7; plan §3.4 says 1,100 px). The controls never shrink (the header's `shrink-0` children):
- * only the breadcrumb truncates.
+ * Below this header width the diagram controls fold into one "Diagram options" menu (wave-2
+ * review m7; plan §3.4 says 1,100 px of window, which is 1,052 px of header beside the 48 px
+ * rail). The header is measured, not the window: an open sidebar takes 256 px of it. The
+ * controls never shrink (the header's `shrink-0` children): only the breadcrumb truncates.
  */
-const COMPACT_BELOW = 1100;
+const COMPACT_BELOW = 1052;
+
+/** True while the element is narrower than `COMPACT_BELOW` (measured before the first paint). */
+function useCompact(ref: RefObject<HTMLElement | null>): boolean {
+  const [compact, setCompact] = useState(false);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const measure = () => setCompact(element.getBoundingClientRect().width < COMPACT_BELOW);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ref]);
+  return compact;
+}
 
 const TIME = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" });
 
@@ -109,7 +125,8 @@ export function TopBar() {
   );
   // No AST (the text is not a diagram): the toggles have nothing to rewrite.
   const disabled = direction === undefined;
-  const compact = useIsMobile(COMPACT_BELOW);
+  const headerRef = useRef<HTMLElement>(null);
+  const compact = useCompact(headerRef);
   const inspectorOpen = useDiagram((s) => s.inspectorOpen); // DG-14
 
   const counts = edit ? (
@@ -128,14 +145,19 @@ export function TopBar() {
   return (
     // One provider for every tooltip in the bar (`WithTooltip`); `IconButton` brings its own.
     <TooltipProvider>
-      <header className="flex h-header items-center gap-2 border-b px-4 [&>*:not(nav)]:shrink-0">
+      <header
+        ref={headerRef}
+        className="flex h-header items-center gap-2 border-b px-4 [&>*:not(nav)]:shrink-0"
+      >
         <SidebarTrigger />
         <TitleCrumbs route={route} />
         {/* Always mounted (it owns the file input, a dialog and the share-link listener);
             off a document it shows nothing. */}
         <DocumentControls compact={compact || !onDoc} showHistory={edit} />
 
-        <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
+        {/* No `min-w-0`: the centre keeps its controls' width, so the breadcrumb truncates
+            instead of the controls running over their neighbours. */}
+        <div className="flex flex-1 items-center justify-center gap-2">
           {/* View mode: DG-31's story bar goes here. */}
           {edit && !compact ? (
             <>
