@@ -94,7 +94,7 @@ would change` (the four examples were migrated to `diagram: "1"` in a separate c
 ## Gates
 
 All from `apps/diagram` in the worktree unless noted; logs under
-`/Users/czq/Documents/DEV/elabs/elabs-components/apps/diagram/.evidence/ref-syntax/1a-build/`.
+`apps/diagram/.evidence/ref-syntax/1a-build/` (repo root, gitignored).
 
 - `typecheck:local` — 0 errors.
 - `lint:local` — 0 errors, **11 warnings** (baseline was 12; the new DG-26 tables on

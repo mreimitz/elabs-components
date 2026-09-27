@@ -1,6 +1,5 @@
 "use client";
 
-import { arc as arcGenerator } from "@visx/shape";
 import { type MotionValue, motion, useTransform } from "motion/react";
 import { useStillEntrance } from "./use-still-entrance";
 import { REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
@@ -16,6 +15,7 @@ import {
 } from "./ring-context";
 import { useEnterComplete } from "./use-enter-complete";
 import { useMountProgress } from "./use-mount-progress";
+import { generateArcPath } from "./pie-ring-engine";
 
 // ── Tick ring (#RM-030 — lieflat F4 "Tick Donut") ───────────────────────────
 //
@@ -227,21 +227,6 @@ export const RingTickRing = memo(function RingTickRing({
 });
 
 RingTickRing.displayName = "RingTickRing";
-
-function generateArcPath(
-  innerRadius: number,
-  outerRadius: number,
-  startAngle: number,
-  endAngle: number,
-  cornerRadius: number,
-): string {
-  const generator = arcGenerator<unknown>({
-    innerRadius,
-    outerRadius,
-    cornerRadius,
-  });
-  return generator({ startAngle, endAngle } as unknown as null) || "";
-}
 
 export type RingLineCap = "round" | "butt";
 

@@ -9,7 +9,7 @@
  * Real render + interaction fidelity is covered by the Storybook story build
  * (pnpm --filter @elabs-ai/components-docs test-storybook, story id: charts-piechart--default).
  */
-import type { ReactElement } from "react";
+import { memo, type ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render } from "@testing-library/react";
 import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
@@ -659,6 +659,28 @@ describe("PieChart seams (paper-seam stroke)", () => {
     );
     const sliceGroups = container.querySelectorAll("svg > g > g");
     expect(sliceGroups).toHaveLength(3);
+  });
+});
+
+describe("PieChart center child matching", () => {
+  it("shows a memo-wrapped PieCenter outside the svg, not inside it", () => {
+    const MemoPieCenter = memo(function MemoPieCenterImpl() {
+      return <span>memo center content</span>;
+    });
+    MemoPieCenter.displayName = "PieCenter";
+
+    const { container } = render(
+      <PieChart data={sampleData} innerRadius={60} size={300}>
+        {sampleData.map((_d, i) => (
+          <PieSlice animate={false} index={i} key={i} />
+        ))}
+        <MemoPieCenter />
+      </PieChart>,
+    );
+
+    expect(container.querySelector("svg")?.textContent).not.toContain("memo center content");
+    const centerWrapper = container.querySelector(".pointer-events-none.flex.justify-center");
+    expect(centerWrapper?.textContent).toContain("memo center content");
   });
 });
 
