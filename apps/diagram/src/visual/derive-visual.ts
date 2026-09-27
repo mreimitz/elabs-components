@@ -28,12 +28,26 @@
  * silent on ties; `docs/findings/lens-switch-slice.md` records this and flags it as arbitrary.
  *
  * ## Rule 2 — boxes (concept §3 rule 2, narrowed: no catalog `capability` field)
- * Nodes with the same derived lane, the same `type` (`ArchNodeType`) and the same parent zone
- * id (`undefined` counts as one shared "no zone" bucket) group into one box. A group of exactly
- * one node keeps its own title and icon; a group of two or more is titled by the shared parent
- * zone's title when they have one, else a plain plural label for the kind (`PLURAL_KIND_LABEL`,
- * e.g. "Databases" for `datastore` — the task's own example). `note` nodes never enter a box:
- * they are canvas annotations, not architecture, in both lenses.
+ * Nodes with the same derived lane and the same parent zone group into one box, if either
+ * shares one more thing: a real product vendor (the icon's namespace, e.g. `"aws"` in
+ * `"aws/rds"`) — regardless of technical `type` — or, with no such vendor to go on (no icon,
+ * or a generic `lucide` glyph — not a real product's brand), the same `type` (`ArchNodeType`)
+ * instead, the stricter original match. `undefined` parent zone counts as one shared "no
+ * zone" bucket for the `type` path only; a vendor match always requires an actual shared
+ * zone. **Maintainer feedback, 2026-09-27** (`.evidence/lens-preview-merge/`): matching on
+ * `type` alone read as "the technical diagram in boxes" — two S3 buckets and Glue
+ * (`datastore`/`service`) are one AWS system, not two; Postgres and MSK (`datastore`/`queue`)
+ * likewise. The vendor match is what lets those merge while still keeping Databricks jobs —
+ * same zone, `databricks` vendor — its own box: a `type`-only key could not tell "one system,
+ * several technical roles" apart from "two unrelated systems that happen to share a zone",
+ * and a vendor could. A group of exactly one node keeps its own title and icon; a group of
+ * two or more is titled by the shared parent zone's title when they have one AND no other
+ * multi-member group shares it (a zone can still produce two boxes — a real vendor's cluster
+ * plus a generic-icon leftover, e.g. `clickhouse-cloud-stack.yaml`'s Grafana + Superset beside
+ * its AWS trio — and both cannot be named after the same zone), else a plain plural label for
+ * the kind (`PLURAL_KIND_LABEL`, e.g. "Databases" for `datastore` — the `type`-path, no-zone,
+ * and zone-collision cases alike). `note` nodes never enter a box: they are canvas
+ * annotations, not architecture, in both lenses.
  *
  * ## Rule 6 — network/access aside (concept §3 rule 6), applied BEFORE rule 2
  * A node whose every technical flow (either end) is `kind: "access"` or `kind: "network"`, and
@@ -203,9 +217,22 @@ function laneForNode(
   return { lane: flowRole(node.id, ast.flows, new Set([node.id])), owner: "unowned" };
 }
 
-/** Rule 2's grouping key: same lane, same kind, same parent zone (or the shared "no zone" bucket). */
+/**
+ * The icon's vendor namespace (`"aws/rds"` → `"aws"`); `undefined` with no icon, no `/`, or
+ * the generic `lucide` glyph set — a placeholder, not a real product's brand, so it never
+ * counts as a vendor match (see rule 2's docstring above).
+ */
+function iconVendor(icon: string | undefined): string | undefined {
+  const vendor = icon?.split("/")[0];
+  return vendor && vendor !== "lucide" ? vendor : undefined;
+}
+
+/** Rule 2's grouping key — see the rule's docstring above for the vendor-vs-`type` choice. */
 function groupKey(lane: LaneRole, node: ArchNodeSpec): string {
-  return `${lane}\u0000${node.type}\u0000${node.parent ?? ""}`;
+  const vendor = node.parent !== undefined ? iconVendor(node.icon) : undefined;
+  return vendor
+    ? `${lane}\u0000vendor:${vendor}\u0000${node.parent}`
+    : `${lane}\u0000type:${node.type}\u0000${node.parent ?? ""}`;
 }
 
 export function deriveVisualLens(ast: ArchDiagram): VisualLens {
@@ -235,6 +262,17 @@ export function deriveVisualLens(ast: ArchDiagram): VisualLens {
     grouped.set(key, bucket);
   }
 
+  // A zone with two or more multi-member groups (a real vendor cluster AND a generic-icon
+  // leftover, say) would otherwise title both boxes identically off the one shared zone —
+  // count multi-member groups per zone up front so the loop below can tell.
+  const multiGroupsByZone = new Map<string, number>();
+  for (const members of grouped.values()) {
+    if (members.length < 2) continue;
+    const zoneId = members[0]?.node.parent;
+    if (zoneId === undefined) continue;
+    multiGroupsByZone.set(zoneId, (multiGroupsByZone.get(zoneId) ?? 0) + 1);
+  }
+
   const boxes: VisualBox[] = [];
   const nodeToBox = new Map<string, string>();
   let boxSeq = 0;
@@ -249,8 +287,11 @@ export function deriveVisualLens(ast: ArchDiagram): VisualLens {
     const [first] = members;
     if (!first) continue;
     const single = members.length === 1;
+    const zoneId = first.node.parent;
+    const sharesZoneWithAnotherGroup =
+      zoneId !== undefined && (multiGroupsByZone.get(zoneId) ?? 0) > 1;
     const parentZone =
-      first.node.parent !== undefined ? zoneTitle.get(first.node.parent) : undefined;
+      !sharesZoneWithAnotherGroup && zoneId !== undefined ? zoneTitle.get(zoneId) : undefined;
     const title = single ? first.node.title : (parentZone ?? PLURAL_KIND_LABEL[first.node.type]);
     const id = `box:${boxSeq++}`;
     boxes.push({
