@@ -343,3 +343,11 @@ the branch report's Problems. What _was_ checked directly against the running de
 renders unchanged (icons, titles, layout); a scratch file with `ref: catalog/aws/rdss` lists
 `1 error` — "No catalog item aws/rdss. Did you mean catalog/aws/rds?" at its exact line:col,
 then was removed (`git status --porcelain workspace/ catalog/` prints nothing after).
+
+Update, review round 0 (`.evidence/ref-syntax/review-r0/mcp-probe.json`,
+`.evidence/ref-syntax/verify-r0/mcp-probes.log`): the 1b.13 probes this section flagged as not
+run were run and passed — `catalog_get`, `compose_add_nodes` with `ref` and its hints,
+`spec_compile`/`spec_validate` against a scratch copy, `diagram_create` refusing bad text, the
+live-catalog-edit delay, the inspector screenshots and the catalog entry snippet page. The
+branch also grew extra fixture rows, so `#dev/spec-check` now reads "75 of 75 checks pass",
+not the 72 above.

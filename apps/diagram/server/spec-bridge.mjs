@@ -31,7 +31,10 @@ export function createSpecBridge(server) {
   /**
    * `checkDiagram`, with `ref: catalog/…` resolved against the current catalog (readAll's
    * entries) — the same result the browser gets once the catalog has loaded. Every MCP tool
-   * that checks or writes a diagram goes through this, never `surface.checkDiagram` directly.
+   * that checks or writes the TEXT it was given goes through this, never `surface.checkDiagram`
+   * directly. The one exception (review round 0 F10): `diagram_write`'s "leave a newer dialect
+   * alone" guard reads the version of the file already ON DISK, before any catalog resolution
+   * is relevant, so it calls `bridge.load()` then `surface.checkDiagram` itself.
    * @param {string} text
    */
   async function check(text) {

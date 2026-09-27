@@ -231,7 +231,9 @@ export function validateArch(ast: ArchDiagram, iconNames: ReadonlySet<string>): 
       issue(
         "ref-type-not-drawn",
         joinPath(n.path, "type"),
-        `"type: ${n.type}" is kept but not drawn until Part 2; the reference still draws as a component.`,
+        // Plain words, no internal phase name (review round 0 F3/F6): a diagram reference
+        // always draws as one box for now; the written type is kept, only not drawn yet.
+        `"type: ${n.type}" is kept, but a diagram reference always draws as one box for now.`,
       ),
     );
   }

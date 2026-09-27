@@ -125,7 +125,7 @@ export const ARCH_DEFINITION_LIST: readonly FlowSpecDefinition[] = [
   {
     id: COMPOSITE_TYPE_KEY,
     kind: "node",
-    label: "Component",
+    label: "Diagram reference", // review round 0 F5/F7 — never "Component" (Ruling 9)
     fields: COMPOSITE_FIELDS,
     targets: ALL_PORTS,
   },

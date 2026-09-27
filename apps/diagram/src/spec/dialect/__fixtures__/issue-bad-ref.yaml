@@ -19,6 +19,10 @@ nodes:
     ref: aws/rds
   - id: i
     ref: catalog/AWS/rds
+  - id: j
+    ref: "ws/a\\b"
+  - id: k
+    ref: "ws/a\tb"
 # expect: bad-ref @ 5:10
 # expect: bad-ref @ 7:10
 # expect: bad-ref @ 9:10
@@ -28,6 +32,9 @@ nodes:
 # expect: bad-ref @ 17:10
 # expect: bad-ref @ 19:10
 # expect: bad-ref @ 21:10
+# expect: bad-ref @ 23:10
+# expect: bad-ref @ 25:10
 # expect-suggestion: bad-ref @ 5:10 = ws/components/qlik-cloud-tenant
 # expect-suggestion: bad-ref @ 11:10 = ws/components/x
 # expect-suggestion: bad-ref @ 19:10 = catalog/aws/rds
+# expect-suggestion: bad-ref @ 21:10 = catalog/aws/rds

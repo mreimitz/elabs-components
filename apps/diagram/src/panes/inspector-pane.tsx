@@ -35,7 +35,8 @@ const INSPECTOR_LABELS = {
   showInYaml: "Show in YAML",
   advanced: "Advanced",
   unset: "Not set",
-  kind: { zone: "Zone", node: "Node", flow: "Flow", note: "Note", component: "Component" },
+  // "Diagram reference" (review round 0 F5/F7): "another diagram" (Ruling 9), never "Component".
+  kind: { zone: "Zone", node: "Node", flow: "Flow", note: "Note", component: "Diagram reference" },
   // DG-26 — help text on a field a catalog reference supplies (1b.6).
   fromReference: "From the reference: ",
 } as const;
@@ -67,8 +68,8 @@ function withReferenceHelp(
   };
 }
 
-// DG-26 — a node whose ref names a diagram is labelled "Component"; its form is the node form
-// (Ref under the essential fields, Expand, Docs and Status under Advanced).
+// DG-26 — a node whose ref names a diagram is labelled "Diagram reference"; its form is the
+// node form (Ref under the essential fields, Expand, Docs and Status under Advanced).
 function kindLabel(entry: DiagramEntry): string {
   return INSPECTOR_LABELS.kind[
     entry.kind === "node" && entry.node.ref !== undefined && refForm(entry.node.ref) === "diagram"

@@ -2,10 +2,14 @@
  * DG-26 — `node scripts/upgrade-workspace.mjs [--dry-run] [file-or-folder …]` (default:
  * workspace): dialect 0 → 1, in place, on disk, never on open (upgrade.ts `upgradeText`).
  *
- * `--ref-first --choices <file.json>` (1b.9): the reference-first migration, once, over the
- * files `choices` names. `choices` shape: `{ "<workspace-relative path>": { "<node id>":
- * "<ref to write>" } }` — a node not named is left exactly as it is written (a stand-in, a
- * custom node with no catalog item, a zone). Never run together with a dialect upgrade.
+ * `--ref-first --choices <file.json>` (1b.9): the reference-first migration, once, over every
+ * `*.yaml` under the target (default: workspace), skipping `_trash` — the same walk as a plain
+ * upgrade. `choices` shape: `{ "<workspace-relative path>": { "<node id>": "<catalog name>" |
+ * "<ref to write>" | "custom" } }` — a bare catalog name ("aws/rds") and the full ref form
+ * ("catalog/aws/rds") both work (review round 0 F3). A node not named in a file's `choices`
+ * falls back to its own written `icon:` as the catalog name to try, so a file with no entry in
+ * `choices` at all is still processed (review round 0 F8); "custom", or an icon that is not a
+ * catalog name, leaves the node exactly as written. Never run together with a dialect upgrade.
  */
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
@@ -31,8 +35,14 @@ const dryRun = args.includes("--dry-run");
 const refFirst = args.includes("--ref-first");
 const choicesFlag = args.indexOf("--choices");
 const choicesPath = choicesFlag === -1 ? undefined : args[choicesFlag + 1];
+// review round 0 F1 — only exclude the value that actually follows a real `--choices` flag;
+// with no `--choices` at all, `choicesFlag === -1` must never exclude the argument at index 0.
 const targets = args.filter(
-  (a, i) => a !== "--dry-run" && a !== "--ref-first" && a !== "--choices" && i !== choicesFlag + 1,
+  (a, i) =>
+    a !== "--dry-run" &&
+    a !== "--ref-first" &&
+    a !== "--choices" &&
+    !(choicesFlag !== -1 && i === choicesFlag + 1),
 );
 const roots = (targets.length > 0 ? targets : ["workspace"]).map((t) => resolve(root, t));
 
@@ -87,8 +97,10 @@ for (const rel of rels) {
   }
   if (refFirst) {
     const result = refFirstText(text, catalog, choices[rel] ?? {});
+    // review round 0 F2 — refFirstText now reports why an unreadable file could not be read
+    // (the same reasons upgradeText does, below), never a quiet "unchanged".
     if (result.reason) {
-      console.log(`${rel}: ${result.reason}`);
+      console.log(`${rel}: cannot read (${result.reason})`);
       failed = true;
       continue;
     }

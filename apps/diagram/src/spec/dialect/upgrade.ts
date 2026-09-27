@@ -7,6 +7,7 @@
 import { parseArchYaml } from "./parse";
 import { normalizeArch } from "./normalize"; // DG-26 (1b.8)
 import { suppliedBy, type CatalogLookup, type Supplied } from "./catalog-refs"; // DG-26 (1b.8)
+import { CATALOG_REF_ROOT } from "./ids"; // DG-26 (review round 0 F3)
 import { renameEntryKey, setEntryKeys, valueAt, type WriteValue } from "./write-back";
 import { DIALECT_VERSION, READ_VERSIONS, type DialectVersion } from "./types";
 
@@ -59,9 +60,10 @@ export function upgradeText(text: string): UpgradeResult {
 // ── DG-26 (1b.8) — the reference-first migration ────────────────────────────────────────
 // A one-time, per-file rewrite (scripts/upgrade-workspace.mjs --ref-first --choices), never
 // run on open (Ruling 1). Per node, in document order: skip a node that already has `ref`;
-// `name = choices[id] ?? <the written icon>`, skip when undefined, "custom", or not a known
-// catalog name (a glyph is never one, Ruling 7); when the written icon equals the entry's own
-// icon or name, rename `icon:` to `ref:` in place (keeps the line, position and any trailing
+// `name = choices[id] ?? <the written icon>` (a leading "catalog/" on a choice is stripped, so
+// either form of the entry's name works — review round 0 F3), skip when undefined, "custom", or
+// not a known catalog name (a glyph is never one, Ruling 7); when the written icon equals the
+// entry's own icon or name, rename `icon:` to `ref:` in place (keeps the line, position and any
 // comment); otherwise add `ref:` after `id:` and keep `icon:` as a deliberate override; then
 // drop title/subtitle/type/badges/description/docs whose written value equals what the entry
 // now supplies, unless the key's own line or the line above carries a comment. Comments, blank
@@ -81,7 +83,13 @@ export interface RefFirstResult {
   text: string;
   changed: boolean;
   changes: readonly RefFirstChange[];
-  reason?: "no-exact-edit";
+  /**
+   * Set when nothing could be read or edited: the same three unreadable-file reasons
+   * `upgradeText` reports (review round 0 F2 — a parse/AST failure is a failure, never a
+   * quiet "unchanged"), plus `"no-exact-edit"` when a write-back splice could not be made
+   * exactly.
+   */
+  reason?: UpgradeReason;
 }
 
 const sameList = (a: readonly string[] | undefined, b: readonly string[] | undefined) =>
@@ -118,9 +126,13 @@ export function refFirstText(
   choices: RefChoices = {},
 ): RefFirstResult {
   const { raw, sourceMap } = parseArchYaml(text);
-  if (raw === undefined) return { text, changed: false, changes: [] };
-  const { ast } = normalizeArch(raw, sourceMap);
-  if (!ast) return { text, changed: false, changes: [] };
+  if (raw === undefined) return { text, changed: false, changes: [], reason: "yaml-error" };
+  const { ast, issues } = normalizeArch(raw, sourceMap);
+  if (!ast) {
+    const reason =
+      issues[0]?.code === "unsupported-version" ? "unsupported-version" : "not-a-diagram";
+    return { text, changed: false, changes: [], reason };
+  }
   const changes: RefFirstChange[] = [];
   let out = text;
   // Node ids/paths only (to enumerate what to touch); every read of a value below re-parses
@@ -135,7 +147,12 @@ export function refFirstText(
     const choice = choices[node.id];
     if (choice === "custom") continue;
     const writtenIcon = typeof entryRaw.icon === "string" ? entryRaw.icon : undefined;
-    const name = choice ?? writtenIcon;
+    // review round 0 F3 — a choice written in the documented ref form ("catalog/aws/rds")
+    // names the same catalog entry as the bare name ("aws/rds"); accept either.
+    const catalogPrefix = `${CATALOG_REF_ROOT}/`;
+    const name =
+      (choice?.startsWith(catalogPrefix) ? choice.slice(catalogPrefix.length) : choice) ??
+      writtenIcon;
     if (name === undefined) continue;
     const entry = catalog.get(name);
     if (!entry) continue;
