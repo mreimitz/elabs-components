@@ -23,6 +23,7 @@ import {
   tabsTriggerVariants,
 } from "@elabs-ai/components-ui";
 import { useRoute } from "../routes/use-hash";
+import { dismissDiskChange } from "../workspace/live-reload";
 import { useWorkspace } from "../workspace/workspace-store";
 import { docTabId, focusDocTab, focusSelectedTab, WORKSPACE_ID } from "./focus";
 import { modeActions, openDoc, useMode, useOpenDocs } from "./mode-store";
@@ -35,6 +36,8 @@ const TAB_LABELS = {
   closeTitle: (title: string) => `Close “${title}”?`,
   closeDescription:
     "Its last autosave failed, so the file on disk is older than what you see. Closing drops the newer text.",
+  closeDescriptionConflict:
+    "The file changed on disk while this tab had unsaved edits. Closing drops your edits and keeps the file on disk as it is.",
   closeConfirm: "Close without saving",
   keepOpen: "Keep it open",
 } as const;
@@ -44,6 +47,7 @@ export function DocTabs() {
   const route = useRoute();
   const shown = route.kind === "doc" ? route.path : null;
   const failed = useWorkspace((s) => s.save === "error" || s.conflict);
+  const conflict = useWorkspace((s) => s.conflict);
   const pendingClose = useMode((s) => s.pendingClose);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -167,7 +171,7 @@ export function DocTabs() {
         }}
         tone="destructive"
         title={TAB_LABELS.closeTitle(pendingTitle)}
-        description={TAB_LABELS.closeDescription}
+        description={conflict ? TAB_LABELS.closeDescriptionConflict : TAB_LABELS.closeDescription}
         confirmLabel={TAB_LABELS.closeConfirm}
         cancelLabel={TAB_LABELS.keepOpen}
         onConfirm={() => {
@@ -175,6 +179,8 @@ export function DocTabs() {
           // SF1: discard the edits in memory first — never write them, and never navigate
           // through a save that could fail and send `closeTab` back onto the wrong tab.
           modeActions.closeTab(pendingClose, { discard: true });
+          // The disk change's Reload / Keep toast is answered by this close: take it down.
+          dismissDiskChange();
           focusSelectedTab();
         }}
       />

@@ -140,6 +140,15 @@ function renameInRecents(from: string, to: string | null) {
 }
 
 /** The open document keeps its text but is no longer a workspace file (moved away, trashed). */
+/** Take the disk text for the open document `path` (a conflict's Reload, or its discard). */
+async function reloadCurrent(path: string): Promise<void> {
+  const { text, mtime } = await readFile(path);
+  // The tab may have opened another file meanwhile: only its own file's state moves.
+  if (workspaceStore.get().current?.path !== path) return;
+  documentActions.reloadFromDisk(text);
+  workspaceStore.set({ current: { path, mtime }, dirty: false, conflict: false, save: "idle" });
+}
+
 function detach() {
   diagramStore.set({ path: null });
   workspaceStore.set({ current: null, dirty: false, conflict: false, versions: null });
@@ -290,12 +299,17 @@ export const workspaceActions = {
    * the failed autosave that got here does not repeat and block the next open. A no-op unless
    * `path` is the document currently open (the only one a destructive-close confirmation ever
    * asks about). // DG-22 review 2 (SF1)
+   *
+   * Held by a disk conflict (someone else wrote the file under the unsaved edits), the file on
+   * disk is NEWER than `loadedText`: the document becomes the disk text, re-read, so reopening
+   * the tab shows the outside write, not the text from before it. // merge audit 2026-09-27
    */
   discard(path: string): void {
-    const { current } = workspaceStore.get();
+    const { current, conflict } = workspaceStore.get();
     if (!current || current.path !== path) return;
     diagramActions.load(diagramStore.get().loadedText, path);
     workspaceStore.set({ dirty: false, save: "idle", conflict: false });
+    if (conflict) void reloadCurrent(path).catch(() => undefined);
   },
 
   /** Write the open text now (autosave's debounce ends here). One write at a time. */
@@ -344,22 +358,20 @@ export const workspaceActions = {
     return "conflict";
   },
 
-  /** After a conflict: take the disk text (`reload`) or write the editor's over it (`keep`). */
+  /**
+   * After a conflict: take the disk text (`reload`) or write the editor's over it (`keep`).
+   * A no-op once no conflict is held: the question's toast can outlive it ("Close without
+   * saving" dropped the edits), and a late "Keep mine" would force-write stale text over the
+   * outside change. // merge audit 2026-09-27
+   */
   async resolveConflict(choice: "reload" | "keep"): Promise<void> {
-    const { current } = workspaceStore.get();
-    if (!current) return;
+    const { current, conflict } = workspaceStore.get();
+    if (!current || !conflict) return;
     if (choice === "keep") {
       await workspaceActions.saveNow({ force: true });
       return;
     }
-    const { text, mtime } = await readFile(current.path);
-    documentActions.reloadFromDisk(text);
-    workspaceStore.set({
-      current: { path: current.path, mtime },
-      dirty: false,
-      conflict: false,
-      save: "idle",
-    });
+    await reloadCurrent(current.path);
   },
 
   /** A new diagram `<folder>/<slug of title>.yaml` (a free name), opened. Returns its path. */
