@@ -19,7 +19,7 @@
       {
         "verb": "validate",
         "usage": "brand-ui a2ui validate <file> [--json]",
-        "does": "Runs `validateA2uiSurface`: one `path code message` line per problem (unknown type/prop/event, enum value, missing required prop, children on a leaf); exit 1 when invalid."
+        "does": "Runs `validateA2uiSurface`: one `path code message` line per blocking error (unknown type/prop/event, enum value, missing required prop, children on a leaf) — exit 1 when any. Non-blocking issues (a deprecated prop) print separately as warnings and never fail the surface."
       }
     ]
   },
