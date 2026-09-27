@@ -43,7 +43,8 @@ export const ENTRY_LABELS = {
   tags: "Tags",
   fileHint: (vendor: string) =>
     `To correct this entry or mark it checked, edit catalog/${vendor}.yaml and set curated: true there.`,
-  partHint: (vendor: string) => `A part is edited in catalog/parts/${vendor}.yaml.`,
+  partHint: (vendor: string) =>
+    `To correct this part or mark it checked, edit catalog/parts/${vendor}.yaml and set curated: true there.`,
 } as const;
 
 /** Only a public https page opens from the catalog (a hand-edited file may hold anything). */
@@ -143,6 +144,8 @@ export function EntryView({ name }: EntryViewProps) {
             className="focus-ring self-start rounded-sm text-primary-text underline underline-offset-4"
           >
             {ENTRY_LABELS.docs}
+            {/* The visible new-tab cue (demo script: "Open docs ↗"); the words are for AT. */}
+            <span aria-hidden="true"> ↗</span>
             <span className="sr-only"> {ENTRY_LABELS.newTab}</span>
           </a>
         ) : null}
