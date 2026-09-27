@@ -6,6 +6,7 @@
 import type {
   ArchDiagram,
   ArchNodeSpec,
+  ArchNodeType,
   ArchStyleSpec,
   ArchZoneSpec,
   Direction,
@@ -95,6 +96,11 @@ export type CompiledCompositeData = CompiledNodeData & {
   ports?: string[];
   /** Inner node count (Part 2). */
   count?: number;
+  /**
+   * `type:` as written on the node, only when it overrides the default ("service"); kept for
+   * DG-27's composite renderer (`ref-type-not-drawn`: not drawn until then).
+   */
+  overrideType?: ArchNodeType;
   /** The reference is broken; `subtitle` says why in words (N11). */
   broken?: true;
   /** The referenced file is not loaded yet (always in Part 1a; until the load lands in Part 2). */
@@ -302,6 +308,7 @@ export function compileArch(ast: ArchDiagram): ArchCompileResult {
         ...nodeData(node),
         component: file ?? ref,
         ports: portsOf.get(node.id),
+        overrideType: node.type !== "service" ? node.type : undefined,
         ...(file === undefined
           ? {
               subtitle: `${COMPOSITE_LABELS.badPath}${ref}`,
