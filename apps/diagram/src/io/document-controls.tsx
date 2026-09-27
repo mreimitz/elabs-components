@@ -18,6 +18,7 @@ import {
   IconButton,
   toast,
 } from "@elabs-ai/components-ui";
+import { compileText } from "../state/compile-text";
 import { diagramActions, diagramStore, fileActions } from "../state/diagram-store";
 import { historyActions, useHistoryCounts } from "../state/history";
 import { downloadYaml, readYamlFile, yamlFileName, YAML_ACCEPT } from "./files";
@@ -31,8 +32,8 @@ const DOCUMENT_LABELS = {
   open: "Open…",
   save: "Save as YAML",
   share: "Copy share link",
-  sharedLink: "the shared link",
   replaceTitle: (name: string) => `Open “${name}”?`,
+  replaceTitleUntitled: "Open the shared diagram?",
   replaceDescription: "Your edits to the current diagram will be replaced. This cannot be undone.",
   replaceConfirm: "Replace my edits",
   keepEditing: "Keep editing",
@@ -48,10 +49,28 @@ const DOCUMENT_LABELS = {
 } as const;
 
 interface IncomingDoc {
-  name: string;
+  /** The file's name, or a shared document's own `title:`; none for an untitled link. */
+  name?: string;
   text: string;
   /** The share link's `doc` value, when the document came from the address bar. */
   link?: string;
+}
+
+/**
+ * A shared document's `title:`, read through the app's compile path (the same `ast.title` that
+ * names a saved file), when it has one. Review-wave3 N5: the dialog quotes a name, never a
+ * phrase standing in for one.
+ */
+function titleOf(text: string): string | undefined {
+  return compileText(text).ast?.title?.trim() || undefined;
+}
+
+/** The replace dialog's title: the incoming document's name, quoted, when it has one. */
+function replaceTitle(doc: IncomingDoc | null): string {
+  if (doc === null) return "";
+  return doc.name === undefined
+    ? DOCUMENT_LABELS.replaceTitleUntitled
+    : DOCUMENT_LABELS.replaceTitle(doc.name);
 }
 
 function save() {
@@ -148,7 +167,7 @@ export function DocumentControls({ compact }: DocumentControlsProps) {
       const value = docParam(new URL(event.newURL).hash);
       if (value === null || value === docParam(new URL(event.oldURL).hash)) return;
       decodeDoc(value).then(
-        (text) => open({ name: DOCUMENT_LABELS.sharedLink, text, link: value }),
+        (text) => open({ name: titleOf(text), text, link: value }),
         () =>
           toast.error(DOCUMENT_LABELS.linkFailed, {
             description: DOCUMENT_LABELS.linkFailedDetail,
@@ -230,7 +249,7 @@ export function DocumentControls({ compact }: DocumentControlsProps) {
           if (!isOpen) refuse();
         }}
         tone="destructive"
-        title={pending ? DOCUMENT_LABELS.replaceTitle(pending.name) : ""}
+        title={replaceTitle(pending)}
         description={DOCUMENT_LABELS.replaceDescription}
         confirmLabel={DOCUMENT_LABELS.replaceConfirm}
         cancelLabel={DOCUMENT_LABELS.keepEditing}
