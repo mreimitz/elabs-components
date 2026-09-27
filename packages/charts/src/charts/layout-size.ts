@@ -148,8 +148,16 @@ function usedBorderBox(el: Element): LayoutSize | null {
  * through that rect state, so it re-renders once per burst.)
  */
 export function useLayoutMeasure(
-  options?: Omit<Options, "debounce" | "polyfill">,
+  options?: Omit<Options, "debounce" | "polyfill"> & {
+    /**
+     * `false`: a node is not read when it attaches; its first size comes from
+     * the observer's first callback, one frame later — what visx `ParentSize`
+     * did before RM-189. Keeps chart renders out of the hydration task.
+     */
+    measureOnAttach?: boolean;
+  },
 ): [(el: HTMLElement | SVGElement | null) => void, LayoutSize] {
+  const { measureOnAttach = true, ...measureOptions } = options ?? {};
   const elRef = useRef<HTMLElement | SVGElement | null>(null);
   // Set once the state exists (below); an observer never calls back before mount.
   const onResizeRef = useRef<() => void>(() => {});
@@ -162,7 +170,7 @@ export function useLayoutMeasure(
       },
   );
   const [measureRef, bounds] = useMeasure({
-    ...options,
+    ...measureOptions,
     // `react-use-measure` drives its ResizeObserver with the SCROLL handler, so
     // that one stays undebounced and `ChartResizeObserver` does the timing.
     debounce: { scroll: 0, resize: CHART_RESIZE_DEBOUNCE_MS },
@@ -201,16 +209,18 @@ export function useLayoutMeasure(
       measureRef(el);
       // A node that mounts (at first, or later after a loading branch) is
       // measured now, so its first painted frame has its size: the observer
-      // answers only after layout.
+      // answers only after layout. With `measureOnAttach: false` the
+      // observer's first callback sizes it instead.
       if (el === null || el === attachedRef.current) return;
       attachedRef.current = el;
       readOnAttachRef.current = true;
+      if (!measureOnAttach) return;
       const next = layoutSize(el);
       // Nothing laid out yet (0 × 0): leave it to the observer.
       if (next.width === 0 && next.height === 0) return;
       update(next);
     },
-    [measureRef, update],
+    [measureRef, update, measureOnAttach],
   );
   useLayoutEffect(() => {
     // `bounds` changes on a window resize or an orientation change (the

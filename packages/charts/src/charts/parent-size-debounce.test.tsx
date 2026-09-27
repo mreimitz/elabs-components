@@ -11,14 +11,16 @@
  *
  * This file pins that timing, and the box itself: the size a chart draws at is
  * the element's layout box — at mount and after a resize — for the wrapper and
- * for two families that measure on their own node (Network, Funnel).
+ * for two families that measure on their own node (Network, Funnel). The
+ * wrapper takes its first size from the observer's first callback, as visx
+ * `ParentSize` did; a node measured on attach has it in the mount commit.
  */
 import { act, cleanup, render } from "@testing-library/react";
 import { Activity } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChartParentSize } from "./chart-parent-size";
 import { FunnelChart } from "./funnel-chart";
-import { CHART_RESIZE_DEBOUNCE_MS, ChartResizeObserver } from "./layout-size";
+import { CHART_RESIZE_DEBOUNCE_MS, ChartResizeObserver, useLayoutMeasure } from "./layout-size";
 import { NetworkChart } from "./network/network-chart";
 
 // ── The layout box every element reports (jsdom lays nothing out) ───────────
@@ -216,32 +218,19 @@ describe("ChartParentSize hands its children the layout box (RM-189)", () => {
     return { seen, svg };
   }
 
-  it("600 × 300 at mount", () => {
-    const { seen, svg } = renderWrapper();
-    expect(seen.at(-1)).toEqual({ width: 600, height: 300 });
-    expect(svg().getAttribute("width")).toBe("600");
-    expect(svg().getAttribute("height")).toBe("300");
-  });
-
-  it("draws once at mount: the observer's first callback, at the attach size, renders nothing", () => {
-    vi.useFakeTimers();
-    const { seen } = renderWrapper();
-    const rendersAtMount = seen.length;
-    tick(); // the first observation reports the 600 × 300 already drawn
-    act(() => vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS));
-    expect(seen.length).toBe(rendersAtMount);
-    resizeTo(380, 200); // a real change still leads at once
-    expect(seen.length).toBe(rendersAtMount + 1);
-    expect(seen.at(-1)).toEqual({ width: 380, height: 200 });
-  });
-
-  it("reads the box once at mount, not again in the mount effect", () => {
-    // `layoutSize` reads `offsetWidth` once per measurement.
+  it("600 × 300 on the observer's first callback — nothing drawn in the mount commit, as ParentSize did", () => {
+    // Sizing in the mount commit puts every chart's first render inside the
+    // hydration task; on the website that cost the desktop Lighthouse budget.
     const reads = vi
       .spyOn(HTMLElement.prototype, "offsetWidth", "get")
       .mockImplementation(() => box.width);
-    renderWrapper();
-    expect(reads).toHaveBeenCalledTimes(1);
+    const { seen, svg } = renderWrapper();
+    expect(reads).not.toHaveBeenCalled();
+    expect(seen.every((s) => s.width === 0 && s.height === 0)).toBe(true);
+    tick();
+    expect(seen.at(-1)).toEqual({ width: 600, height: 300 });
+    expect(svg().getAttribute("width")).toBe("600");
+    expect(svg().getAttribute("height")).toBe("300");
   });
 
   it("a window resize alone lands the new box one period later", () => {
@@ -319,6 +308,44 @@ describe("ChartParentSize hands its children the layout box (RM-189)", () => {
     const settled = seen.length;
     act(() => vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS * 5));
     expect(seen.length).toBe(settled);
+  });
+});
+
+describe("useLayoutMeasure, measuring on attach (the families that measure their own node)", () => {
+  function renderProbe() {
+    const seen: { width: number; height: number }[] = [];
+    function Probe() {
+      const [ref, size] = useLayoutMeasure();
+      seen.push(size);
+      return <div ref={ref} />;
+    }
+    render(<Probe />);
+    return seen;
+  }
+
+  it("has the box in the mount commit", () => {
+    expect(renderProbe().at(-1)).toEqual({ width: 600, height: 300 });
+  });
+
+  it("draws once at mount: the observer's first callback, at the attach size, renders nothing", () => {
+    vi.useFakeTimers();
+    const seen = renderProbe();
+    const rendersAtMount = seen.length;
+    tick(); // the first observation reports the 600 × 300 already drawn
+    act(() => vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS));
+    expect(seen.length).toBe(rendersAtMount);
+    resizeTo(380, 200); // a real change still leads at once
+    expect(seen.length).toBe(rendersAtMount + 1);
+    expect(seen.at(-1)).toEqual({ width: 380, height: 200 });
+  });
+
+  it("reads the box once at mount, not again in the mount effect", () => {
+    // `layoutSize` reads `offsetWidth` once per measurement.
+    const reads = vi
+      .spyOn(HTMLElement.prototype, "offsetWidth", "get")
+      .mockImplementation(() => box.width);
+    renderProbe();
+    expect(reads).toHaveBeenCalledTimes(1);
   });
 });
 

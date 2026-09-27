@@ -22,6 +22,9 @@ import {
 import { type LayoutSize, useLayoutMeasure } from "./layout-size";
 
 const FILL_PARENT: CSSProperties = { width: "100%", height: "100%" };
+// Sized on the observer's first callback, as `ParentSize` was: no chart render
+// inside the mount (or hydration) commit.
+const MEASURE_OPTIONS = { measureOnAttach: false } as const;
 
 export interface ChartParentSizeProps extends Omit<HTMLAttributes<HTMLDivElement>, "children"> {
   /** Renders the chart at the measured size (0 × 0 until the first measurement). */
@@ -30,7 +33,7 @@ export interface ChartParentSizeProps extends Omit<HTMLAttributes<HTMLDivElement
 
 export const ChartParentSize = forwardRef<HTMLDivElement, ChartParentSizeProps>(
   function ChartParentSize({ children, style, ...props }, forwardedRef) {
-    const [measureRef, size] = useLayoutMeasure();
+    const [measureRef, size] = useLayoutMeasure(MEASURE_OPTIONS);
     const ref = useCallback(
       (node: HTMLDivElement | null) => {
         measureRef(node);
