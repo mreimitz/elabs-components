@@ -13,6 +13,7 @@ import {
   useMemo,
   useRef,
 } from "react";
+import { mergeRefs } from "@elabs-ai/components-ui";
 import { useSvgId } from "../svg-id";
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { HaloText } from "../../marks/halo-text";
@@ -770,14 +771,7 @@ export const ChartAnnotations = forwardRef<SVGGElement, ChartAnnotationsProps>(
     // Text is measured in the chart container's font; a container without a
     // chart context (DumbbellChart) measures inside the layer itself.
     const ownRef = useRef<SVGGElement | null>(null);
-    const setRef = useCallback(
-      (node: SVGGElement | null) => {
-        ownRef.current = node;
-        if (typeof ref === "function") ref(node);
-        else if (ref) ref.current = node;
-      },
-      [ref],
-    );
+    const setRef = useMemo(() => mergeRefs(ownRef, ref), [ref]);
     const measurer = useTextMeasurerOf(stable?.containerRef ?? ownRef);
     const measureNote = useCallback<MeasureNote>(
       (text) => {

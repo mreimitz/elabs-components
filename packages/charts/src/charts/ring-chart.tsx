@@ -13,7 +13,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn, StatePanel } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, StatePanel } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_DURATION_MS, enterTransitionForDuration } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
@@ -532,21 +532,11 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
     [enterTransitionProp, animationDuration],
   );
 
-  // Internal ref anchors tooltips; we merge it with any forwarded ref via a
-  // callback ref so both stay in sync.
+  // Internal ref anchors tooltips; we merge it with any forwarded ref via mergeRefs
+  // so both stay in sync.
   const internalRef = useRef<HTMLDivElement>(null);
 
-  const callbackRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      (internalRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      if (typeof ref === "function") {
-        ref(node);
-      } else if (ref) {
-        (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [ref],
-  );
+  const callbackRef = useMemo(() => mergeRefs(internalRef, ref), [ref]);
 
   const {
     role,

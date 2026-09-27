@@ -12,7 +12,7 @@ import {
   useState,
 } from "react";
 import { useLayoutMeasure } from "./layout-size";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import { DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
@@ -512,18 +512,9 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartBaseProps>(funct
     descId,
   } = useChartA11yContainerProps(accessibleLabel, fullDescription); // Labels — RM-110
 
-  const setContainerRef = (node: HTMLDivElement | null) => {
-    // Keep the internal ref (anchors tooltips) in sync.
-    containerRef.current = node;
-    // Measure it (`useLayoutMeasure`).
-    measureRef(node);
-    // Honour the forwarded ref from callers.
-    if (typeof forwardedRef === "function") {
-      forwardedRef(node);
-    } else if (forwardedRef) {
-      forwardedRef.current = node;
-    }
-  };
+  // Keeps the internal ref (anchors tooltips) and the `useLayoutMeasure` ref in sync while
+  // still forwarding to the caller's ref.
+  const setContainerRef = mergeRefs(containerRef, measureRef, forwardedRef);
 
   const width = bounds.width ?? 0;
   const height = bounds.height ?? 0;

@@ -15,7 +15,7 @@ import {
   useState,
 } from "react";
 import { useSvgId } from "./svg-id";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
@@ -582,17 +582,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartPlotProps>(function Li
     currency: legendFormat.currency,
   });
 
-  const mergedRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      if (typeof ref === "function") {
-        ref(node);
-      } else if (ref) {
-        (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [ref],
-  );
+  const mergedRef = useMemo(() => mergeRefs(containerRef, ref), [ref]);
 
   const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
   // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.

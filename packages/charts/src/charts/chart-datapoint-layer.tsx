@@ -50,7 +50,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { cn, useCopyToClipboard, useLocale } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, useCopyToClipboard, useLocale } from "@elabs-ai/components-ui";
 import type {
   ChartDatapoint,
   ChartDatapointClickHandler,
@@ -757,14 +757,7 @@ export const ChartDatapointLayer = forwardRef<HTMLDivElement, ChartDatapointLaye
         className={cn("pointer-events-none absolute inset-0", className)}
         data-chart-export="exclude"
         data-slot="chart-datapoint-layer"
-        ref={(node) => {
-          rootRef.current = node;
-          if (typeof ref === "function") {
-            ref(node);
-          } else if (ref) {
-            ref.current = node;
-          }
-        }}
+        ref={mergeRefs(rootRef, ref)}
         role="group"
         {...props}
       >

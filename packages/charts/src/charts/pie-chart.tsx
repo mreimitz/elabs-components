@@ -18,7 +18,7 @@ import {
   useState,
 } from "react";
 import { useSvgId } from "./svg-id";
-import { cn, StatePanel } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, StatePanel } from "@elabs-ai/components-ui";
 import { useArcChartLoaded } from "./use-arc-chart-loaded";
 import { generateArcPath, isNamedChartChild } from "./pie-ring-engine";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
@@ -1110,21 +1110,9 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
     locale,
   });
 
-  // containerRef anchors tooltips; merged with the forwarded ref via callback ref
+  // containerRef anchors tooltips; merged with the forwarded ref via mergeRefs
   const containerRef = useRef<HTMLDivElement>(null);
-  const mergedRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      // Keep internal containerRef in sync for tooltip positioning
-      (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      // Forward to the caller's ref
-      if (typeof ref === "function") {
-        ref(node);
-      } else if (ref) {
-        (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [ref],
-  );
+  const mergedRef = useMemo(() => mergeRefs(containerRef, ref), [ref]);
 
   // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
   const description = useChartAutoSummary("pie", {

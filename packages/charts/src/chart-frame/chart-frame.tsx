@@ -30,7 +30,6 @@ import {
   useRef,
   useState,
   type HTMLAttributes,
-  type MutableRefObject,
   type ReactNode,
 } from "react";
 import { Download, FileCode2, ImageDown, Maximize2, Table as TableIcon } from "lucide-react";
@@ -61,6 +60,7 @@ import {
   cn,
   csvQuoteField,
   csvStringifyValue,
+  mergeRefs,
   useLocale,
 } from "@elabs-ai/components-ui";
 import {
@@ -1034,14 +1034,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   // `refs.card.current`, which only ChartFrameInner can attach since the
   // provider renders no DOM of its own.
   const mergedCardRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      refs.card.current = node;
-      if (typeof ref === "function") {
-        ref(node);
-      } else if (ref) {
-        (ref as MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
+    (node: HTMLDivElement | null) => mergeRefs(refs.card, ref)(node),
     [ref, refs.card],
   );
 

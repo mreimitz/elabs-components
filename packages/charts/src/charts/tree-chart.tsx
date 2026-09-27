@@ -66,12 +66,11 @@ import {
   useMemo,
   useRef,
   useState,
-  type MutableRefObject,
   type ReactElement,
   type ReactNode,
   type RefAttributes,
 } from "react";
-import { cn, Skeleton, useControllableState } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, Skeleton, useControllableState } from "@elabs-ai/components-ui";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, stagger } from "../marks";
 import { readChartMotionMs } from "./animation";
@@ -1017,16 +1016,9 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
   const outerRef = useRef<HTMLDivElement | null>(null);
   const [measureViewport, viewport] = useLayoutMeasure(VIEWPORT_MEASURE);
   const setOuterRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      outerRef.current = node;
-      // Only a free canvas needs the box (its pan room), so only it measures.
-      if (zoomEnabled) measureViewport(node);
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
+    // Only a free canvas needs the box (its pan room), so only it measures.
+    (node: HTMLDivElement | null) =>
+      mergeRefs(outerRef, zoomEnabled ? measureViewport : undefined, forwardedRef)(node),
     [forwardedRef, zoomEnabled, measureViewport],
   );
   const canvasRef = useRef<HTMLDivElement | null>(null);

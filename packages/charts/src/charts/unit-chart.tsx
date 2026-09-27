@@ -38,7 +38,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn, Skeleton, StatePanel, useLocale } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, Skeleton, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { Leader } from "../marks/leader";
 import { UnitStack } from "../marks/unit-stack";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
@@ -292,17 +292,7 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
     },
     [measureRef],
   );
-  const ref = useCallback(
-    (node: HTMLDivElement | null) => {
-      internalRef.current = node;
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        (forwardedRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [forwardedRef],
-  );
+  const ref = useMemo(() => mergeRefs(internalRef, forwardedRef), [forwardedRef]);
 
   const {
     role,

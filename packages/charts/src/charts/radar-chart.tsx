@@ -4,7 +4,7 @@ import { Group } from "@visx/group";
 import { ChartParentSize } from "./chart-parent-size";
 import { scaleLinear } from "@visx/scale";
 import type { Transition } from "motion/react";
-import React, {
+import {
   type ReactNode,
   type RefObject,
   useCallback,
@@ -13,7 +13,7 @@ import React, {
   useState,
   forwardRef,
 } from "react";
-import { cn, StatePanel } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, StatePanel } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import {
@@ -359,17 +359,7 @@ export const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(functi
     locale,
   });
 
-  const mergedRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      internalRef.current = node;
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        (forwardedRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [forwardedRef],
-  );
+  const mergedRef = useMemo(() => mergeRefs(internalRef, forwardedRef), [forwardedRef]);
 
   const {
     role,

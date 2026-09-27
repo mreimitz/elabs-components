@@ -46,7 +46,7 @@ import { scaleLinear, scalePoint } from "@visx/scale";
 import { LinePath } from "@visx/shape";
 import { forwardRef, useCallback, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { useLayoutMeasure } from "./layout-size";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import { HaloText, QuietDot } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { type ChartPalette, type Margin, resolvePalette } from "./chart-context";
@@ -1105,15 +1105,7 @@ const BumpChartUnscoped = forwardRef<HTMLDivElement, BumpChartProps>(
       descId,
     } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
-    const setContainerRef = (node: HTMLDivElement | null) => {
-      containerRef.current = node;
-      measureRef(node);
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        forwardedRef.current = node;
-      }
-    };
+    const setContainerRef = mergeRefs(containerRef, measureRef, forwardedRef);
 
     const width = bounds.width ?? 0;
     const height = bounds.height ?? 0;

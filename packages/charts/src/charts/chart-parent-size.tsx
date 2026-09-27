@@ -17,8 +17,9 @@ import {
   forwardRef,
   type HTMLAttributes,
   type ReactNode,
-  useCallback,
+  useMemo,
 } from "react";
+import { mergeRefs } from "@elabs-ai/components-ui";
 import { type LayoutSize, useLayoutMeasure } from "./layout-size";
 
 const FILL_PARENT: CSSProperties = { width: "100%", height: "100%" };
@@ -34,14 +35,7 @@ export interface ChartParentSizeProps extends Omit<HTMLAttributes<HTMLDivElement
 export const ChartParentSize = forwardRef<HTMLDivElement, ChartParentSizeProps>(
   function ChartParentSize({ children, style, ...props }, forwardedRef) {
     const [measureRef, size] = useLayoutMeasure(MEASURE_OPTIONS);
-    const ref = useCallback(
-      (node: HTMLDivElement | null) => {
-        measureRef(node);
-        if (typeof forwardedRef === "function") forwardedRef(node);
-        else if (forwardedRef) forwardedRef.current = node;
-      },
-      [measureRef, forwardedRef],
-    );
+    const ref = useMemo(() => mergeRefs(measureRef, forwardedRef), [measureRef, forwardedRef]);
     return (
       <div ref={ref} style={style ? { ...FILL_PARENT, ...style } : FILL_PARENT} {...props}>
         {children(size)}

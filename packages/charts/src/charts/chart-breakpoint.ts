@@ -14,7 +14,7 @@
  *   a `Responsive` value with an explicit `narrow` entry.
  */
 
-import { cn } from "@elabs-ai/components-ui";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import { warnOnce } from "@elabs-ai/components-ui/definition";
 import {
   type CSSProperties,
@@ -145,11 +145,6 @@ export function ChartBreakpointScope({ breakpoint, children }: ChartBreakpointSc
   );
 }
 
-function assignRef<T>(ref: ForwardedRef<T> | undefined, node: T | null) {
-  if (typeof ref === "function") ref(node);
-  else if (ref) ref.current = node;
-}
-
 /**
  * Measures `ref`'s element with a `ResizeObserver` and returns its tier (the
  * host-forced tier wins). Re-renders only when the TIER changes.
@@ -175,7 +170,7 @@ export function useMeasuredChartBreakpoint<E extends Element = HTMLDivElement>(
         const tier = breakpointForWidth(width);
         setMeasured((prev) => (prev === tier ? prev : tier));
       }
-      assignRef(forwardedRef, next);
+      mergeRefs(forwardedRef)(next);
     },
     [forwardedRef],
   );

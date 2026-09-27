@@ -34,6 +34,7 @@
  * the value domain so the plotted trend never clips against them (RM-039).
  */
 import { cn } from "@elabs-ai/components-ui/lib/cn";
+import { mergeRefs } from "@elabs-ai/components-ui";
 import {
   forwardRef,
   useEffect,
@@ -42,7 +43,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type ForwardedRef,
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   type SVGAttributes,
@@ -252,18 +252,6 @@ function estimateLastValueWidth(text: string, fontSizePx: number): number {
     ratio += NARROW_CHARS.has(char) ? 0.33 : WIDE_CHARS.has(char) ? 0.9 : 0.55;
   }
   return ratio * fontSizePx * LAST_VALUE_WIDTH_SAFETY_FACTOR;
-}
-
-/** Combine the caller's `forwardRef` with a locally-owned one so both end up on the same node — a local copy of `ui/lib/merge-refs.ts`'s tiny helper, not an import: that path has no public subpath export, and adding one for four lines isn't warranted (component-api.md). */
-// prettier-ignore
-function mergeRefs<T>(...refs: Array<ForwardedRef<T> | undefined>) { // microtypography-exempt: generic/rest-parameter syntax, not prose
-  return (node: T | null) => {
-    for (const ref of refs) {
-      if (!ref) continue;
-      if (typeof ref === "function") ref(node);
-      else ref.current = node;
-    }
-  };
 }
 
 /**

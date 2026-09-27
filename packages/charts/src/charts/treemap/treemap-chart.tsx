@@ -6,7 +6,6 @@ import { useReducedMotion } from "@elabs-ai/components-tokens";
 import {
   type CSSProperties,
   forwardRef,
-  type MutableRefObject,
   useCallback,
   useEffect,
   useMemo,
@@ -14,7 +13,7 @@ import {
   useState,
 } from "react";
 import { useSvgId } from "../svg-id";
-import { cn, Skeleton, StatePanel } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, Skeleton, StatePanel } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import type { ChartLegendEntry } from "../chart-context";
 import type { ChartInteractionProps } from "../chart-datapoint";
@@ -270,16 +269,8 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
 
   const internalRef = useRef<HTMLDivElement | null>(null);
   const [measureRef, measuredBox] = useLayoutMeasure();
-  const ref = useCallback(
-    (node: HTMLDivElement | null) => {
-      internalRef.current = node;
-      measureRef(node);
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
+  const ref = useMemo(
+    () => mergeRefs(internalRef, measureRef, forwardedRef),
     [forwardedRef, measureRef],
   );
 

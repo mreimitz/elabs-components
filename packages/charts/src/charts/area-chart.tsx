@@ -14,7 +14,7 @@ import {
   useState,
 } from "react";
 import { useSvgId } from "./svg-id";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import { Area, type AreaProps, type AreaStackOffset, AreaStackProvider } from "./area";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
@@ -589,19 +589,8 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartPlotProps>(function Ar
     currency: legendFormat.currency,
   });
 
-  const mergedRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      // Keep internal ref working for tooltip positioning.
-      (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      // Forward to the caller's ref.
-      if (typeof ref === "function") {
-        ref(node);
-      } else if (ref) {
-        (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [ref],
-  );
+  // Keeps `containerRef` working for tooltip positioning while still forwarding to the caller's ref.
+  const mergedRef = useMemo(() => mergeRefs(containerRef, ref), [ref]);
 
   const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
   // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.

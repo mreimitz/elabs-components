@@ -10,7 +10,6 @@ import {
   forwardRef,
   isValidElement,
   memo,
-  type MutableRefObject,
   type ReactElement,
   type ReactNode,
   useCallback,
@@ -18,7 +17,7 @@ import {
   useRef,
 } from "react";
 import { useSvgId } from "./svg-id";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 // Analytics — RM-138 / RM-139
 import type { ChartAnalytic } from "./analytics/types";
 import type { ChartAnnotation } from "./annotations/annotation-types";
@@ -436,19 +435,9 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartBaseProp
     },
     forwardedRef,
   ) {
-    // Internal ref anchors tooltips; callback ref merges both.
+    // Internal ref anchors tooltips; merged with the forwarded ref via mergeRefs.
     const internalRef = useRef<HTMLDivElement>(null);
-    const callbackRef = useCallback(
-      (node: HTMLDivElement | null) => {
-        (internalRef as MutableRefObject<HTMLDivElement | null>).current = node;
-        if (typeof forwardedRef === "function") {
-          forwardedRef(node);
-        } else if (forwardedRef) {
-          (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
-        }
-      },
-      [forwardedRef],
-    );
+    const callbackRef = useMemo(() => mergeRefs(internalRef, forwardedRef), [forwardedRef]);
 
     const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
     const dataAsRecords = data as unknown as Record<string, unknown>[];

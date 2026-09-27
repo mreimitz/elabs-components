@@ -35,7 +35,7 @@ import { scaleLinear } from "@visx/scale";
 import { forwardRef, useCallback, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { useSvgId } from "./svg-id";
 import { useLayoutMeasure } from "./layout-size";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import { HaloText, UnitStack, type UnitStackDirection } from "../marks";
 // Annotations — RM-111
 import { type ChartAnnotation } from "./annotations/annotation-types";
@@ -1922,15 +1922,7 @@ const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartResolvedProps>
       descId,
     } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
-    const setContainerRef = (node: HTMLDivElement | null) => {
-      containerRef.current = node;
-      measureRef(node);
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        forwardedRef.current = node;
-      }
-    };
+    const setContainerRef = mergeRefs(containerRef, measureRef, forwardedRef);
 
     // `variant="dots"` (RM-116): `valueKeys` names every dot, `startKey`/
     // `endKey` still resolve to its first/last (the domain and the optional

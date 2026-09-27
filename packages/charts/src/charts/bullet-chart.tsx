@@ -19,16 +19,9 @@
  */
 
 import { scaleLinear } from "@visx/scale";
-import {
-  forwardRef,
-  useId,
-  useMemo,
-  type CSSProperties,
-  type HTMLAttributes,
-  type MutableRefObject,
-} from "react";
+import { forwardRef, useId, useMemo, type CSSProperties, type HTMLAttributes } from "react";
 import { useLayoutMeasure } from "./layout-size";
-import { cn, Skeleton } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, Skeleton } from "@elabs-ai/components-ui";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { HaloText } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps } from "./chart-a11y";
@@ -620,13 +613,7 @@ export const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(func
   const trackThickness = size === "sm" ? SM_TRACK_THICKNESS : MD_TRACK_THICKNESS;
   const crossExtent = trackThickness + (showAxis ? MD_AXIS_EXTENT : 0);
 
-  const setContainerRef = (node: HTMLDivElement | null) => {
-    if (typeof forwardedRef === "function") {
-      forwardedRef(node);
-    } else if (forwardedRef) {
-      (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
-    }
-  };
+  const setContainerRef = mergeRefs(forwardedRef);
 
   const marginBox = resolveChartMargin(marginProp, ZERO_MARGIN);
   const marginStyle = marginPaddingStyle(marginBox);

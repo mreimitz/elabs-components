@@ -10,7 +10,6 @@ import {
   forwardRef,
   isValidElement,
   memo,
-  type MutableRefObject,
   type ReactElement,
   type ReactNode,
   useCallback,
@@ -18,7 +17,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import { ChartFallback } from "./chart-fallback";
 import { useChartFacetScope } from "./chart-config-context"; // ChartMultiples — RM-120
 import { useFacetScopedChildren } from "../multiples/facet-scope"; // ChartMultiples — RM-120
@@ -1984,19 +1983,8 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartPlotProps>(function BarC
     currency: legendFormat.currency,
   });
 
-  const mergedRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      // Keep internal ref working for tooltip positioning.
-      (containerRef as MutableRefObject<HTMLDivElement | null>).current = node;
-      // Forward to the caller's ref.
-      if (typeof ref === "function") {
-        ref(node);
-      } else if (ref) {
-        (ref as MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [ref],
-  );
+  // Keeps `containerRef` working for tooltip positioning while still forwarding to the caller's ref.
+  const mergedRef = useMemo(() => mergeRefs(containerRef, ref), [ref]);
 
   const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
   // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.

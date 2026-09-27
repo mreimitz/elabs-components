@@ -36,7 +36,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn, useControllableState, useLocale } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, useControllableState, useLocale } from "@elabs-ai/components-ui";
 import { useChartBreakpoint } from "../chart-breakpoint";
 import { useChartInteractionPolicy } from "../chart-config-context";
 import { chartCssVars } from "../chart-context";
@@ -361,12 +361,7 @@ export const ChartNavigator = forwardRef<HTMLDivElement, ChartNavigatorStripProp
     const swap = vertical ? `matrix(0 1 -1 0 ${thickness} 0)` : undefined;
     const veil = 1 - SELECTION_EXCLUDED_OPACITY;
 
-    const setRoot = (node: HTMLDivElement | null) => {
-      rootRef.current = node;
-      gestures.surfaceRef.current = node;
-      if (typeof forwardedRef === "function") forwardedRef(node);
-      else if (forwardedRef) forwardedRef.current = node;
-    };
+    const setRoot = mergeRefs(rootRef, gestures.surfaceRef, forwardedRef);
 
     return (
       <div

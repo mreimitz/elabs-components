@@ -34,7 +34,7 @@ import {
   useState,
 } from "react";
 import { useSvgId } from "./svg-id";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import { Area, type AreaProps } from "./area";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
@@ -962,17 +962,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartPlotProps>(fun
   });
 
   // Merge the forwarded ref with the internal containerRef (used for tooltip anchoring).
-  const mergedRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      (internalRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        (forwardedRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [forwardedRef],
-  );
+  const mergedRef = useMemo(() => mergeRefs(internalRef, forwardedRef), [forwardedRef]);
 
   const {
     role,

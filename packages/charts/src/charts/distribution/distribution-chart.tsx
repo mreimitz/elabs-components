@@ -64,7 +64,7 @@ import {
   type ReactNode,
 } from "react";
 import { useSvgId } from "../svg-id";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import type { ChartAnalytic } from "../analytics/types"; // Analytics — RM-138
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { resolvePalette, type ChartPalette } from "../chart-context";
@@ -437,17 +437,7 @@ const DistributionChartUnscoped = forwardRef<HTMLDivElement, DistributionChartPr
 
     const a11y = useChartA11yContainerProps(accessibleLabel, description);
 
-    const mergedRef = useCallback(
-      (node: HTMLDivElement | null) => {
-        internalRef.current = node;
-        if (typeof forwardedRef === "function") {
-          forwardedRef(node);
-        } else if (forwardedRef) {
-          (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
-        }
-      },
-      [forwardedRef],
-    );
+    const mergedRef = useMemo(() => mergeRefs(internalRef, forwardedRef), [forwardedRef]);
 
     // RM-185: with no `plotHeight`, the chart fills whatever height its parent
     // gives it — exactly as before this prop existed — so the ready plot box
