@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-27T19:11:23.041Z",
+  "generatedAt": "2026-09-27T19:25:41.189Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -35634,9 +35634,9 @@
           "dataShapes": [
             "parts of a whole across a few categories, read as proportions of the total"
           ],
-          "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
+          "avoidWhen": "more than 5 slices — use a bar or unit chart",
           "avoidWhens": [
-            "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart"
+            "more than 5 slices — use a bar or unit chart"
           ],
           "targets": [
             {

@@ -397,11 +397,11 @@ export function renderChartCountSummary(root) {
   return (
     `\`@elabs-ai/components-charts\` ships ${chartCount} chart containers (registry count) ` +
     `plus ${surfaceCount} chart-adjacent surfaces (\`Gauge\`, \`Sparkline\`, \`ChartCard\`, ` +
-    "`MetricGrid`). `Gauge` still gets a row in the manual-select table below and `chart_for` " +
+    "`MetricGrid`). `Gauge` has a row in the manual-select table below and `chart_for` " +
     "ranks it by shape, like a chart; `Sparkline`, `ChartCard` and `MetricGrid` have no " +
     `data-shape row and are picked directly, not by data shape. ${tableCount} of the ` +
-    `${chartCount} chart containers have a row in the two tables below; the rest are a ` +
-    "tracked follow-up (see this file's own reference notes)."
+    `${chartCount} chart containers have a row in the two tables below; \`chart_for\` ` +
+    "ranks the others by shape too."
   );
 }
 

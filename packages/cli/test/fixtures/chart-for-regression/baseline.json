@@ -86,7 +86,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 3.75,
         "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
-        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
+        "avoidWhen": "more than 5 slices — use a bar or unit chart",
         "hasTargets": false
       }
     ]
@@ -316,7 +316,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 1.75,
         "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
-        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
+        "avoidWhen": "more than 5 slices — use a bar or unit chart",
         "hasTargets": false
       }
     ]
@@ -858,7 +858,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 9,
         "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
-        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
+        "avoidWhen": "more than 5 slices — use a bar or unit chart",
         "hasTargets": false
       },
       {
@@ -958,7 +958,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 3,
         "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
-        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
+        "avoidWhen": "more than 5 slices — use a bar or unit chart",
         "hasTargets": false
       },
       {
@@ -1120,7 +1120,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 2,
         "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
-        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
+        "avoidWhen": "more than 5 slices — use a bar or unit chart",
         "hasTargets": false
       }
     ]
@@ -1188,7 +1188,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 4.75,
         "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
-        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
+        "avoidWhen": "more than 5 slices — use a bar or unit chart",
         "hasTargets": false
       },
       {

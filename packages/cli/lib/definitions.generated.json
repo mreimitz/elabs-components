@@ -9434,10 +9434,8 @@
       "label": "Pie chart",
       "module": "packages/charts/src/charts/pie-chart.tsx",
       "prose": {
-        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
-        "avoidWhens": [
-          "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart"
-        ],
+        "avoidWhen": "more than 5 slices — use a bar or unit chart",
+        "avoidWhens": ["more than 5 slices — use a bar or unit chart"],
         "dataShapes": ["parts of a whole across a few categories, read as proportions of the total"]
       },
       "specTypes": ["pie"],
