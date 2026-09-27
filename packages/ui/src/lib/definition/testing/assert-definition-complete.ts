@@ -24,6 +24,9 @@ import { planOf } from "../effective-fields";
 import type { KnownKey } from "../field";
 import { validateProps } from "../validate";
 
+/** Steps a dotted alias `to` may never name: writing through them reaches an object's prototype. */
+const UNSAFE_PATH_STEPS: ReadonlySet<string> = new Set(["__proto__", "prototype", "constructor"]);
+
 type AccountedKeys<D> =
   | (D extends { readonly fields: infer F } ? keyof F : never)
   | (D extends { readonly groups: infer G } ? GroupFieldKeys<G> : never)
@@ -95,10 +98,22 @@ export function assertDefinitionComplete<D extends AnyComponentDefinition>(
   }
 
   for (const row of plan.aliases) {
-    // A dotted `to` ("empty.title") writes into an object prop: its first key must be a prop.
-    const prop = row.to.split(".")[0] ?? row.to;
-    if (!plan.byKey.has(prop) && !plan.codeOnly.has(prop)) {
+    // A dotted `to` ("empty.title") writes into an object prop: its first key must be a prop,
+    // an object one when the definition describes it, and no step may reach the prototype.
+    const [prop = row.to, ...members] = row.to.split(".");
+    const described = plan.byKey.get(prop)?.field;
+    if (!described && !plan.codeOnly.has(prop)) {
       problems.push(`Alias "${row.from}" points at "${row.to}", which is not a prop.`);
+    } else if (members.length > 0 && described && described.kind !== "object") {
+      problems.push(
+        `Alias "${row.from}" points at "${row.to}", but "${prop}" is a ${described.kind} field, not an object.`,
+      );
+    }
+    const unsafe = [prop, ...members].find((step) => UNSAFE_PATH_STEPS.has(step));
+    if (unsafe !== undefined) {
+      problems.push(
+        `Alias "${row.from}" points at "${row.to}", whose step "${unsafe}" is not allowed.`,
+      );
     }
     if (plan.byKey.has(row.from)) problems.push(`Alias "${row.from}" is also a field.`);
   }

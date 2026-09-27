@@ -76,6 +76,7 @@ export {
   type AliasSource,
   type AliasTransform,
   type AliasTransformId,
+  type AliasUse,
   type NormalizedAliasRow,
 } from "./aliases";
 export { resetWarnOnce, warnOnce } from "./warn-once";

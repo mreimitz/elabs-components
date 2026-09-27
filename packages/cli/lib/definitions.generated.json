@@ -3328,9 +3328,8 @@
         "status": {
           "default": "ready",
           "description": "Show the loading skeleton until the data is ready.",
-          "group": null,
+          "group": "chart-state",
           "kind": "enum",
-          "overrides": "chart-state",
           "tier": "advanced",
           "values": ["loading", "ready"]
         },

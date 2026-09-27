@@ -13,8 +13,8 @@
  *
  * RM-194 (ADR 0042 A.4, rows 23–24): `emptyTitle` / `emptyMessage` → `empty.title` /
  * `empty.message`, each an alias row until 6.0.0. The family applies the `chart-state` group
- * (`status`, `empty`); its own `status` field overrides the group's, and the kind default
- * `empty` keeps the family's own words.
+ * (`status`, `empty`), which now declares `status` in place of an own field, and the kind
+ * default `empty` keeps the family's own words.
  *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
@@ -95,7 +95,6 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
     zoomMin: field.number({ tier: "advanced", description: "Minimum zoom scale." }),
     zoomMax: field.number({ tier: "advanced", description: "Maximum zoom scale." }),
     margin: frameSizeGroup.fields.margin,
-    status: chartStateGroup.fields.status,
     className: classNameField,
   },
   codeOnly: [

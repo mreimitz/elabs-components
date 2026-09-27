@@ -118,6 +118,8 @@ export function toJsonSchema(def: AnyComponentDefinition): JsonSchema {
   for (const row of plan.aliases) {
     if (Object.hasOwn(properties, row.from)) continue;
     const target = aliasTargetField(plan, row.to);
+    // An identity rename of an undescribed (`codeOnly`) target is code-only too: left out.
+    if (!target && row.transform === "identity") continue;
     const schema: JsonSchema =
       row.transform === "identity" && target ? { ...valueSchema(target) } : { type: "boolean" };
     schema.description = `Deprecated: use "${row.to}".`;

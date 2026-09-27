@@ -62,24 +62,24 @@ const meta = {
   argTypes: {
     showLegend: {
       description: "Deprecated since 5.6.0 — use `legend`. Removed in 6.0.0.",
-      table: { category: "Deprecated (RM-194)" },
+      table: { category: "Deprecated" },
     },
     loading: {
       description:
         'Deprecated since 5.6.0 — use `status` (`true` is `"loading"`, `false` is `"ready"`). Removed in 6.0.0.',
-      table: { category: "Deprecated (RM-194)" },
+      table: { category: "Deprecated" },
     },
     emptyTitle: {
       description: "Deprecated since 5.6.0 — use `empty.title`. Removed in 6.0.0.",
-      table: { category: "Deprecated (RM-194)" },
+      table: { category: "Deprecated" },
     },
     emptyMessage: {
       description: "Deprecated since 5.6.0 — use `empty.message`. Removed in 6.0.0.",
-      table: { category: "Deprecated (RM-194)" },
+      table: { category: "Deprecated" },
     },
     emptyAction: {
       description: "Deprecated since 5.6.0 — use `empty.action`. Removed in 6.0.0.",
-      table: { category: "Deprecated (RM-194)" },
+      table: { category: "Deprecated" },
     },
   },
 } satisfies Meta<typeof HeatmapChart>;

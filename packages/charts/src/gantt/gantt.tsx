@@ -2043,7 +2043,7 @@ const GanttUnscoped = forwardRef<HTMLDivElement, GanttProps>(function Gantt(rawP
         >
           <Calendar className="size-8 opacity-40" aria-hidden="true" />
           {empty?.title ? (
-            <p className="text-body font-semibold text-foreground">{empty.title}</p>
+            <h3 className="text-body font-semibold text-foreground">{empty.title}</h3>
           ) : null}
           <p className="text-body">{empty?.message ?? t("charts.gantt.noTasksToDisplay")}</p>
           {empty?.action ? (

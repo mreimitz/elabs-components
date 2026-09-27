@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-27T09:24:32.815Z",
+  "generatedAt": "2026-09-27T10:00:04.579Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -17009,6 +17009,10 @@
           "module": "packages/charts/src/charts/chart-config-context.tsx"
         },
         {
+          "name": "ChartEmptyState",
+          "module": "packages/charts/src/charts/props/chart-state.ts"
+        },
+        {
           "name": "ChartExportKind",
           "module": "packages/charts/src/chart-frame/export-svg.ts"
         },
@@ -24837,7 +24841,8 @@
               "type": "ChartStatus",
               "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
               "defaultValue": "\"ready\"",
-              "kind": "enum"
+              "kind": "enum",
+              "group": "chart-state"
             },
             {
               "name": "children",
@@ -34320,12 +34325,12 @@
             ]
           },
           "stateTokens": {
-            "loading": "loading → skeleton rows + overlay spinner"
+            "status": "status=\"loading\" → skeleton rows + overlay spinner; \"ready\" → the grid"
           },
           "antiPatterns": [
             "Mutating task dates inside the component on drag — Gantt is emit-only; the app owns the model (D5).",
             "Bar labels that rely on the bar fill for contrast — check the label against the bar color in every theme.",
-            "Rendering the grid without `loading` while rows are still fetching — skeleton rows must hold the layout."
+            "Rendering the grid without status=\"loading\" while rows are still fetching — skeleton rows must hold the layout."
           ],
           "dataShapes": [
             "tasks or phases across a timeline, with dependencies between them"
@@ -34428,7 +34433,7 @@
             "cell": "value → an ordered ramp step (--chart-seq-*, --chart-div-*, --chart-mono-* via resolvePalette)",
             "empty": "null or 0 → a QuietDot pinprick in --chart-foreground-muted, not a hole",
             "peak": "the highlighted cell → a dashed PeakRing in --chart-foreground",
-            "loading": "loading → the same grid as skeleton cells in --muted"
+            "status": "status=\"loading\" → the same grid as skeleton cells in --muted"
           },
           "antiPatterns": [
             "steps: 0 (the continuous ramp) when the reader must compare exact values — opacity is not countable; keep the stepped ramp or turn showValues on.",
@@ -60576,6 +60581,10 @@
             },
             {
               "name": "AliasTransformId",
+              "module": "packages/ui/src/lib/definition/aliases.ts"
+            },
+            {
+              "name": "AliasUse",
               "module": "packages/ui/src/lib/definition/aliases.ts"
             },
             {

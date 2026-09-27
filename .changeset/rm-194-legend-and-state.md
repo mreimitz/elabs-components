@@ -13,10 +13,18 @@ loading and empty states (`ADR 0042` Appendix A.4). The old names keep working, 
 - `Gantt`: `status: "loading" | "ready"` (default `"ready"`) and `empty: { title, message, action }`
   for the no-tasks state. Unset, the empty state reads exactly as before.
 - `ChoroplethChart`: `empty: { title, message, action }`; `action` is new here.
+- The `ChartEmptyState` type (the shape of `empty`) is now exported.
+- A caller who passes an old name and its new name together keeps the new value, and the
+  development warning now says the old one was ignored.
 
 `@elabs-ai/components-ui/definition`: an alias row whose `to` is a dotted path (`"empty.title"`) now
 writes into that object prop key by key, keeping the object's other keys and never mutating the
-caller's object; `toJsonSchema` and `validateProps` type the old name from that member's field.
+caller's object, and never overwrites a non-object value the caller put on the path;
+`toJsonSchema` and `validateProps` type the old name from that member's field, and
+`toJsonSchema` leaves out an old name whose new one is code-only. `applyAliases` passes its
+`onAlias` callback a second argument, `AliasUse` (`{ ignored }`), saying the new name was also
+given and won. `assertDefinitionComplete` rejects a dotted `to` through a non-object field or
+through `__proto__`, `prototype` or `constructor`.
 
 ### Deprecated
 

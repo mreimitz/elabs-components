@@ -1202,6 +1202,24 @@ describe("ChoroplethChart renamed props (RM-194)", () => {
     expect(status).not.toHaveTextContent("Old");
   });
 
+  it("says an old name was ignored when its new name is also given", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      map({ empty: { title: "New title" }, emptyTitle: "Old title", emptyMessage: "Kept" }),
+    ).unmount();
+    expect(deprecations(spy)).toEqual([
+      [
+        '[ChoroplethChart] "emptyTitle" is deprecated and will be removed in 6.0.0. ' +
+          'Use "empty.title". "emptyTitle" was ignored because "empty.title" is set.',
+      ],
+      [
+        '[ChoroplethChart] "emptyMessage" is deprecated and will be removed in 6.0.0. ' +
+          'Use "empty.message".',
+      ],
+    ]);
+  });
+
   it("keeps the default title when only empty.message is set, and renders empty.action", () => {
     render(
       map({

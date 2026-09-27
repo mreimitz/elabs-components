@@ -1604,6 +1604,18 @@ describe("Gantt renamed props (RM-194)", () => {
     expect(screen.getByRole("status")).toHaveTextContent("No tasks to display");
   });
 
+  it("says loading was ignored when status is also given", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<Gantt tasks={[]} loading status="ready" />).unmount();
+    expect(deprecations(spy)).toEqual([
+      [
+        '[Gantt] "loading" is deprecated and will be removed in 6.0.0. Use "status". ' +
+          '"loading" was ignored because "status" is set.',
+      ],
+    ]);
+  });
+
   it("empty (chart-state group) words the empty state; unset keys keep the default", () => {
     const { unmount } = render(
       <Gantt
@@ -1615,7 +1627,7 @@ describe("Gantt renamed props (RM-194)", () => {
       />,
     );
     const status = screen.getByRole("status");
-    expect(status).toHaveTextContent("Nothing planned");
+    expect(within(status).getByRole("heading", { name: "Nothing planned" })).toBeInTheDocument();
     expect(status).toHaveTextContent("No tasks to display");
     expect(within(status).getByRole("button", { name: "Add a task" })).toBeInTheDocument();
     unmount();

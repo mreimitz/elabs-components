@@ -100,11 +100,11 @@ const meta = {
   argTypes: {
     emptyTitle: {
       description: "Deprecated since 5.6.0 — use `empty.title`. Removed in 6.0.0.",
-      table: { category: "Deprecated (RM-194)" },
+      table: { category: "Deprecated" },
     },
     emptyMessage: {
       description: "Deprecated since 5.6.0 — use `empty.message`. Removed in 6.0.0.",
-      table: { category: "Deprecated (RM-194)" },
+      table: { category: "Deprecated" },
     },
   },
 } satisfies Meta<typeof ChoroplethChart>;

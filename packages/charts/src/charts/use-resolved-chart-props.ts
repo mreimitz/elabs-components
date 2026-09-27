@@ -22,6 +22,7 @@ import { useMemo } from "react";
 
 import {
   type AnyComponentDefinition,
+  type AliasUse,
   applyAliases,
   type NormalizedAliasRow,
   resolveProps,
@@ -30,9 +31,15 @@ import {
 
 import { warnChartOnce } from "./chart-breakpoint";
 
-/** The development warning for a caller still using an old prop name. */
-function aliasWarning(id: string, row: NormalizedAliasRow): string {
-  return `[${id}] "${row.from}" is deprecated and will be removed in ${row.removeIn}. Use "${row.to}".`;
+/**
+ * The development warning for a caller still using an old prop name. When the caller gave
+ * the new name too (`use.ignored`), it also says the old value was dropped (ADR 0042 §8).
+ */
+function aliasWarning(id: string, row: NormalizedAliasRow, use?: AliasUse): string {
+  const warning = `[${id}] "${row.from}" is deprecated and will be removed in ${row.removeIn}. Use "${row.to}".`;
+  return use?.ignored
+    ? `${warning} "${row.from}" was ignored because "${row.to}" is set.`
+    : warning;
 }
 
 /** `rawProps` with renamed props mapped and the definition's defaults filled in. */
@@ -41,8 +48,8 @@ export function useResolvedChartProps<D extends AnyComponentDefinition, Props ex
   rawProps: Props,
 ): ResolvedProps<Props, D> {
   return useMemo(() => {
-    const renamed = applyAliases(def, rawProps, (row) =>
-      warnChartOnce(`${def.id}.${row.from}`, aliasWarning(def.id, row)),
+    const renamed = applyAliases(def, rawProps, (row, use) =>
+      warnChartOnce(`${def.id}.${row.from}`, aliasWarning(def.id, row, use)),
     );
     return resolveProps(def, renamed);
   }, [def, rawProps]);

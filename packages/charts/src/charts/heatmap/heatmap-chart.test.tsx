@@ -27,7 +27,8 @@ import { fileURLToPath } from "node:url";
 import { render, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
+import { resetWarnOnce, toJsonSchema } from "@elabs-ai/components-ui/definition";
+import { HEATMAP_CHART } from "../../definitions/heatmap-chart.definition";
 import { HeatmapChart as HeatmapChartDouble } from "../../test";
 import { HeatmapChart } from "./heatmap-chart";
 
@@ -435,6 +436,42 @@ describe("HeatmapChart renamed props (RM-194)", () => {
     expect(screen.getByRole("heading", { name: "New title" })).toBeInTheDocument();
     expect(screen.getByText("New message")).toBeInTheDocument();
     expect(screen.queryByText("Old message")).toBeNull();
+  });
+
+  it("says an old name was ignored when its new name is also given", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <HeatmapChart
+        {...base}
+        data={[]}
+        legend
+        showLegend={false}
+        empty={{ title: "New title" }}
+        emptyTitle="Old title"
+        emptyMessage="Kept message"
+      />,
+    ).unmount();
+    const ignored = (from: string, to: string) =>
+      `[HeatmapChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}". ` +
+      `"${from}" was ignored because "${to}" is set.`;
+    expect(deprecations(spy)).toEqual([
+      [ignored("showLegend", "legend")],
+      [ignored("emptyTitle", "empty.title")],
+      [
+        '[HeatmapChart] "emptyMessage" is deprecated and will be removed in 6.0.0. Use "empty.message".',
+      ],
+    ]);
+  });
+
+  it("leaves the code-only emptyAction out of the JSON Schema and types the other old names", () => {
+    const properties = toJsonSchema(HEATMAP_CHART).properties as Record<string, unknown>;
+    expect(properties).not.toHaveProperty("emptyAction");
+    expect(properties).toMatchObject({
+      showLegend: { type: "boolean", deprecated: true },
+      emptyTitle: { type: "string", deprecated: true },
+      emptyMessage: { type: "string", deprecated: true },
+    });
   });
 
   it("merges an old empty name into a partial empty object, key by key", () => {

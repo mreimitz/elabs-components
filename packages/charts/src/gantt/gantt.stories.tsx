@@ -47,7 +47,7 @@ const meta = {
     loading: {
       description:
         'Deprecated since 5.6.0 — use `status` (`true` is `"loading"`, `false` is `"ready"`). Removed in 6.0.0.',
-      table: { category: "Deprecated (RM-194)" },
+      table: { category: "Deprecated" },
     },
   },
 } satisfies Meta<typeof Gantt>;
