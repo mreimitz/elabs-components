@@ -62,40 +62,56 @@ never guesses at them; you reach for the container directly.
 
 ### Inferred (via `AutoChart` / `ChartType`)
 
-| Shape                                                              | `ChartType`                   | Container → key props                                                           | Alternatives                                  | Avoid when                                                                    |
-| ------------------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------- |
-| One or more measures over time, continuous                         | `line`                        | `LineChart` (`data`, `xDataKey`, `<Line dataKey>`)                              | `area` (below), `scatter` if sparse           | > ~8 series (illegible); use `stream`/`ComposedChart` instead                 |
-| A breakdown of a TOTAL over time (≥ 2 series that add up)          | `area` / `stream`             | `AreaChart` (`offset="wiggle"` for `stream`, `stacked` otherwise)               | `line` (trend only), `bar` (few points)       | One series, or series that don't add up — use `line`; < ~4 points — use `bar` |
-| Categorical comparison, one or more measures                       | `bar`                         | `BarChart` (`orientation`, `stacked`)                                           | `diverging-bar` (signed), `unit` (parts)      | A time axis with many points — use `line`/`area`                              |
-| Parts of a whole, ≤ 5 wedges after `groupSmall`                    | `pie`                         | `PieChart` (`donut` via `innerRadius`, `groupSmall`, `half`)                    | `unit` waffle (more legible at scale), `bar`  | More than 5 wedges and no `groupSmall` — inference falls through to `bar`     |
-| Two continuous measures, correlation / distribution                | `scatter`                     | `ScatterChart` (`xDataKey`, `<Scatter dataKey>`)                                | `bump` (if one axis is rank over time)        | One axis is categorical — use `bar`/`dumbbell`                                |
-| Multiple measures per entity, compared as a shape                  | `radar`                       | `RadarChart` (`data: RadarData[]`, `metrics`)                                   | small-multiple `bar`                          | > ~8 spokes (radar can't scale) or absolute magnitude matters more than shape |
-| A sequential process with drop-off between stages                  | `funnel`                      | `FunnelChart` (`data: FunnelStage[]`, `orientation`)                            | `bar` (stage totals, no flow read)            | Stages aren't sequential / no drop-off story                                  |
-| OHLC financial series over time                                    | `candlestick`                 | `CandlestickChart` (`data: OHLCDataPoint[]`)                                    | `line` (close only)                           | Data isn't OHLC-shaped                                                        |
-| Two categorical axes (e.g. **weekday × hour**), one value per cell | `heatmap`                     | `HeatmapChart` (`x`, `y`, `valueKey`, `variant="matrix"`, `mode="cell"\|"dot"`) | `unit` rows (per-category tally)              | > ~10 columns of continuous data, or exact values matter more than pattern    |
-| One measure per calendar day over ≥ a few months                   | `calendar`                    | `HeatmapChart` (`variant="calendar"`, `mode` defaults to `"dot"`)               | `heatmap` matrix (if not date-shaped)         | < ~2 months of days (too sparse to read as a calendar)                        |
-| A running total with signed steps to/from it                       | `waterfall`                   | `WaterfallChart` (`data: WaterfallDatum[]`, `kind: "step"\|"total"`)            | `diverging-bar` (no running total)            | No meaningful running total — use `diverging-bar`                             |
-| Before/after or range per category                                 | `dumbbell`                    | `DumbbellChart` (`startKey`, `endKey`, `category`)                              | `bar` (single value), `waterfall`             | More than 2 points per category — use small-multiple `line`                   |
-| Parts of a whole as discrete UNIT counts (not a percentage)        | `unit`                        | `UnitChart` (`layout="waffle"`, marks = `Math.round` units of 100)              | `pie`, `bar`                                  | Exact per-unit counts don't matter — `pie`/`bar` read faster                  |
-| A nested hierarchy sized by a measure                              | `treemap`                     | `TreemapChart` (`data: TreemapNode` — a HIERARCHY, not flat rows)               | `NetworkChart` (relations, not size)          | The hierarchy has < 2 levels — flat `bar` is clearer                          |
-| Distribution of one measure, optionally grouped                    | `histogram` / `box` / `strip` | `DistributionChart` (`kind`, `valueKey`, `groupKey`)                            | each other (see `kind`)                       | A single summary number would do — use a `MetricCard`                         |
-| Rank of entities over ordered periods                              | `bump`                        | `BumpChart` (`period`, `entity`, `rankKey` or `valueKey`)                       | `line` (if magnitude, not rank, is the point) | Only 2 periods — use `dumbbell`                                               |
-| A single signed measure around a meaningful zero                   | `diverging-bar`               | `BarChart` (`Bar labels zeroLine`)                                              | `waterfall` (if it accumulates)               | The zero baseline isn't meaningful — use `bar`                                |
+<!-- The "Container → key props" cell is generated by `pnpm gen` from each chart's own
+     definition (RM-199, ADR 0042 §10) — edit chart-selection-docs.mjs's INFERRED_ROWS,
+     not this table; the Shape/ChartType/Alternatives/Avoid-when text lives there too. -->
+
+<!-- brand-ui:gen:inferred-table:start -->
+
+| Shape                                                              | `ChartType`                   | Container → key props                                                                                    | Alternatives                                  | Avoid when                                                                    |
+| ------------------------------------------------------------------ | ----------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------- |
+| One or more measures over time, continuous                         | `line`                        | `LineChart` (`data`, `xDataKey`, `<Line dataKey>`)                                                       | `area` (below), `scatter` if sparse           | > ~8 series (illegible); use `stream`/`ComposedChart` instead                 |
+| A breakdown of a TOTAL over time (≥ 2 series that add up)          | `area` / `stream`             | `AreaChart` (`data`, `xDataKey`, `<Area dataKey>` — `offset="wiggle"` for `stream`, `stacked` otherwise) | `line` (trend only), `bar` (few points)       | One series, or series that don't add up — use `line`; < ~4 points — use `bar` |
+| Categorical comparison, one or more measures                       | `bar`                         | `BarChart` (`data`, `xDataKey`, `<Bar dataKey>` — `orientation`, `stacked`)                              | `diverging-bar` (signed), `unit` (parts)      | A time axis with many points — use `line`/`area`                              |
+| Parts of a whole, ≤ 5 wedges after `groupSmall`                    | `pie`                         | `PieChart` (`data` — `donut` via `innerRadius`, `groupSmall`, `half`)                                    | `unit` waffle (more legible at scale), `bar`  | More than 5 wedges and no `groupSmall` — inference falls through to `bar`     |
+| Two continuous measures, correlation / distribution                | `scatter`                     | `ScatterChart` (`data`, `xDataKey`, `<Scatter dataKey>`)                                                 | `bump` (if one axis is rank over time)        | One axis is categorical — use `bar`/`dumbbell`                                |
+| Multiple measures per entity, compared as a shape                  | `radar`                       | `RadarChart` (`data`, `metrics`)                                                                         | small-multiple `bar`                          | > ~8 spokes (radar can't scale) or absolute magnitude matters more than shape |
+| A sequential process with drop-off between stages                  | `funnel`                      | `FunnelChart` (`data` — `orientation`)                                                                   | `bar` (stage totals, no flow read)            | Stages aren't sequential / no drop-off story                                  |
+| OHLC financial series over time                                    | `candlestick`                 | `CandlestickChart` (`data`, `xDataKey`)                                                                  | `line` (close only)                           | Data isn't OHLC-shaped                                                        |
+| Two categorical axes (e.g. **weekday × hour**), one value per cell | `heatmap`                     | `HeatmapChart` (`data`, `x`, `y`, `valueKey` — `variant="matrix"`, `mode="cell"\|"dot"`)                 | `unit` rows (per-category tally)              | > ~10 columns of continuous data, or exact values matter more than pattern    |
+| One measure per calendar day over ≥ a few months                   | `calendar`                    | `HeatmapChart` (`data`, `x`, `y`, `valueKey` — `variant="calendar"` (`mode` defaults to `"dot"`))        | `heatmap` matrix (if not date-shaped)         | < ~2 months of days (too sparse to read as a calendar)                        |
+| A running total with signed steps to/from it                       | `waterfall`                   | `WaterfallChart` (`data` — `kind: "step"\|"total"`)                                                      | `diverging-bar` (no running total)            | No meaningful running total — use `diverging-bar`                             |
+| Before/after or range per category                                 | `dumbbell`                    | `DumbbellChart` (`data`, `category`, `startKey`, `endKey`)                                               | `bar` (single value), `waterfall`             | More than 2 points per category — use small-multiple `line`                   |
+| Parts of a whole as discrete UNIT counts (not a percentage)        | `unit`                        | `UnitChart` (`data`, `layout` — `layout="waffle"`, marks = `Math.round` units of 100)                    | `pie`, `bar`                                  | Exact per-unit counts don't matter — `pie`/`bar` read faster                  |
+| A nested hierarchy sized by a measure                              | `treemap`                     | `TreemapChart` (`data` — a HIERARCHY (`TreemapNode`), not flat rows)                                     | `NetworkChart` (relations, not size)          | The hierarchy has < 2 levels — flat `bar` is clearer                          |
+| Distribution of one measure, optionally grouped                    | `histogram` / `box` / `strip` | `DistributionChart` (`data`, `valueKey`, `kind`, `groupKey`)                                             | each other (see `kind`)                       | A single summary number would do — use a `MetricCard`                         |
+| Rank of entities over ordered periods                              | `bump`                        | `BumpChart` (`data`, `period`, `entity`, `valueKey` — or `rankKey`)                                      | `line` (if magnitude, not rank, is the point) | Only 2 periods — use `dumbbell`                                               |
+| A single signed measure around a meaningful zero                   | `diverging-bar`               | `BarChart` (`data`, `xDataKey`, `<Bar dataKey>` — `Bar labels zeroLine`)                                 | `waterfall` (if it accumulates)               | The zero baseline isn't meaningful — use `bar`                                |
+
+<!-- brand-ui:gen:inferred-table:end -->
 
 ### Manual-select (not inferred — `ChartSpec`/`AutoChart` cannot express these shapes; RM-038's `chart-spec.ts` docblock)
 
-| Shape                                                                                   | Container                  | Key props                                                                                                                                                     | Avoid when                                                         |
-| --------------------------------------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Donut-only ring focused on ONE proportion (not a full pie breakdown)                    | `RingChart`                | `value`, `max`                                                                                                                                                | Multiple categories matter — use `pie`/`unit`                      |
-| Mixed marks on one shared axis (bars + a line target, etc.)                             | `ComposedChart`            | children compose `Bar`/`Line`/`Area`                                                                                                                          | A single mark type would do — use the plain container              |
-| A metric updating in real time, streaming in                                            | `LiveLineChart`            | `data` appended over time, retains a rolling window                                                                                                           | The series is static/historical — use `LineChart`                  |
-| A measure by geographic region                                                          | `ChoroplethChart`          | `data` keyed by region id, a `valueKey`                                                                                                                       | No real geography — use `bar`                                      |
-| A single value against a target/threshold band                                          | `Gauge`                    | `value`, `min`, `max`, threshold bands                                                                                                                        | Trend over time matters more than the instant — use `line`         |
-| A flow between named nodes (source → target, weighted)                                  | `SankeyChart`              | `data: { nodes, links }` — nodes + weighted links                                                                                                             | The nodes have no real flow between them — use `NetworkChart`      |
-| Many numeric dimensions compared across entities at once                                | `ParallelCoordinatesChart` | `data`, `dimensions: string[]`                                                                                                                                | > ~2 entities need per-entity detail — use small-multiple `radar`  |
-| A hierarchy read as a branching tree (org chart, KPI driver tree), not sized rectangles | `TreeChart`                | `data: TreeNode`; branches open/close by default (`defaultExpandedDepth`, `expandedIds`, `collapsible={false}` for static); `orientation`; `renderNode` cards | Size, not structure, is the point — use `treemap`                  |
-| Arbitrary node/edge relationships, no hierarchy                                         | `NetworkChart`             | `data: { nodes, edges }`                                                                                                                                      | The relationship IS a hierarchy — use `TreeChart`/`treemap`        |
-| Tasks/phases across a timeline, with dependencies                                       | `Gantt`                    | `tasks`, `dependencies`, `viewMode`                                                                                                                           | Not really scheduled work — use `dumbbell` (a single before/after) |
+<!-- The "Key props" cell is generated by `pnpm gen` from each chart's own definition
+     (RM-199, ADR 0042 §10) — edit chart-selection-docs.mjs's MANUAL_ROWS, not this
+     table; the Shape/Avoid-when text lives there too. -->
+
+<!-- brand-ui:gen:manual-table:start -->
+
+| Shape                                                                                   | Container                  | Key props                                                                                                                                            | Avoid when                                                         |
+| --------------------------------------------------------------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Donut-only ring focused on ONE proportion (not a full pie breakdown)                    | `RingChart`                | `data`                                                                                                                                               | Multiple categories matter — use `pie`/`unit`                      |
+| Mixed marks on one shared axis (bars + a line target, etc.)                             | `ComposedChart`            | `data`, `xDataKey`, `<SeriesBar dataKey>`, `<Line dataKey>`, `<Area dataKey>`                                                                        | A single mark type would do — use the plain container              |
+| A metric updating in real time, streaming in                                            | `LiveLineChart`            | `data`, `value` — appended over time, retains a rolling window                                                                                       | The series is static/historical — use `LineChart`                  |
+| A measure by geographic region                                                          | `ChoroplethChart`          | `data` — a GeoJSON `FeatureCollection`                                                                                                               | No real geography — use `bar`                                      |
+| A single value against a target/threshold band                                          | `Gauge`                    | `centerValue`, `value` — `thresholds` for the bands                                                                                                  | Trend over time matters more than the instant — use `line`         |
+| A flow between named nodes (source → target, weighted)                                  | `SankeyChart`              | `data` — shaped `{ nodes, links }`, weighted links between named nodes                                                                               | The nodes have no real flow between them — use `NetworkChart`      |
+| Many numeric dimensions compared across entities at once                                | `ParallelCoordinatesChart` | `data`, `entity`, `dimensions`                                                                                                                       | > ~2 entities need per-entity detail — use small-multiple `radar`  |
+| A hierarchy read as a branching tree (org chart, KPI driver tree), not sized rectangles | `TreeChart`                | `data` — branches open/close by default (`defaultExpandedDepth`, `expandedIds`, `collapsible={false}` for static); `orientation`; `renderNode` cards | Size, not structure, is the point — use `treemap`                  |
+| Arbitrary node/edge relationships, no hierarchy                                         | `NetworkChart`             | `nodes`, `links`, `layout`                                                                                                                           | The relationship IS a hierarchy — use `TreeChart`/`treemap`        |
+| Tasks/phases across a timeline                                                          | `Gantt`                    | `tasks`                                                                                                                                              | Not really scheduled work — use `dumbbell` (a single before/after) |
+
+<!-- brand-ui:gen:manual-table:end -->
 
 ### Cross-cutting devices (not chart types)
 
@@ -268,28 +284,47 @@ encodes one as a default it says so in brackets.
 
 `brand-ui chart-for "<data shape>"` and the `chart_for` MCP tool rank chart
 containers by matching your free-text query against each container's own
-`@dataShape` JSDoc tag, which is extracted from the component source into the
-shipped manifest. The match is deliberately dumb — plain token overlap, no
-synonyms — so the ranking you get is always traceable back to the exact words the
-container's own docblock uses:
+`@dataShape` JSDoc tag. For a container with a `ComponentDefinition`, the tag text
+and the roles it binds (below) come from the CLI's own committed definitions
+snapshot; a chart with no definition falls back to parsing its own source
+directly. The match is deliberately dumb — plain
+token overlap, no synonyms — so the ranking you get is always traceable back to
+the exact words the container's own docblock uses. Each candidate also prints a
+`binds:` line — the data ROLES (dimension/measure) its `targets` describe, distinct
+from this reference's "key props" tables below, which print literal prop names:
 
 ```
 $ brand-ui chart-for "weekday by hour ticket volume"
-chart-for "weekday by hour ticket volume" — 2 candidate(s), ranked:
+chart-for "weekday by hour ticket volume" — 5 candidate(s), ranked:
+  read as: measure × time
   1. HeatmapChart  (@elabs-ai/components-charts, score 4)
      shape: two categorical axes (weekday by hour, for example) with one numeric value per cell — ticket volume, event counts; many small cells favour mode="dot" over the default cell fill
+     binds: Column (dimension), Row (dimension), Value (measure)
      avoid when: more than about 10 columns of continuous data, or exact cell values matter more than the pattern
   2. UnitChart  (@elabs-ai/components-charts, score 3)
      shape: one tally row per category, ticks summing to a total — ticket volume by weekday, for example, as layout="rows"
+     binds: Category (dimension), Value (measure)
      avoid when: exact per-unit counts do not matter — a pie or bar chart reads faster
+  3. LineChart  (@elabs-ai/components-charts, score 2.5)
+     shape: one or more measures over continuous time, where the trend itself is the point
+     binds: X axis (dimension), Series (measure)
+     avoid when: many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart
+  4. AreaChart  (@elabs-ai/components-charts, score 2.5)
+     shape: measures over time where magnitude matters — stacked, or as a stream with offset="wiggle"
+     binds: X axis (dimension), Series (measure)
+     avoid when: fewer than about 4 points — a bar chart reads the same data faster
+  5. LiveLineChart  (@elabs-ai/components-charts, score 1.75)
+     shape: a metric updating in real time, appended over a rolling window
+     binds: Time (dimension), Value (measure)
+     avoid when: the series is static or historical — use a line chart
 
 Per the chart-selection rules: compare at least 3 candidates and write down why the
-others lost — see this chart-selection reference.
+others lost — see skills/brand-ui/reference/chart-selection.md.
 ```
 
-All 25 containers carry their tags, so this is what the command actually prints
-today — the `score` is the count of your query's words that appear in the quoted
-shape text, and nothing else.
+28 containers carry their tags today, so this is what the command actually prints
+— the `score` is the count of your query's words that appear in the quoted shape
+text, and nothing else.
 
 ### `@dataShape` / `@avoidWhen` tag format (for whoever authors them)
 
@@ -319,8 +354,10 @@ regenerating must delete the manifest entry.
 
 ### Where the tags live
 
-Every one of the 25 containers carries its `@dataShape` / `@avoidWhen` tags on its
-own declaration, in the module that declares it — never in a barrel re-export. The
+Every container in the tables above carries its `@dataShape` / `@avoidWhen` tags on
+its own declaration, in the module that declares it — never in a barrel re-export.
+(A few containers carry the tags but aren't in either table yet — `BulletChart`,
+`ChartMultiples`, `DensityScatterChart`.) The
 tags are read from the docblock **immediately preceding the declaration** and
 nowhere else, so a tuning constant exported from the same module never inherits
 the container's shapes and never turns up as a `chart-for` candidate.
