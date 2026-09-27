@@ -740,3 +740,239 @@ import {
 //     NodeDetails L47, resolveNodeDetails L92, formatMetric L128
 //   fixtures/details-fixture.ts: DETAILS_FIXTURE_PARAM L11 ("details-fixture"), withDetailsFixture L32
 ```
+
+## Atlas wave 1 — server, MCP, catalog (DG-35, DG-24)
+
+> **R1 scope (2026-09-27):** the release plan cut DG-35's tab bridge (render, open, present) and every MCP resource, and DG-24's in-app catalog edit. The measurements below stay true and are kept for the items that bring those back. The localhost guard (`server/local-guard.mjs`) is already on `/api/workspace` (`aaead782`).
+
+Read at `diagram/atlas-integrate` 61702bd1 (DG-21 merged). Reference code: branch `diagram/harden-w1-mcp` (0a34f7de, 4c005572) — typechecked (`0` errors), linted (`✖ 12 problems (0 errors, 12 warnings)`, the baseline), Prettier-clean, and driven on a dev server at :5192. "Ran" below means the output was observed; "read" means taken from source only.
+
+### Vite 6.4.3 — running app code in the dev server
+
+- **`ViteDevServer.ssrLoadModule(url: string, opts?: { fixStacktrace?: boolean }): Promise<Record<string, any>>`** — `vite/dist/node/index.d.ts` L3105–3107; the server method is `dep-Dm0c1Wj2.js` L38633–38635, and the implementation at L25310 runs `server.environments.ssr` through `SSRCompatModuleRunner` (L25345: `hmr: false`, `ESModulesEvaluator`).
+- **It works from a plugin's `configureServer` for a `.ts` file under `src/`.** Ran: `server/spec-bridge.mjs` calls `server.ssrLoadModule("/src/server-surface.ts")` lazily per request. It loaded the parser, the validator, `compileArch`, `validateFlowSpec`, `buildArchSchema` and `index.json`, and validated `examples/lakehouse-aws.yaml` (`ok: true`, 2 info issues) and a broken text (`unknown-endpoint` error at line 9, col 10). Never call it in the body of `configureServer` itself: call it per request.
+- **Edits reach the next call without a restart.** On a watcher `change`, `environment.moduleGraph.onFileChange(file)` runs for every environment (L38798). `invalidateModule` (L47663) clears the SSR result, and the runner re-imports. Ran: an edit to `src/spec/dialect/validate.ts` (two imports below the surface module) changed `spec_validate`'s message on the next call; reverting it changed the message back. The log shows `(ssr) page reload src/spec/dialect/validate.ts`. **Do not add a cache in the bridge.**
+- **A plugin's middleware runs BEFORE Vite's own host check and CORS.** `_createServer` (L38813–38825) runs the `configureServer` hooks, then `rejectInvalidRequestMiddleware`, `corsMiddleware`, and `hostCheckMiddleware` (L32320, `isHostAllowedWithoutCache` L32262). `/api/workspace` (DG-21) and `/mcp` therefore get neither check.
+  - Ran: with `Host: evil.example:5192`, the answer was the app's own 403 text, not Vite's "Blocked request".
+  - DG-21 as merged accepts a cross-origin `text/plain` POST, because `readJson` ignores `Content-Type`. That is a localhost CSRF: any web page could trash or move workspace files. Read, not exploited; the reference guard answers 403.
+  - **Fix:** `server/local-guard.mjs` `refuseNonLocal(req)` (reference L32). It requires `Host` to be localhost, 127.0.0.1 or [::1], and `Origin`, when present, to equal `http://<Host>`. Mount it on both `/api/workspace` and `/mcp`.
+  - Ran (guard in place):
+
+    | Request                         | Result |
+    | ------------------------------- | ------ |
+    | Same-origin EventSource         | opens  |
+    | Same-origin POST                | 200    |
+    | No Origin (curl, Claude Code)   | 200    |
+    | `Origin: http://localhost:3000` | 403    |
+    | `Origin: https://evil.example`  | 403    |
+
+- **Server-side `.mjs` imports `yaml` 2.9.1.** Ran: `import { parse, parseDocument } from "yaml"` from `apps/diagram/server/` resolves, because the app depends on it.
+  - A `parseDocument(…)` + `doc.setIn([...], value)` + `doc.toString({ lineWidth: 0, flowCollectionPadding: false })` round trip keeps a header comment and inline comments. It appends new keys in block style.
+  - `doc.createNode(["a", "b"], { flow: true })` writes `[a, b]`. Without `flowCollectionPadding: false`, the output is `[ a, b ]`.
+  - This is fine for catalog files the server owns. It is **not** fine for diagrams: write-back.ts L1–10 bans Document round trips there.
+- **Node 22.22.0 `fetch` HEAD with a timeout.** Ran: `fetch(url, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(5000) })` against `https://docs.aws.amazon.com/lambda/` → `200` in 322 ms. An unreachable host rejects with `TimeoutError` "The operation was aborted due to timeout".
+- A browser import of `/public/icons/index.json` logs Vite's "Assets in public directory cannot be imported from JavaScript" warning once per load. `register-packs.ts` has always done this; it is harmless (the JSON plugin still serves it).
+
+### React-free (Node-safe) vs not — measured by imports
+
+- **Node-safe:**
+  - `src/spec/dialect/**`: `yaml`, and `@elabs-ai/components-ui/definition` (a pure subpath);
+  - `src/spec/flow-spec/**`: type-only `@xyflow/react`;
+  - `src/spec/compile/compile-arch.ts` and `arch-definitions.ts`;
+  - `src/state/edit-text.ts`: imports `parseArchYaml` only;
+  - `src/state/entries.ts`: type-only imports;
+  - `src/spec/dialect/write-back.ts`.
+- **Not Node-safe:**
+  - `src/spec/compile/registry.ts`: React node components and `@elabs-ai/components-flow`;
+  - `src/state/compile-text.ts`: the registry, plus `icons/icon-names.ts` → `lucide-map.ts` (lucide-react) and `register-packs.ts` (React, `@elabs-ai/components-icons`);
+  - `src/state/diagram-store.ts`: `useSyncExternalStore` and a `?raw` seed;
+  - `src/icons/*`, except `lucide-names.ts` and `icon-names.ts` after the split.
+- **The split (reference commit 0a34f7de):**
+  - `src/spec/check-text.ts` `checkText(text, iconNames)` (L46) is `compileText` minus `toReactFlow`/`decorate`. It uses `ARCH_DEFINITIONS` (`compile/arch-definitions.ts` L108; `createArchRegistry().definitions` is that same object, `registry.ts` L115).
+  - `DiagramIssue` (L23) and `IssueStage` (L20) moved there; `compile-text.ts` re-exports them.
+  - `src/icons/lucide-names.ts` `LUCIDE_NAMES` (L7) and `LucideIconName` (L50) are plain strings. `lucide-map.ts` types its map `as const satisfies Record<LucideIconName, LucideIcon>`.
+  - `src/icons/icon-names.ts` `ICON_NAMES` now imports `index.json` and `LUCIDE_NAMES` directly.
+  - `src/server-surface.ts` is the one module the server loads (`checkDiagram` L22, plus re-exports).
+  - Ran: the app still renders the seed (19 nodes, 14 edges, no page errors).
+
+### MCP wire conventions (`packages/cli/lib/mcp.mjs`, `mcp-http.mjs`)
+
+- **Protocol.** `PROTOCOL_VERSION = "2024-11-05"` L46; `SUPPORTED_PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", PROTOCOL_VERSION]` L53; `SERVER_INFO` L60.
+  - `initialize` echoes a supported requested version, else answers `PROTOCOL_VERSION` (the oldest).
+  - Atlas answers its newest (`2025-06-18`) instead, as the spec's SHOULD says. Ran: asking for `1999-01-01` gets back `2025-06-18`.
+- **Helpers** L248–250 `result` / `error` / `textContent`. **Tools** `TOOLS` L137: `{ name, description, inputSchema: { type: "object", properties, required?, additionalProperties: false } }`.
+- **Errors.**
+
+  | Case               | Answer                                                                      |
+  | ------------------ | --------------------------------------------------------------------------- |
+  | Tool failure       | a RESULT `{ content: [{ type: "text", text }], isError: true }` (e.g. L305) |
+  | Unknown tool       | `-32602 "Unknown tool: <name>"` (L654)                                      |
+  | Unknown method     | `-32601 "Method not found: <m>"` (L659), but a notification gets no answer  |
+  | Not an object      | `-32600 "Invalid Request"` (L628)                                           |
+  | Unparsable JSON    | `-32700 "Parse error"` (stdio L685; HTTP 400, `mcp-http.mjs` L68–76)        |
+  | Empty batch        | HTTP 400 `-32600` (L80–84)                                                  |
+  | Only notifications | 202 with no body (L87)                                                      |
+
+- **HTTP.** Stateless: no `Mcp-Session-Id`. `GET` → 405 `Allow: POST, OPTIONS` (L62–66). The CLI's `OPTIONS` → 204 with `Access-Control-Allow-Origin: *` (L30–36, L60–61) is **wrong for Atlas**, which writes local files: send no CORS headers and answer every non-POST with 405.
+- **Atlas reference** (`server/mcp/`):
+  - `handleMessage(msg, ctx)` is **async** (`handler.mjs` L96);
+  - `checkArgs(schema, value)` (L28) covers the JSON-Schema subset the tools use;
+  - an unknown resource answers `-32002` (MCP's "resource not found");
+  - `createMcpMiddleware(ctx)` (`http.mjs` L50) is a Connect handler. `server.middlewares.use("/mcp", …)` strips the prefix, so `req.url === "/"`.
+  - `createToolRegistry()` (`tools/index.mjs` L22) checks `TOOL_NAME = /^[a-zA-Z0-9_-]{1,64}$/` (L18) and duplicates.
+  - Ran:
+
+    | Request                            | Result                                                                                                                                                      |
+    | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | `initialize`                       | `{ protocolVersion: "2025-06-18", capabilities: { tools: {}, resources: {}, prompts: {} }, serverInfo: { name: "atlas", version: "0.1.0" }, instructions }` |
+    | `notifications/initialized`        | 202                                                                                                                                                         |
+    | `ping`                             | `{}`                                                                                                                                                        |
+    | `tools/list`                       | 8 tools                                                                                                                                                     |
+    | `/mcp/x`                           | 404                                                                                                                                                         |
+    | batch of a ping and a notification | a one-element array                                                                                                                                         |
+
+- **Names.** Claude Code shows a tool as `mcp__<server>__<tool>`, and the API's tool-name rule is `^[a-zA-Z0-9_-]{1,64}$`. Wire names therefore use underscores: `diagram_read`, not `diagram.read`.
+
+### Workspace service (DG-21) as the MCP tools call it
+
+- **`server/workspace-fs.mjs` exports:**
+
+  | Name                                               | Line |
+  | -------------------------------------------------- | ---- |
+  | `ROOT`                                             | L25  |
+  | `TRASH`                                            | L27  |
+  | `COMPONENTS`                                       | L29  |
+  | `MAX_TEXT_BYTES = 1_000_000`                       | L31  |
+  | `WorkspaceError(status, message, extra)`           | L40  |
+  | `safe`                                             | L98  |
+  | `relOf`                                            | L131 |
+  | `list()`                                           | L157 |
+  | `read(rel)`                                        | L191 |
+  | `write(rel, text, { overwrite, base, exclusive })` | L213 |
+  | `mkdir`                                            | L249 |
+  | `move(from, to, { overwrite })`                    | L262 |
+  | `trash(rel)`                                       | L299 |
+  | `writeThumb`                                       | L321 |
+  | `versions`                                         | L370 |
+  | `readVersion`                                      | L380 |
+
+- **Ran through MCP:**
+
+  | Call                                | Result                                                     |
+  | ----------------------------------- | ---------------------------------------------------------- |
+  | `diagram_create` (new path)         | `{ path, mtime, size, warnings: [] }`                      |
+  | `diagram_create` again              | `"… already exists. (code: exists)"`                       |
+  | `diagram_write` with `base` = mtime | written                                                    |
+  | `diagram_write` with a stale `base` | `"… changed on disk. (code: changed)"`                     |
+  | `diagram_move`                      | `{ from, to }`                                             |
+  | `diagram_trash` of a folder         | `{ path, trashedTo: "_trash/<stamp>-_probe" }`             |
+  | `diagram_read("../package.json")`   | `"'..' is not allowed in a workspace path."`               |
+  | `diagram_create` with an error      | `"Nothing was written: the YAML has errors.\n- line 9: …"` |
+
+  A `WorkspaceError`'s `extra.code` is appended as `(code: …)`. `mtime` is a float (`1790509408492.415`) and round-trips through JSON exactly.
+
+- **SSE hub** `createEvents(watcher)`: `workspace-plugin.mjs` L88; `broadcast` L92 writes only `data:` frames; `connect` L129.
+- **Tab side.** `live-reload.ts` `startLiveReload` L80 listens only through `source.onmessage` (L100), so a **named** event (`event: atlas-request`) never reaches it.
+- **Opening a file.** `workspaceActions.open(path)` is `workspace-store.ts` L222, and `workspaceStore.get().current?.path` is the open file. `diagramActions.load(text, path)` (`diagram-store.ts` L116) bumps `loadCount`. `canvas-pane.tsx` L86 remounts `ReactFlowProvider key={loadCount}`, and the new canvas starts `inert` (L288, `shown` L218).
+  - **Race:** `canvasDrawn()` (`io/export.ts` L93) checks `[inert]` synchronously. Called in the same task as `open`, it can resolve on the OLD canvas. Wait two animation frames first.
+
+### DG-17 exporter (for `diagram_render`) — lines at 61702bd1
+
+The `io/export.ts` lines moved since the wave-3 table above:
+
+| Name                                                                                      | Line |
+| ----------------------------------------------------------------------------------------- | ---- |
+| `PictureScale = 1 \| 2 \| 3`                                                              | L26  |
+| `PictureOptions { transparent? }`                                                         | L28  |
+| `Picture { svg, width, height }`                                                          | L34  |
+| `CANVAS_WAIT_MS = 10_000`                                                                 | L84  |
+| `canvasDrawn()`                                                                           | L93  |
+| `pictureOfCanvas(title, options)` (throws "There is no diagram on the canvas to export.") | L760 |
+| `svgBlob`                                                                                 | L821 |
+| `pngBlob(picture, scale) → { blob, width, height }`                                       | L829 |
+| `pictureFileName`                                                                         | L856 |
+| `saveBlob`                                                                                | L868 |
+
+`export-menu.tsx` L89–96 composes them as `canvasDrawn().then(() => pictureOfCanvas(title, { transparent }))`, then `pngBlob(p, scale)`. A background tab never lays out, so a render needs a visible tab. **Present:** `enterPresentation()` is `interaction/presentation-mode.ts` L36 (it sets the hash).
+
+### Catalog inputs (DG-24)
+
+- **`public/icons/index.json`**: `{ "<vendor>/<stem>": { path: "/icons/<vendor>/<stem>.svg", label, pack } }`, with 667 keys, sorted.
+  - It is written by `scripts/build-icon-index.mjs` (60 lines; `labels.json` overrides L32; sort L53; write L56).
+  - 12 vendor folders: aws 273, azure 291, clickhouse 2, databricks 4, gcp 46, k8s 31, microsoft 2, oracle 2, qlik 8, salesforce 3, sap 3, snowflake 2.
+  - The small packs: `clickhouse/{clickhouse, clickpipes}`, `databricks/{databricks, delta, unity-catalog, workspace}`, `microsoft/{microsoft, sql-server}`, `oracle/{db, oracle}`, `qlik/{answers, automate, automl, cloud, data-gateway, qlik, sense-enterprise, talend-cloud}`, `salesforce/{data-cloud, mulesoft, salesforce}`, `sap/{btp, s4hana, sap}`, `snowflake/{snowflake, warehouse}`.
+- `register-packs.ts`: `IconIndexEntry` L8, `ICON_INDEX` L25, `ICON_PACKS` L30.
+- **Validator.** `validate.ts` `validateArch(ast, iconNames)` L7. The unknown-icon block is at L150–159 at 61702bd1: code `"unknown-icon"` at `joinPath(e.path, "icon")`, severity `warning` (`issues.ts`). `unknown-provider` derives providers from `iconNames` (L161–171).
+  - `ArchIssue` (`issues.ts` L46) is `{ path, code, message, severity, range? }`. Reference 4c005572 adds `suggestion?: string`.
+  - `src/spec/dialect/nearest-name.ts`: `editDistance` L7, `nearestName(name, names)` L24 (limit `max(2, ⌊len/3⌋)`; the same vendor wins a tie).
+  - Ran: `aws/lamda` → `aws/lambda`; `azure/cosmosdb` → `azure/cosmos-db`; `lucide/userz` → `lucide/user`; `nothing/close` → none. Fixtures assert `code @ line:col` only, so the longer message breaks none.
+- **Node fields v0** (for part snippets):
+  - `NodeInput` (`definitions.ts` L158): `id`, `type`, `variant`, `icon`, `badges`, `class`, `tone`, `href`, `text`, `parent`, `position`, plus `headerGroup` `title` / `subtitle` / `description` (`packages/ui/src/lib/definition/groups/header.ts` L13).
+  - The node type union is `ArchNodeType` (`spec/dialect/types.ts` L35, `NODE_TYPES` L12), which is React-free. `nodes/arch-node-data.ts` `ArchNodeKind` L12 is the same union.
+- **v1 icon sheet.**
+  - `icons/icon-sheet.tsx`: `IconSheetProps` L23, `iconSheetHash` L41, `iconSheetVendor` L46.
+  - `app.tsx` L150–160 renders it for `#icons` / `#icons/<vendor>`.
+  - DG-22 (planned) moves routing to `parseRoute(hash)` with `{ kind: "catalog", vendor?, entry? }` and a placeholder `EmptyState`.
+- **ui for the pages** (`packages/ui/src/index.ts`):
+  - Lines: `Badge` L165 (variants `default`, `secondary`, `outline`, `success`, `warning`, `destructive`, `info`), `Button` L169, `Card*` L172, `CopyableValue` L185, `Dialog` L189, `EmptyState` L193 (`{ title, description?, icon?, actions?, className? }`), `Input` L209, `Kbd` L212, `Label` L215, `ScrollArea` L242, `Select` L245, `Skeleton` L250, `toast` / `Toaster` L255, `StatePanel` L257, `TagInput` L264, `Textarea` L266, `ToggleGroup` / `ToggleGroupItem` L272, `Tooltip` L274, `Heading` / `Text` L279.
+  - `TagInput` props: `value?`, `defaultValue?`, `onValueChange?`, `max?`, `validate?`, `delimiter?`, `placeholder?`.
+  - `ServiceLogo` (`packages/icons/src/service-logo.tsx` L97; props L70): `{ name, size?, label?, variant?: "brand" | "mono", logos?, decorative? }`.
+
+### Reference e551aa09 — compose, prompts, resources, tab bridge (ran)
+
+Same branch, typechecked, `0` lint errors, Prettier-clean; driven over HTTP JSON-RPC on :5192 and, for the tab bridge, with a real browser tab.
+
+- **Compose** (`server/mcp/tools/compose.mjs` L75) edits text through `write-back.ts`, then gates with `assertValid`, then writes with `base` = the mtime it read.
+  - `appendEntries(text, listPath, items)` (`write-back.ts` L538) and `nodeItem` / `flowItem` (`spec/dialect/entry-text.ts` L16 / L35) are new; `server-surface.ts` re-exports them.
+  - Ran, one file: `compose_add_nodes` into a zone and at the top level (created the missing `nodes:` list), `compose_add_flows` (created `flows:`; wrote `- a -> b`, `- a -> b: Write`, `- a -> b: { label: Read, kind: data, secure: tls }`), `compose_set` on a node, on a flow (`{ label: HTTPS, step: 1 }`), on `""` (a new top-level key lands after `title:` with `{ after: "title" }`), and `null` removing a key. A `# comment` on `title:` survived every edit.
+  - Ran, refusals: `flow:api->nope` → `"No flow api -> nope."`; a flow to an unknown id → `"Nothing was written: … (unknown-endpoint at flows[3].to)"`; a misspelt icon writes, with the warning's `suggestion: "aws/dynamodb"`.
+  - `spec_compile` returned nodes with their `parent` and flows with their `form` (`shorthand`).
+- **Prompts** (`server/mcp/prompts.mjs` `createPrompts` L44, files under `mcp/prompts/*.md` with YAML frontmatter, read on every call). Ran: `prompts/list` → `author-diagram (description*, path)`, `write-story (path*)`; a missing required argument → `-32602 "Missing argument: description"`; an unknown name → `-32602 "Unknown prompt: nope"`; no `{{…}}` left in the text.
+- **Resources** (`server/mcp/resources.mjs` `createResources` L56). Ran: 5 resources (4 workspace files + `atlas://schema/v0`, 16 000 bytes, `application/schema+json`); a missing file → `-32002 "Resource not found: atlas://workspace/nope.yaml"`.
+- **The author-diagram cheat-sheet** (the prompt's YAML block) validates: `{ ok: true, issues: [] }`.
+- **Tab bridge.**
+  - Server: `createEvents` gains `send(type, data)` (`workspace-plugin.mjs` L143; writes `event: <type>`, returns the client count), `POST /api/workspace/render-result` (L224, body limit 16 MB), `server/mcp/tab-bridge.mjs` `createTabBridge(hub)` (L27; `TAB_EVENT = "atlas-request"`, `TAB_TIMEOUT_MS = 15_000`).
+  - Tab: `live-reload.ts` `onServerEvent(type, listener)` (L64) and `src/workspace/tab-requests.ts` `useTabRequests()` (L109).
+  - **`useLiveReload()` must be mounted above the hash router** (`App`), not in `SidebarNav`: `#present` renders `PresentationView` without the shell, which closed the stream. The reference moves it.
+  - Ran (15 tools listed):
+
+    | Case                                     | Result                                                                |
+    | ---------------------------------------- | --------------------------------------------------------------------- |
+    | `diagram_render`, no tab                 | `isError` "No Atlas tab is open. …" in 38 ms                          |
+    | `diagram_render` the open file           | PNG 2588×1148, 203 ms, correct picture                                |
+    | `diagram_render` ANOTHER file            | opened it; PNG 999×1582 of the new file (no stale canvas), 342 ms     |
+    | `story_present`                          | `{ path, title, steps: 5 }`; tab at `#present`, sidebar gone          |
+    | `diagram_render` `svg` while presenting  | answered (stream alive), 110 ms                                       |
+    | tab reports `visibilityState = "hidden"` | `isError` "The Atlas tab is in the background, …" in 36 ms            |
+    | tab never answers                        | `isError` "The Atlas tab did not answer within 15 s." after 15 053 ms |
+
+  - Not run: two tabs at once (first answer wins by design), and a real OS-level background window (the hidden case was simulated by overriding `document.visibilityState`).
+
+### Reference c43d185d — after merging `diagram/atlas-integrate` 9581961f (ran)
+
+- **Merge** (f59d9d08): two conflicts, both resolved by keeping both sides — `verified-apis.md` (the DG-23/DG-25 section first, this one after) and `workspace-plugin.mjs` (9581961f's PNG-sized `MAX_JSON_BYTES = Math.ceil((MAX_THUMB_BYTES * 4) / 3) + 64 * 1024` beside DG-35's `MAX_RENDER_BYTES`). Typecheck `0`, lint `0 errors, 12 warnings`, Prettier clean.
+- **Thumbnails are binary since d2f7f0e2** (`<name>.thumb.png`, `thumbPathOf`; `workspace-fs.mjs` `read()` now also returns `bytes`). `workspace.list()` lists diagrams only, so `workspace_tree` and `resources/list` never show a thumbnail (ran: 5 resources, 0 `.png`). A direct read would have returned PNG bytes as UTF-8 text; c43d185d routes every MCP read through `readDiagram(path)` (`server/mcp/tools/workspace.mjs`). Ran:
+
+  | Call                                                                | Answer                                                                           |
+  | ------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+  | `diagram_read { path: "examples/lakehouse-aws.thumb.png" }`         | `isError` `Only .yaml diagrams can be read: "examples/lakehouse-aws.thumb.png".` |
+  | `resources/read atlas://workspace/examples/lakehouse-aws.thumb.png` | `-32602`, same message                                                           |
+  | `diagram_read { path: "../package.json" }`                          | `isError` `Only .yaml diagrams can be read: "../package.json".`                  |
+  | `diagram_read { path: "../x.yaml" }`                                | `isError` `'..' is not allowed in a workspace path.`                             |
+  | `diagram_read { path: "examples/lakehouse-aws.yaml" }`              | 3 367 characters of text                                                         |
+
+- Tab bridge after the merge (real tab on :5192): `diagram_render` of `examples/qlik-cloud-data-gateway.yaml` → PNG 1198×1416 in 341 ms; with the tab closed → "No Atlas tab is open…" in 32 ms. `tools/list` still 15 names.
+
+### Reference 03deda60 — the catalog service, routes, MCP tools and pages (DG-24, ran)
+
+Commits 590550e8 (service, routes, tools, resource, prompt), de559ebc (docs check refuses private addresses), 03deda60 (pages, one snippet builder). Typecheck `0`, lint `0 errors, 12 warnings`, audit `0/0/0`, Prettier clean. Probe data under `catalog/` was deleted after each run.
+
+- **`yaml` 2.9.1 in a server `.mjs`**: `import { isMap, parseDocument } from "yaml"` works (the app already depends on it). Writing through the Document API keeps every comment and untouched line with `doc.contents.flow = false`, arrays `flow = true`, `toString({ lineWidth: 0, flowCollectionPadding: false })`. **A file's header comment attaches to the first key**: inserting a key before it carries the header down, so new entries are appended (`entryMap`).
+- **Merge at request time** (`server/catalog-fs.mjs` `readAll(iconNames)`, iconNames = the app's `ICON_NAMES` through the spec bridge): `GET /api/catalog/all` → 708 entries (667 icons + 40 `lucide/*` + 1 part), 13 vendors, 120 ms. A part whose slug is also an icon, and a part whose `icon:` is unknown, are skipped and listed in `problems`. `build-icon-index.mjs` is not needed.
+- **Routes**: a foreign `Origin` → `403` (the DG-35 guard); an unknown route → `404`; `PUT /api/catalog/entry?name=aws/api-gateway` → `{ entry, docsUnverified }` with `curated: true`, 5 ms; `PUT` on a part → `400` "`<name>` is a part: edit catalog/parts/`<vendor>`.yaml by hand.".
+- **MCP** (19 tools): `catalog_missing { vendor: "nope" }` → `isError` listing the 12 packs; `{ vendor: "aws" }` → `total: 272` (one curated); `after` skips past a slug. `catalog_update` with 8 entries, 364 ms: 3 written, `lambda` in `skippedCurated`, `amplify` in `docsUnverified` (a real 404), 4 `rejected` (not an icon, 141 characters, `http://`, `https://localhost/…`); a bad `kind` → schema `isError`. `catalog_get aws/dynamo` → `No catalog entry "aws/dynamo". Close: aws/dynamodb.`; `catalog_search gateway` → 7 results; `resources/read atlas://catalog/aws` → `application/yaml`, `atlas://catalog/azure` (no file) → `-32002`. `prompts/get fill-catalog {}` → `-32602 Missing argument: vendor`.
+- **Docs check**: HEAD, then GET on 403/405, `redirect: "manual"`, 5 s timeout, `status < 400` = reachable. The host is resolved first (`node:dns/promises` `lookup`, all addresses) and a loopback/private/link-local/CGNAT answer is never fetched: `https://localtest.me/` (resolves to `::1` and `127.0.0.1`) → unreachable in 62 ms with no request; `https://docs.aws.amazon.com/lambda/` → reachable, 336 ms.
+- **Watch**: one `event: catalog` `data: {"vendor":"aws"}` per MCP write and per hand edit of `catalog/parts/qlik.yaml` (100 ms debounce). **Vite reloads the whole page on any change under `catalog/`** ("(client) page reload catalog/aws.yaml", measured twice) until `handleHotUpdate` returns `[]` for `CATALOG_ROOT` too; with it, the tab kept its state, got one `subscribe` notification and the new text (`aws/batch` description) without a reload. The same reload happens for `docs/*.md` edits (seen in the log; not changed).
+- **Tab** (`src/catalog/catalog-service.ts`, real browser on :5192): `catalogService.get("aws/glue")` right after import → `undefined`; `await catalogService.ready()` (5 ms) first, then it has the description. `stats()` → `{ total: 668, withoutDescription: 662, docsUnverified: 1 }` (lucide excluded); `suggest("aws/dynamo")` → `aws/dynamodb`.
+- **Pages** (v1 hash wiring on the reference only): `#catalog/aws` grid of 273 with names and one-liners; `#catalog/aws/dynamodb` edit → Save wrote `curated: true` and the new description to `catalog/aws.yaml`; an `http://` docs URL → `role="alert"` "aws/dynamodb: docs must be an https:// URL."; Edit moves focus to "Product name", Cancel returns it to Edit; `#catalog/qlik/data-gateway-direct` shows the part read-only with its snippet; `#catalog/aws/dynamo` → "No catalog entry “aws/dynamo”" with a link to `aws/dynamodb`. Dark theme checked on `#catalog/qlik`. Inside DG-22's shell the top bar owns the page `<h1>` (`shell/top-bar.tsx` L224 on 7515caf2), so the pages start at `<h2>`.
+- **Seeds and parts** (4bcef440): 12 seed files (a two-line header comment and `{}`) plus 15 parts in `catalog/parts/{qlik,snowflake,databricks,clickhouse,sap,generic}.yaml` → `/api/catalog/all` 722 entries (667 icons, 40 `lucide/*`, 15 parts), 13 vendors besides `lucide`, `problems: []`; `catalog_missing aws` → `total: 273` from `activate`. The 15 parts' `catalog_get` snippets under `diagram: 0` pass `spec_validate` (`ok`). A seed keeps its header after a server write, and the written file passes Prettier.
