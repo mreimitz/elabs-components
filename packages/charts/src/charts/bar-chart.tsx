@@ -14,7 +14,6 @@ import {
   type ReactElement,
   type ReactNode,
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -100,7 +99,18 @@ import {
   ChartDatapointProvider,
   useChartDatapointsEnabled,
 } from "./chart-datapoint-layer";
-import { isGradientDefComponent, isPatternDefComponent } from "./chart-defs";
+import {
+  isGradientDefComponent,
+  isPatternDefComponent,
+  isPostOverlayComponent,
+} from "./chart-defs";
+import {
+  useChartEnterReveal,
+  useChartPhaseReport,
+  useContainerRevealGate,
+  useValueAxisConfigs,
+  useValueAxisWarnings,
+} from "./cartesian-shell-hooks";
 import { useChartFormatters } from "./chart-formatters";
 import { ChartLoadingAnnouncement, ChartLoadingLabel } from "./chart-loading-label";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
@@ -118,7 +128,7 @@ import {
   DEFAULT_CHART_LIFECYCLE,
   resolveRestingChartPhase,
 } from "./chart-phase";
-import { type ChartRevealOn, useChartRevealGate } from "./chart-reveal-clip";
+import type { ChartRevealOn } from "./chart-reveal-clip";
 import { generateCategoricalSkeletonData } from "./generate-chart-skeleton-data";
 import { useScheduledTooltip } from "./use-scheduled-tooltip";
 import { useStableValue } from "./use-stable-value";
@@ -127,12 +137,10 @@ import {
   applyValueAxisConfigs,
   buildYScalesForLines,
   buildYScalesFromDomains,
-  collectValueAxisConfigs,
   DEFAULT_Y_AXIS_ID,
   getPrimaryYScale,
   normalizeYAxisId,
   resolveValueAxis,
-  warnValueAxisOnce,
   wrapSingleYScale,
 } from "./y-axis-scales";
 import { computeYDomainsByAxis, niceYDomain } from "./y-domain-utils";
@@ -400,6 +408,23 @@ function extractBarStackGaps(children: ReactNode): Readonly<Record<string, numbe
 }
 
 /**
+ * The `groupGap` of each `Bar` that sets its own, so pointer hit-testing
+ * finds a grouped bar where `Bar` paints it (default 4 px, as `Bar` uses).
+ */
+function extractBarGroupGaps(children: ReactNode): Readonly<Record<string, number>> {
+  const gaps: Record<string, number> = {};
+  Children.forEach(children, (child) => {
+    if (isBarChild(child) && child.props.dataKey && child.props.groupGap !== undefined) {
+      gaps[child.props.dataKey] = child.props.groupGap;
+    }
+  });
+  return gaps;
+}
+
+/** Default gap between the bars of one group — `Bar`'s own `groupGap` default. */
+const DEFAULT_BAR_GROUP_GAP = 4;
+
+/**
  * Assign a default `fill` (RM-027) to `Bar` children that don't set their
  * own, via `resolvePalette`. Only ever touches series that would otherwise
  * COLLIDE — a single unfilled `Bar` keeps the pre-RM-027
@@ -623,24 +648,6 @@ function reserveCategoryAxisMargin(
     : { ...base, bottom: Math.max(base.bottom, required) };
 }
 
-// Check if a component should render after the mouse overlay
-function isPostOverlayComponent(child: ReactElement): boolean {
-  const childType = child.type as {
-    displayName?: string;
-    name?: string;
-    __isChartMarkers?: boolean;
-  };
-
-  if (childType.__isChartMarkers) {
-    return true;
-  }
-
-  const componentName =
-    typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
-
-  return componentName === "ChartMarkers" || componentName === "MarkerGroup";
-}
-
 interface ChartInnerProps {
   width: number;
   height: number;
@@ -763,8 +770,6 @@ const ChartCore = memo(function ChartCore({
 }: ChartInnerProps) {
   const { tooltipData, setTooltipData, scheduleTooltip, clearTooltip } =
     useScheduledTooltip<TooltipData>();
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [revealEpoch, setRevealEpoch] = useState(0);
   const hoveredBarIndex = tooltipData?.index ?? null;
 
   const isHorizontal = orientation === "horizontal";
@@ -799,6 +804,7 @@ const ChartCore = memo(function ChartCore({
   // below (and the scales it drives) don't rebuild on an unrelated re-render.
   const allLines = useStableValue(useMemo(() => extractBarConfigs(children), [children]));
   const barStackGaps = useStableValue(useMemo(() => extractBarStackGaps(children), [children]));
+  const barGroupGaps = useStableValue(useMemo(() => extractBarGroupGaps(children), [children]));
   // RM-118 toggle: every calculation BELOW this point (row order, stack
   // layout, the value domain, per-axis scales, tooltip positions and the
   // context `lines` `Bar` itself reads for its own `seriesIndex`) reads
@@ -1162,14 +1168,7 @@ const ChartCore = memo(function ChartCore({
   // is widened back to 0, and any non-linear scale falls back to linear — each
   // with a dev warning (charts-honesty). No request → the pre-RM-108 path.
   const facetYDomain = isHorizontal ? undefined : facet?.yDomain;
-  const valueAxisConfigs = useMemo(() => {
-    const configs = collectValueAxisConfigs(children);
-    // ChartMultiples — RM-120: the panel's domain, unless `YAxis domain` pins one.
-    if (facetYDomain && !configs[DEFAULT_Y_AXIS_ID]?.domain) {
-      configs[DEFAULT_Y_AXIS_ID] = { ...configs[DEFAULT_Y_AXIS_ID], domain: facetYDomain };
-    }
-    return configs;
-  }, [children, facetYDomain]);
+  const valueAxisConfigs = useValueAxisConfigs(children, facetYDomain);
   const hasValueAxisConfigs = Object.keys(valueAxisConfigs).length > 0;
   const primaryValueAxis = useMemo(() => {
     const config = valueAxisConfigs[DEFAULT_Y_AXIS_ID];
@@ -1225,19 +1224,16 @@ const ChartCore = memo(function ChartCore({
     });
   }, [analyticsExtents, domainData, hasValueAxisConfigs, isHorizontal, lines, valueAxisConfigs]);
 
-  useEffect(() => {
-    if (data.length === 0) {
-      return;
-    }
-    // Horizontal bars have one value scale (the `left` request); vertical
-    // bars resolve per axis id.
-    const warnings = isHorizontal
-      ? { [DEFAULT_Y_AXIS_ID]: primaryValueAxis?.warnings ?? [] }
-      : (verticalValueAxes?.warningsByAxis ?? {});
-    for (const [axisId, messages] of Object.entries(warnings)) {
-      warnValueAxisOnce(axisId, messages);
-    }
-  }, [data.length, isHorizontal, primaryValueAxis, verticalValueAxes]);
+  // Horizontal bars have one value scale (the `left` request); vertical
+  // bars resolve per axis id.
+  const valueAxisWarnings = useMemo(
+    () =>
+      isHorizontal
+        ? { [DEFAULT_Y_AXIS_ID]: primaryValueAxis?.warnings ?? [] }
+        : (verticalValueAxes?.warningsByAxis ?? {}),
+    [isHorizontal, primaryValueAxis, verticalValueAxes],
+  );
+  useValueAxisWarnings(valueAxisWarnings, data.length > 0);
 
   const yScales = useMemo(() => {
     // A rich layout (RM-113) is one value scale: stacks, overlays and the
@@ -1326,39 +1322,20 @@ const ChartCore = memo(function ChartCore({
   // it a real element when a caller opted in: `useInView` observes any
   // non-null ref, so an unconditional ref would mount an
   // `IntersectionObserver` for every default `"mount"` chart.
-  const revealGate = useChartRevealGate({
-    replayOnClick,
-    revealOn,
-    viewportRef: revealOn === "inView" || replayOnClick ? containerRef : undefined,
-  });
-  const revealHeld = revealGate.held;
-  // Under reduced motion a replay has nothing to replay: the gate never holds
-  // there, and restarting the grow would put motion back on screen for someone
-  // who asked for less of it.
-  const replayEpoch = revealGate.prefersReducedMotion ? 0 : revealGate.replayEpoch;
-
-  // Animation timing — replay when motion settings change
+  const revealGate = useContainerRevealGate({ containerRef, replayOnClick, revealOn });
   // revealSignature (or a gate replay) replays enter; an in-view hold keeps
-  // the bars at their pre-enter state with no settle timer running.
-  useEffect(() => {
-    setIsLoaded(false);
-    if (revealHeld) {
-      return;
-    }
-    setRevealEpoch((n) => n + 1);
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
-    }, animationDuration);
-    return () => clearTimeout(timer);
-  }, [animationDuration, revealSignature, revealHeld, replayEpoch]);
-
-  useEffect(() => {
-    if (isLoadingStatus) {
-      onPhaseChange?.("loading");
-      return;
-    }
-    onPhaseChange?.(isLoaded ? "ready" : "revealing");
-  }, [isLoaded, isLoadingStatus, onPhaseChange]);
+  // the bars at their pre-enter state with no settle timer running. Under
+  // reduced motion a replay has nothing to replay: the gate never holds
+  // there, and restarting the grow would put motion back on screen for
+  // someone who asked for less of it.
+  const { isLoaded, revealEpoch } = useChartEnterReveal({
+    animationDuration,
+    revealSignature,
+    held: revealGate.held,
+    replayEpoch: revealGate.prefersReducedMotion ? 0 : revealGate.replayEpoch,
+  });
+  const chartPhase: ChartPhase = isLoadingStatus ? "loading" : isLoaded ? "ready" : "revealing";
+  useChartPhaseReport(chartPhase, onPhaseChange);
 
   // Mouse move handler
   const handleMouseMove = useCallback(
@@ -1416,13 +1393,18 @@ const ChartCore = memo(function ChartCore({
       const yPositions: Record<string, number> = {};
       const xPositions: Record<string, number> = {};
       const barPos = categoryScale(categoryAccessor(d)) ?? 0;
+      // A grouped bar's centre within its band, from that series' own
+      // `Bar groupGap` — the same maths `Bar` paints the bar with.
+      const groupedBarCentre = (dataKey: string, idx: number, seriesCount: number): number => {
+        const groupGap = seriesCount > 1 ? (barGroupGaps[dataKey] ?? DEFAULT_BAR_GROUP_GAP) : 0;
+        const size =
+          seriesCount > 0 ? (bandWidth - groupGap * (seriesCount - 1)) / seriesCount : bandWidth;
+        return idx * (size + groupGap) + size / 2;
+      };
 
       if (isHorizontal) {
         // Horizontal bars: dots at end of bar (x = value), centered vertically in band
         const seriesCount = lines.length;
-        const groupGap = seriesCount > 1 ? 4 : 0;
-        const individualBarHeight =
-          seriesCount > 0 ? (bandWidth - groupGap * (seriesCount - 1)) / seriesCount : bandWidth;
 
         if (stacked) {
           // Stacked horizontal: all bars same y, x at cumulative end
@@ -1445,8 +1427,7 @@ const ChartCore = memo(function ChartCore({
             if (typeof value === "number") {
               const axisScale = yScales[normalizeYAxisId(line.yAxisId)] ?? valueScale;
               xPositions[line.dataKey] = axisScale(value) ?? 0;
-              yPositions[line.dataKey] =
-                barPos + idx * (individualBarHeight + groupGap) + individualBarHeight / 2;
+              yPositions[line.dataKey] = barPos + groupedBarCentre(line.dataKey, idx, seriesCount);
             }
           });
         }
@@ -1466,17 +1447,13 @@ const ChartCore = memo(function ChartCore({
       } else {
         // Vertical grouped bars
         const seriesCount = lines.length;
-        const groupGap = seriesCount > 1 ? 4 : 0;
-        const individualBarWidth =
-          seriesCount > 0 ? (bandWidth - groupGap * (seriesCount - 1)) / seriesCount : bandWidth;
 
         lines.forEach((line, idx) => {
           const value = d[line.dataKey];
           if (typeof value === "number") {
             const axisScale = yScales[normalizeYAxisId(line.yAxisId)] ?? primaryYScale;
             yPositions[line.dataKey] = axisScale(value) ?? 0;
-            xPositions[line.dataKey] =
-              barPos + idx * (individualBarWidth + groupGap) + individualBarWidth / 2;
+            xPositions[line.dataKey] = barPos + groupedBarCentre(line.dataKey, idx, seriesCount);
           }
         });
       }
@@ -1512,6 +1489,7 @@ const ChartCore = memo(function ChartCore({
       isHorizontal,
       stacked,
       stackGap,
+      barGroupGaps,
       barStackGaps,
       stackOffsets,
       scheduleTooltip,
@@ -1595,7 +1573,7 @@ const ChartCore = memo(function ChartCore({
     revealEpoch,
     revealOn,
     replayOnClick,
-    revealHeld,
+    revealHeld: revealGate.held,
     xAccessor: xAccessorDate,
     dateLabels,
     // Bar-specific properties
@@ -1618,7 +1596,7 @@ const ChartCore = memo(function ChartCore({
     stackGap,
     legendItems,
     // Loading chrome (Grid shimmer/loadingStroke) reads chartPhase off context.
-    chartPhase: (isLoadingStatus ? "loading" : isLoaded ? "ready" : "revealing") as ChartPhase,
+    chartPhase,
     chartStatus,
     loadingLabel,
   };

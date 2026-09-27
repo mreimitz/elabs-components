@@ -59,3 +59,17 @@ export function collectChartDefsChildren(children: ReactNode): ReactElement[] {
 
   return defNodes;
 }
+
+/**
+ * Children a cartesian container paints AFTER its pointer overlay, so they
+ * stay clickable and draggable above it: markers (`ChartMarkers`,
+ * `MarkerGroup`, or any type flagged `__isChartMarkers`) and `ChartBrush`.
+ * The one classifier Line, Area, Composed, Bar and Scatter share.
+ */
+export function isPostOverlayComponent(child: ReactElement): boolean {
+  if ((child.type as { __isChartMarkers?: boolean }).__isChartMarkers) {
+    return true;
+  }
+  const name = getChartChildComponentName(child);
+  return name === "ChartMarkers" || name === "MarkerGroup" || name === "ChartBrush";
+}

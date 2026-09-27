@@ -1,7 +1,7 @@
 "use client";
 
 import { scaleLinear, scaleTime } from "@visx/scale";
-import { bisector, extent } from "d3-array";
+import { extent } from "d3-array";
 import type { Transition } from "motion/react";
 import {
   Children,
@@ -77,7 +77,18 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
-import { isGradientDefComponent, isPatternDefComponent } from "./chart-defs";
+import {
+  isGradientDefComponent,
+  isPatternDefComponent,
+  isPostOverlayComponent,
+} from "./chart-defs";
+import {
+  useChartPhaseReport,
+  useContainerRevealGate,
+  useDateBisector,
+  useValueAxisConfigs,
+  useValueAxisWarnings,
+} from "./cartesian-shell-hooks";
 import { splitChartAnnotationsChild } from "./annotations/chart-annotations";
 import {
   placementRects,
@@ -91,7 +102,7 @@ import {
   DEFAULT_Y_DOMAIN_TWEEN_MS,
   isChartInteractionPhase,
 } from "./chart-phase";
-import { type ChartRevealOn, ChartRevealClipView, useChartRevealGate } from "./chart-reveal-clip";
+import { type ChartRevealOn, ChartRevealClipView } from "./chart-reveal-clip";
 import { isInvalidDate } from "./chart-x-value-utils";
 import { decimateTimeSeries, maxRenderPointsForWidth } from "./decimate-time-series";
 import { filterDataByXDomain } from "./filter-data-by-x-domain";
@@ -117,10 +128,8 @@ import {
   DEFAULT_Y_AXIS_ID,
   getPrimaryYScale,
   applyValueAxisConfigs,
-  collectValueAxisConfigs,
   groupLinesByYAxisId,
   normalizeYAxisId,
-  warnValueAxisOnce,
 } from "./y-axis-scales";
 import { computeYDomainsByAxis } from "./y-domain-utils";
 // Analytics — RM-138 / RM-139
@@ -197,28 +206,6 @@ function resolveTimeSeriesYDomain(
 
   const padding = (maxValue - minValue) * 0.05 || 1;
   return [minValue - padding, maxValue + padding];
-}
-
-/** Markers render after the interaction overlay so they stay clickable. */
-export function isPostOverlayComponent(child: ReactElement): boolean {
-  const childType = child.type as {
-    displayName?: string;
-    name?: string;
-    __isChartMarkers?: boolean;
-  };
-
-  if (childType.__isChartMarkers) {
-    return true;
-  }
-
-  const componentName =
-    typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
-
-  return (
-    componentName === "ChartMarkers" ||
-    componentName === "MarkerGroup" ||
-    componentName === "ChartBrush"
-  );
 }
 
 const CLIP_EXCLUDED_COMPONENT_NAMES = new Set([
@@ -1072,11 +1059,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   // unconditionally would mount an `IntersectionObserver` for every default
   // `"mount"` chart (a behaviour change, and undefined in environments — like
   // this package's own jsdom unit tests — with no `IntersectionObserver`).
-  const revealGate = useChartRevealGate({
-    replayOnClick,
-    revealOn,
-    viewportRef: revealOn === "inView" || replayOnClick ? containerRef : undefined,
-  });
+  const revealGate = useContainerRevealGate({ containerRef, replayOnClick, revealOn });
   // Hold the phase only when a clip reveal will actually render (mirrors
   // `useClipReveal` below); with no clip there is nothing to hold back.
   const holdReveal = revealGate.held && !staticPreview && animationDuration > 0 && data.length > 1;
@@ -1102,9 +1085,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     yDomainTweenDuration,
   });
 
-  useEffect(() => {
-    onPhaseChange?.(chartPhase);
-  }, [chartPhase, onPhaseChange]);
+  useChartPhaseReport(chartPhase, onPhaseChange);
 
   // #352 — which axis kind are we actually drawing? An explicit `xScaleType`
   // is a contract (time data is bit-for-bit unaffected); with none, only an
@@ -1130,10 +1111,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
     [encoderSource, xScaleResolution.type, xDataKey, locale],
   );
 
-  const bisectDate = useMemo(
-    () => bisector<Record<string, unknown>, Date>((d) => xAccessor(d)).left,
-    [xAccessor],
-  );
+  const bisectDate = useDateBisector(xAccessor);
 
   const visiblePlotData = useMemo(() => {
     if (!xDomain) {
@@ -1258,15 +1236,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
   // Applied AFTER the domain tween so pinned ends stay put while `"auto"` ends
   // keep animating; a log axis resolves from the data extent and never tweens
   // through zero.
-  const facetYDomain = facet?.yDomain;
-  const valueAxisConfigs = useMemo(() => {
-    const configs = collectValueAxisConfigs(children);
-    // ChartMultiples — RM-120: the panel's domain, unless `YAxis domain` pins one.
-    if (facetYDomain && !configs[DEFAULT_Y_AXIS_ID]?.domain) {
-      configs[DEFAULT_Y_AXIS_ID] = { ...configs[DEFAULT_Y_AXIS_ID], domain: facetYDomain };
-    }
-    return configs;
-  }, [children, facetYDomain]);
+  const valueAxisConfigs = useValueAxisConfigs(children, facet?.yDomain);
   const hasValueAxisConfigs = Object.keys(valueAxisConfigs).length > 0;
   const valueAxisData = xDomain && !yDomainFromAllRows ? visiblePlotData : data;
   const valueAxes = useMemo(
@@ -1293,15 +1263,7 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
       valueAxisData,
     ],
   );
-  const valueAxisWarnings = valueAxes?.warningsByAxis;
-  useEffect(() => {
-    if (!valueAxisWarnings || data.length === 0) {
-      return;
-    }
-    for (const [axisId, warnings] of Object.entries(valueAxisWarnings)) {
-      warnValueAxisOnce(axisId, warnings);
-    }
-  }, [valueAxisWarnings, data.length]);
+  useValueAxisWarnings(valueAxes?.warningsByAxis, data.length > 0);
 
   const yDomainsForScales = valueAxes?.domainsByAxis ?? animatedYDomainsByAxis;
   const scaleKindsByAxis = valueAxes?.scaleKindsByAxis;

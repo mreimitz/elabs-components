@@ -5,7 +5,6 @@ import {
   UnpaintedLabelsProvider,
   useUnpaintedLabelsStore,
 } from "./labels/unpainted-labels";
-import { bisector } from "d3-array";
 import { scaleLinear, scaleTime } from "d3-scale";
 import type { Transition } from "motion/react";
 import {
@@ -17,7 +16,6 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
 } from "react";
 import { DEFAULT_ANIMATION_EASING } from "./animation";
 import { splitChartAnnotationsChild } from "./annotations/chart-annotations";
@@ -27,16 +25,23 @@ import {
   type LineConfig,
   type Margin,
 } from "./chart-context";
-import { isGradientDefComponent, isPatternDefComponent } from "./chart-defs";
+import {
+  isGradientDefComponent,
+  isPatternDefComponent,
+  isPostOverlayComponent,
+} from "./chart-defs";
+import {
+  useChartEnterReveal,
+  useChartPhaseReport,
+  useDateBisector,
+  useValueAxisConfigs,
+  useValueAxisWarnings,
+} from "./cartesian-shell-hooks";
 import { useChartFormatters } from "./chart-formatters";
 import { type ChartPhase, DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import { fallbackXLabel, isInvalidDate } from "./chart-x-value-utils";
-import {
-  findYAxisTooltipHint,
-  isPostOverlayComponent,
-  withYAxisTooltipHint,
-} from "./time-series-chart-shell";
-import { useScatterChartInteraction } from "./use-scatter-chart-interaction";
+import { findYAxisTooltipHint, withYAxisTooltipHint } from "./time-series-chart-shell";
+import { useChartInteraction } from "./use-chart-interaction";
 import {
   ChartSelectionGestureHost,
   ChartSelectionGestureLayer,
@@ -129,8 +134,6 @@ export function ScatterChartInner({
   onPhaseChange,
 }: ScatterChartInnerProps) {
   const unpaintedStore = useUnpaintedLabelsStore(); // Labels — RM-110
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [revealEpoch, setRevealEpoch] = useState(0);
 
   const innerWidth = Math.max(0, width - margin.left - margin.right);
   const innerHeight = Math.max(0, height - margin.top - margin.bottom);
@@ -207,10 +210,7 @@ export function ScatterChartInner({
     [xDataKey, linearEncoder],
   );
 
-  const bisectDate = useMemo(
-    () => bisector<Record<string, unknown>, Date>((d) => xAccessor(d)).left,
-    [xAccessor],
-  );
+  const bisectDate = useDateBisector(xAccessor);
 
   const xRangePadding = useMemo(() => {
     if (lines.length === 0) {
@@ -242,7 +242,7 @@ export function ScatterChartInner({
   // RM-108: the data-derived domains first (niced, exactly what
   // `buildYScalesForLines` used to build), then any `YAxis domain`/`scale`
   // request read off the direct children on top.
-  const valueAxisConfigs = useMemo(() => collectValueAxisConfigs(children), [children]);
+  const valueAxisConfigs = useValueAxisConfigs(children);
   const analyticsExtents = useAnalyticsExtents(); // Analytics — RM-138
   const valueAxes = useMemo(
     () =>
@@ -265,14 +265,7 @@ export function ScatterChartInner({
       }),
     [analyticsExtents, data, lines, valueAxisConfigs],
   );
-  useEffect(() => {
-    if (data.length === 0) {
-      return;
-    }
-    for (const [axisId, warnings] of Object.entries(valueAxes.warningsByAxis)) {
-      warnValueAxisOnce(axisId, warnings);
-    }
-  }, [valueAxes, data.length]);
+  useValueAxisWarnings(valueAxes.warningsByAxis, data.length > 0);
 
   const yScales = useMemo(
     () =>
@@ -343,23 +336,13 @@ export function ScatterChartInner({
   }, [dateLabelInfo.hasInvalid, xDataKey]);
 
   // revealSignature replays enter.
-  useEffect(() => {
-    setRevealEpoch((n) => n + 1);
-    setIsLoaded(false);
-    const timer = setTimeout(() => {
-      setIsLoaded(true);
-    }, animationDuration);
-    return () => clearTimeout(timer);
-  }, [animationDuration, revealSignature]);
-
-  useEffect(() => {
-    onPhaseChange?.(isLoaded ? "ready" : "revealing");
-  }, [isLoaded, onPhaseChange]);
+  const { isLoaded, revealEpoch } = useChartEnterReveal({ animationDuration, revealSignature });
+  useChartPhaseReport(isLoaded ? "ready" : "revealing", onPhaseChange);
 
   const canInteract = isLoaded;
 
   const { tooltipData, setTooltipData, interactionHandlers, interactionStyle } =
-    useScatterChartInteraction({
+    useChartInteraction({
       xScale,
       yScale: yScale as ChartContextValue["yScale"],
       yScales: yScales as ChartContextValue["yScales"],
