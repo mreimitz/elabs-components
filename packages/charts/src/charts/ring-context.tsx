@@ -37,10 +37,10 @@ export const ringCssVars = {
 
 /**
  * Default ring colours: the categorical palette, uncapped — all twelve
- * series colours (`--chart-1` … `--chart-12`). The same list as
- * `defaultPieColors`.
+ * series colours (`--chart-1` … `--chart-12`). Same contents as
+ * `defaultPieColors`, in its own array.
  */
-export const defaultRingColors: string[] = defaultArcChartColors;
+export const defaultRingColors: string[] = [...defaultArcChartColors];
 
 /**
  * A ring's drill-down target (#349). The hit box sits on the ring's arc at its

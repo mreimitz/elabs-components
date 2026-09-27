@@ -4,7 +4,7 @@
  * Every legend surface describes its rows with `ChartLegendItem`: the entries
  * a chart container publishes, the legend the container engine mounts, the
  * composable `Legend`, `pieLegendItems` and a scatter encoding key. Each keeps
- * its own public name as a `LegendItemShape` projection (the fields it uses,
+ * its own public name as an interface extending a `LegendItemShape` projection (the fields it uses,
  * each required or optional exactly as before), so the names stay what
  * consumers already hold while the fields are documented once, here.
  *

@@ -18,7 +18,8 @@ import { resolvePalette } from "./chart-context";
  * Default arc colours: the categorical palette through `resolvePalette`
  * (RM-186), uncapped — both arc families have always cycled all twelve
  * series colours (`--chart-1` … `--chart-12`), so they ask for them
- * `explicit`ly. One list, shared by `PieChart` and `RingChart`.
+ * `explicit`ly. The one list both
+ * families' public default colour arrays are copied from.
  */
 export const defaultArcChartColors: string[] = resolvePalette("categorical", 12, {
   explicit: true,

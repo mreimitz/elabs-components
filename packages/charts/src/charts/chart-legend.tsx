@@ -14,10 +14,10 @@ import type { LegendItemShape, LegendRowMarker } from "./legend/chart-legend-ite
  * One row of `ChartLegend`: `label`, `value` and `color` always set;
  * `maxValue`, `seriesIndex`, `key`, `marker` and `markerDash` optional.
  */
-export type LegendItem = LegendItemShape<
+export interface LegendItem extends LegendItemShape<
   "label" | "value" | "color",
   "maxValue" | "seriesIndex" | "key" | "markerDash"
-> & {
+> {
   /**
    * Swatch shape. Unset: the filled dot. `"dashed"`: a short dashed rule — a
    * model overlay (a trend, a forecast), never mistaken for a measured
@@ -28,7 +28,7 @@ export type LegendItem = LegendItemShape<
    * the swatch makes the distinction DOM-observable.
    */
   marker?: LegendRowMarker;
-};
+}
 
 export interface ChartLegendProps {
   /** Legend items to display */

@@ -13,10 +13,11 @@ export const legendCssVars = {
 };
 
 /** One row of the composable `Legend`: `label`, `value` and `color` always set; `maxValue` and `seriesIndex` optional. */
-export type LegendItemData = LegendItemShape<
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- kept an interface so consumers can still merge declarations into it
+export interface LegendItemData extends LegendItemShape<
   "label" | "value" | "color",
   "maxValue" | "seriesIndex"
->;
+> {}
 
 export interface LegendContextValue {
   /** All legend items */

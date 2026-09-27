@@ -112,9 +112,10 @@ export function groupSmallSlices(
 }
 
 /** A `ChartLegend` item (`LegendItem` shape) with the fields a pie legend needs, every one set. */
-export type PieLegendItem = LegendItemShape<
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- kept an interface so consumers can still merge declarations into it
+export interface PieLegendItem extends LegendItemShape<
   "label" | "value" | "maxValue" | "color" | "seriesIndex"
->;
+> {}
 
 export interface PieLegendItemsOptions {
   /** Same fold `PieChart`'s own `groupSmall` prop would apply — keep them identical. */

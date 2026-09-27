@@ -532,17 +532,17 @@ export function applySeriesPalette(
  * `kind` are always set; `value` (shown only with `legend={{ values: true }}`),
  * `marker` and `pattern` may be omitted.
  */
-export type ChartLegendEntry = LegendItemShape<
+export interface ChartLegendEntry extends LegendItemShape<
   "key" | "label" | "color" | "kind",
   "value" | "pattern"
-> & {
+> {
   /**
    * Overlay / comparison glyph — how the legend swatch should be drawn.
    * `"hollow"`: a ring, not a fill — the container legend forwards it
    * straight through to the legend row's `marker`.
    */
   marker?: LegendEntryMarker;
-};
+}
 
 // `Margin` moved to `./chart-margin` (RM-173) — a pure leaf, so the future
 // `frame-size` prop group can reference it without pulling React into the
@@ -954,8 +954,8 @@ export function useChart(): ChartContextValue {
   const hover = useChartHover();
   // Identity changes on every hover (hover is the volatile slice) — that's
   // fine for consumers using this merged hook; they explicitly opted in to
-  // re-rendering on hover.
-  return { ...stable, ...hover };
+  // re-rendering on hover. It stays the same object while neither slice changes.
+  return useMemo(() => ({ ...stable, ...hover }), [stable, hover]);
 }
 
 export default ChartStableContext;

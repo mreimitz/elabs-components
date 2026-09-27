@@ -36,10 +36,10 @@ export const pieCssVars = {
 
 /**
  * Default slice colours: the categorical palette, uncapped — all twelve
- * series colours (`--chart-1` … `--chart-12`). The same list as
- * `defaultRingColors`.
+ * series colours (`--chart-1` … `--chart-12`). Same contents as
+ * `defaultRingColors`, in its own array.
  */
-export const defaultPieColors: string[] = defaultArcChartColors;
+export const defaultPieColors: string[] = [...defaultArcChartColors];
 
 export interface PieData {
   /** Display label for the slice */

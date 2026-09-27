@@ -100,28 +100,37 @@ describe("chart context: family fields", () => {
     expect("barColorOf" in result.current).toBe(true);
   });
 
-  it("keeps the stable value's identity across a hover change", () => {
-    let setTooltip: ((v: ChartContextValue["tooltipData"]) => void) | undefined;
-    const seen: unknown[] = [];
+  it("useChart() and useChartStable() keep their identity until a slice changes", () => {
+    const seen: { all: unknown; stable: unknown }[] = [];
     function Probe() {
-      seen.push(useChartStable());
+      seen.push({ all: useChart(), stable: useChartStable() });
       return null;
     }
-    const base = chartValue(family);
-    function Host() {
-      const [tooltipData, set] = [null, vi.fn()] as const;
-      setTooltip = set;
-      return (
-        <ChartProvider value={{ ...base, tooltipData, setTooltipData: set }}>
-          <Probe />
-        </ChartProvider>
-      );
-    }
-    const { rerender } = render(<Host />);
-    rerender(<Host />);
-    expect(setTooltip).toBeDefined();
-    expect(seen.length).toBeGreaterThanOrEqual(2);
-    expect(seen[seen.length - 1]).toBe(seen[0]);
+    const unchanged = chartValue(family);
+    const { rerender } = render(
+      <ChartProvider value={unchanged}>
+        <Probe />
+      </ChartProvider>,
+    );
+    rerender(
+      <ChartProvider value={unchanged}>
+        <Probe />
+      </ChartProvider>,
+    );
+    expect(seen).toHaveLength(2);
+    expect(seen[1]!.all).toBe(seen[0]!.all);
+    expect(seen[1]!.stable).toBe(seen[0]!.stable);
+
+    // A Bar sub-context field changes: both merged values are new objects.
+    rerender(
+      <ChartProvider value={{ ...unchanged, barCrossInset: 0.3 }}>
+        <Probe />
+      </ChartProvider>,
+    );
+    expect(seen).toHaveLength(3);
+    expect(seen[2]!.all).not.toBe(seen[1]!.all);
+    expect(seen[2]!.stable).not.toBe(seen[1]!.stable);
+    expect((seen[2]!.stable as ChartContextValue).barCrossInset).toBe(0.3);
   });
 
   it("still throws outside a ChartProvider", () => {
@@ -190,10 +199,19 @@ describe("legend hover: one context, three independent slots", () => {
 });
 
 describe("arc chart contexts: one shape for PieChart and RingChart", () => {
-  it("PieChart and RingChart share one default colour list", () => {
-    expect(defaultRingColors).toBe(defaultPieColors);
+  it("PieChart and RingChart default colours: same contents, two separate arrays", () => {
+    expect(defaultRingColors).toEqual(defaultPieColors);
+    expect(defaultRingColors).not.toBe(defaultPieColors);
     expect(defaultPieColors).toHaveLength(12);
     expect(defaultPieColors[0]).toBe("var(--chart-1)");
+    // Mutating one never changes the other.
+    const before = [...defaultRingColors];
+    defaultPieColors.push("var(--probe)");
+    try {
+      expect(defaultRingColors).toEqual(before);
+    } finally {
+      defaultPieColors.pop();
+    }
   });
 
   it("keeps each family's guard messages", () => {

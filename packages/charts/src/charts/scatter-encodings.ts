@@ -85,7 +85,8 @@ export interface ScatterColorByConfig {
 }
 
 /** One scatter encoding key row: `label` always set; `color` and `shape` optional. */
-export type ScatterEncodingLegendItem = LegendItemShape<"label", "color" | "shape">;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- kept an interface so consumers can still merge declarations into it
+export interface ScatterEncodingLegendItem extends LegendItemShape<"label", "color" | "shape"> {}
 
 export interface ScatterColorByResolution {
   /** `undefined` → the caller's own fill (colorBy had nothing usable for this row). */

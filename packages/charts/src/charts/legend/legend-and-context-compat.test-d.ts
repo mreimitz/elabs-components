@@ -554,6 +554,40 @@ expectTypeOf<Parameters<typeof RingProvider>[0]>().toEqualTypeOf<{
   value: RingContextValue;
 }>();
 
+// The old interface names are still interfaces: a consumer can merge a field
+// into each (an optional probe here, so nothing else changes). A type alias
+// would reject this with "Duplicate identifier".
+declare module "../chart-legend" {
+  interface LegendItem {
+    compatMergeProbe?: never;
+  }
+}
+declare module "./legend-context" {
+  interface LegendItemData {
+    compatMergeProbe?: never;
+  }
+}
+declare module "../pie-grouping" {
+  interface PieLegendItem {
+    compatMergeProbe?: never;
+  }
+}
+declare module "../scatter-encodings" {
+  interface ScatterEncodingLegendItem {
+    compatMergeProbe?: never;
+  }
+}
+declare module "../chart-context" {
+  interface ChartLegendEntry {
+    compatMergeProbe?: never;
+  }
+}
+expectTypeOf<LegendItem["compatMergeProbe"]>().toEqualTypeOf<undefined>();
+expectTypeOf<LegendItemData["compatMergeProbe"]>().toEqualTypeOf<undefined>();
+expectTypeOf<PieLegendItem["compatMergeProbe"]>().toEqualTypeOf<undefined>();
+expectTypeOf<ScatterEncodingLegendItem["compatMergeProbe"]>().toEqualTypeOf<undefined>();
+expectTypeOf<ChartLegendEntry["compatMergeProbe"]>().toEqualTypeOf<undefined>();
+
 // Referenced only by the copied declarations above.
 export type {
   CategoryAxisPlan,
