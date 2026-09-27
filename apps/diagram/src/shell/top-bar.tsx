@@ -36,7 +36,7 @@ import { SEVERITY_STATUS } from "../panes/issues-panel";
 import { useRoute, type Route } from "../routes/use-hash";
 import { diagramActions, editActions, useDiagram } from "../state/diagram-store";
 import { folderOf, useWorkspace } from "../workspace/workspace-store";
-import { modeActions, useDocMode } from "./mode-store"; // DG-68: fileTitle no longer used here
+import { modeActions, useDocMode } from "./mode-store";
 import { WithTooltip } from "./with-tooltip";
 // Wave 3: one import line per item under its marker; blank lines keep parallel merges clean.
 
@@ -111,16 +111,14 @@ const TIME = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-di
  * file name, the page's `h1` — a location, never the diagram's title; DG-68). Centre: in view
  * mode the story bar's slot (DG-31), in edit mode direction, node style and layout. Right: the
  * save state, Edit/Done, the zone folds and Present, Export, the theme. Undo/Redo, the
- * inspector switch and the problem counts show in
- * edit mode only. Below `COMPACT_BELOW` the controls move into one menu. Off a document (Home,
- * Catalog, Settings) the bar is the breadcrumb and the theme.
+ * inspector switch and the problem counts show in edit mode only. Below `COMPACT_BELOW` the
+ * controls move into one menu. Off a document (Home, Catalog, Settings) the bar is the
+ * breadcrumb and the theme.
  */
 export function TopBar() {
   const route = useRoute();
   const onDoc = route.kind === "doc";
   const edit = useDocMode() === "edit" && onDoc;
-  // The drawn diagram's title: while the text does not compile, the canvas keeps the last
-  // valid diagram, and so does the heading (wave-2 review m4).
   const direction = useDiagram((s) => s.compiled.ast?.direction);
   const nodeStyle = useDiagram((s) => s.compiled.ast?.nodeStyle);
   const errors = useDiagram((s) => s.compiled.issues.filter((i) => i.severity === "error").length);
@@ -201,11 +199,12 @@ export function TopBar() {
   );
 }
 
+// DG-68
 /**
  * Folder › file name. The folders are plain text (the tree in the sidebar is where they are
  * opened); the last crumb is the page's `h1`. It answers "where is this file", never "what is
  * it called" — the diagram's own title reads once, in the title block on the canvas
- * (chrome/title-block.tsx). Off a document it is the page name alone. // DG-68
+ * (chrome/title-block.tsx). Off a document it is the page name alone.
  */
 function TitleCrumbs({ route }: { route: Route }) {
   const shownPath = useDiagram((s) => s.path);

@@ -36,7 +36,7 @@ import {
   useDocMode,
   useMode,
 } from "./shell/mode-store";
-import { SHORTCUTS, displayKeys } from "./shell/keymap"; // DG-68: shortcutText no longer used here
+import { SHORTCUTS, displayKeys } from "./shell/keymap";
 import { MOTION_CLASS, motionMs } from "./motion";
 // Dev routes — one gallery per work package, each in its own file so parallel items
 // merge without touching each other's code. DG-22 moved them under `#dev/<name>`.

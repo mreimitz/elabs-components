@@ -31,7 +31,7 @@ function specData(data: Record<string, unknown>): Record<string, unknown> {
 export function fromReactFlow(
   nodes: readonly Node[],
   edges: readonly Edge[],
-  base: Pick<FlowSpec, "title" | "layout">,
+  base: Pick<FlowSpec, "title" | "description" | "layout">,
 ): FlowSpec {
   const manual = base.layout.engine === "none";
   const specNodes: FlowSpecNode[] = nodes.map((n) => ({
@@ -59,6 +59,7 @@ export function fromReactFlow(
   return {
     flow: FLOW_SPEC_VERSION,
     ...(base.title !== undefined ? { title: base.title } : {}),
+    ...(base.description !== undefined ? { description: base.description } : {}),
     layout: { ...base.layout },
     nodes: specNodes,
     edges: specEdges,
