@@ -10,6 +10,7 @@ changes, update the code, and this page will then need updating to match.
 | ----------------- | ----------------- | -------------------------------------------------------------------------- |
 | `E`               |                   | Edit / Done: slide the editor and inspector in or out                      |
 | `P`               |                   | Present the diagram                                                        |
+| `L`               |                   | Switch between the technical and visual lens                               |
 | `Mod` `K`         |                   | Command palette: switch diagram, go to a page                              |
 | `Mod` `W`         | `Alt` `W`         | Close the diagram tab                                                      |
 | `Mod` `Shift` `]` | `Alt` `Shift` `]` | Next tab                                                                   |

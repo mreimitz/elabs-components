@@ -101,7 +101,10 @@ import {
   YAxis,
 } from "../charts";
 import { ChartFallback } from "../charts/chart-fallback";
-import { useChartFrameChrome } from "../chart-frame/chart-frame-context";
+import {
+  useChartFrameChrome,
+  useChartFrameShowsChromeTitle,
+} from "../chart-frame/chart-frame-context";
 import type { BarSort } from "../charts/bar-stacking";
 import type { GridMode } from "../charts/grid";
 import type {
@@ -266,7 +269,7 @@ function scatterPointLabels(points: ChartLabelsSpec["points"]): ScatterLabels | 
 /**
  * True when every Line/Area series the spec draws paints an end label at the
  * wide tier (maintainer decision 7: two or more series, each with a real
- * display name, or an explicit `labels.series`). Only then is the AutoLegend
+ * display name, or an explicit `labels.series`). Only then is a legend
  * redundant. Stacked areas name their bands themselves, never with end labels.
  */
 function everySeriesEndLabelled(
@@ -288,14 +291,20 @@ function everySeriesEndLabelled(
 }
 
 // ---------------------------------------------------------------------------
-// AutoLegend
+// Legend
 // ---------------------------------------------------------------------------
 
 /**
  * Chart types whose container renders its own legend via `useContainerLegend`
- * (RM-118). `AutoChart` forwards the SAME show/hide decision `AutoLegend`
- * used to make into that container's own `legend` prop instead of rendering
- * `AutoLegend` below it — one legend per chart, never two.
+ * (RM-118, "the legend group"). `AutoChart` forwards the SAME show/hide
+ * decision into that container's own `legend` prop — one legend per chart,
+ * never two.
+ *
+ * A type not yet in this set (candlestick, waterfall, histogram, box, strip,
+ * bump) has no legend group of its own — those keep the older `AutoLegend`
+ * fallback (below) instead, so a multi-series spec of that type still shows a
+ * key. `heatmap`, `calendar`, `choropleth` and `unit`'s `"waffle"` layout draw
+ * their own, separate, in-container key and get neither engine.
  *
  * #610: radar (one entry per polygon, hover dims the others) and funnel (one
  * entry for its one measure, static) joined. Dumbbell joined too — EVERY
@@ -304,7 +313,8 @@ function everySeriesEndLabelled(
  * shape (hollow start / filled end) instead, via `DumbbellChart`'s
  * `startLabel`/`endLabel` (see the dumbbell branch in `renderChart` below) —
  * `AutoLegend`'s old before/after `<li>` list is retired for dumbbell
- * entirely, not just the `"dots"` case.
+ * entirely, not just the `"dots"` case. `diverging-bar` joined too, forwarded
+ * to both the Likert-stack and single-measure `BarChart` branches below.
  */
 const LEGEND_ENGINE_TYPES = new Set<ChartType>([
   "line",
@@ -319,6 +329,25 @@ const LEGEND_ENGINE_TYPES = new Set<ChartType>([
   "radar",
   "funnel",
   "dumbbell",
+  "diverging-bar",
+]);
+
+/**
+ * Chart types with no legend group of their own (no `useContainerLegend`
+ * support) that still get a spec-driven key: the old plain-`<ul>` fallback
+ * `AutoLegend` draws below, using the same show/hide default the legend
+ * engine uses (2+ series, or explicit `spec.legend: true`). `heatmap`,
+ * `calendar`, `choropleth` and `unit` are deliberately absent — each already
+ * draws its own in-container key, and an `AutoLegend` there would duplicate
+ * it.
+ */
+const AUTO_LEGEND_FALLBACK_TYPES = new Set<ChartType>([
+  "candlestick",
+  "waterfall",
+  "histogram",
+  "box",
+  "strip",
+  "bump",
 ]);
 
 /**
@@ -343,6 +372,10 @@ interface AutoLegendProps {
   series: NormalizedSeries[];
 }
 
+/**
+ * The plain `<ul>` key `AutoChart` draws itself for `AUTO_LEGEND_FALLBACK_TYPES`
+ * — the container types with no `useContainerLegend` support of their own.
+ */
 function AutoLegend({ series }: AutoLegendProps) {
   const { t } = useLocale();
   return (
@@ -950,7 +983,7 @@ function renderChart(
           {/* Gridlines run ACROSS the value axis, so they swap with orientation. */}
           <Grid horizontal={!isHorizontal} mode={axisProps.gridMode} vertical={isHorizontal} />
           {series.map((s) => (
-            <Bar key={s.key} dataKey={s.key} fill={s.color} lineCap="round" />
+            <Bar key={s.key} dataKey={s.key} name={s.label} fill={s.color} lineCap="round" />
           ))}
           {isHorizontal ? <BarYAxis /> : <BarXAxis />}
           {/*
@@ -1440,10 +1473,11 @@ function renderChart(
             {...barRichnessProps(spec)}
             {...categoryScrollProps(spec)}
             stacked="diverging"
+            legend={containerLegend}
           >
             <Grid mode={axisProps.gridMode} vertical />
             {series.map((s) => (
-              <Bar key={s.key} dataKey={s.key} fill={s.color} lineCap="butt" />
+              <Bar key={s.key} dataKey={s.key} name={s.label} fill={s.color} lineCap="butt" />
             ))}
             <BarYAxis />
             <ChartTooltip {...tooltipSpecProps(spec)} />
@@ -1451,6 +1485,7 @@ function renderChart(
         );
       }
       const valueKey = series[0]?.key ?? "";
+      const valueLabel = series[0]?.label ?? valueKey;
       const color = series[0]?.color ?? "var(--chart-1)";
       return (
         <BarChart
@@ -1467,9 +1502,10 @@ function renderChart(
           accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}
           {...categoryScrollProps(spec)}
+          legend={containerLegend}
         >
           <Grid horizontal mode={axisProps.gridMode} />
-          <Bar dataKey={valueKey} fill={color} lineCap="round" labels zeroLine />
+          <Bar dataKey={valueKey} name={valueLabel} fill={color} lineCap="round" labels zeroLine />
           <BarXAxis />
           <YAxis formatValue={yFormat} {...axisProps.y} />
           <ChartTooltip {...tooltipSpecProps(spec)} />
@@ -1702,9 +1738,20 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
   ref,
 ) {
   const { t } = useLocale();
-  // RM-117: inside a ChartFrame, the spec's notes, byline and source join the
-  // frame's footer (the frame's own props win). No-op outside a frame.
-  useChartFrameChrome({ notes: spec.notes, byline: spec.byline, source: spec.source });
+  // RM-117: inside a ChartFrame, the spec's title, notes, byline and source
+  // join the frame's own header/footer (the frame's own props win). No-op
+  // outside a frame — see the standalone title paragraph below.
+  // `showsChromeTitle` is only ever `true` once the frame has actually
+  // confirmed it is drawing this title as its own header (never during SSR
+  // or the matching first client paint) — so the in-body title below never
+  // goes missing, it only yields once something else is genuinely showing it.
+  const showsChromeTitle = useChartFrameShowsChromeTitle();
+  useChartFrameChrome({
+    title: spec.title,
+    notes: spec.notes,
+    byline: spec.byline,
+    source: spec.source,
+  });
   // `height` is the deprecated alias; `plotHeight` wins when both are set.
   if (height !== undefined) {
     warnChartOnce(
@@ -2032,7 +2079,14 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       className={cn("flex w-full flex-col", fillsFrame && "h-full min-h-0", className)}
       {...props}
     >
-      {title ? <p className="mb-1 text-subtitle text-foreground">{title}</p> : null}
+      {/* Outside a frame, with no frame yet drawing this title as its
+          own header (bare, a tile with `headerSlot`, an explicit frame
+          title, first paint before the frame confirms), or during SSR — this
+          paragraph is the title. Once the frame confirms it draws the same
+          title, this yields to it, never the other way around. */}
+      {title && !showsChromeTitle ? (
+        <p className="mb-1 text-subtitle text-foreground">{title}</p>
+      ) : null}
       {spec.annotations?.length && ANNOTATED_CHART_TYPES.has(type) ? (
         // Annotations — RM-111: one layout scope for the plot and its key, so
         // the key lists the notes the layer had to demote to a marker.
@@ -2043,7 +2097,9 @@ export const AutoChart = forwardRef<HTMLDivElement, AutoChartProps>(function Aut
       ) : (
         chartBody
       )}
-      {showLegend && !usesLegendEngine(type) ? <AutoLegend series={legendItems} /> : null}
+      {showLegend && AUTO_LEGEND_FALLBACK_TYPES.has(type) ? (
+        <AutoLegend series={legendItems} />
+      ) : null}
     </div>
   );
 });

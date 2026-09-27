@@ -9,7 +9,7 @@ diagram: "1"
 title: Qlik Sense Enterprise on Windows, on premises with a DMZ
 description: How users reach a three-node Qlik Sense site through the DMZ, and the storage, directory and license check it depends on.
 direction: TB
-nodeStyle: card
+nodeStyle: icon
 legend: auto
 
 styles:
