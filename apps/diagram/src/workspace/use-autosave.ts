@@ -17,7 +17,9 @@ import { toast } from "@elabs-ai/components-ui";
 import { resolveThemeIsDark } from "@elabs-ai/components-tokens";
 import { pictureOfCanvas, pngBlob, type Picture, type PictureScale } from "../io/export";
 import { lensStore } from "../shell/lens-store";
+import { currentMode } from "../shell/mode-store"; // fix-r0 F2/F3: gate the override check on mode
 import { diagramStore } from "../state/diagram-store";
+import { viewOverrideActions } from "../shell/view-overrides-store"; // view mode overrides (maintainer 2026-09-27)
 import { writeThumb } from "./client";
 import { askAboutDiskChange, tellFileGone } from "./live-reload";
 import { workspaceActions, workspaceStore } from "./workspace-store";
@@ -84,6 +86,13 @@ export function installAutosave(): () => void {
     // Plan §9.2: thumbnails are light. The exporter paints in the page's theme
     // (io/export.ts has no theme option), so a dark page skips the thumbnail.
     if (resolveThemeIsDark()) return;
+    // view mode overrides (maintainer 2026-09-27, fix-r0 F2/F3): never a viewer's own choice.
+    // A save can only land while editing, when the canvas already shows the file's own values
+    // regardless of any override recorded earlier for this document — gate on mode, not just
+    // presence, or an override set once in the session (from an earlier view-mode visit to this
+    // doc) silently suppresses every later edit-mode thumbnail refresh (review-r0 F3, measured:
+    // 2 s to a thumbnail with no override, none within 25 s with one still on record).
+    if (currentMode() !== "edit" && viewOverrideActions.hasOverride(path)) return;
     // Lens switch (maintainer 2026-09-27): the thumbnail is always the technical lens, never
     // the derived visual one — a previous feature leaked a viewer-only view into the saved
     // file via a drag and via the thumbnail, and this is that same failure mode's thumbnail
