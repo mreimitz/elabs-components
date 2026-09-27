@@ -1,7 +1,7 @@
 ---
 id: RM-166
 title: "Unit `palette`: the `explicit` flag comes from what the caller passed"
-status: in-progress
+status: done
 priority: P0
 effort: S (0.5 day)
 wave: 1

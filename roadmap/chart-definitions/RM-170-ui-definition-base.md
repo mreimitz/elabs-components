@@ -1,7 +1,7 @@
 ---
 id: RM-170
 title: "ui definition base: the React-free `@elabs-ai/components-ui/definition` subpath"
-status: in-progress
+status: done
 priority: P0
 effort: L (3–4 days)
 wave: A
