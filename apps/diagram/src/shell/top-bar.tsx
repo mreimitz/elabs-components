@@ -36,8 +36,11 @@ import { SEVERITY_STATUS } from "../panes/issues-panel";
 import { useRoute, type Route } from "../routes/use-hash";
 import { diagramActions, editActions, useDiagram } from "../state/diagram-store";
 import { folderOf, useWorkspace } from "../workspace/workspace-store";
-import { modeActions, useDocMode } from "./mode-store";
+import { docKey, modeActions, useDocMode } from "./mode-store";
 import { WithTooltip } from "./with-tooltip";
+// view-mode direction (maintainer 2026-09-27)
+import { useViewDirectionOverride, viewDirectionActions } from "./view-direction-store";
+import type { DiagramDirection } from "../layout/run-elk";
 // Wave 3: one import line per item under its marker; blank lines keep parallel merges clean.
 
 import { LayoutControls, LayoutMenuItems } from "../layout/layout-controls"; // DG-15
@@ -63,6 +66,14 @@ const TOP_BAR_LABELS = {
   leftToRightTip: "Left to right (LR)",
   topToBottom: "TB, top to bottom",
   topToBottomTip: "Top to bottom (TB)",
+  // view-mode direction (maintainer 2026-09-27): the view-mode control's own copy — it says
+  // its scope, since changing it here never touches the file.
+  directionViewLabel: "Direction (this view)",
+  directionViewHint: "This view only. The default for everyone is set in Edit mode.",
+  leftToRightViewTip:
+    "Left to right (LR) — this view only; the default for everyone is set in Edit mode.",
+  topToBottomViewTip:
+    "Top to bottom (TB) — this view only; the default for everyone is set in Edit mode.",
   nodeStyle: "Node style",
   icons: "Icons",
   iconsTip: "Icon nodes",
@@ -119,6 +130,7 @@ export function TopBar() {
   const route = useRoute();
   const onDoc = route.kind === "doc";
   const edit = useDocMode() === "edit" && onDoc;
+  const viewing = onDoc && !edit; // view-mode direction (maintainer 2026-09-27)
   const direction = useDiagram((s) => s.compiled.ast?.direction);
   const nodeStyle = useDiagram((s) => s.compiled.ast?.nodeStyle);
   const errors = useDiagram((s) => s.compiled.issues.filter((i) => i.severity === "error").length);
@@ -130,6 +142,14 @@ export function TopBar() {
   const headerRef = useRef<HTMLElement>(null);
   const compact = useCompact(headerRef);
   const inspectorOpen = useDiagram((s) => s.inspectorOpen); // DG-14
+
+  // view-mode direction (maintainer 2026-09-27): this viewer's own LR/TB choice for the
+  // shown document, kept only for this tab — `viewDirectionActions.setOverride` never
+  // touches the file. Falls back to the file's own direction until one is chosen.
+  const docPath = useDiagram((s) => s.path);
+  const overrideKey = docKey(docPath);
+  const viewOverride = useViewDirectionOverride(overrideKey);
+  const viewDirection = viewOverride ?? direction;
 
   const counts = edit ? (
     <>
@@ -160,12 +180,19 @@ export function TopBar() {
         {/* No `min-w-0`: the centre keeps its controls' width, so the breadcrumb truncates
             instead of the controls running over their neighbours. */}
         <div className="flex flex-1 items-center justify-center gap-2">
-          {/* View mode: DG-31's story bar goes here. */}
+          {/* View mode: the view-only direction control (maintainer 2026-09-27) sits here;
+              DG-31's story bar will share this slot once it exists. */}
           {edit && !compact ? (
             <>
               <DiagramToggles direction={direction} nodeStyle={nodeStyle} disabled={disabled} />
               <LayoutControls disabled={disabled} compact={false} />
             </>
+          ) : viewing && !compact ? (
+            <ViewDirectionControl
+              direction={viewDirection}
+              disabled={disabled}
+              onChange={(value) => viewDirectionActions.setOverride(overrideKey, value)}
+            />
           ) : null}
         </div>
         {/* Wave 3: LayoutControls owns the layout dialogs, so it stays mounted when its
@@ -186,6 +213,10 @@ export function TopBar() {
               nodeStyle={nodeStyle}
               disabled={disabled}
               edit={edit}
+              viewDirection={viewDirection}
+              onViewDirectionChange={(value) =>
+                viewDirectionActions.setOverride(overrideKey, value)
+              }
             />
           </>
         ) : null}
@@ -369,6 +400,44 @@ function DiagramToggles({ direction, nodeStyle, disabled }: DiagramTogglesProps)
   );
 }
 
+interface ViewDirectionControlProps {
+  direction: string | undefined;
+  disabled: boolean;
+  onChange: (direction: DiagramDirection) => void;
+}
+
+/**
+ * view-mode direction (maintainer 2026-09-27) — the wide bar's view-mode control: the same
+ * LR/TB toggle as `DiagramToggles`' direction group, but it sets this viewer's own choice
+ * (`viewDirectionActions.setOverride`) instead of rewriting the file. Its tooltips carry the
+ * scope (`WithTooltip`'s label is both the accessible name and the tooltip text), so a
+ * viewer never has to guess whether this changes the saved default.
+ */
+function ViewDirectionControl({ direction, disabled, onChange }: ViewDirectionControlProps) {
+  return (
+    <ToggleGroup
+      type="single"
+      variant="segmented"
+      size="sm"
+      aria-label={TOP_BAR_LABELS.directionViewLabel}
+      value={direction ?? ""}
+      disabled={disabled}
+      onValueChange={(value) => value && onChange(value as DiagramDirection)}
+    >
+      <WithTooltip label={TOP_BAR_LABELS.leftToRightViewTip}>
+        <ToggleGroupItem value="LR">
+          <ArrowRight aria-hidden="true" />
+        </ToggleGroupItem>
+      </WithTooltip>
+      <WithTooltip label={TOP_BAR_LABELS.topToBottomViewTip}>
+        <ToggleGroupItem value="TB">
+          <ArrowDown aria-hidden="true" />
+        </ToggleGroupItem>
+      </WithTooltip>
+    </ToggleGroup>
+  );
+}
+
 /**
  * DG-14's inspector switch: a pressed toggle, icon-only with the name as its tooltip. The glyph
  * flips as a second, non-colour cue (wave-3 review F3).
@@ -390,8 +459,11 @@ function InspectorToggle({ open }: { open: boolean }) {
 }
 
 interface DiagramOptionsMenuProps extends DiagramTogglesProps {
-  /** Edit mode: the editing entries (direction, node style, inspector, layout) show too. */
+  /** Edit mode: the editing entries (node style, inspector, layout) show too. */
   edit: boolean;
+  /** view-mode direction (maintainer 2026-09-27): this viewer's own choice, view mode only. */
+  viewDirection: string | undefined;
+  onViewDirectionChange: (direction: DiagramDirection) => void;
 }
 
 /**
@@ -399,7 +471,14 @@ interface DiagramOptionsMenuProps extends DiagramTogglesProps {
  * actions as the wide bar (each wave-3 item adds its own entries in its slot).
  * P4: library gap — ui has no responsive toolbar that folds its overflow into a menu.
  */
-function DiagramOptionsMenu({ direction, nodeStyle, disabled, edit }: DiagramOptionsMenuProps) {
+function DiagramOptionsMenu({
+  direction,
+  nodeStyle,
+  disabled,
+  edit,
+  viewDirection,
+  onViewDirectionChange,
+}: DiagramOptionsMenuProps) {
   const inspectorOpen = useDiagram((s) => s.inspectorOpen); // DG-14
   return (
     <DropdownMenu>
@@ -419,22 +498,38 @@ function DiagramOptionsMenu({ direction, nodeStyle, disabled, edit }: DiagramOpt
       >
         <DocumentMenuItems />
 
+        {/* view-mode direction (maintainer 2026-09-27): shown in both modes now — edit mode
+            rewrites the file's own default, view mode sets this viewer's own choice, and the
+            hint under the radios says so (never only in the tooltip, since the compact menu
+            has no hover tooltip on a touch device). */}
+        <DropdownMenuLabel>
+          {edit ? TOP_BAR_LABELS.direction : TOP_BAR_LABELS.directionViewLabel}
+        </DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          aria-label={edit ? TOP_BAR_LABELS.direction : TOP_BAR_LABELS.directionViewLabel}
+          value={(edit ? direction : viewDirection) ?? ""}
+          onValueChange={(value) =>
+            edit
+              ? diagramActions.setTopLevel("direction", value)
+              : onViewDirectionChange(value as DiagramDirection)
+          }
+        >
+          <DropdownMenuRadioItem value="LR" disabled={disabled}>
+            {TOP_BAR_LABELS.leftToRight}
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="TB" disabled={disabled}>
+            {TOP_BAR_LABELS.topToBottom}
+          </DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+        {edit ? null : (
+          <DropdownMenuLabel className="pt-0 text-caption font-normal">
+            {TOP_BAR_LABELS.directionViewHint}
+          </DropdownMenuLabel>
+        )}
+        <DropdownMenuSeparator />
+
         {edit ? (
           <>
-            <DropdownMenuLabel>{TOP_BAR_LABELS.direction}</DropdownMenuLabel>
-            <DropdownMenuRadioGroup
-              aria-label={TOP_BAR_LABELS.direction}
-              value={direction ?? ""}
-              onValueChange={(value) => diagramActions.setTopLevel("direction", value)}
-            >
-              <DropdownMenuRadioItem value="LR" disabled={disabled}>
-                {TOP_BAR_LABELS.leftToRight}
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="TB" disabled={disabled}>
-                {TOP_BAR_LABELS.topToBottom}
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-            <DropdownMenuSeparator />
             <DropdownMenuLabel>{TOP_BAR_LABELS.nodeStyle}</DropdownMenuLabel>
             <DropdownMenuRadioGroup
               aria-label={TOP_BAR_LABELS.nodeStyle}

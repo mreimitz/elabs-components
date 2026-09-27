@@ -20,7 +20,7 @@ import { FIT_MIN_ZOOM, useDiagramLayout } from "../layout/use-diagram-layout";
 import { isZoneNode } from "../nodes/zone-data";
 import { useZoneAutofit } from "../nodes/use-zone-autofit";
 import type { ArchCompileView } from "../spec/compile/compile-arch";
-import type { FlowSpec, ReactFlowGraph } from "../spec/flow-spec";
+import type { FlowSpec, FlowSpecDirection, ReactFlowGraph } from "../spec/flow-spec";
 import { archRegistry } from "../state/compile-text";
 import { diagramActions, diagramStore, useDiagram } from "../state/diagram-store";
 import { keepSelection, patchGraph, stageGraph } from "../state/pipeline";
@@ -38,7 +38,12 @@ import { withCompositeMock } from "../fixtures/composite-mock"; // DG-20
 import { ARCH_NODE_TYPE } from "../nodes/arch-node-data"; // DG-20
 
 import { focusEditor } from "../shell/focus"; // DG-22 review
-import { modeActions, useDocMode } from "../shell/mode-store"; // DG-22 review
+import { docKey, modeActions, useDocMode } from "../shell/mode-store"; // DG-22 review
+
+import {
+  useSyncViewDirectionWithFile,
+  useViewDirectionOverride,
+} from "../shell/view-direction-store"; // view-mode direction (maintainer 2026-09-27)
 
 /** The pane's strings, in one place (`conventions/i18n-strings`). */
 const CANVAS_LABELS = {
@@ -73,6 +78,29 @@ const PRESENTING_PROPS = {
   deleteKeyCode: null,
 } as const satisfies CanvasProps;
 
+/**
+ * View mode (maintainer 2026-09-27): nothing on the canvas is connectable, so an unconnected
+ * port shows no dot on hover (`nodes/port-visibility.ts` `IDLE_PORT_CLASS` keys on React
+ * Flow's own `connectionindicator` class, set only while a handle can start or end a
+ * connection). Edit mode keeps today's look (dots on hover, drag to connect); dragging nodes
+ * and Delete are unrelated to this and keep their own (unchanged) behaviour in both modes.
+ *
+ * Both branches set `nodesConnectable`/`edgesReconnectable` explicitly (never omit the key):
+ * React Flow's `StoreUpdater` skips a field whose incoming value is `undefined` and keeps
+ * whatever the store already had, so leaving the key out on the edit-mode branch would strand
+ * the canvas non-connectable after a view-to-edit switch instead of restoring it.
+ */
+const NOT_CONNECTABLE_PROPS = {
+  nodesConnectable: false,
+  edgesReconnectable: false,
+} as const satisfies CanvasProps;
+
+/** Edit mode (maintainer 2026-09-27): today's connect-by-drag look, set explicitly — see above. */
+const CONNECTABLE_PROPS = {
+  nodesConnectable: true,
+  edgesReconnectable: true,
+} as const satisfies CanvasProps;
+
 export interface CanvasPaneProps {
   /** DG-18 presentation: the canvas takes no edit. */
   presenting?: boolean;
@@ -93,8 +121,18 @@ export function CanvasPane({ presenting = false }: CanvasPaneProps) {
   const stale = useDiagram((s) => s.compiled !== s.drawn);
   const loadCount = useDiagram((s) => s.loadCount);
   const blank = useDiagram((s) => s.text.trim() === ""); // DG-20
+  const path = useDiagram((s) => s.path);
   const viewing = useDocMode() === "view"; // DG-22 review
   const { graph, spec, view, issues } = drawn;
+  // view-mode direction (maintainer 2026-09-27): outside edit mode the canvas follows this
+  // viewer's own LR/TB choice for the document, when one is set; edit mode (and presenting or
+  // exporting FROM edit mode) always shows the file's own direction, never the override.
+  const overrideKey = docKey(path);
+  const fileDirection = spec?.layout.direction;
+  useSyncViewDirectionWithFile(overrideKey, fileDirection);
+  const directionOverride = useViewDirectionOverride(overrideKey);
+  const effectiveDirection =
+    viewing && directionOverride !== undefined ? directionOverride : fileDirection;
   // DG-20 step 8: the review-only composite mock (`?composite-mock`), memoised so the
   // canvas sees one graph object per compile.
   const shownGraph = useMemo(() => (graph ? withCompositeMock(graph) : graph), [graph]);
@@ -167,6 +205,11 @@ export function CanvasPane({ presenting = false }: CanvasPaneProps) {
         structure={structure}
         stale={stale}
         presenting={presenting}
+        // view-mode direction (maintainer 2026-09-27): the file's own direction in edit mode,
+        // else this viewer's own choice when one is set. `spec` is defined here (the guard
+        // above returned early otherwise); `effectiveDirection` only reads as `undefined`
+        // before the first compile has one, which cannot be true past that guard.
+        direction={effectiveDirection ?? spec.layout.direction}
       />
     </ReactFlowProvider>
   );
@@ -179,6 +222,9 @@ interface DiagramCanvasProps {
   structure: string;
   stale: boolean;
   presenting: boolean;
+  /** view-mode direction (maintainer 2026-09-27): what the canvas lays out with right now —
+   * the file's own direction, or this viewer's own override (never the file's spec object). */
+  direction: FlowSpecDirection;
 }
 
 /** The outline's zones; two share a size, so each carries its own key. */
@@ -222,7 +268,15 @@ function collapsedOnCanvas(nodes: readonly Node[]): string[] {
   return nodes.filter((n) => isZoneNode(n) && n.data.collapsed).map((n) => n.id);
 }
 
-function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: DiagramCanvasProps) {
+function DiagramCanvas({
+  graph,
+  spec,
+  view,
+  structure,
+  stale,
+  presenting,
+  direction,
+}: DiagramCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { getNodes, getEdges } = useReactFlow();
@@ -291,9 +345,21 @@ function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: Diag
     setEdges,
   ]);
 
+  // view-mode direction (maintainer 2026-09-27): a direction that changes with no new compile
+  // (the viewer's own override, set or dropped) still needs the visible nodes laid out again.
+  // Skipped when `structure` also moved in the same render: the effect above already staged
+  // and re-laid the graph out for that (an edit-mode toggle changes both at once).
+  const laidOutDirection = useRef({ direction, structure });
+  useEffect(() => {
+    const last = laidOutDirection.current;
+    laidOutDirection.current = { direction, structure };
+    if (last.direction === direction || last.structure !== structure) return;
+    setLayoutKey((key) => key + 1);
+  }, [direction, structure]);
+
   const { status, refit } = useDiagramLayout({
     layoutKey,
-    direction: spec.layout.direction,
+    direction,
     manual: spec.layout.engine === "none",
     collapse,
     noteAnchors: view.noteAnchors,
@@ -316,13 +382,20 @@ function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: Diag
 
   const interactionProps = useCanvasInteraction({ nodes, setNodes, setEdges }); // DG-18
 
+  // view-mode direction (maintainer 2026-09-27) reuses `viewing` too: outside edit mode,
+  // nothing on the canvas is connectable (NOT_CONNECTABLE_PROPS), so hovering a node shows no
+  // unused port dot; edit mode keeps today's connect-by-drag look.
+  const viewing = useDocMode() === "view";
+
   // Presenting: DG-18's own slice only, and every write path closed (PRESENTING_PROPS).
   const waveProps = useMemo(
     () =>
       presenting
         ? mergeCanvasProps(interactionProps, PRESENTING_PROPS)
-        : mergeCanvasProps(deleteProps, layoutProps, interactionProps),
-    [presenting, deleteProps, layoutProps, interactionProps],
+        : viewing
+          ? mergeCanvasProps(deleteProps, layoutProps, interactionProps, NOT_CONNECTABLE_PROPS)
+          : mergeCanvasProps(deleteProps, layoutProps, interactionProps, CONNECTABLE_PROPS),
+    [presenting, viewing, deleteProps, layoutProps, interactionProps],
   );
 
   // Hide the canvas and show the loading state only until the FIRST layout lands; later
