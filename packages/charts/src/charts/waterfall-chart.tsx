@@ -177,9 +177,9 @@ export interface WaterfallCallout {
 
 /**
  * Value-label control for every row (RM-122) — Datawrapper's "show totals" /
- * "show differences". Given at all, it REPLACES `showValues`'s own default
- * label text/placement (default rendering, `labels` unset, is unaffected —
- * every published story keeps its byte-identical output).
+ * "show differences". Given at all, it REPLACES the plain `labels` flag's own
+ * default label text/placement (default rendering, `labels` unset, is
+ * unaffected — every published story keeps its byte-identical output).
  */
 export interface WaterfallLabelsConfig {
   /** `"all"` labels every row; `"totalsOnly"` labels only a `"total"`/
@@ -189,8 +189,8 @@ export interface WaterfallLabelsConfig {
    * a signed percent of the running total it left off (`"percent"`, e.g.
    * `"+12.5 %"`), or `"none"`. Ignored when `totals: "totalsOnly"`. */
   differences?: "absolute" | "percent" | "none";
-  /** `"outside"` (default) sits past the bar's far edge, matching
-   * `showValues`'s own placement; `"inside"` sits just inside it. */
+  /** `"outside"` (default) sits past the bar's far edge, matching the plain
+   * `labels` flag's own placement; `"inside"` sits just inside it. */
   placement?: "inside" | "outside";
   /** Paint the label in the row's own fill color instead of the neutral
    * `HaloText` ink — through `seriesLabelInk` (never the raw fill: the
@@ -350,9 +350,10 @@ function formatSigned(value: number, format: (v: number) => string, signStep: bo
 }
 
 /**
- * One row's value-label text (RM-122) — `labels` given wins over the plain
- * `showValues` default entirely (see {@link WaterfallLabelsConfig}); `labels`
- * unset falls back to the pre-RM-122 `formatSigned` call, byte-identical.
+ * One row's value-label text (RM-122) — a `WaterfallLabelsConfig` given wins
+ * over the plain `labels` flag's own default entirely (see
+ * {@link WaterfallLabelsConfig}); `labels` unset falls back to the
+ * pre-RM-122 `formatSigned` call, byte-identical.
  * `percentFormat` renders a `"step"` row's delta as a percent of the running
  * total it left off (`row.before`) — undefined/0 `before` has no percent to
  * show, so it falls back to the absolute reading.

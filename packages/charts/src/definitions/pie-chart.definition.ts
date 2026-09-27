@@ -47,8 +47,9 @@ export const PIE_CHART = /* @__PURE__ */ defineChart<PieChartProps>()({
     frameSizeGroup,
     chartStateGroup,
     // RM-193 review (charts-group-drift): applied so the own, richer `labels` field below
-    // (a `ReactNode`-shaped config, left to code) is a declared OVERRIDE of the group's
-    // plain flag, not an unrelated field that happens to share its name.
+    // (a modelled `field.object` — `show`/`matchColor`/`minAngle`, :133) is a declared
+    // OVERRIDE of the group's plain flag, not an unrelated field that happens to share
+    // its name.
     dataLabelsGroup,
   ],
   fields: {

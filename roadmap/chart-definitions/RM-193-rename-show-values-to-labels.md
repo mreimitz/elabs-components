@@ -75,9 +75,12 @@ Ship ADR 0042 Appendix A.3 exactly:
   `charts-group-drift` findings — not a stale snapshot; before this item, `labels` was not yet
   a key any rule checked other definitions against. Fixed properly, not baselined: `PieChart`
   and `RingChart` now also apply `dataLabelsGroup`, so their own richer `labels` field is a
-  declared override, the same pattern this item already uses for Bar and WaterfallChart.
-- **ChoroplethChart's and the Scatter part's own `labels`** were flagged by the same mechanism
-  (place-name and point labels, a different meaning that ADR 0042 Appendix A.9 already checked
-  against `data-labels` and left alone). They are recorded in `charts-group-drift`'s `NOT_DRIFT`
+  declared override, the same pattern this item already uses for Bar and WaterfallChart. The
+  group is now applied by seven definitions: `Bar` (part), `WaterfallChart`, `FunnelChart`,
+  `HeatmapChart`, `TreemapChart`, `PieChart` and `RingChart`.
+- **ChoroplethChart's and the Scatter part's own `labels`** were flagged by the same mechanism.
+  They already carry the `data-labels` meaning (ADR 0042 Appendix A.9) rather than a different
+  one — place-name and point labels ARE data labels for those two, already checked against the
+  group and deliberately left alone. They are recorded in `charts-group-drift`'s `NOT_DRIFT`
   exception list instead of the group, citing Appendix A.9 — the owner's approval of Appendix A
   on 2026-09-27 is the maintainer decision this records, the same way RM-190 recorded `zoom`.

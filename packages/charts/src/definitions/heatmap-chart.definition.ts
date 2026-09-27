@@ -19,8 +19,8 @@
  * RM-193 (ADR 0042 A.3, row 14): `showValues` → `labels`. Unlike the other four rows,
  * `labels`'s default is not a literal — it follows `palette` (`true` only on `"diverging"`,
  * §8's "sign cannot ride on hue alone") — so `normalize` fills it once `palette` itself has
- * resolved, the one call site of a definition's `normalize` in this package today
- * (`HeatmapChartUnscoped` calls it right after `useResolvedChartProps`).
+ * resolved. `useResolvedChartProps` calls a definition's `normalize` (when it declares one)
+ * inside its own memo; `HeatmapChart` is the only definition that declares one today.
  *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
@@ -236,9 +236,17 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
     },
   ],
   // RM-193 — `labels`'s default follows `palette` (true only on "diverging"), so it can't
-  // be a literal kind default; this runs once `palette` itself has resolved.
+  // be a literal kind default; this runs once `palette` itself has resolved. An object with
+  // no `show` key (`{}`, e.g. `boolean-to-labels`'s own output never produces this — a
+  // caller writing `labels={{}}` directly does) carries no explicit on/off either, so it
+  // falls back to the palette default the same as `labels` unset entirely (review fix:
+  // previously `{}` short-circuited here and rendered off on a diverging palette).
   normalize(props, _ctx) {
-    if (props.labels !== undefined) return props;
+    const { labels } = props;
+    const hasExplicitShow =
+      typeof labels === "boolean" ||
+      (typeof labels === "object" && labels !== null && labels.show !== undefined);
+    if (hasExplicitShow) return props;
     return { ...props, labels: props.palette === "diverging" };
   },
   targets: [

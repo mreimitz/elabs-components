@@ -506,6 +506,20 @@ describe("HeatmapChart renamed props (RM-194)", () => {
     );
   });
 
+  it("`labels={{}}` (no `show` key) also keeps the palette-driven default, same as unset (re-review)", () => {
+    plot.width = 400;
+    plot.height = 300;
+    const sequential = render(<HeatmapChart {...base} data={punchCard} labels={{}} />);
+    expect(sequential.container.querySelectorAll('[data-slot="halo-text"]')).toHaveLength(0);
+    sequential.unmount();
+    const diverging = render(
+      <HeatmapChart {...base} data={punchCard} labels={{}} palette="diverging" />,
+    );
+    expect(diverging.container.querySelectorAll('[data-slot="halo-text"]').length).toBeGreaterThan(
+      0,
+    );
+  });
+
   it("leaves the code-only emptyAction out of the JSON Schema and types the other old names", () => {
     const properties = toJsonSchema(HEATMAP_CHART).properties as Record<string, unknown>;
     expect(properties).not.toHaveProperty("emptyAction");

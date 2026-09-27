@@ -186,20 +186,21 @@ export interface BarShowValuesSpec {
    */
   filter?: (datum: Record<string, unknown>, index: number) => boolean;
   /**
-   * Explicit on/off, the shared `data-labels` group's own member (RM-193 review P2-7):
-   * `false` turns the label off even though the rest of this object is a real spec —
-   * every OTHER union member of {@link BarShowValues} (a bare object always meant "on")
-   * silently ignored it, so a value built generically for the group (`{ show: false }`,
-   * structurally assignable here since every field of this interface is optional) still
-   * rendered a label. Unset behaves exactly as before: an object means on.
+   * Explicit on/off, the shared `data-labels` group's own member: `false` turns the
+   * label off even though the rest of this object may be a real spec (`placement`,
+   * `visibility`, `filter`). Unset: an object means on, same as every other
+   * {@link BarShowValues} member.
    */
   show?: boolean;
 }
 
 /**
  * `true`/`"outside"` place the value label just past the bar's far end;
- * `"inside"` places it just inside; a {@link BarShowValuesSpec} adds `"auto"`
- * placement and hover-only visibility. See {@link BarProps.labels}.
+ * `"inside"` places it just inside; a {@link BarShowValuesSpec} adds an explicit
+ * `show` on/off, hover-only visibility, and its own `"auto"` placement — fits the
+ * label inside the bar when there's room, else outside. Its default placement is
+ * therefore `"auto"`, not `"outside"`: `{ show: true }` is NOT the same as `true`.
+ * See {@link BarProps.labels}.
  */
 export type BarShowValues = boolean | "outside" | "inside" | BarShowValuesSpec;
 
@@ -274,11 +275,14 @@ export interface BarProps {
    * A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than
    * shrinking below `text-meta`. Default: off.
    *
-   * A {@link BarShowValuesSpec} (RM-110) adds `"auto"` placement and
-   * hover-only visibility. In a stack drawn from a layout (percent, diverging,
-   * ordered or totalled — RM-113) each segment centres its label whatever the
-   * placement, a percent segment prints its share, and a segment shorter than
-   * 24 px along the value axis stays unlabelled.
+   * A {@link BarShowValuesSpec} (RM-110) adds `"auto"` placement, hover-only
+   * visibility and an explicit `show` on/off. The object form's `placement`
+   * defaults to `"auto"` (inside when the label fits, else outside) — so
+   * `{ show: true }` is NOT the same as `true`, which always places the label
+   * outside. In a stack drawn from a layout (percent, diverging, ordered or
+   * totalled — RM-113) each segment centres its label whatever the placement,
+   * a percent segment prints its share, and a segment shorter than 24 px
+   * along the value axis stays unlabelled.
    */
   labels?: BarShowValues;
   /**
