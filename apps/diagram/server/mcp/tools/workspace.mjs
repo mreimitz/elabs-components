@@ -85,7 +85,11 @@ export const workspaceTools = [
           ...PATH,
           description: 'New workspace-relative path ending in .yaml, e.g. "acme/landscape.yaml".',
         },
-        text: { type: "string", description: 'The YAML document, starting with diagram: "0".' },
+        text: {
+          type: "string",
+          description:
+            'The YAML document, starting with diagram: "1" (files that say "0" are read too).',
+        },
       },
       required: ["path", "text"],
       additionalProperties: false,

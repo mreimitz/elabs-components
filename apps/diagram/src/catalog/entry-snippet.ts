@@ -1,5 +1,5 @@
 /**
- * DG-24 — a node for one catalog entry in dialect v0: what MCP `catalog_get` returns as `yaml`
+ * DG-24 — a node for one catalog entry in dialect v1: what MCP `catalog_get` returns as `yaml`
  * and what the entry page copies. One function for both (the server reaches it through
  * `server-surface.ts`). React-free.
  */
@@ -16,7 +16,7 @@ export interface SnippetEntry {
 /** `aws/lambda` → `- id: lambda\n  icon: aws/lambda\n  title: AWS Lambda\n`. */
 export function entrySnippet(e: SnippetEntry): string {
   const fields: Record<string, NewEntryValue> = {
-    // An id starts with a letter (dialect v0); an icon stem like "3scale" gets a prefix.
+    // An id starts with a letter (dialect v1); an icon stem like "3scale" gets a prefix.
     id: /^[a-z]/.test(e.slug) ? e.slug : `n-${e.slug}`,
     ...(e.kind && e.kind !== "service" ? { type: e.kind } : {}),
     icon: e.icon,
