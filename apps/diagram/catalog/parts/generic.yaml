@@ -1,0 +1,50 @@
+# Atlas parts — generic. Vendor-neutral building blocks drawn with Lucide glyphs.
+users:
+  name: Users
+  icon: lucide/users
+  kind: actor
+  description: People who use the system.
+  tags: [people]
+browser:
+  name: Web browser
+  icon: lucide/globe
+  kind: actor
+  description: A user's web browser reaching the system over the internet.
+  tags: [client, web]
+mobile-app:
+  name: Mobile app
+  icon: lucide/smartphone
+  kind: actor
+  description: An app on a phone or tablet that calls the system's APIs.
+  tags: [client, mobile]
+on-prem-server:
+  name: On-premises server
+  icon: lucide/server
+  kind: service
+  badges: [on-prem]
+  description: A server in the organisation's own data centre.
+  tags: [compute, on-prem]
+firewall:
+  name: Firewall
+  icon: lucide/shield
+  kind: service
+  description: Filters network traffic between zones by rule.
+  tags: [network, security]
+load-balancer:
+  name: Load balancer
+  icon: lucide/network
+  kind: service
+  description: Spreads incoming requests across several servers.
+  tags: [network]
+message-queue:
+  name: Message queue
+  icon: lucide/layers
+  kind: queue
+  description: Holds messages between producers and consumers until they are processed.
+  tags: [messaging]
+object-storage:
+  name: Object storage
+  icon: lucide/hard-drive
+  kind: datastore
+  description: Stores files as objects in buckets.
+  tags: [storage]

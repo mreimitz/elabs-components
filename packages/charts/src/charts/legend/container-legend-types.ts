@@ -28,6 +28,13 @@ export interface ContainerLegendConfig {
    */
   interactive?: ContainerLegendInteractive;
   /**
+   * With `interactive: "toggle"`: what hides an entry. `"item"` (default)
+   * makes the entry itself the toggle. `"checkbox"` adds a small checkbox
+   * after each entry, shown on hover or focus, and leaves a click on the
+   * entry to the container (`DensityScatterChart` selects the class).
+   */
+  toggleControl?: "item" | "checkbox";
+  /**
    * Show a value column beside each entry. Default `false`. What the number
    * means depends on the family (F09):
    *

@@ -1,9 +1,13 @@
 /**
  * DG-16 — the top bar's document controls: Undo and Redo (the text history), and a File
- * menu with Open…, Save as YAML and Copy share link. Opening over edited text asks first,
- * like DG-13's examples. A share link pasted into this tab (only the hash changes, so the
- * page does not reload) opens the same way. The compact top bar keeps Undo and Redo and
- * shows the File actions in its options menu (`DocumentMenuItems`).
+ * menu with Import YAML…, Export YAML and Copy share link. A share link pasted into this tab
+ * (only the hash changes, so the page does not reload) replaces the text, asking first over
+ * edits, like DG-13's examples. The compact top bar keeps Undo and Redo and shows the File
+ * actions in its options menu (`DocumentMenuItems`).
+ *
+ * DG-22 (DG-21's deviation): with the workspace a document is a file that autosaves, so Open…
+ * and Save became Import (a local `.yaml` becomes a new workspace file, opened in a tab) and
+ * Export (a download). Undo and Redo show in edit mode only (`showHistory`).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, FileText, FolderOpen, Link, Redo2, Undo2 } from "lucide-react";
@@ -22,7 +26,9 @@ import { WithTooltip } from "../shell/with-tooltip";
 import { compileText } from "../state/compile-text";
 import { diagramActions, diagramStore, fileActions } from "../state/diagram-store";
 import { historyActions, useHistoryCounts } from "../state/history";
-import { downloadYaml, readYamlFile, yamlFileName, YAML_ACCEPT } from "./files";
+import { exportYaml, importYamlFile, YAML_ACCEPT } from "./files";
+import { currentFolder, workspaceActions } from "../workspace/workspace-store";
+import { openDoc } from "../shell/mode-store";
 import { decodeDoc, docParam, forgetDocParam, shareUrl, takeBootFailure } from "./share-url";
 
 /** The controls' strings, in one place (`conventions/i18n-strings`). */
@@ -30,8 +36,8 @@ const DOCUMENT_LABELS = {
   undo: "Undo",
   redo: "Redo",
   file: "File",
-  open: "Open…",
-  save: "Save as YAML",
+  open: "Import YAML…",
+  save: "Export YAML",
   share: "Copy share link",
   replaceTitle: (name: string) => `Open “${name}”?`,
   replaceTitleUntitled: "Open the shared diagram?",
@@ -43,6 +49,8 @@ const DOCUMENT_LABELS = {
     `${length} characters. The diagram travels inside the link; nothing is uploaded.`,
   copyFailed: "Could not copy the link",
   copyFailedDetail: "The link is in the address bar.",
+  /** The share link's name where a pasted link shows one (rich text, a chat). */
+  linkName: (title: string | undefined) => `Atlas · ${title || "Untitled diagram"}`,
   openFailed: (name: string) => `Could not open “${name}”`,
   linkFailed: "This share link could not be read",
   linkFailedDetail: "The diagram you had open is still here.",
@@ -74,19 +82,45 @@ function replaceTitle(doc: IncomingDoc | null): string {
     : DOCUMENT_LABELS.replaceTitle(doc.name);
 }
 
+/**
+ * Export: download the text. Only a document that is no workspace file (a share link) counts
+ * as saved by it: marking a workspace file's text as loaded would make the autosave skip it.
+ */
 function save() {
-  const { text, compiled } = diagramStore.get();
-  downloadYaml(text, yamlFileName(compiled.ast?.title));
-  fileActions.markSaved();
+  const { text, compiled, path } = diagramStore.get();
+  exportYaml(text, compiled.ast?.title);
+  if (path === null) fileActions.markSaved();
+}
+
+const escapeHtml = (value: string) =>
+  value.replace(
+    /[&<>"]/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c,
+  );
+
+/** The link as plain text, plus a rich-text link named `Atlas · <title>` where supported. */
+async function copyLink(url: string, title: string | undefined): Promise<void> {
+  if (typeof ClipboardItem === "undefined" || !navigator.clipboard.write) {
+    await navigator.clipboard.writeText(url);
+    return;
+  }
+  const html = `<a href="${escapeHtml(url)}">${escapeHtml(DOCUMENT_LABELS.linkName(title))}</a>`;
+  await navigator.clipboard.write([
+    new ClipboardItem({
+      "text/plain": new Blob([url], { type: "text/plain" }),
+      "text/html": new Blob([html], { type: "text/html" }),
+    }),
+  ]);
 }
 
 async function share() {
-  const url = await shareUrl(diagramStore.get().text);
+  const { text, compiled } = diagramStore.get();
+  const url = await shareUrl(text);
   // A fragment navigation that replaces this entry: no reload, no new Back step. The
   // `hashchange` it fires finds the same text and does nothing.
   window.location.replace(url);
   try {
-    await navigator.clipboard.writeText(url);
+    await copyLink(url, compiled.ast?.title?.trim());
     toast.success(DOCUMENT_LABELS.copied, {
       description: DOCUMENT_LABELS.copiedDetail(url.length),
     });
@@ -109,15 +143,17 @@ function load(doc: IncomingDoc) {
 let pickFile: (() => void) | null = null;
 
 export interface DocumentControlsProps {
-  /** The compact top bar: Undo and Redo only; the File actions are in its options menu. */
+  /** The compact top bar: no File menu here; its actions are in the options menu. */
   compact: boolean;
+  /** Undo and Redo show (edit mode). */
+  showHistory?: boolean;
 }
 
 /**
  * Always mounted: it owns the file input, the replace dialog and the share-link listener,
  * whichever bar is showing.
  */
-export function DocumentControls({ compact }: DocumentControlsProps) {
+export function DocumentControls({ compact, showHistory = true }: DocumentControlsProps) {
   const { undo, redo } = useHistoryCounts();
   const [pending, setPending] = useState<IncomingDoc | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -192,26 +228,30 @@ export function DocumentControls({ compact }: DocumentControlsProps) {
           shortcut is announced through aria-keyshortcuts. docs/findings/DG-16-undo-share-files.md.
           `aria-disabled`, not `disabled`: the last undo would disable the button that holds
           focus and drop it to <body>. An empty history makes the action a no-op. */}
-      <IconButton
-        label={DOCUMENT_LABELS.undo}
-        icon={<Undo2 />}
-        variant="ghost"
-        size="icon-sm"
-        aria-disabled={undo === 0}
-        className="aria-disabled:opacity-50"
-        aria-keyshortcuts="Control+Z Meta+Z"
-        onClick={() => historyActions.undo()}
-      />
-      <IconButton
-        label={DOCUMENT_LABELS.redo}
-        icon={<Redo2 />}
-        variant="ghost"
-        size="icon-sm"
-        aria-disabled={redo === 0}
-        className="aria-disabled:opacity-50"
-        aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y"
-        onClick={() => historyActions.redo()}
-      />
+      {showHistory ? (
+        <>
+          <IconButton
+            label={DOCUMENT_LABELS.undo}
+            icon={<Undo2 />}
+            variant="ghost"
+            size="icon-sm"
+            aria-disabled={undo === 0}
+            className="aria-disabled:opacity-50"
+            aria-keyshortcuts="Control+Z Meta+Z"
+            onClick={() => historyActions.undo()}
+          />
+          <IconButton
+            label={DOCUMENT_LABELS.redo}
+            icon={<Redo2 />}
+            variant="ghost"
+            size="icon-sm"
+            aria-disabled={redo === 0}
+            className="aria-disabled:opacity-50"
+            aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y"
+            onClick={() => historyActions.redo()}
+          />
+        </>
+      ) : null}
       {compact ? null : (
         <DropdownMenu>
           <WithTooltip label={DOCUMENT_LABELS.file}>
@@ -226,7 +266,7 @@ export function DocumentControls({ compact }: DocumentControlsProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       )}
-      {/* The platform file picker; "Open…" clicks it. */}
+      {/* The platform file picker; "Import YAML…" clicks it. */}
       <input
         ref={fileInput}
         type="file"
@@ -236,8 +276,11 @@ export function DocumentControls({ compact }: DocumentControlsProps) {
           const file = event.currentTarget.files?.[0];
           event.currentTarget.value = ""; // the same file can be picked again
           if (!file) return;
-          readYamlFile(file).then(
-            (text) => open({ name: file.name, text }),
+          importYamlFile(file, currentFolder()).then(
+            (path) => {
+              void workspaceActions.refreshTree().catch(() => {});
+              openDoc(path);
+            },
             (error: unknown) =>
               toast.error(DOCUMENT_LABELS.openFailed(file.name), {
                 description: error instanceof Error ? error.message : undefined,
@@ -265,7 +308,7 @@ export function DocumentControls({ compact }: DocumentControlsProps) {
   );
 }
 
-/** Open…, Save as YAML, Copy share link: the File menu's items, in either bar. */
+/** Import YAML…, Export YAML, Copy share link: the File menu's items, in either bar. */
 function FileItems() {
   return (
     <>

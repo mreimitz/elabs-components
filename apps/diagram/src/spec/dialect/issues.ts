@@ -49,6 +49,8 @@ export interface ArchIssue {
   message: string;
   severity: ArchIssueSeverity;
   range?: SourceRange;
+  /** DG-24: a replacement value for the key at `path` (the nearest icon name). */
+  suggestion?: string;
 }
 
 export function issue(code: ArchIssueCode, path: string, message: string): ArchIssue {

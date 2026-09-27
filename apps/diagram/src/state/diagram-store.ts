@@ -4,7 +4,10 @@
  * compile that produced a graph, so a half-typed line never blanks it.
  */
 import { useSyncExternalStore } from "react";
-import lakehouseYaml from "../examples/lakehouse-aws.yaml?raw";
+// DG-21: the seed is a workspace document (its `?raw` import does not hot-reload the page:
+// server/workspace-plugin.mjs `hotUpdate`).
+import lakehouseYaml from "../../workspace/examples/lakehouse-aws.yaml?raw";
+import { SEED_EXAMPLE_PATH } from "../examples";
 import { compileText, type CompiledDiagram } from "./compile-text";
 import {
   removeEntries,
@@ -46,9 +49,14 @@ export interface DiagramState {
   inspectorOpen: boolean;
   /** DG-14: bumped by "Show in YAML": the editor reveals and focuses the selection. */
   revealRequest: number;
+  /**
+   * DG-21: the document's identity, its workspace path (`examples/lakehouse-aws.yaml`), or
+   * `null` for a document that is not a workspace file (a share link, an opened file).
+   */
+  path: string | null;
 }
 
-function initialState(text: string): DiagramState {
+function initialState(text: string, path: string | null): DiagramState {
   const compiled = compileText(text);
   return {
     text,
@@ -63,10 +71,13 @@ function initialState(text: string): DiagramState {
     loadCount: 0,
     inspectorOpen: false,
     revealRequest: 0,
+    path,
   };
 }
 
-export const diagramStore = createStore<DiagramState>(initialState(lakehouseYaml));
+export const diagramStore = createStore<DiagramState>(
+  initialState(lakehouseYaml, SEED_EXAMPLE_PATH),
+);
 
 let pending: ReturnType<typeof setTimeout> | undefined;
 
@@ -94,17 +105,32 @@ export const diagramActions = {
     clearTimeout(pending);
     pending = setTimeout(compileNow, COMPILE_DEBOUNCE_MS);
   },
-  /** Replace the whole text (DG-13's examples): compile now, clear the selection, new canvas. */
+  /**
+   * Replace the whole text with a document that is not a workspace file (a share link, an
+   * opened file; DG-21: `path` becomes `null`): compile now, clear the selection, new canvas.
+   */
   loadText(text: string) {
+    diagramActions.load(text, null);
+  },
+  /** DG-21: open a document with its workspace path (`workspace/workspace-store.ts` `open`). */
+  load(text: string, path: string | null) {
     clearTimeout(pending);
     pending = undefined;
+    // A different document never inherits the previous one's drawing: a blank or broken
+    // file shows the canvas's empty or error state, not the last diagram with a
+    // "last valid" badge. Only edits and disk reloads of the same file keep the last valid.
+    const compiled = compileText(text);
     diagramStore.set((state) => ({
       text,
       loadedText: text,
       selectedId: null,
       loadCount: state.loadCount + 1,
+      path,
+      compiled,
+      compiledText: text,
+      drawn: compiled,
+      structure: structureKey(compiled),
     }));
-    compileNow();
   },
   /** A top-bar toggle: rewrite one top-level key in the text, then compile now. */
   setTopLevel(key: TopLevelScalarKey, value: string) {
@@ -193,5 +219,32 @@ export const fileActions = {
   /** Saved to a file: the current text is the one "loaded" (not edited), no new canvas. */
   markSaved() {
     diagramStore.set((state) => ({ loadedText: state.text }));
+  },
+};
+
+// ── DG-21 workspace document ────────────────────────────────────────────────────────────
+// The workspace service (`src/workspace/`) keeps the open document and its file in step. It
+// adds `path` and `load` above and these two actions; `loadedText` keeps DG-16's meaning (the
+// text last loaded or saved), so the unload guard and the replace dialogs stay quiet once
+// autosave has written the text.
+
+export const documentActions = {
+  /**
+   * The file changed on disk and the open text had no unsaved edits (live reload): take the
+   * disk text as it is. Same canvas (no `loadCount` bump); DG-16's history records it as one
+   * step, so Undo brings the previous text back (and autosave writes it).
+   */
+  reloadFromDisk(text: string) {
+    if (text === diagramStore.get().text) {
+      documentActions.markPersisted(text);
+      return;
+    }
+    clearTimeout(pending);
+    diagramStore.set({ text, loadedText: text });
+    compileNow();
+  },
+  /** Autosave wrote `text`: it is the saved state now, even if typing went on meanwhile. */
+  markPersisted(text: string) {
+    if (diagramStore.get().loadedText !== text) diagramStore.set({ loadedText: text });
   },
 };
