@@ -73,6 +73,11 @@ selected, so the ring is the focus ring) and `state-loading-{light,dark}`.
   last valid diagram" badge. The new `EmptyState` / `StatePanel kind="error"` branches in
   `canvas-pane.tsx` are therefore only reachable once the store can start blank or drop the
   drawn graph. Follow-up outside this item: `diagram-store.ts`.
+- **Update (orchestrator, integration line).** Fixed in `diagram-store.ts` `load`: opening a
+  different document now compiles it fresh and never keeps the previous drawing (edits and
+  disk reloads of the same file still keep the last valid one). Both states were then shot
+  from the running app by loading a blank text and a non-diagram text:
+  `state-empty-{light,dark}` ("Nothing to draw yet") and `state-error-{light,dark}`.
 
 ### Per example
 
@@ -175,3 +180,10 @@ selected, so the ring is the focus ring) and `state-loading-{light,dark}`.
 - **`hairline-stack` insets by a percentage** (`--hairline-stack-inset: 4%`), about 2 px on a
   48 px tile, which reads as one thicker top line rather than stacked cards. The composite mock
   sets a fixed 7 px; a pixel default (or a size-aware one) would suit small surfaces.
+
+## §3 Acceptance
+
+Accepted by the maintainer on 2026-09-27 from the before/after review page, with the
+follow-ups kept: the minimap (16), connected-port dots (13), the card eyebrow's "Service"
+fallback (8) and the zone chip's full straddle (ELK `spacing.edgeNode`). Dimming stays at
+DG-18's 0.25 on marks with text at full opacity (the 0.25 vs 0.35 call above).
