@@ -24,7 +24,7 @@ import { archRegistry } from "../state/compile-text";
 import { diagramActions, diagramStore, useDiagram } from "../state/diagram-store";
 import { keepSelection, patchGraph, stageGraph } from "../state/pipeline";
 // Wave 3: one import line per item under its marker; blank lines keep parallel merges clean.
-import { mergeCanvasProps } from "./canvas-props"; // DG-14
+import { mergeCanvasProps, type CanvasProps } from "./canvas-props"; // DG-14
 import { useCanvasDelete } from "./use-canvas-delete"; // DG-14
 
 import { useManualLayout } from "../layout/use-manual-layout"; // DG-15
@@ -43,10 +43,27 @@ const CANVAS_LABELS = {
 } as const;
 
 /**
+ * DG-18 presentation is view-only (review-wave3 M3): nothing done on it may change the text.
+ * No drag or arrow-key move (DG-15), no delete (DG-14), no connecting. Selection, zone folds,
+ * the details card, the step player, pan and zoom stay.
+ */
+const PRESENTING_PROPS = {
+  nodesDraggable: false,
+  nodesConnectable: false,
+  edgesReconnectable: false,
+  deleteKeyCode: null,
+} as const satisfies CanvasProps;
+
+export interface CanvasPaneProps {
+  /** DG-18 presentation: the canvas takes no edit. */
+  presenting?: boolean;
+}
+
+/**
  * The right-hand canvas: the last compile with a graph (DG-12 store), laid out once (DG-11),
  * then patched in place while only words change.
  */
-export function CanvasPane() {
+export function CanvasPane({ presenting = false }: CanvasPaneProps) {
   const drawn = useDiagram((s) => s.drawn);
   const structure = useDiagram((s) => s.structure);
   const stale = useDiagram((s) => s.compiled !== s.drawn);
@@ -66,7 +83,14 @@ export function CanvasPane() {
   return (
     // A loaded document starts a fresh canvas: first-layout path, loading state, new fit.
     <ReactFlowProvider key={loadCount}>
-      <DiagramCanvas graph={graph} spec={spec} view={view} structure={structure} stale={stale} />
+      <DiagramCanvas
+        graph={graph}
+        spec={spec}
+        view={view}
+        structure={structure}
+        stale={stale}
+        presenting={presenting}
+      />
     </ReactFlowProvider>
   );
 }
@@ -77,6 +101,7 @@ interface DiagramCanvasProps {
   view: ArchCompileView;
   structure: string;
   stale: boolean;
+  presenting: boolean;
 }
 
 /** Zones collapsed on the canvas right now. */
@@ -84,7 +109,7 @@ function collapsedOnCanvas(nodes: readonly Node[]): string[] {
   return nodes.filter((n) => isZoneNode(n) && n.data.collapsed).map((n) => n.id);
 }
 
-function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasProps) {
+function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: DiagramCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const { getNodes, getEdges } = useReactFlow();
@@ -178,9 +203,13 @@ function DiagramCanvas({ graph, spec, view, structure, stale }: DiagramCanvasPro
 
   const interactionProps = useCanvasInteraction({ nodes, setNodes, setEdges }); // DG-18
 
+  // Presenting: DG-18's own slice only, and every write path closed (PRESENTING_PROPS).
   const waveProps = useMemo(
-    () => mergeCanvasProps(deleteProps, layoutProps, interactionProps),
-    [deleteProps, layoutProps, interactionProps],
+    () =>
+      presenting
+        ? mergeCanvasProps(interactionProps, PRESENTING_PROPS)
+        : mergeCanvasProps(deleteProps, layoutProps, interactionProps),
+    [presenting, deleteProps, layoutProps, interactionProps],
   );
 
   // Hide the canvas and show the loading state only until the FIRST layout lands; later

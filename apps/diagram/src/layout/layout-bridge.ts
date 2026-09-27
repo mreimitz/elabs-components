@@ -87,6 +87,14 @@ export const layoutBridge = {
     promptStore.set({ prompt });
     if (prompt === null) restoreFocus();
   },
+  /**
+   * Drop an open prompt without answering it or moving focus. DG-18: presentation starts and
+   * ends on a fresh canvas, so a prompt about the other canvas's drag has nothing to act on.
+   */
+  dismiss(): void {
+    returnTo = null;
+    if (promptStore.get().prompt !== null) promptStore.set({ prompt: null });
+  },
   toManual(): void {
     handlers?.toManual();
   },

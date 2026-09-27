@@ -117,6 +117,7 @@ export function StepPlayer() {
       aria-label={STEP_LABELS.region}
       data-slot="step-player"
       data-diagram-export="exclude"
+      className="pointer-events-none"
       onKeyDown={(event) => {
         const delta = keyDelta(event.key);
         if (delta === 0) return;
@@ -124,8 +125,17 @@ export function StepPlayer() {
         move(delta);
       }}
     >
+      {/* Review-wave3 F2: on a narrow pane (under `@2xl`, 672 px) the player cannot sit between
+          the legend (bottom-left) and the zoom controls (bottom-right), so it rises above that
+          row: 13 = the collapsed legend's 11 plus a 2 gap, over the panel's own 15 px margin.
+          The margin is on the surface, not the panel: flow's unlayered `margin: 15px` wins over a
+          utility there (docs/findings/DG-18-interactive-layer.md §7). The panel itself lets the
+          pointer through, so its empty margin never covers the controls beside it. */}
       <div
-        className={cn("flex max-w-[min(36rem,calc(100vw-2rem))] items-center gap-1 p-1", SURFACE)}
+        className={cn(
+          "pointer-events-auto flex max-w-[min(36rem,calc(100vw-2rem))] items-center gap-1 p-1 @max-2xl:mb-13",
+          SURFACE,
+        )}
       >
         {current ? (
           <>

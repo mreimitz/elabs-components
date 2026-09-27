@@ -64,6 +64,25 @@ export function docParam(hash: string): string | null {
   return new URLSearchParams(hash.replace(/^#/, "")).get(DOC_PARAM);
 }
 
+/**
+ * Drop `doc=<value>` from the address bar, keeping every other part (DG-18 `present`): a link
+ * the person turned down must not stay there to be read again. `replaceState` fires no
+ * `hashchange` and adds no Back step. Nothing happens when the hash carries another link.
+ */
+export function forgetDocParam(value: string): void {
+  const { hash, pathname, search } = window.location;
+  if (docParam(hash) !== value) return;
+  const kept = hash
+    .replace(/^#/, "")
+    .split("&")
+    .filter((part) => part !== "" && !part.startsWith(`${DOC_PARAM}=`));
+  window.history.replaceState(
+    window.history.state,
+    "",
+    kept.length > 0 ? `#${kept.join("&")}` : `${pathname}${search}`,
+  );
+}
+
 /** This page's URL with the hash `#doc=<text>` (a dev route such as `#icons` is dropped). */
 export async function shareUrl(text: string): Promise<string> {
   const params = new URLSearchParams({ [DOC_PARAM]: await encodeDoc(text) });

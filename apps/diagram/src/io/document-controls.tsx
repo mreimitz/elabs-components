@@ -21,7 +21,7 @@ import {
 import { diagramActions, diagramStore, fileActions } from "../state/diagram-store";
 import { historyActions, useHistoryCounts } from "../state/history";
 import { downloadYaml, readYamlFile, yamlFileName, YAML_ACCEPT } from "./files";
-import { decodeDoc, docParam, shareUrl, takeBootFailure } from "./share-url";
+import { decodeDoc, docParam, forgetDocParam, shareUrl, takeBootFailure } from "./share-url";
 
 /** The controls' strings, in one place (`conventions/i18n-strings`). */
 const DOCUMENT_LABELS = {
@@ -50,6 +50,8 @@ const DOCUMENT_LABELS = {
 interface IncomingDoc {
   name: string;
   text: string;
+  /** The share link's `doc` value, when the document came from the address bar. */
+  link?: string;
 }
 
 function save() {
@@ -114,6 +116,12 @@ export function DocumentControls({ compact }: DocumentControlsProps) {
     setTimeout(() => returnFocusTo.current?.focus());
   };
 
+  /** "Keep editing": the link turned down leaves the address bar (review-wave3 M1). */
+  const refuse = () => {
+    if (pending?.link !== undefined) forgetDocParam(pending.link);
+    closeDialog();
+  };
+
   // A share link that failed to load at startup (main.tsx), once the Toaster is mounted.
   useEffect(() => {
     if (takeBootFailure()) {
@@ -121,13 +129,16 @@ export function DocumentControls({ compact }: DocumentControlsProps) {
     }
   }, []);
 
-  // A share link pasted into this tab: only the hash changes.
+  // A share link pasted into this tab: only the hash changes. Only a CHANGED `doc` value is
+  // an incoming document: the app's own rewrites (entering and leaving presentation, Back and
+  // Forward between them) keep it, and must not read it again (review-wave3 M1). A loaded
+  // link stays in the address bar, so a reload shows the same document.
   useEffect(() => {
-    const onHashChange = () => {
-      const value = docParam(window.location.hash);
-      if (value === null) return;
+    const onHashChange = (event: HashChangeEvent) => {
+      const value = docParam(new URL(event.newURL).hash);
+      if (value === null || value === docParam(new URL(event.oldURL).hash)) return;
       decodeDoc(value).then(
-        (text) => open({ name: DOCUMENT_LABELS.sharedLink, text }),
+        (text) => open({ name: DOCUMENT_LABELS.sharedLink, text, link: value }),
         () =>
           toast.error(DOCUMENT_LABELS.linkFailed, {
             description: DOCUMENT_LABELS.linkFailedDetail,
@@ -206,7 +217,7 @@ export function DocumentControls({ compact }: DocumentControlsProps) {
       <ConfirmDialog
         open={pending !== null}
         onOpenChange={(isOpen) => {
-          if (!isOpen) closeDialog();
+          if (!isOpen) refuse();
         }}
         tone="destructive"
         title={pending ? DOCUMENT_LABELS.replaceTitle(pending.name) : ""}

@@ -161,3 +161,23 @@ the ClickHouse example (steps 1–5) and the lakehouse seed.
   (`hidden`, the group's box, the rerouted edges), as DG-15 §4 proposes for nodes. Or, without
   changing the operations, export `normalizeGroupEdges(nodes, edges)` doing that recompute,
   and a `groupProxyEdge(edge, groupId, end)` builder so callers never copy the id format.
+
+## 9. Escape on a focused node or flow drops focus to `<body>`
+
+Found fixing the wave-3 review's M3 (presentation accepted edits), 2026-09-27.
+
+- **Where:** `@xyflow/react` 12.11.1 `dist/esm/index.mjs`: a node's Escape deselects it and
+  blurs it a frame later (`:2282`, then `requestAnimationFrame(() => nodeRef?.current?.blur())`
+  at `:1652`); a flow's Escape blurs it at once (`:2999-3003`). ui `CanvasShell`
+  (`packages/flow/src/canvas-shell/canvas-shell.tsx:128-160`) passes this through unchanged.
+- **Evidence:** in presentation with a node (`msk`) or a flow (`salesforce->s3-landing`)
+  focused and a details card open, the first Escape closed the card (Radix marks the event
+  handled, so presentation stays) and `document.activeElement` became `BODY`; the review saw
+  the same after a drag.
+- **App workaround:** `interaction/presentation-view.tsx`: when a card or menu took the Escape,
+  a frame later (after React Flow's blur) focus goes back to the element that held it, or to
+  the presentation region. Measured after the fix: `DIV[msk]` and `g[salesforce->s3-landing]`.
+  The editor canvas still drops focus this way; the fix there belongs in the library.
+- **Proposed API:** `CanvasShell` keeps focus on the element after Escape deselects it (or
+  moves it to the pane), for example `escapeDeselects?: "keep-focus" | "blur"`, defaulting to
+  keeping focus.
