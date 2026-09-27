@@ -83,11 +83,15 @@ export function startLiveReload(): () => void {
   let opened = false;
   const refreshSoon = () => {
     clearTimeout(refresh);
+    // A failure lands in the store's `treeError`, which the tree shows with Retry.
     refresh = setTimeout(
       () => void workspaceActions.refreshTree().catch(() => {}),
       REFRESH_DELAY_MS,
     );
   };
+  // DG-22 review: read the tree now, not only once the stream opens (a stream that never
+  // opens left the tree loading for good). An open within the delay shares this read.
+  refreshSoon();
   source.onopen = () => {
     // A reconnect (the dev server restarted) may have missed events: catch up once.
     if (opened) {

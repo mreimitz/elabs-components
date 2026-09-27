@@ -7,7 +7,14 @@
  *
  * DG-23 (Home's folder tree) can reuse `buildTree` and `WorkspaceTree`.
  */
-import { useMemo, useState, useSyncExternalStore, type DragEvent, type MouseEvent } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type DragEvent,
+  type MouseEvent,
+} from "react";
 import {
   ChevronRight,
   Ellipsis,
@@ -46,6 +53,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  StatePanel,
   cn,
   toast,
   useSidebar,
@@ -54,16 +62,29 @@ import { createStore } from "../state/create-store";
 import { toHash, useRoute } from "../routes/use-hash";
 import type { WorkspaceFile, WorkspaceTree as WorkspaceTreeData } from "../workspace/client";
 import { folderOf, useWorkspace, workspaceActions } from "../workspace/workspace-store";
+import {
+  activeElement,
+  docTabElement,
+  focusDocTab,
+  focusSoon,
+  TREE_PATH_ATTR,
+  treeRowElement,
+} from "./focus";
 import { fileTitle, modeActions, openDoc } from "./mode-store";
 
 /** The tree's strings, in one place (`conventions/i18n-strings`). */
 const TREE_LABELS = {
   loading: "Loading the workspace…",
+  loadFailed: "Could not load the workspace",
+  retry: "Retry",
+  retrying: "Retrying…",
   actions: (name: string) => `Actions for ${name}`,
   rootActions: "Workspace actions",
   newDiagram: "New diagram here",
   newFolder: "New folder",
-  rename: "Rename",
+  // Rename changes the file (or folder) name, never the diagram's `title:` (DG-22 review).
+  renameFile: "Rename file…",
+  renameFolder: "Rename folder…",
   moveTo: "Move to",
   root: "Workspace (top level)",
   trash: "Trash",
@@ -71,16 +92,21 @@ const TREE_LABELS = {
   newDiagramField: "Title",
   newFolderTitle: "New folder",
   newFolderField: "Folder name",
-  renameTitle: (name: string) => `Rename “${name}”`,
-  renameField: "New name",
+  renameFileTitle: "Rename file",
+  renameFolderTitle: "Rename folder",
+  renameFileDescription: (title: string, name: string, folder: string) =>
+    `“${title}” is saved as ${name} ${folder === "" ? "in the workspace root" : `in ${folder}/`}. This renames the file; the diagram’s title stays.`,
+  fileNameField: "File name",
   inFolder: (folder: string) => (folder === "" ? "In the workspace root." : `In ${folder}/.`),
+  /** A file row's hover text: the title is truncated in the tree, and the row shows no file. */
+  rowHover: (title: string, name: string) => `${title}\n${name}`,
   create: "Create",
   save: "Rename",
   cancel: "Cancel",
   invalidName: "A name cannot be empty or contain “/”.",
   trashTitle: (name: string) => `Move “${name}” to the trash?`,
   trashDescription:
-    "It moves to _trash/ in the workspace folder, where Git or the Finder can bring it back. Its open tabs close.",
+    "It moves to _trash/ in the workspace folder, where Git or your file manager can bring it back. Its open tabs close.",
   trashConfirm: "Move to trash",
   keep: "Keep it",
   failed: (action: string, path: string) => `Could not ${action} “${path}”`,
@@ -150,7 +176,8 @@ export function buildTree(tree: WorkspaceTreeData): TreeEntry[] {
 type TreeRequest =
   | { kind: "new-diagram"; folder: string }
   | { kind: "new-folder"; folder: string }
-  | { kind: "rename"; path: string }
+  /** `title`: the diagram's title, for a file (a folder has none). */
+  | { kind: "rename"; path: string; title?: string }
   | { kind: "trash"; path: string };
 
 const treeUi = createStore<{ request: TreeRequest | null; serial: number }>({
@@ -158,19 +185,32 @@ const treeUi = createStore<{ request: TreeRequest | null; serial: number }>({
   serial: 0,
 });
 
-/** Where focus goes back to once a dialog closes (ConfirmDialog / Dialog have no trigger). */
+/**
+ * Where focus goes back to once a dialog closes (ConfirmDialog / Dialog have no trigger): the
+ * "…" button whose menu asked. The menu passes it in, because by the time an item's `onSelect`
+ * runs, `document.activeElement` is the menu item, which unmounts with the menu (DG-22 review).
+ */
 let returnFocusTo: HTMLElement | null = null;
 
-function ask(request: TreeRequest) {
-  const active = document.activeElement;
-  returnFocusTo = active instanceof HTMLElement && active !== document.body ? active : null;
+function ask(request: TreeRequest, trigger: HTMLElement | null) {
+  returnFocusTo = trigger ?? activeElement();
   treeUi.set((s) => ({ request, serial: s.serial + 1 }));
 }
 
-function dismiss() {
+/** Close the dialog. Focus goes to `to`, else back to the "…" that opened it. */
+function dismiss(to?: () => HTMLElement | null) {
   treeUi.set({ request: null });
-  // P4: library gap — H-24: a trigger-less dialog returns focus to <body>; hand it back.
-  setTimeout(() => returnFocusTo?.isConnected && returnFocusTo.focus());
+  const back = returnFocusTo;
+  // P4: library gap — H-24: a trigger-less dialog returns focus to <body>; hand it on.
+  focusSoon(to ?? (() => back), () => (back?.isConnected ? back : treeRowElement("")));
+}
+
+/**
+ * An entry is new or has a new path (rename, move): focus its tab when it has one, else its
+ * row once the refreshed tree shows it, else `fallback` (a collapsed folder hides the row).
+ */
+function focusEntry(path: string, fallback: () => HTMLElement | null) {
+  focusSoon(() => docTabElement(path) ?? treeRowElement(path), fallback);
 }
 
 function fail(action: string, path: string) {
@@ -185,6 +225,12 @@ async function moveInto(path: string, folder: string) {
   try {
     const to = await workspaceActions.move(path, join(folder, baseName(path)));
     modeActions.moved(path, to);
+    // The row remounts at its new path; the old one, with the focused "…", is gone. Its new
+    // folder's row, when that folder is collapsed.
+    focusSoon(
+      () => treeRowElement(to),
+      () => treeRowElement(folder),
+    );
   } catch (error) {
     fail("move", path)(error);
   }
@@ -208,10 +254,13 @@ function RowMenu({ entry, folders, open, onOpenChange }: RowMenuProps) {
     (f) => f !== parent && f !== entry.path && !f.startsWith(`${entry.path}/`),
   );
   const label = entry.kind === "file" ? entry.title : entry.name;
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const request = (next: TreeRequest) => ask(next, triggerRef.current);
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button
+          ref={triggerRef}
           variant="ghost"
           size="icon-sm"
           aria-label={TREE_LABELS.actions(label)}
@@ -221,18 +270,26 @@ function RowMenu({ entry, folders, open, onOpenChange }: RowMenuProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="start" collisionPadding={8}>
-        <DropdownMenuItem onSelect={() => ask({ kind: "new-diagram", folder })}>
+        <DropdownMenuItem onSelect={() => request({ kind: "new-diagram", folder })}>
           <FilePlus aria-hidden="true" />
           {TREE_LABELS.newDiagram}
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => ask({ kind: "new-folder", folder })}>
+        <DropdownMenuItem onSelect={() => request({ kind: "new-folder", folder })}>
           <FolderPlus aria-hidden="true" />
           {TREE_LABELS.newFolder}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => ask({ kind: "rename", path: entry.path })}>
+        <DropdownMenuItem
+          onSelect={() =>
+            request({
+              kind: "rename",
+              path: entry.path,
+              title: entry.kind === "file" ? entry.title : undefined,
+            })
+          }
+        >
           <PencilLine aria-hidden="true" />
-          {TREE_LABELS.rename}
+          {entry.kind === "file" ? TREE_LABELS.renameFile : TREE_LABELS.renameFolder}
         </DropdownMenuItem>
         <DropdownMenuSub>
           {/* P4: library gap — H-30: the sub-trigger does not size an icon; text only. */}
@@ -254,7 +311,7 @@ function RowMenu({ entry, folders, open, onOpenChange }: RowMenuProps) {
         <DropdownMenuSeparator />
         {/* P4: library gap — DropdownMenuItem has no destructive variant; the Trash item
             relies on its icon, its word and the confirm dialog behind it. */}
-        <DropdownMenuItem onSelect={() => ask({ kind: "trash", path: entry.path })}>
+        <DropdownMenuItem onSelect={() => request({ kind: "trash", path: entry.path })}>
           <Trash2 aria-hidden="true" />
           {TREE_LABELS.trash}
         </DropdownMenuItem>
@@ -311,7 +368,8 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
             <a
               href={toHash({ kind: "doc", path: entry.path })}
               aria-current={active ? "page" : undefined}
-              title={entry.path}
+              title={TREE_LABELS.rowHover(entry.title, entry.name)}
+              {...{ [TREE_PATH_ATTR]: entry.path }}
               draggable
               onDragStart={(event) => {
                 event.dataTransfer.setData(TREE_DRAG_TYPE, entry.path);
@@ -345,6 +403,7 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
             >
               <button
                 type="button"
+                {...{ [TREE_PATH_ATTR]: entry.path }}
                 onContextMenu={onContextMenu}
                 onDragOver={(event) => {
                   if (!hasTreeDrag(event)) return;
@@ -387,39 +446,79 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
 function NameDialog({ request }: { request: Exclude<TreeRequest, { kind: "trash" }> }) {
   const initial = request.kind === "rename" ? baseName(request.path).replace(/\.ya?ml$/i, "") : "";
   const [value, setValue] = useState(initial);
+  // Set by a submit with an invalid name: the message shows even for an empty field.
+  const [attempted, setAttempted] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const name = value.trim();
   const valid = name !== "" && !/[\\/]/.test(name) && name !== "." && name !== "..";
+  const showError = !valid && (value !== "" || attempted);
   const folder = request.kind === "rename" ? folderOf(request.path) : request.folder;
   const copy =
     request.kind === "new-diagram"
       ? {
           title: TREE_LABELS.newDiagramTitle,
+          description: TREE_LABELS.inFolder(folder),
           field: TREE_LABELS.newDiagramField,
           submit: TREE_LABELS.create,
         }
       : request.kind === "new-folder"
         ? {
             title: TREE_LABELS.newFolderTitle,
+            description: TREE_LABELS.inFolder(folder),
             field: TREE_LABELS.newFolderField,
             submit: TREE_LABELS.create,
           }
-        : {
-            title: TREE_LABELS.renameTitle(baseName(request.path)),
-            field: TREE_LABELS.renameField,
-            submit: TREE_LABELS.save,
-          };
+        : request.title !== undefined
+          ? {
+              title: TREE_LABELS.renameFileTitle,
+              description: TREE_LABELS.renameFileDescription(
+                request.title,
+                baseName(request.path),
+                folder,
+              ),
+              field: TREE_LABELS.fileNameField,
+              submit: TREE_LABELS.save,
+            }
+          : {
+              title: TREE_LABELS.renameFolderTitle,
+              description: TREE_LABELS.inFolder(folder),
+              field: TREE_LABELS.newFolderField,
+              submit: TREE_LABELS.save,
+            };
 
   const submit = () => {
-    if (!valid) return;
-    dismiss();
+    if (!valid) {
+      setAttempted(true);
+      inputRef.current?.focus();
+      return;
+    }
     if (request.kind === "new-diagram") {
-      workspaceActions.create(folder, name).then((path) => openDoc(path), fail("create", name));
+      dismiss();
+      // A new diagram opens in edit mode: it has nothing to show until it is written.
+      workspaceActions.create(folder, name).then(
+        (path) => {
+          openDoc(path, { mode: "edit" });
+          focusDocTab(path);
+        },
+        fail("create", name),
+      );
     } else if (request.kind === "new-folder") {
-      workspaceActions.mkdir(join(folder, name)).catch(fail("create", join(folder, name)));
-    } else if (name !== initial) {
+      const path = join(folder, name);
+      dismiss();
       workspaceActions
-        .rename(request.path, name)
-        .then((to) => modeActions.moved(request.path, to), fail("rename", request.path));
+        .mkdir(path)
+        .then(() => focusEntry(path, () => returnFocusTo), fail("create", path));
+    } else if (name !== initial) {
+      dismiss();
+      workspaceActions.rename(request.path, name).then(
+        (to) => {
+          modeActions.moved(request.path, to);
+          focusEntry(to, () => treeRowElement(folder));
+        },
+        fail("rename", request.path),
+      );
+    } else {
+      dismiss();
     }
   };
 
@@ -435,20 +534,21 @@ function NameDialog({ request }: { request: Exclude<TreeRequest, { kind: "trash"
         >
           <DialogHeader>
             <DialogTitle>{copy.title}</DialogTitle>
-            <DialogDescription>{TREE_LABELS.inFolder(folder)}</DialogDescription>
+            <DialogDescription>{copy.description}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2">
             <Label htmlFor="workspace-tree-name">{copy.field}</Label>
             <Input
+              ref={inputRef}
               id="workspace-tree-name"
               value={value}
               autoFocus
               onFocus={(event) => event.currentTarget.select()}
-              aria-invalid={value !== initial && !valid}
-              aria-describedby={!valid && value !== "" ? "workspace-tree-name-error" : undefined}
+              aria-invalid={showError}
+              aria-describedby={showError ? "workspace-tree-name-error" : undefined}
               onChange={(event) => setValue(event.currentTarget.value)}
             />
-            {!valid && value !== "" ? (
+            {showError ? (
               <p
                 id="workspace-tree-name-error"
                 role="alert"
@@ -459,7 +559,7 @@ function NameDialog({ request }: { request: Exclude<TreeRequest, { kind: "trash"
             ) : null}
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={dismiss}>
+            <Button type="button" variant="outline" onClick={() => dismiss()}>
               {TREE_LABELS.cancel}
             </Button>
             {/* `aria-disabled`, not `disabled`: focus stays on the button (composer rule). */}
@@ -488,8 +588,9 @@ function TreeDialogs() {
       confirmLabel={TREE_LABELS.trashConfirm}
       cancelLabel={TREE_LABELS.keep}
       onConfirm={() => {
-        dismiss();
         modeActions.closeTabsAt(request.path);
+        // The row (and its "…") leaves the tree: focus its folder's row, or the tree's root.
+        dismiss(() => treeRowElement(folderOf(request.path)));
         workspaceActions.trash(request.path).catch(fail("trash", request.path));
       }}
     />
@@ -504,19 +605,24 @@ function useTreeUi() {
 
 /** The "…" on the rail's Workspace entry: new diagram or folder at the root. */
 export function WorkspaceRootMenu() {
+  const triggerRef = useRef<HTMLButtonElement>(null);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <SidebarMenuAction showOnHover aria-label={TREE_LABELS.rootActions}>
+        <SidebarMenuAction ref={triggerRef} showOnHover aria-label={TREE_LABELS.rootActions}>
           <Ellipsis />
         </SidebarMenuAction>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="start">
-        <DropdownMenuItem onSelect={() => ask({ kind: "new-diagram", folder: "" })}>
+        <DropdownMenuItem
+          onSelect={() => ask({ kind: "new-diagram", folder: "" }, triggerRef.current)}
+        >
           <FilePlus aria-hidden="true" />
           {TREE_LABELS.newDiagramTitle}
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => ask({ kind: "new-folder", folder: "" })}>
+        <DropdownMenuItem
+          onSelect={() => ask({ kind: "new-folder", folder: "" }, triggerRef.current)}
+        >
           <FolderPlus aria-hidden="true" />
           {TREE_LABELS.newFolder}
         </DropdownMenuItem>
@@ -525,9 +631,45 @@ export function WorkspaceRootMenu() {
   );
 }
 
+/**
+ * The tree could not be read. Retry keeps this panel (and focus on its button) while it
+ * runs; once the tree shows, focus goes to the tree's root entry.
+ */
+function TreeLoadError({ message }: { message: string }) {
+  const [retrying, setRetrying] = useState(false);
+  const retry = () => {
+    if (retrying) return;
+    setRetrying(true);
+    workspaceActions.refreshTree().then(
+      () => focusSoon(() => treeRowElement("")),
+      // The store keeps the error; this panel shows it.
+      () => setRetrying(false),
+    );
+  };
+  return (
+    <StatePanel
+      kind="error"
+      titleAs="div"
+      icon={null}
+      title={TREE_LABELS.loadFailed}
+      description={message}
+      // `bg-card`: the panel's text tokens are for page and card surfaces; on the sidebar's
+      // own (often dark) surface the title would vanish.
+      className="gap-2 bg-card px-3 py-4"
+      actions={
+        // `aria-disabled`, not `disabled`: focus stays on the button while it retries.
+        <Button size="sm" variant="outline" aria-disabled={retrying} onClick={retry}>
+          {retrying ? TREE_LABELS.retrying : TREE_LABELS.retry}
+        </Button>
+      }
+    />
+  );
+}
+
 /** The folder tree (a `SidebarMenuSub`), for inside the rail's Workspace item. */
 export function WorkspaceTree() {
   const tree = useWorkspace((s) => s.tree);
+  const treeError = useWorkspace((s) => s.treeError);
   const entries = useMemo(() => (tree ? buildTree(tree) : []), [tree]);
   const route = useRoute();
   const shown = route.kind === "doc" ? route.path : null;
@@ -556,10 +698,17 @@ export function WorkspaceTree() {
   return (
     <>
       <SidebarMenuSub className="me-0 pe-0">
-        {tree === null ? (
-          <SidebarMenuSubItem aria-label={TREE_LABELS.loading}>
-            <SidebarMenuSkeleton />
-            <SidebarMenuSkeleton />
+        {tree === null && treeError !== null ? (
+          <SidebarMenuSubItem>
+            <TreeLoadError message={treeError} />
+          </SidebarMenuSubItem>
+        ) : tree === null ? (
+          <SidebarMenuSubItem>
+            <div role="status" aria-live="polite">
+              <span className="sr-only">{TREE_LABELS.loading}</span>
+              <SidebarMenuSkeleton aria-hidden="true" />
+              <SidebarMenuSkeleton aria-hidden="true" />
+            </div>
           </SidebarMenuSubItem>
         ) : (
           <TreeRows

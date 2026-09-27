@@ -6,10 +6,12 @@ were checked in the app's dev server, in Chromium through `agent-browser`.
 
 The findings fall into two groups:
 
-- **Library gaps** (§1–§4) are things `@elabs-ai/components-ui` lacks. Each one is marked in
-  the code with a `// P4: library gap` comment.
-- **Decisions and deviations** (§5–§13) are choices this item made that differ from the brief,
+- **Library gaps** (§1–§4, and §16 from the UI review) are things `@elabs-ai/components-ui`
+  lacks. Each one is marked in the code with a `// P4: library gap` comment.
+- **Decisions and deviations** (§5–§15) are choices this item made that differ from the brief,
   or problems it found in other items.
+- **The UI review** (§16–§17, 2026-09-27, branch `diagram/dg-22-review-fixes`) fixed the
+  review's findings. §10 was rewritten then to say what the shell now does with focus.
 
 ## Library gaps
 
@@ -36,7 +38,8 @@ The findings fall into two groups:
 - **Evidence:** the workspace tree's row menu has a Trash item. It should look destructive
   next to New, Rename and Move.
 - **App workaround:** a plain item. Trash asks first through a `ConfirmDialog` with
-  `tone="destructive"` (`shell/workspace-tree.tsx`, at the comment near line 255).
+  `tone="destructive"` (`shell/workspace-tree.tsx`, at the Trash item's `P4: library gap`
+  comment).
 - **Proposed API:** `DropdownMenuItem variant="destructive"`, matching `Button`'s tone.
 
 ### 3. `EmptyState` is deprecated in favour of `StatePanel`
@@ -46,7 +49,8 @@ The findings fall into two groups:
 - **Evidence:** the brief's step 7 asks for `EmptyState` cards on Home, Catalog and Settings.
 - **App:** Home and Catalog use `StatePanel kind="empty" titleAs="h2"`. The top bar's
   breadcrumb holds the page `h1`. Settings is a `Card` listing the shortcuts, not a
-  placeholder.
+  placeholder. Since the UI review, the canvas's empty and "not a diagram" states use
+  `StatePanel` as well (`panes/canvas-pane.tsx`), so the app no longer renders `EmptyState`.
 - **Library:** nothing to add. This is recorded so the brief template stops naming
   `EmptyState`.
 
@@ -107,19 +111,42 @@ Chromium acts on Close tab and on switching tabs before the page sees the keys, 
 `preventDefault` cannot stop it. Each of these actions also answers to ⌥ / Alt with the same
 key: ⌥W, ⌥⇧[ and ⌥⇧]. `docs/keyboard.md` and the Settings page list both bindings.
 
-### 10. H-24 (focus returns to `<body>`) applies to the new dialogs
+### 10. H-24 (focus returns to `<body>`): where the shell hands focus on
 
-`ConfirmDialog` has no trigger, so when it closes, focus lands on `<body>` (harvest
-inventory H-24). This affects:
+A `Dialog` or `ConfirmDialog` with no trigger closes onto `<body>` (harvest inventory H-24),
+and so does the ⌘K `CommandDialog`. A closed tab or a trashed row also takes its focused
+element with it. Since the UI review, `shell/focus.ts` hands focus to a named target instead.
+`focusSoon` looks the target up by id or `data-tree-path`, polls on a timer until React has
+rendered it, and falls back when it never shows. The latest call wins.
 
-- the workspace tree's rename and trash confirmations, which hand focus back themselves
-  (`shell/workspace-tree.tsx:172`);
-- the close-tab confirmation (`shell/doc-tabs.tsx`);
-- the new "Replace your edits?" confirmation (`shell/diagram-shell.tsx`,
-  `ReplaceEditsDialog`).
+What each action now does with focus, checked keyboard-only in the browser:
 
-For the last two, the action that follows moves focus anyway: the route changes and the
-workspace remounts. H-24's proposed `returnFocusTo` would cover all of them.
+- **Workspace tree dialogs** (`shell/workspace-tree.tsx`). The row menu and the Workspace
+  menu pass their trigger to `ask`.
+  - Esc or Cancel: back to that trigger ("Actions for …" or "Workspace actions").
+  - New diagram: the new document's tab, in edit mode.
+  - New folder: the folder's row.
+  - Rename file: the file's tab if it is open, else its row.
+  - Move: the moved row.
+  - Trash: the parent folder's row, or the rail's Workspace entry for a file at the root.
+- **⌘K palette** (`shell/diagram-shell.tsx`, `CommandPalette`). A layout effect records what
+  had focus as the palette opens.
+  - Esc, or a command: back to that element, else the workspace.
+  - A diagram: its tab.
+  - A page under "Go to": the workspace.
+- **Closing the last tab** (Delete, ⌥W or the close button): the workspace
+  (`shell/mode-store.ts`, `closeTab`). The strip is gone, so no tab can take it.
+
+Not changed, and not checked in the browser (they need a failed autosave, or edits to a
+share link). Read from the code:
+
+- **The close-tab confirmation** (`shell/doc-tabs.tsx`). Delete moves focus to the next tab
+  before it asks. Cancel still lands on `<body>`. Close ends in `closeTab`, so the last tab
+  hands focus to the workspace; otherwise the route changes and focus is on `<body>`.
+- **The "Replace your edits?" confirmation** (`shell/diagram-shell.tsx`,
+  `ReplaceEditsDialog`). Both answers land on `<body>`; Replace then changes the route.
+
+H-24's proposed `returnFocusTo` on the dialogs would let the app drop most of `focus.ts`.
 
 ### 11. DG-21: `workspaceActions.open()` goes ahead after a failed save
 
@@ -198,3 +225,47 @@ reader over the mode store. It can go once DG-17's menu reads `useDocMode()`.
 - **Height-bound examples fit about 6 % smaller.** The tab strip takes 56 px of canvas
   height, so the ClickHouse and Qlik Sense examples fit at a smaller zoom than in DG-20's
   shots. The layout and the routing are unchanged. Lakehouse is width-bound and unchanged.
+
+## UI review (2026-09-27)
+
+### 16. `CommandDialog` does not forward cmdk's `label`
+
+- **Where:** `packages/ui/src/components/command/command.tsx:240`. `CommandDialog` spreads its
+  props onto the Radix `Dialog` root and renders `<Command filter={filter}>` with no `label`.
+  `CommandInput` takes cmdk's input props, and cmdk points the input's `aria-labelledby` at its
+  own label element.
+- **Evidence:** in the browser, the palette's search box has
+  `aria-labelledby="radix-_r_4e_"`, whose element is empty, and no `aria-label`. The
+  accessibility snapshot shows `combobox [expanded=true]` with no name. The placeholder
+  ("Search diagrams, pages and commands…") is not used as the name, because the label
+  reference wins.
+- **App:** no workaround. The palette's `CommandInput` carries a
+  `// P4: library gap` comment (`shell/diagram-shell.tsx`).
+- **Proposed API:** `CommandDialog` takes `label` and passes it to `<Command label>`. It could
+  default to `title` when that is a string.
+
+### 17. Decisions and notes from the review
+
+- **Tab width stays `max-w-56`.** At a 1,440 px window with the sidebar open, four example
+  diagrams take 896 of the strip's 1,184 px: each tab is 224 px and cuts its title after about
+  22 characters. Hovering a tab now shows the full title and the file path, and a tree row
+  shows the title and the file name. A wider cap would fit fewer tabs before the strip
+  scrolls, so the cap stays.
+- **Rename stays a file rename.** The menu item and the dialog say "Rename file…". The
+  dialog names the diagram's title and the file it is saved as, and says the title stays.
+- **A new diagram opens in edit mode without the inspector.** `workspaceActions.create`
+  loads the file before the route changes, so `syncDocRoute` finds it already shown and
+  does not call `setMode`. The editor opens; the inspector does not. Left as it is: the
+  inspector's behaviour on Edit is the maintainer's call.
+- **A new diagram edited into invalid YAML shows the empty state, not the error.** The canvas
+  keeps the last compile that had a graph, and a title-only file never had one. Not changed
+  (`panes/canvas-pane.tsx` is a shared file).
+- **The dev server reloads the page on some workspace file moves and trashes.** Vite logged
+  `page reload workspace/shellfix-folder/shellfix-two.yaml`, and focus was lost with the
+  page. `server/workspace-plugin.mjs` filters workspace files in the legacy
+  `handleHotUpdate`, which Vite 6 calls only for changed files, not for created or deleted
+  ones. A `hotUpdate` hook that returns `[]` for every event under the workspace would stop
+  it. Not changed (outside the review's findings).
+- **The palette ranks "Qlik Cloud (SaaS)…" above "Home" for the query "Home".** cmdk's fuzzy
+  score matches the letters across the long title. A strict substring `filter` would fix it.
+  Not changed.

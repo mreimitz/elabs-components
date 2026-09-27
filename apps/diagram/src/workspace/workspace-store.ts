@@ -43,6 +43,8 @@ export interface CurrentFile {
 export interface WorkspaceState {
   /** `null` until the first `refreshTree`. */
   tree: WorkspaceTree | null;
+  /** DG-22 review: why the last `refreshTree` failed; `null` once one succeeds. */
+  treeError: string | null;
   /** Last paths opened, newest first. */
   recents: string[];
   /** The open document's file; `null` when the text is not a workspace file (a share link). */
@@ -82,6 +84,7 @@ function writeRecents(recents: string[]) {
 
 export const workspaceStore = createStore<WorkspaceState>({
   tree: null,
+  treeError: null, // DG-22 review
   recents: readRecents(),
   current: null,
   dirty: false,
@@ -225,9 +228,16 @@ export class UnsavedEditsError extends Error {
 export const workspaceActions = {
   /** Fetch the tree again (after any event; DG-22 renders it). */
   async refreshTree(): Promise<WorkspaceTree> {
-    const tree = await getTree();
-    workspaceStore.set({ tree });
-    return tree;
+    // DG-22 review: a failure is kept in `treeError` (the tree shows it with Retry), not only
+    // thrown to a caller that may ignore it.
+    try {
+      const tree = await getTree();
+      workspaceStore.set({ tree, treeError: null });
+      return tree;
+    } catch (error) {
+      workspaceStore.set({ treeError: error instanceof Error ? error.message : String(error) });
+      throw error;
+    }
   },
 
   /**

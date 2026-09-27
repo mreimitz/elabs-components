@@ -15,6 +15,7 @@ import { createStore } from "../state/create-store";
 import { diagramStore, editActions, useDiagram } from "../state/diagram-store";
 import { navigate, parseRoute } from "../routes/use-hash";
 import { useWorkspace, workspaceActions, workspaceStore } from "../workspace/workspace-store";
+import { focusWorkspace } from "./focus"; // DG-22 review
 
 export type DocMode = "view" | "edit";
 
@@ -181,6 +182,8 @@ export const modeActions = {
     void workspaceActions.saveNow();
     const neighbour = next[Math.min(index, next.length - 1)];
     navigate(neighbour ? { kind: "doc", path: neighbour } : { kind: "home" });
+    // DG-22 review: the last tab took focus with it (the strip is gone); Home gets it.
+    if (!neighbour) focusWorkspace();
   },
 
   /**

@@ -24,7 +24,7 @@ import {
 } from "@elabs-ai/components-ui";
 import { useRoute } from "../routes/use-hash";
 import { useWorkspace } from "../workspace/workspace-store";
-import { WORKSPACE_ID } from "./diagram-shell";
+import { docTabId, WORKSPACE_ID } from "./focus";
 import { modeActions, openDoc, useMode, useOpenDocs } from "./mode-store";
 
 /** The strip's strings, in one place (`conventions/i18n-strings`). */
@@ -38,11 +38,6 @@ const TAB_LABELS = {
   closeConfirm: "Close without saving",
   keepOpen: "Keep it open",
 } as const;
-
-/** The DOM id of a document's tab (the workspace panel is labelled by it). */
-export function docTabId(path: string): string {
-  return `doc-tab-${path.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
-}
 
 export function DocTabs() {
   const docs = useOpenDocs();
@@ -120,7 +115,8 @@ export function DocTabs() {
                 aria-keyshortcuts="Delete"
                 data-state={selected ? "active" : "inactive"}
                 tabIndex={doc.path === focusable ? 0 : -1}
-                title={doc.path}
+                // The title is truncated in the tab; hover shows it whole, with its file.
+                title={`${doc.title}\n${doc.path}`}
                 className={cn(
                   tabsTriggerVariants({ variant: "underline" }),
                   "h-full min-w-0 gap-1.5 rounded-none ps-3 pe-8 hover:bg-transparent",

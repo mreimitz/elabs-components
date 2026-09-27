@@ -19,6 +19,7 @@ import {
   useSidebar,
 } from "@elabs-ai/components-ui";
 import { toHash, useRoute, type Route } from "../routes/use-hash";
+import { TREE_PATH_ATTR } from "./focus";
 import { WorkspaceRootMenu, WorkspaceTree } from "./workspace-tree";
 
 /** The rail's strings, in one place (`conventions/i18n-strings`). */
@@ -75,6 +76,8 @@ export function RailNav() {
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton
+                  // The tree's root: where focus goes when a root-level row leaves (focus.ts).
+                  {...{ [TREE_PATH_ATTR]: "" }}
                   isActive={route.kind === "doc"}
                   tooltip={RAIL_LABELS.workspace}
                   className="[&[data-state=open]>svg:last-child]:rotate-90"
