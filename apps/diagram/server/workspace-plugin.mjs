@@ -231,8 +231,10 @@ export function atlasWorkspace() {
     },
     // Workspace files are documents, not modules: a `?raw` import of one (the store's seed,
     // `src/state/diagram-store.ts`) must not hot-reload the page on every autosave. The app
-    // hears about changes over `/api/workspace/events` instead.
-    handleHotUpdate({ file }) {
+    // hears about changes over `/api/workspace/events` instead. `hotUpdate`, not the legacy
+    // `handleHotUpdate`: Vite 6 calls that one only for edits, so a file created, trashed or
+    // moved (from the tree, or by the MCP server) still reloaded the page.
+    hotUpdate({ file }) {
       if (file.startsWith(workspace.ROOT + path.sep)) return [];
     },
   };
