@@ -17,6 +17,11 @@ const STEP_LABELS = {
   end: "End walk-through",
   position: (index: number, count: number) => `Step ${index} of ${count}`,
   to: "to",
+  /** The caption as one line: the tooltip of a caption the player clamps. */
+  caption: (step: WalkStep) =>
+    step.flows
+      .map((flow) => `${flow.label ? `${flow.label}: ` : ""}${flow.from} → ${flow.to}`)
+      .join("; "),
 } as const;
 
 /** The floating-surface look of the canvas chrome (`TitleBlock`, `DiagramLegend`). */
@@ -153,13 +158,35 @@ export function StepPlayer() {
               className="aria-disabled:opacity-50"
               onClick={() => move(-1)}
             />
-            <div className="flex min-w-0 flex-col px-1 @max-2xl:flex-1">
-              <Text variant="meta" as="span" className="font-medium tabular-nums">
-                {STEP_LABELS.position(index + 1, steps.length)}
-              </Text>
-              <Text variant="meta" tone="muted" as="span" className="line-clamp-2 break-words">
-                <StepCaption step={current} />
-              </Text>
+            {/* Review-wave3 (player): the surface shrank to the current caption, so its width
+                changed every step and Previous / Next moved under the pointer. Every step's
+                words sit in one grid cell, only the current step's shown: the surface takes
+                the widest step's width (and the tallest's height, clamped) for the whole walk.
+                Its box changes only at walk start and end, which is when the canvas re-fits
+                around it (`panes/canvas-pane.tsx`). */}
+            <div className="grid min-w-0 px-1 @max-2xl:flex-1">
+              {steps.map((entry, at) => (
+                <div
+                  key={entry.step}
+                  className={cn(
+                    "col-start-1 row-start-1 flex min-w-0 flex-col",
+                    at !== index && "invisible",
+                  )}
+                >
+                  <Text variant="meta" as="span" className="font-medium tabular-nums">
+                    {STEP_LABELS.position(at + 1, steps.length)}
+                  </Text>
+                  <Text
+                    variant="meta"
+                    tone="muted"
+                    as="span"
+                    className="line-clamp-2 break-words"
+                    title={STEP_LABELS.caption(entry)}
+                  >
+                    <StepCaption step={entry} />
+                  </Text>
+                </div>
+              ))}
             </div>
             <IconButton
               ref={nextRef}
