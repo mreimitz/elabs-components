@@ -5,34 +5,38 @@ import { Panel } from "@elabs-ai/components-flow";
 export interface TitleBlockProps {
   /** The diagram's `title:`. Without one only `children` render. */
   title?: string;
+  /** Prose under the title, capped to a readable measure. */
   description?: string;
-  /** A short meta line — an example, environment or "generated from …" note. */
+  /**
+   * The `text-meta` source line — DG-20: "Atlas · N nodes · M flows" on the canvas (the
+   * folder and date join it when the workspace service lands), or an example/environment
+   * note on a gallery route.
+   */
   meta?: string;
   /**
    * Semantic heading level for the title (m10). Default `2`: the app shell's top bar
    * already owns the page `<h1>` (plan §6). A standalone route with no shell (e.g.
    * `#legend`) passes `1` so the page still has exactly one `<h1>`. The visual rung stays
-   * pinned to `size="subtitle"` either way, so this never changes how the title looks.
+   * pinned to `size="display"` either way, so this never changes how the title looks.
    */
   headingLevel?: 1 | 2;
   /**
-   * Stacked under the title card, in the same panel — the canvas's status line (wave-2 review
+   * Stacked under the title block, in the same panel — the canvas's status line (wave-2 review
    * m4). Its box is part of the panel, so the chrome-aware fit keeps nodes out from under it.
    */
   children?: ReactNode;
 }
 
 /**
- * DG-08 — the diagram's title, as a floating `Panel` over the canvas (D9: it must be in
- * the exported picture). `Heading level={2}` by default: the app shell's top bar already
- * owns the page `<h1>` (plan §6), so the title block starts at `<h2>`, visually sized down
- * to the `subtitle` rung so it does not compete with it; `headingLevel={1}` opts a
- * standalone route in instead (m10).
+ * DG-08 — the diagram's title, as a `Panel` over the canvas (D9: it must be in the exported
+ * picture). `Heading level={2}` by default: the app shell's top bar already owns the page
+ * `<h1>` (plan §6); `headingLevel={1}` opts a standalone route in instead (m10).
  *
- * The card has the same floating-surface look as `DiagramLegend`/flow's `Legend`
- * (`rounded-lg bg-surface-elevated/90 p-3 text-meta shadow-ring-sm backdrop-blur`) — a
- * floating surface takes `shadow-ring-*` and no border (conventions, "Elevation"). The panel
- * itself is a bare column: the card, then `children`.
+ * DG-20 (defect 1) — an editorial title block, not a floating label card: the `display`
+ * rung, the description at a prose measure, a `text-meta` source line, and a hairline rule
+ * beneath. It sits on a translucent patch of the canvas itself (`bg-canvas/80` +
+ * `backdrop-blur-sm`, so lines passing behind it recede) with no shadow or border of its
+ * own — it is part of the drawing, not a surface floating over it.
  */
 export function TitleBlock({
   title,
@@ -55,35 +59,30 @@ export function TitleBlock({
         // rem — 2rem leaves room for the `top-left` panel's own 15px outer margin on both
         // sides. Wave-2 review m1: from `@3xl` the canvas shows the minimap top-right, so the
         // cap also leaves its 200px plus its 15px margin and a gap (16rem in all). P4: library
-        // gap — the floating-surface shell (`DiagramLegend`'s `FLOATING_SURFACE`, this block)
-        // should cap itself to its pane so no consumer writes this calc(); see
-        // docs/findings/DG-08-legend.md.
+        // gap — the floating-surface shell should cap itself to its pane so no consumer
+        // writes this calc(); see docs/findings/DG-08-legend.md.
         // The column's empty corner (beside a short status line) must not catch the canvas's
-        // pointer, so only the card takes it.
+        // pointer, so only the block takes it.
         "pointer-events-none flex min-w-0 max-w-[calc(100%-2rem)] flex-col items-start gap-2 @3xl:max-w-[calc(100%-16rem)]",
       )}
     >
       {title ? (
         <div
           data-slot="diagram-title-card"
-          className="pointer-events-auto flex min-w-0 max-w-full flex-col gap-0.5 rounded-lg bg-surface-elevated/90 p-3 text-meta shadow-ring-sm backdrop-blur"
+          className="pointer-events-auto flex min-w-0 max-w-full flex-col gap-1 rounded-t-md border-b border-border bg-canvas/80 px-3 pt-2 pb-2.5 backdrop-blur-sm"
         >
           {/* Wave-2 review m1: wraps to two lines before it clips — `truncate` kept one line
               at the full title's width, which ran under the minimap at 1440. */}
-          <Heading
-            level={headingLevel}
-            size="subtitle"
-            className="line-clamp-2 min-w-0 break-words"
-          >
+          <Heading level={headingLevel} size="display" className="line-clamp-2 min-w-0 break-words">
             {title}
           </Heading>
           {description ? (
-            <Text variant="caption" tone="muted" className="min-w-0 truncate">
+            <Text variant="body" tone="muted" className="min-w-0 max-w-prose">
               {description}
             </Text>
           ) : null}
           {meta ? (
-            <Text variant="meta" tone="muted" className="min-w-0 truncate">
+            <Text variant="meta" tone="muted" className="min-w-0 truncate tabular-nums">
               {meta}
             </Text>
           ) : null}

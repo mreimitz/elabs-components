@@ -16,6 +16,7 @@ import {
   cn,
 } from "@elabs-ai/components-ui";
 import { buildLegend, type LegendMode } from "./build-legend";
+import { CLUSTER_CLASS } from "../edges/edge-label-size";
 import type { FlowKind, FlowSecure } from "../edges/data-flow-edge-data";
 import {
   KIND_GLYPH,
@@ -37,9 +38,15 @@ export interface DiagramLegendProps {
   mode: LegendMode;
 }
 
-/** The floating-surface look shared with `TitleBlock` and flow's own `Legend`. */
+/**
+ * The floating-surface look (flow's own `Legend` shape), one rung lighter since DG-20
+ * (defect 12): `shadow-ring-xs` and `p-2.5`.
+ */
 const FLOATING_SURFACE =
-  "rounded-lg bg-surface-elevated/90 p-3 text-meta shadow-ring-sm backdrop-blur";
+  "rounded-lg bg-surface-elevated/90 p-2.5 text-meta shadow-ring-xs backdrop-blur";
+
+/** DG-20: above this many rows the legend starts closed (unless the session kept a choice). */
+const MAX_OPEN_ENTRIES = 8;
 
 /** Every fixed UI string in one place (`conventions/i18n-strings`). */
 const LABELS = {
@@ -66,18 +73,15 @@ const OPEN_KEY = "diagram-legend-open";
 /** Tailwind's `xl` breakpoint (80rem). */
 const WIDE_QUERY = "(min-width: 80rem)";
 
-/**
- * Open or closed at first: the user's choice this session if they made one; otherwise open on
- * an `xl` window and closed below it, where the legend costs the fit zoom most.
- */
-function initialOpen(): boolean {
+/** The user's open/closed choice this session, or `null` if they made none. */
+function keptOpen(): boolean | null {
   try {
     const kept = sessionStorage.getItem(OPEN_KEY);
     if (kept !== null) return kept === "true";
   } catch {
-    // Storage blocked: fall back to the width.
+    // Storage blocked: no kept choice.
   }
-  return window.matchMedia(WIDE_QUERY).matches;
+  return null;
 }
 
 function keepOpen(open: boolean) {
@@ -95,7 +99,7 @@ function providerLabel(provider: string): string {
 }
 
 /**
- * A 28×16 owner swatch: the zone frame (`zoneVariants`) with a top-level zone's fill rung
+ * A 16 px owner swatch: the zone frame (`zoneVariants`) with a top-level zone's fill rung
  * (`zoneFill`, DG-20) around a body carrying the SaaS hatch.
  */
 function OwnerSwatch({ owner }: { owner: ZoneOwner }) {
@@ -104,7 +108,7 @@ function OwnerSwatch({ owner }: { owner: ZoneOwner }) {
       aria-hidden="true"
       className={cn(
         zoneVariants({ owner, kind: "generic", ...zoneFill(0, owner) }),
-        "inline-block h-4 w-7 shrink-0",
+        "inline-block size-4 shrink-0",
       )}
     >
       <span className={cn("block h-full w-full", zoneBodyVariants({ owner }))} />
@@ -155,7 +159,7 @@ function OwnersSection({ owners }: { owners: ZoneOwner[] }) {
       <Text as="div" id={headingId} tone="muted" variant="eyebrow">
         {LABELS.owners}
       </Text>
-      <ul aria-labelledby={headingId} className="mt-1 flex flex-col gap-1">
+      <ul aria-labelledby={headingId} className="mt-1 flex flex-col gap-0.5">
         {owners.map((owner) => (
           <li key={owner} className="flex items-center gap-2 text-muted-foreground">
             <OwnerSwatch owner={owner} />
@@ -182,7 +186,7 @@ function EdgesSection({
       <Text as="div" id={headingId} tone="muted" variant="eyebrow">
         {LABELS.edges}
       </Text>
-      <ul aria-labelledby={headingId} className="mt-1 flex flex-col gap-1">
+      <ul aria-labelledby={headingId} className="mt-1 flex flex-col gap-0.5">
         {edgeKinds.map((kind) => {
           const KindGlyph = KIND_GLYPH[kind];
           return (
@@ -204,7 +208,9 @@ function EdgesSection({
         })}
         {hasSteps ? (
           <li className="flex items-center gap-2 text-muted-foreground">
-            <Badge className="min-w-5 justify-center rounded-full px-1.5 tabular-nums">1</Badge>
+            <Badge variant="outline" className={CLUSTER_CLASS.step}>
+              1
+            </Badge>
             <span>{LABELS.numberedStep}</span>
           </li>
         ) : null}
@@ -220,7 +226,7 @@ function ProvidersSection({ providers }: { providers: string[] }) {
       <Text as="div" id={headingId} tone="muted" variant="eyebrow">
         {LABELS.providers}
       </Text>
-      <ul aria-labelledby={headingId} className="mt-1 flex flex-col gap-1">
+      <ul aria-labelledby={headingId} className="mt-1 flex flex-col gap-0.5">
         {providers.map((provider) => (
           <li key={provider} className="flex items-center gap-2 text-muted-foreground">
             <ServiceLogo decorative name={`${provider}/${provider}`} size={16} />
@@ -247,9 +253,10 @@ export function DiagramLegend({ mode }: DiagramLegendProps) {
   const nodes = useNodes();
   const edges = useEdges();
   // Every example load remounts the canvas and this legend; the session keeps the choice.
-  const [open, setOpen] = useState(initialOpen);
+  const [choice, setChoice] = useState(keptOpen);
+  const [wide] = useState(() => window.matchMedia(WIDE_QUERY).matches);
   const onOpenChange = (next: boolean) => {
-    setOpen(next);
+    setChoice(next);
     keepOpen(next);
   };
   const spec = useMemo(() => buildLegend(nodes, edges, mode), [nodes, edges, mode]);
@@ -259,6 +266,15 @@ export function DiagramLegend({ mode }: DiagramLegendProps) {
   const hasProviders = spec.providers.length > 0;
   const hasEdges = spec.edgeKinds.length > 0 || spec.secure.length > 0 || spec.hasSteps;
   if (!hasOwners && !hasEdges && !hasProviders) return null;
+  // Open at first only on an `xl` window (below it the legend costs the fit zoom most) and
+  // only when it is short (DG-20); the session's own choice always wins. Derived, no effect.
+  const entries =
+    spec.owners.length +
+    spec.edgeKinds.length +
+    spec.secure.length +
+    (spec.hasSteps ? 1 : 0) +
+    spec.providers.length;
+  const open = choice ?? (wide && entries <= MAX_OPEN_ENTRIES);
 
   return (
     <Panel
