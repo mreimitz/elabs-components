@@ -1,0 +1,1266 @@
+[
+  {
+    "family": "AreaChart",
+    "query": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
+    "candidates": [
+      {
+        "name": "AreaChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 11.5,
+        "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
+        "hasTargets": false
+      },
+      {
+        "name": "LineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4.5,
+        "matchedShape": "one or more measures over continuous time, where the trend itself is the point",
+        "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart",
+        "hasTargets": false
+      },
+      {
+        "name": "HeatmapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3.75,
+        "matchedShape": "one measure per calendar day over several months, as variant=\"calendar\"",
+        "avoidWhen": "fewer than about two months of days — too sparse to read as a calendar grid",
+        "hasTargets": false
+      },
+      {
+        "name": "LiveLineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2.75,
+        "matchedShape": "a metric updating in real time, appended over a rolling window",
+        "avoidWhen": "the series is static or historical — use a line chart",
+        "hasTargets": false
+      },
+      {
+        "name": "CandlestickChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "open, high, low and close per period — an OHLC financial series over time",
+        "avoidWhen": "the data is not OHLC-shaped — a line of closing values is enough",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "BarChart",
+    "query": "categorical comparison of one or more measures across a small set of named categories",
+    "candidates": [
+      {
+        "name": "BarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 10,
+        "matchedShape": "categorical comparison of one or more measures across a small set of named categories",
+        "avoidWhen": "a time axis with many points — use a line or area chart",
+        "hasTargets": false
+      },
+      {
+        "name": "ChartMultiples",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 5,
+        "matchedShape": "one measure across many categories or groups — a grid of panels that share a scale, read as one picture",
+        "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart",
+        "hasTargets": false
+      },
+      {
+        "name": "HeatmapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4.75,
+        "matchedShape": "two categorical axes (weekday by hour, for example) with one numeric value per cell — ticket volume, event counts; many small cells favour mode=\"dot\" over the default cell fill",
+        "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+        "hasTargets": false
+      },
+      {
+        "name": "DumbbellChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4,
+        "matchedShape": "two measures per category with a direction — the move from one to the other is the fact, drawn as an arrow (variant=\"arrow\")",
+        "avoidWhen": "more than 2 points per category — use small-multiple lines",
+        "hasTargets": false
+      },
+      {
+        "name": "PieChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3.75,
+        "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
+        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "BulletChart",
+    "query": "a single value against a target and 2–3 qualitative bands",
+    "candidates": [
+      {
+        "name": "BulletChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 6,
+        "matchedShape": "a single value against a target and 2–3 qualitative bands",
+        "avoidWhen": "more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`",
+        "hasTargets": false
+      },
+      {
+        "name": "Gauge",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 5,
+        "matchedShape": "a single value against a target or threshold bands",
+        "avoidWhen": "the trend over time matters more than the instant — use a line chart",
+        "hasTargets": false
+      },
+      {
+        "name": "RingChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "one proportion against its maximum, read as a single ring",
+        "avoidWhen": "several categories matter — use a pie or unit chart",
+        "hasTargets": false
+      },
+      {
+        "name": "BarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "a single signed measure around a meaningful zero, as diverging bars with a zero line",
+        "avoidWhen": "the zero baseline is not meaningful — plain bars read the same comparison",
+        "hasTargets": false
+      },
+      {
+        "name": "ChoroplethChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "a measure by geographic region",
+        "avoidWhen": "there is no real geography — use a bar chart",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "BumpChart",
+    "query": "rank of several entities over ordered periods",
+    "candidates": [
+      {
+        "name": "BumpChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 6,
+        "matchedShape": "rank of several entities over ordered periods",
+        "avoidWhen": "only 2 periods — use a dumbbell chart",
+        "hasTargets": false
+      },
+      {
+        "name": "HeatmapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2.75,
+        "matchedShape": "one measure per calendar day over several months, as variant=\"calendar\"",
+        "avoidWhen": "fewer than about two months of days — too sparse to read as a calendar grid",
+        "hasTargets": false
+      },
+      {
+        "name": "LiveLineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "a metric updating in real time, appended over a rolling window",
+        "avoidWhen": "the series is static or historical — use a line chart",
+        "hasTargets": false
+      },
+      {
+        "name": "DumbbellChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "two time points per category — a before and after, or a range with two ends",
+        "avoidWhen": "more than 2 points per category — use small-multiple lines",
+        "hasTargets": false
+      },
+      {
+        "name": "CandlestickChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "open, high, low and close per period — an OHLC financial series over time",
+        "avoidWhen": "the data is not OHLC-shaped — a line of closing values is enough",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "CandlestickChart",
+    "query": "open, high, low and close per period — an OHLC financial series over time",
+    "candidates": [
+      {
+        "name": "CandlestickChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 10,
+        "matchedShape": "open, high, low and close per period — an OHLC financial series over time",
+        "avoidWhen": "the data is not OHLC-shaped — a line of closing values is enough",
+        "hasTargets": false
+      },
+      {
+        "name": "ChartMultiples",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4,
+        "matchedShape": "many overlapping lines over time — one panel per series instead of a spaghetti chart, so each trend reads on its own",
+        "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart",
+        "hasTargets": false
+      },
+      {
+        "name": "LiveLineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "a metric updating in real time, appended over a rolling window",
+        "avoidWhen": "the series is static or historical — use a line chart",
+        "hasTargets": false
+      },
+      {
+        "name": "LineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "one or more measures over continuous time, where the trend itself is the point",
+        "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart",
+        "hasTargets": false
+      },
+      {
+        "name": "AreaChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "ChartMultiples",
+    "query": "many overlapping lines over time — one panel per series instead of a spaghetti chart, so each trend reads on its own",
+    "candidates": [
+      {
+        "name": "ChartMultiples",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 17,
+        "matchedShape": "many overlapping lines over time — one panel per series instead of a spaghetti chart, so each trend reads on its own",
+        "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart",
+        "hasTargets": false
+      },
+      {
+        "name": "LineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4,
+        "matchedShape": "one or more measures over continuous time, where the trend itself is the point",
+        "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart",
+        "hasTargets": false
+      },
+      {
+        "name": "CandlestickChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3.75,
+        "matchedShape": "open, high, low and close per period — an OHLC financial series over time",
+        "avoidWhen": "the data is not OHLC-shaped — a line of closing values is enough",
+        "hasTargets": false
+      },
+      {
+        "name": "LiveLineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "a metric updating in real time, appended over a rolling window",
+        "avoidWhen": "the series is static or historical — use a line chart",
+        "hasTargets": false
+      },
+      {
+        "name": "AreaChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "ChoroplethChart",
+    "query": "a measure by geographic region",
+    "candidates": [
+      {
+        "name": "ChoroplethChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "a measure by geographic region",
+        "avoidWhen": "there is no real geography — use a bar chart",
+        "hasTargets": false
+      },
+      {
+        "name": "BarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "categorical comparison of one or more measures across a small set of named categories",
+        "avoidWhen": "a time axis with many points — use a line or area chart",
+        "hasTargets": false
+      },
+      {
+        "name": "DumbbellChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "two measures per category with a direction — the move from one to the other is the fact, drawn as an arrow (variant=\"arrow\")",
+        "avoidWhen": "more than 2 points per category — use small-multiple lines",
+        "hasTargets": false
+      },
+      {
+        "name": "ChartMultiples",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "one measure across many categories or groups — a grid of panels that share a scale, read as one picture",
+        "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart",
+        "hasTargets": false
+      },
+      {
+        "name": "PieChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1.75,
+        "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
+        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "ComposedChart",
+    "query": "mixed marks on one shared axis — bars with a line target, for example",
+    "candidates": [
+      {
+        "name": "ComposedChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 9,
+        "matchedShape": "mixed marks on one shared axis — bars with a line target, for example",
+        "avoidWhen": "a single mark type would do — reach for that container directly",
+        "hasTargets": false
+      },
+      {
+        "name": "BarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "a single signed measure around a meaningful zero, as diverging bars with a zero line",
+        "avoidWhen": "the zero baseline is not meaningful — plain bars read the same comparison",
+        "hasTargets": false
+      },
+      {
+        "name": "UnitChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "one tally row per category, ticks summing to a total — ticket volume by weekday, for example, as layout=\"rows\"",
+        "avoidWhen": "exact per-unit counts do not matter — a pie or bar chart reads faster",
+        "hasTargets": false
+      },
+      {
+        "name": "ChartMultiples",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "many overlapping lines over time — one panel per series instead of a spaghetti chart, so each trend reads on its own",
+        "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart",
+        "hasTargets": false
+      },
+      {
+        "name": "HeatmapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "two categorical axes (weekday by hour, for example) with one numeric value per cell — ticket volume, event counts; many small cells favour mode=\"dot\" over the default cell fill",
+        "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "DensityScatterChart",
+    "query": "hundreds of thousands of rows of two continuous measures — where the points pile up, and which zone each falls in",
+    "candidates": [
+      {
+        "name": "DensityScatterChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 14,
+        "matchedShape": "hundreds of thousands of rows of two continuous measures — where the points pile up, and which zone each falls in",
+        "avoidWhen": "under ~20k rows — use ScatterChart, which keeps labels, shapes and per-point marks",
+        "hasTargets": false
+      },
+      {
+        "name": "ScatterChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4,
+        "matchedShape": "two continuous measures per row — correlation, or the shape of a distribution",
+        "avoidWhen": "one axis is categorical — use a bar or dumbbell chart",
+        "hasTargets": false
+      },
+      {
+        "name": "LineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4,
+        "matchedShape": "one or more measures over continuous time, where the trend itself is the point",
+        "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart",
+        "hasTargets": false
+      },
+      {
+        "name": "DumbbellChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "two time points per category — a before and after, or a range with two ends",
+        "avoidWhen": "more than 2 points per category — use small-multiple lines",
+        "hasTargets": false
+      },
+      {
+        "name": "AreaChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "DistributionChart",
+    "query": "the spread of one measure, optionally grouped — a histogram, box plot or strip plot",
+    "candidates": [
+      {
+        "name": "DistributionChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 9,
+        "matchedShape": "the spread of one measure, optionally grouped — a histogram, box plot or strip plot",
+        "avoidWhen": "a single summary number would do — use a metric card",
+        "hasTargets": false
+      },
+      {
+        "name": "BarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "categorical comparison of one or more measures across a small set of named categories",
+        "avoidWhen": "a time axis with many points — use a line or area chart",
+        "hasTargets": false
+      },
+      {
+        "name": "DumbbellChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "two measures per category with a direction — the move from one to the other is the fact, drawn as an arrow (variant=\"arrow\")",
+        "avoidWhen": "more than 2 points per category — use small-multiple lines",
+        "hasTargets": false
+      },
+      {
+        "name": "ChartMultiples",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "one measure across many categories or groups — a grid of panels that share a scale, read as one picture",
+        "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart",
+        "hasTargets": false
+      },
+      {
+        "name": "UnitChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2.75,
+        "matchedShape": "one tally row per category, ticks summing to a total — ticket volume by weekday, for example, as layout=\"rows\"",
+        "avoidWhen": "exact per-unit counts do not matter — a pie or bar chart reads faster",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "DumbbellChart",
+    "query": "two time points per category — a before and after, or a range with two ends",
+    "candidates": [
+      {
+        "name": "DumbbellChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 8,
+        "matchedShape": "two time points per category — a before and after, or a range with two ends",
+        "avoidWhen": "more than 2 points per category — use small-multiple lines",
+        "hasTargets": false
+      },
+      {
+        "name": "LineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "one or more measures over continuous time, where the trend itself is the point",
+        "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart",
+        "hasTargets": false
+      },
+      {
+        "name": "BumpChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1.5,
+        "matchedShape": "rank of several entities over ordered periods",
+        "avoidWhen": "only 2 periods — use a dumbbell chart",
+        "hasTargets": false
+      },
+      {
+        "name": "DensityScatterChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1.5,
+        "matchedShape": "hundreds of thousands of rows of two continuous measures — where the points pile up, and which zone each falls in",
+        "avoidWhen": "under ~20k rows — use ScatterChart, which keeps labels, shapes and per-point marks",
+        "hasTargets": false
+      },
+      {
+        "name": "HeatmapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1.5,
+        "matchedShape": "two categorical axes (weekday by hour, for example) with one numeric value per cell — ticket volume, event counts; many small cells favour mode=\"dot\" over the default cell fill",
+        "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "FunnelChart",
+    "query": "a sequential process with drop-off between stages",
+    "candidates": [
+      {
+        "name": "FunnelChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 6,
+        "matchedShape": "a sequential process with drop-off between stages",
+        "avoidWhen": "the stages are not sequential, or there is no drop-off story to tell",
+        "hasTargets": false
+      },
+      {
+        "name": "Gantt",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "tasks or phases across a timeline, with dependencies between them",
+        "avoidWhen": "it is not really scheduled work — a dumbbell chart shows a single before and after",
+        "hasTargets": false
+      },
+      {
+        "name": "SankeyChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "a weighted flow between named nodes, source to target",
+        "avoidWhen": "the nodes have no real flow between them — use a network chart",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "Gantt",
+    "query": "tasks or phases across a timeline, with dependencies between them",
+    "candidates": [
+      {
+        "name": "Gantt",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 7,
+        "matchedShape": "tasks or phases across a timeline, with dependencies between them",
+        "avoidWhen": "it is not really scheduled work — a dumbbell chart shows a single before and after",
+        "hasTargets": false
+      },
+      {
+        "name": "LiveLineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "a metric updating in real time, appended over a rolling window",
+        "avoidWhen": "the series is static or historical — use a line chart",
+        "hasTargets": false
+      },
+      {
+        "name": "DumbbellChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "two time points per category — a before and after, or a range with two ends",
+        "avoidWhen": "more than 2 points per category — use small-multiple lines",
+        "hasTargets": false
+      },
+      {
+        "name": "LineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "one or more measures over continuous time, where the trend itself is the point",
+        "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart",
+        "hasTargets": false
+      },
+      {
+        "name": "AreaChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "Gauge",
+    "query": "a single value against a target or threshold bands",
+    "candidates": [
+      {
+        "name": "Gauge",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 6,
+        "matchedShape": "a single value against a target or threshold bands",
+        "avoidWhen": "the trend over time matters more than the instant — use a line chart",
+        "hasTargets": false
+      },
+      {
+        "name": "BulletChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 5,
+        "matchedShape": "a single value against a target and 2–3 qualitative bands",
+        "avoidWhen": "more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`",
+        "hasTargets": false
+      },
+      {
+        "name": "RingChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "one proportion against its maximum, read as a single ring",
+        "avoidWhen": "several categories matter — use a pie or unit chart",
+        "hasTargets": false
+      },
+      {
+        "name": "BarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "a single signed measure around a meaningful zero, as diverging bars with a zero line",
+        "avoidWhen": "the zero baseline is not meaningful — plain bars read the same comparison",
+        "hasTargets": false
+      },
+      {
+        "name": "ChoroplethChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "a measure by geographic region",
+        "avoidWhen": "there is no real geography — use a bar chart",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "HeatmapChart",
+    "query": "two categorical axes (weekday by hour, for example) with one numeric value per cell — ticket volume, event counts; many small cells favour mode=\"dot\" over the default cell fill",
+    "candidates": [
+      {
+        "name": "HeatmapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 22,
+        "matchedShape": "two categorical axes (weekday by hour, for example) with one numeric value per cell — ticket volume, event counts; many small cells favour mode=\"dot\" over the default cell fill",
+        "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+        "hasTargets": false
+      },
+      {
+        "name": "UnitChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 6.75,
+        "matchedShape": "one tally row per category, ticks summing to a total — ticket volume by weekday, for example, as layout=\"rows\"",
+        "avoidWhen": "exact per-unit counts do not matter — a pie or bar chart reads faster",
+        "hasTargets": false
+      },
+      {
+        "name": "LineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4.5,
+        "matchedShape": "one or more measures over continuous time, where the trend itself is the point",
+        "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart",
+        "hasTargets": false
+      },
+      {
+        "name": "ChartMultiples",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4,
+        "matchedShape": "many overlapping lines over time — one panel per series instead of a spaghetti chart, so each trend reads on its own",
+        "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart",
+        "hasTargets": false
+      },
+      {
+        "name": "AreaChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3.5,
+        "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "LineChart",
+    "query": "one or more measures over continuous time, where the trend itself is the point",
+    "candidates": [
+      {
+        "name": "LineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 10.5,
+        "matchedShape": "one or more measures over continuous time, where the trend itself is the point",
+        "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart",
+        "hasTargets": false
+      },
+      {
+        "name": "AreaChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 5.5,
+        "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
+        "hasTargets": false
+      },
+      {
+        "name": "ChartMultiples",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4,
+        "matchedShape": "many overlapping lines over time — one panel per series instead of a spaghetti chart, so each trend reads on its own",
+        "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart",
+        "hasTargets": false
+      },
+      {
+        "name": "LiveLineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3.75,
+        "matchedShape": "a metric updating in real time, appended over a rolling window",
+        "avoidWhen": "the series is static or historical — use a line chart",
+        "hasTargets": false
+      },
+      {
+        "name": "HeatmapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3.75,
+        "matchedShape": "one measure per calendar day over several months, as variant=\"calendar\"",
+        "avoidWhen": "fewer than about two months of days — too sparse to read as a calendar grid",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "LiveLineChart",
+    "query": "a metric updating in real time, appended over a rolling window",
+    "candidates": [
+      {
+        "name": "LiveLineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 8,
+        "matchedShape": "a metric updating in real time, appended over a rolling window",
+        "avoidWhen": "the series is static or historical — use a line chart",
+        "hasTargets": false
+      },
+      {
+        "name": "LineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3.5,
+        "matchedShape": "one or more measures over continuous time, where the trend itself is the point",
+        "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart",
+        "hasTargets": false
+      },
+      {
+        "name": "AreaChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3.5,
+        "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
+        "hasTargets": false
+      },
+      {
+        "name": "HeatmapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2.75,
+        "matchedShape": "one measure per calendar day over several months, as variant=\"calendar\"",
+        "avoidWhen": "fewer than about two months of days — too sparse to read as a calendar grid",
+        "hasTargets": false
+      },
+      {
+        "name": "CandlestickChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "open, high, low and close per period — an OHLC financial series over time",
+        "avoidWhen": "the data is not OHLC-shaped — a line of closing values is enough",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "NetworkChart",
+    "query": "arbitrary node and edge relationships with no hierarchy",
+    "candidates": [
+      {
+        "name": "NetworkChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 6,
+        "matchedShape": "arbitrary node and edge relationships with no hierarchy",
+        "avoidWhen": "the relationship really is a hierarchy — use a tree chart or a treemap",
+        "hasTargets": false
+      },
+      {
+        "name": "TreemapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "a nested hierarchy sized by one measure",
+        "avoidWhen": "the hierarchy has fewer than 2 levels — a flat bar chart is clearer",
+        "hasTargets": false
+      },
+      {
+        "name": "SankeyChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "a weighted flow between named nodes, source to target",
+        "avoidWhen": "the nodes have no real flow between them — use a network chart",
+        "hasTargets": false
+      },
+      {
+        "name": "TreeChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "a hierarchy read as a branching tree rather than as sized rectangles",
+        "avoidWhen": "size, not structure, is the point — use a treemap",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "ParallelCoordinatesChart",
+    "query": "many numeric dimensions compared across entities at once",
+    "candidates": [
+      {
+        "name": "ParallelCoordinatesChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 8,
+        "matchedShape": "many numeric dimensions compared across entities at once",
+        "avoidWhen": "more than about 2 entities need per-entity detail — use small-multiple radar",
+        "hasTargets": false
+      },
+      {
+        "name": "ChartMultiples",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4,
+        "matchedShape": "one measure across many categories or groups — a grid of panels that share a scale, read as one picture",
+        "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart",
+        "hasTargets": false
+      },
+      {
+        "name": "BarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "categorical comparison of one or more measures across a small set of named categories",
+        "avoidWhen": "a time axis with many points — use a line or area chart",
+        "hasTargets": false
+      },
+      {
+        "name": "RadarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "several measures per entity, compared as an overall shape rather than value by value",
+        "avoidWhen": "more than about 8 spokes, or absolute magnitude matters more than the shape",
+        "hasTargets": false
+      },
+      {
+        "name": "HeatmapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "two categorical axes (weekday by hour, for example) with one numeric value per cell — ticket volume, event counts; many small cells favour mode=\"dot\" over the default cell fill",
+        "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "PieChart",
+    "query": "parts of a whole across a few categories, read as proportions of the total",
+    "candidates": [
+      {
+        "name": "PieChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 9,
+        "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
+        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
+        "hasTargets": false
+      },
+      {
+        "name": "ChartMultiples",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 5,
+        "matchedShape": "one measure across many categories or groups — a grid of panels that share a scale, read as one picture",
+        "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart",
+        "hasTargets": false
+      },
+      {
+        "name": "UnitChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4.75,
+        "matchedShape": "parts of a whole as discrete unit counts rather than a percentage, as layout=\"waffle\"",
+        "avoidWhen": "exact per-unit counts do not matter — a pie or bar chart reads faster",
+        "hasTargets": false
+      },
+      {
+        "name": "RingChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3.75,
+        "matchedShape": "one proportion against its maximum, read as a single ring",
+        "avoidWhen": "several categories matter — use a pie or unit chart",
+        "hasTargets": false
+      },
+      {
+        "name": "BarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "categorical comparison of one or more measures across a small set of named categories",
+        "avoidWhen": "a time axis with many points — use a line or area chart",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "RadarChart",
+    "query": "several measures per entity, compared as an overall shape rather than value by value",
+    "candidates": [
+      {
+        "name": "RadarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 10,
+        "matchedShape": "several measures per entity, compared as an overall shape rather than value by value",
+        "avoidWhen": "more than about 8 spokes, or absolute magnitude matters more than the shape",
+        "hasTargets": false
+      },
+      {
+        "name": "HeatmapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4,
+        "matchedShape": "one measure per calendar day over several months, as variant=\"calendar\"",
+        "avoidWhen": "fewer than about two months of days — too sparse to read as a calendar grid",
+        "hasTargets": false
+      },
+      {
+        "name": "DumbbellChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4,
+        "matchedShape": "two measures per category with a direction — the move from one to the other is the fact, drawn as an arrow (variant=\"arrow\")",
+        "avoidWhen": "more than 2 points per category — use small-multiple lines",
+        "hasTargets": false
+      },
+      {
+        "name": "ChartMultiples",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4,
+        "matchedShape": "one measure across many categories or groups — a grid of panels that share a scale, read as one picture",
+        "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart",
+        "hasTargets": false
+      },
+      {
+        "name": "UnitChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3.75,
+        "matchedShape": "parts of a whole as discrete unit counts rather than a percentage, as layout=\"waffle\"",
+        "avoidWhen": "exact per-unit counts do not matter — a pie or bar chart reads faster",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "RingChart",
+    "query": "one proportion against its maximum, read as a single ring",
+    "candidates": [
+      {
+        "name": "RingChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 9,
+        "matchedShape": "one proportion against its maximum, read as a single ring",
+        "avoidWhen": "several categories matter — use a pie or unit chart",
+        "hasTargets": false
+      },
+      {
+        "name": "PieChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
+        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
+        "hasTargets": false
+      },
+      {
+        "name": "ChartMultiples",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "many overlapping lines over time — one panel per series instead of a spaghetti chart, so each trend reads on its own",
+        "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart",
+        "hasTargets": false
+      },
+      {
+        "name": "BulletChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "a single value against a target and 2–3 qualitative bands",
+        "avoidWhen": "more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`",
+        "hasTargets": false
+      },
+      {
+        "name": "Gauge",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "a single value against a target or threshold bands",
+        "avoidWhen": "the trend over time matters more than the instant — use a line chart",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "SankeyChart",
+    "query": "a weighted flow between named nodes, source to target",
+    "candidates": [
+      {
+        "name": "SankeyChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 7,
+        "matchedShape": "a weighted flow between named nodes, source to target",
+        "avoidWhen": "the nodes have no real flow between them — use a network chart",
+        "hasTargets": false
+      },
+      {
+        "name": "BulletChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "a single value against a target and 2–3 qualitative bands",
+        "avoidWhen": "more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`",
+        "hasTargets": false
+      },
+      {
+        "name": "FunnelChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "a sequential process with drop-off between stages",
+        "avoidWhen": "the stages are not sequential, or there is no drop-off story to tell",
+        "hasTargets": false
+      },
+      {
+        "name": "Gauge",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "a single value against a target or threshold bands",
+        "avoidWhen": "the trend over time matters more than the instant — use a line chart",
+        "hasTargets": false
+      },
+      {
+        "name": "NetworkChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "arbitrary node and edge relationships with no hierarchy",
+        "avoidWhen": "the relationship really is a hierarchy — use a tree chart or a treemap",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "ScatterChart",
+    "query": "two continuous measures per row — correlation, or the shape of a distribution",
+    "candidates": [
+      {
+        "name": "ScatterChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 7,
+        "matchedShape": "two continuous measures per row — correlation, or the shape of a distribution",
+        "avoidWhen": "one axis is categorical — use a bar or dumbbell chart",
+        "hasTargets": false
+      },
+      {
+        "name": "DensityScatterChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4,
+        "matchedShape": "hundreds of thousands of rows of two continuous measures — where the points pile up, and which zone each falls in",
+        "avoidWhen": "under ~20k rows — use ScatterChart, which keeps labels, shapes and per-point marks",
+        "hasTargets": false
+      },
+      {
+        "name": "LineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "one or more measures over continuous time, where the trend itself is the point",
+        "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart",
+        "hasTargets": false
+      },
+      {
+        "name": "RadarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "several measures per entity, compared as an overall shape rather than value by value",
+        "avoidWhen": "more than about 8 spokes, or absolute magnitude matters more than the shape",
+        "hasTargets": false
+      },
+      {
+        "name": "DumbbellChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "two measures per category with a direction — the move from one to the other is the fact, drawn as an arrow (variant=\"arrow\")",
+        "avoidWhen": "more than 2 points per category — use small-multiple lines",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "TreeChart",
+    "query": "a hierarchy read as a branching tree rather than as sized rectangles",
+    "candidates": [
+      {
+        "name": "TreeChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 9,
+        "matchedShape": "a hierarchy read as a branching tree rather than as sized rectangles",
+        "avoidWhen": "size, not structure, is the point — use a treemap",
+        "hasTargets": false
+      },
+      {
+        "name": "RadarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "several measures per entity, compared as an overall shape rather than value by value",
+        "avoidWhen": "more than about 8 spokes, or absolute magnitude matters more than the shape",
+        "hasTargets": false
+      },
+      {
+        "name": "UnitChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "parts of a whole as discrete unit counts rather than a percentage, as layout=\"waffle\"",
+        "avoidWhen": "exact per-unit counts do not matter — a pie or bar chart reads faster",
+        "hasTargets": false
+      },
+      {
+        "name": "TreemapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "a nested hierarchy sized by one measure",
+        "avoidWhen": "the hierarchy has fewer than 2 levels — a flat bar chart is clearer",
+        "hasTargets": false
+      },
+      {
+        "name": "PieChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
+        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "TreemapChart",
+    "query": "a nested hierarchy sized by one measure",
+    "candidates": [
+      {
+        "name": "TreemapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 5,
+        "matchedShape": "a nested hierarchy sized by one measure",
+        "avoidWhen": "the hierarchy has fewer than 2 levels — a flat bar chart is clearer",
+        "hasTargets": false
+      },
+      {
+        "name": "BarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "categorical comparison of one or more measures across a small set of named categories",
+        "avoidWhen": "a time axis with many points — use a line or area chart",
+        "hasTargets": false
+      },
+      {
+        "name": "DistributionChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "the spread of one measure, optionally grouped — a histogram, box plot or strip plot",
+        "avoidWhen": "a single summary number would do — use a metric card",
+        "hasTargets": false
+      },
+      {
+        "name": "HeatmapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "one measure per calendar day over several months, as variant=\"calendar\"",
+        "avoidWhen": "fewer than about two months of days — too sparse to read as a calendar grid",
+        "hasTargets": false
+      },
+      {
+        "name": "LineChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "one or more measures over continuous time, where the trend itself is the point",
+        "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "UnitChart",
+    "query": "parts of a whole as discrete unit counts rather than a percentage, as layout=\"waffle\"",
+    "candidates": [
+      {
+        "name": "UnitChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 11,
+        "matchedShape": "parts of a whole as discrete unit counts rather than a percentage, as layout=\"waffle\"",
+        "avoidWhen": "exact per-unit counts do not matter — a pie or bar chart reads faster",
+        "hasTargets": false
+      },
+      {
+        "name": "PieChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4.75,
+        "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
+        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
+        "hasTargets": false
+      },
+      {
+        "name": "RadarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 4,
+        "matchedShape": "several measures per entity, compared as an overall shape rather than value by value",
+        "avoidWhen": "more than about 8 spokes, or absolute magnitude matters more than the shape",
+        "hasTargets": false
+      },
+      {
+        "name": "TreeChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 3,
+        "matchedShape": "a hierarchy read as a branching tree rather than as sized rectangles",
+        "avoidWhen": "size, not structure, is the point — use a treemap",
+        "hasTargets": false
+      },
+      {
+        "name": "HeatmapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "one measure per calendar day over several months, as variant=\"calendar\"",
+        "avoidWhen": "fewer than about two months of days — too sparse to read as a calendar grid",
+        "hasTargets": false
+      }
+    ]
+  },
+  {
+    "family": "WaterfallChart",
+    "query": "a running total with signed steps into and out of it",
+    "candidates": [
+      {
+        "name": "WaterfallChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 7,
+        "matchedShape": "a running total with signed steps into and out of it",
+        "avoidWhen": "there is no meaningful running total — use diverging bars instead",
+        "hasTargets": false
+      },
+      {
+        "name": "BarChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 2,
+        "matchedShape": "a single signed measure around a meaningful zero, as diverging bars with a zero line",
+        "avoidWhen": "the zero baseline is not meaningful — plain bars read the same comparison",
+        "hasTargets": false
+      },
+      {
+        "name": "TreeChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1.75,
+        "matchedShape": "a metric decomposed into driver metrics — a KPI or driver tree",
+        "avoidWhen": "size, not structure, is the point — use a treemap",
+        "hasTargets": false
+      },
+      {
+        "name": "ChoroplethChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "a measure by geographic region",
+        "avoidWhen": "there is no real geography — use a bar chart",
+        "hasTargets": false
+      },
+      {
+        "name": "TreemapChart",
+        "pkg": "@elabs-ai/components-charts",
+        "score": 1,
+        "matchedShape": "a nested hierarchy sized by one measure",
+        "avoidWhen": "the hierarchy has fewer than 2 levels — a flat bar chart is clearer",
+        "hasTargets": false
+      }
+    ]
+  }
+]

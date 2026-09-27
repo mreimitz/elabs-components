@@ -1,7 +1,7 @@
 ---
 id: RM-199
 title: "Doc regions, `chart_for` from the snapshot, generated `chart-selection.md` key props, `argTypesFromDefinition`"
-status: planned
+status: done
 priority: P2
 effort: M (2 days)
 wave: 5
@@ -44,3 +44,323 @@ source: docs/review/2026-09-25-charts-unification-review.md F03, F39; ADR 0042 (
 ## Test / gate
 
 `pnpm gen && pnpm gen:check`, the cli tests, `pnpm build` (Storybook), `pnpm check --rule pnpm-script-refs`.
+
+## Deviations
+
+- **Regression baseline built from git history, not literally "before" in wall-clock order.**
+  `core.mjs`/`chart-for.mjs` were already changed before `chart-for-regression.test.mjs` was
+  written. Since `matchChartFor` is a pure function of `(manifest, query)` with no imports of
+  its own, the fixture (`packages/cli/test/fixtures/chart-for-regression/baseline.json`) was
+  reconstructed by running the OLD `chart-for.mjs` against the OLD `brand-ui.manifest.json`,
+  both read verbatim from the branch point (`e5f37e50`) via `git show` — byte-identical to
+  what the CLI actually printed before this item, not a reviewer's guess. Verified with two
+  mutations (forcing `targets` to always null; adding 1 to every score) — both fail the
+  regression suite; the clean tree passes 30/30.
+- **`components.md`'s "KPIs / charts" chart count could not become a table cell.** Splicing the
+  `brand-ui:gen:*` marker pair into the middle of an existing GFM table row breaks the table in
+  two — Prettier's markdown formatter always blank-line-separates an HTML comment block from
+  its neighbours, and `writeMarkerBlock` always puts the markers on their own line. The table
+  row keeps its old static wording ("chart types … — count below, see the Charts section"); the
+  generated count is a new standalone paragraph directly after the table.
+- **`genTargets`'s two new chart regions are skipped when the snapshot file
+  (`definitions.generated.json`) doesn't exist at the target root** — added because
+  `gen.test.mjs`'s hermetic fixture builds a temp repo with no charts package, and the row
+  catalogs in `chart-selection-docs.mjs` are a fixed list of real chart ids, not derived from
+  whatever minimal manifest a test hands in. The real repo always has the snapshot by the time
+  `pnpm gen` runs (`gen-definitions` is an earlier step), so this never skips anything outside
+  a test.
+- **Found but out of scope, flagged as follow-up, not fixed here:** `BulletChart`,
+  `ChartMultiples` and `DensityScatterChart` all carry `@dataShape` tags (28 containers total)
+  but appear in neither `chart-selection.md` table (25 rows) — the "Fifteen of the 25
+  containers…" / "28 containers carry their tags…" wording now says so explicitly rather than
+  silently overclaiming, but adding the three missing rows is unstarted. `charts.md` ("14
+  compositional charts") and `packages/charts/src/index.ts`'s docblock also still hand-state a
+  stale chart count; only `components.md` was in this item's `touches` list, so those two were
+  left alone.
+
+## Review round 1 (fix)
+
+Verdict on the first pass: CHANGES. Merged `origin/main` (74ca3844, wave 4 incl. RM-196) first
+— `brand-ui.manifest.json` and `apps/home/content/generated/agent-loop-recorded.json` taken
+`--theirs` (pure generated files) and rebuilt with `pnpm gen`; `chart-selection.md`'s conflict
+(a marker region origin didn't have yet) resolved by keeping this branch's structure, then
+regenerated. **`chart_for` regression baseline not rebuilt** — RM-196 renamed HeatmapChart's
+`x`/`y` props to `xDataKey`/`yDataKey` but never touched its `@dataShape`/`@avoidWhen` JSDoc
+text (`git diff e5f37e50..HEAD -- packages/charts/src/definitions/heatmap-chart.definition.ts`
+shows no shape/avoidWhen line changed), and the existing regression suite
+(`chart-for-regression.test.mjs`) still passes 30/30 against the merged tree unmodified — so
+nothing to rebuild.
+
+**F01 (defaults tables) — scope decision, no new region added.** Grepped
+`skills/brand-ui/reference/*.md`, `docs/*.md`, `packages/charts/README.md` and
+`packages/charts/CHANGELOG.md` for a hand-typed chart prop default. Three hits, all in
+`charts.md`'s KPI-tiles section: `MetricGrid`'s `columns` (default 4) and `reveal` (default
+false), and `ChartCard`'s `height` (default 260) — all three are real snapshot defaults
+(`MetricGrid`/`ChartCard` are `kind: "surface"` definitions) and all three currently agree
+with the snapshot; nothing is wrong today. Not converted to a generated region: these are KPI
+tile furniture, not a chart-selection judgment (the F01 finding this item answers was about
+_chart family_ prop defaults, which `brand-ui docs <Chart>`/the MCP docs tool and the
+`chart-default-prose` gate already keep honest straight from each component's own TSDoc —
+`chart-default-prose` reads every charts-package definition's module, `MetricGrid`/`ChartCard`
+included, so a real drift there already reds today). Building a new marker-wrapped region for
+two small numbers sitting mid-sentence in prose (not a table cell) is a disproportionate
+mechanism for this fix round; flagged here as a small, low-risk follow-up rather than done
+silently. No hit anywhere else grepped.
+
+**F02 (data-shape tables generated) — every row's Shape/Avoid-when wording changed.**
+`dataShapeFor`/`avoidWhenFor` now read the same `@dataShape`/`@avoidWhen` prose `chart_for`
+uses, replacing the old hand-kept sentence in both tables — that is a wording change on
+**all 25 rows** in both tables (15 inferred + 10 manual-select), since the old text was a
+terse hand-written cheat-sheet phrasing and the new text is the component's own JSDoc prose,
+sentence-cased. The two rows the review named specifically: LineChart's avoid-when now reads
+"Many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream
+area chart or a composed chart" (was "> ~8 series (illegible); use stream/ComposedChart
+instead"); PieChart's now reads "More than about 6 slices — use a bar or unit chart" (was
+"More than 5 wedges and no groupSmall — inference falls through to bar"). Full diff:
+`git diff 2da5a893 -- skills/brand-ui/reference/chart-selection.md`. Neither `calendar` nor
+`diverging-bar` (the two rows the review flagged as likely needing a hand override) actually
+needed one — both have their own second `@dataShape` tag in the snapshot, in the same
+declaration order as their existing table row (`shapeIndex: 1`), so no override field exists
+anywhere in `chart-selection-docs.mjs`.
+
+**F03 (waterfall argTypes regression) — fixed in `arg-types.ts`'s `controlFor`.** `enum` /
+`union` / `responsive` fields now omit `control` entirely (never set it to `false`) instead of
+forcing a fixed mapping, so Storybook's own type-based inference stands: `labels`, `margin`,
+`plotHeight`, `valueFormat` (`union`/`responsive`) get back their inferred object control
+instead of a blanket `false`; `orientation`, `connectors`, `dataFormat`, `sort` (`enum`) stop
+being forced to `select`, restoring whatever Storybook infers from the real prop type (radio
+for a small literal union). Enum `options` stay populated either way. New test:
+`packages/charts/src/definitions/arg-types.test.ts` (11 assertions — control omitted for all
+8 props, options still present, unrelated kinds unaffected, deprecated field keeps
+`control: false`). Verified for real, not just at the argTypes-object level: the waterfall
+story test passes in both themes (17/17 each — see Gates below).
+
+**F04 (chart_for tests) — added.** `packages/cli/test/chart-for.test.mjs` gained a test that
+deep-equals HeatmapChart's candidate `targets` against the manifest's own `targets` array
+(not mere presence — the same objects, so an id-swap or a dropped target fails) and pins the
+exact `binds:` text: `binds: Column → xDataKey (dimension), Row → yDataKey (dimension), Value
+→ valueKey (measure)`.
+
+**F05 (keyPropsFor tests) — added.** New `packages/cli/test/chart-selection-docs.test.mjs`,
+8 tests against the real committed snapshot, pinning the six originally-wrong rows: Ring
+(`` `data`, `data[].label`, `data[].value`, `data[].maxValue` ``, never `value`/`max` as own
+props), Choropleth (`` `data` `` only, never `valueKey`), Gauge (`` `centerValue`, `value` ``,
+never `min`/`max`), ParallelCoordinatesChart (`entity` present), Network (`nodes`/`links`,
+never `edges`), Gantt (`` `tasks` ``, never `dependencies`) — plus a null-for-unknown-id case
+and a "every id still in the snapshot" guard.
+
+**F06 (item-type hints) — already covered by F02's `{field}` rendering**, no separate change:
+a `{ field }` target renders as `` `data[].fieldName` `` (`RingChart` → `` `data[].label`,
+`data[].value`, `data[].maxValue` ``, `PieChart`/`FunnelChart`/`WaterfallChart` → `` `data[].label`,
+`data[].value` ``, `CandlestickChart` → `` `data[].open`, `data[].high`, `data[].low`,
+`data[].close` ``), generated from the snapshot's own targets rather than a hand-typed type
+name (`OHLCDataPoint[]`, `RadarData[]`, …) that could rename out from under the doc. `Gantt`
+keeps its `defaultViewMode` extra; `TreeChart`'s node shape has no `{ field }` targets to
+render (its data is a hierarchy, not a data-row list), so it is untouched.
+
+**F07 (prop names in `binds:`) — done.** `chart-for.mjs` gained a small, self-contained,
+import-free `targetPropText(target)` (the file has zero imports by design — see its own
+docblock) mirroring `chart-selection-docs.mjs`'s `targetLabel` logic: a container prop, a
+child part's (`Part.prop`), or `data[].field` for a `{ field }` target (same "the array prop
+is always named `data`" simplifying assumption, since no family's `{ field }` targets bind
+against a differently-named prop today). `binds:` now reads `Column → xDataKey (dimension), …`
+instead of `Column (dimension), …`. A family with no targets still prints nothing (untouched).
+No new targets were added to any definition. The 11 chart/surface-kind families with zero
+targets today, so `binds:` prints nothing for them (a follow-up, not done here — recomputed
+against the merged snapshot, not just carried over): `BulletChart`, `ChoroplethChart`,
+`DensityScatterChart`, `Gantt`, `Gauge`, `NetworkChart`, `ParallelCoordinatesChart`,
+`SankeyChart`, `Sparkline`, `TreeChart`, `TreemapChart` (`ChartCard`/`MetricGrid` excluded —
+furniture surfaces, never shape-picked).
+
+**F08 (shipped comment style) — done.** Every `<!-- brand-ui:gen:*:start -->` region in
+`chart-selection.md`/`components.md` is now preceded by the same bare
+`<!-- generated by \`pnpm gen\` — do not edit -->`every other generated region in the repo
+uses — no RM/ADR codes, no maintainer instructions. The dangling "Charts section below"
+reference is fixed in two places: the generated chart-count row now links to`chart-selection.md`directly, and a second, hand-authored dangling reference in`components.md`'s own "KPIs / charts" table row (not generated, a leftover from before this
+item) is fixed the same way.
+
+**F09 (chart counts) — generated and scope-labeled.** `chart-selection.md` gained a new
+`count-summary` region: "`@elabs-ai/components-charts` ships 26 chart containers (registry
+count) plus 4 chart-adjacent surfaces (`Gauge`, `Sparkline`, `ChartCard`, `MetricGrid`) picked
+directly, not by data shape. 25 of the 26 chart containers have a row in the two tables
+below…", and a `split-summary` region replacing the old hand "Fifteen of the 25…"/"other ten"
+sentence with the same numbers read from the row catalogs (15 inferred + 10 manual-select).
+`components.md`'s `chart-count` region already stated the correct number (26) — its only bug
+was the dangling reference, fixed under F08. `charts.md` (the skill reference) had two stale
+mentions of "25": "the full 25-container data-shape table" (dropped the number, now "the
+full data-shape table" — chart-selection.md already carries the generated one) and "a
+cheat sheet covering 13 of the 25 containers" (the "13" is this doc's own cheat table's real
+row count, easy to keep accurate by hand; the stale part was "of the 25" — reworded to "13 of
+the containers … see chart-selection.md's own generated count for how many there are
+today", dropping the number rather than hand-pinning a second one). `packages/charts/src/index.ts`'s docblock was badly stale (a "Chart
+containers (14):" list missing 12 real containers — Heatmap, Waterfall, Dumbbell, Unit,
+Treemap, Distribution, Bump, Tree, Network, ParallelCoordinates, Bullet, DensityScatter) —
+rewritten to drop the count and point at `chart-selection.md`, with its own sample list
+explicitly marked "not exhaustive" rather than fully rebuilt (out of scope for this fix
+round: it needs no generation mechanism, just accuracy, and touching it further risks scope
+creep into an unrelated docblock rewrite).
+
+**F10 (silent gen skip) — logs now.** `gen.mjs`'s chart-region branch gained an `else`
+that `console.warn`s when `definitions.generated.json` is missing at the target root,
+instead of skipping silently. The real repo always has the snapshot by the time `pnpm gen`
+runs, so this only ever fires for `gen.test.mjs`'s hermetic fixture (a temp repo with no
+charts package) — verified: the full CLI suite (408/408) still passes with the warning
+present.
+
+**F11 (changeset) — fixed.** Dropped the `"@elabs-ai/components-charts": minor` line (the
+`argTypesFromDefinition` helper is stories-only and never ships in a runtime bundle — only the
+`@elabs-ai/components-cli` entry is real). Reworded: the ranking (`matchChartFor`) still
+parses each container's `@dataShape`/`@avoidWhen` docblocks straight from source at the CLI's
+base, unchanged; only the new `binds:` prop-name text and the two doc-table cells
+additionally read the committed snapshot. The chart-type count is now its own line, separate
+from the "Container → key props" sentence.
+
+### Gates (fix round 1)
+
+`pnpm gen && pnpm gen:check`, twice each — clean and deterministic both times (second `gen`
+run: "nothing changed"; both `gen:check` runs: "every generated artifact is fresh"). CLI tests:
+`node --test packages/cli/test/*.mjs` — 408/408 pass (no ENOENT/ENOTEMPTY flake this run, no
+rerun needed). `pnpm check:changed` — 16/16 tasks successful (only pre-existing warnings in
+the unrelated `@elabs-ai/components-process` package). `@elabs-ai/components-charts`:
+`typecheck` clean, `lint` 0 errors / 72 pre-existing warnings (none in a file this round
+touched), `test` 190 files / 3980 tests passed (8 pre-existing skips). Storybook
+(`apps/docs`) production build: green. Waterfall story
+(`packages/charts/src/charts/waterfall-chart.stories.tsx`) via
+`STORYBOOK_THEME=light|dark pnpm --filter @elabs-ai/components-docs exec vitest --project
+storybook run …`: 17/17 in both light and dark.
+
+## Review round 2 (final fixes)
+
+Verdict on the second pass: APPROVE WITH FIXES on `a59ca8a8`. Merged `origin/main` first
+(clean, zero conflicts — the incoming commits only touched `apps/diagram/**`, unrelated to
+this item, so no `--theirs` resolution was needed).
+
+**R1 (per-shape avoid-when) — fixed.** `@avoidWhen` was already a repeatable JSDoc tag like
+`@dataShape` (the generic `jsdocTagValues` parser in `core.mjs` handled repeats fine), but
+`extractChartDataShapes` only ever kept the FIRST one (`const [avoidWhen] = jsdocTagValues(...)`)
+— so a container with two `@dataShape` tags and two `@avoidWhen` tags always showed the first
+`@avoidWhen` on both table rows. Fixed by capturing the full array (`avoidWhens`, index-paired
+with `dataShapes`) alongside the existing single `avoidWhen` (kept as `avoidWhens[0]`, so every
+caller that only ever wanted one summary line — the Storybook Intent block, the `apps/home`
+catalog, the `chart_for` MCP tool description — is untouched). `chart-selection-docs.mjs`'s
+`avoidWhenFor(snapshot, id, index)` now mirrors `dataShapeFor`'s existing `index` parameter,
+with a fallback to the last declared `@avoidWhen` when a container has fewer avoid-whens than
+shapes; both row-catalog renderers pass the row's own `shapeIndex ?? 0`. `chart-for.mjs`'s
+`matchChartFor` now tracks which shape INDEX won the best-match, not just the shape text, and
+selects `avoidWhens[index]` (falling back the same way) for the ranked candidate's `avoidWhen`.
+New JSDoc text: `HeatmapChart`'s calendar variant ("fewer than about two months of days — too
+sparse to read as a calendar grid") and `BarChart`'s diverging-bar variant ("the zero baseline
+is not meaningful — plain bars read the same comparison"). New tests in
+`chart-selection-docs.test.mjs` pin both rows' Shape AND Avoid-when text as distinct from their
+sibling row's (closes the "mutation M5 survived" gap the review flagged).
+
+**R2 (chart-count wording) — fixed.** `tableCoverageCount` counted every id across both row
+catalogs regardless of `kind`, including `Gauge` (`kind: "surface"`, not `"chart"`) — so
+"25 of the 26 chart containers have a row" was really 24 chart containers plus Gauge. Now
+filters to `kind === "chart"` only (24 of 26, generated text confirms it). The Gauge clause
+was also wrong the other way: `Gauge` DOES get a table row (in the manual-select table) and
+IS ranked by `chart_for` like a chart — "picked directly, not by data shape" only describes
+`Sparkline`/`ChartCard`/`MetricGrid`. `renderChartCountSummary`'s generated sentence now says
+so explicitly.
+
+**R3 (missing facts) — fixed.** `PieChart`'s `@avoidWhen` said "more than about 6 slices";
+`AutoChart` actually caps pie inference at 5 (`PIE_MAX_SLICES = 5`,
+`auto-chart/infer-chart-type.ts:321`) — the JSDoc now says 5, citing the constant by name.
+(This wording had briefly been _correct_ at `ad0b329f`, the item's first commit — the doc
+generation step itself is what changed the pie row's text since then, from the old hand table's
+"5" to the component's own then-stale "6" docblock; round 1's F02 flagged this same drift as
+"6" being the NEW value without checking whether the old, hand-typed "5" was the one that
+matched reality.) `AreaChart`'s `@avoidWhen` had lost its "one series, or series that don't add
+up to a meaningful total — use a line chart" half somewhere before generation landed; restored
+alongside the still-correct "< ~4 points" half.
+
+**R4 (hand-stated defaults) — verified, RM record corrected.** Grepped
+`skills/brand-ui/reference/chart-selection.md`'s "Editorial rules" section for every
+bracket-noted default claim and checked each against the real source: `"computation"` is
+the real default analytics label (`analytics-label.ts`); `ChartMultiples`' `scales.y` really
+defaults to `"shared"` and `sort`/`baseline`/`showAt` are real props
+(`multiples/chart-multiples.tsx`); series end labels really default on only for two or more
+named series (`use-chart-labels.ts`'s `seriesCount` / `hasDisplayName` check); `valueFormat`
+really defaults to `"compact"` (`DEFAULT_CHART_VALUE_FORMAT`, `value-format.ts`) — plus the
+two the review had already confirmed, `curve` defaulting to `"monotone"` and `symbols`
+defaulting off. All six are correct as written; nothing needed changing in the file itself.
+Round 1's F01 said "No hit anywhere else grepped" for this class of finding — that was about
+`MetricGrid`/`ChartCard`'s prop defaults specifically, not this file's six bracket-noted
+claims, which F01 never actually enumerated; this round's grep is the first time all six were
+checked by hand against source.
+
+**R5 (`arg-types.ts` controls) — `connectors` accepted, `palette` fixed.** Round 1's F03
+generalized the un-forced enum inference as "radio for a small literal union" for all four
+props it named (`orientation`, `connectors`, `dataFormat`, `sort`); verified in Storybook,
+`connectors` actually renders a SELECT, not a radio — its real type mixes booleans and strings
+(`true | false | "thin" | "thick"`, per its pinned `options` in `arg-types.test.ts`), which is
+a reasonable case for docgen to prefer a select over a radio group. That's a better outcome,
+not a bug — accepted as-is; F03's parenthetical was the imprecise part, not the code.
+`palette`, however, gets NO control at all under plain inference — it is spread into every
+chart's props from the shared `paletteGroup` field group rather than declared inline, so
+per-component docgen doesn't reliably resolve it to the `ChartPalette` union the way an inline
+literal prop does. `controlFor` now special-cases the `palette` key (the only named exception)
+to an explicit `{ type: "select" }`; new test pins the control and its five options.
+
+**R6 (shapeIndex assertions) — added**, see R1 above (`chart-selection-docs.test.mjs`).
+
+**R7 (`renderTable` escaping) — fixed.** `renderTable` built each row by joining cells on
+`" | "` with no escaping, relying on catalog rows to hand-escape their own literal `|`
+characters (`mode="cell"\|"dot"`, `kind: "step"\|"total"`) — a cell that forgot to escape would
+silently split into an extra column instead of erroring. The renderer now escapes every cell's
+`|` itself; the two catalog rows dropped their hand-escaping (now plain `|`, matching every
+other row) since the renderer handles it uniformly. New test in `chart-selection-docs.test.mjs`
+pins the escaped output and the resulting column count (closes the "mutation M6 broke a row
+silently" gap).
+
+**R8 (changeset wording) — fixed.** `.changeset/chart-for-binds-and-arg-types.md` repeated
+round 1's F11 claim that `matchChartFor` "parses each container's `@dataShape`/`@avoidWhen`
+JSDoc docblocks straight from source at the CLI's base" — wrong for every component with a
+`ComponentDefinition`: those read `dataShapes`/`avoidWhen` from the committed snapshot
+(`core.mjs`'s `collectChartDataShapes`, at `pnpm gen` time), never re-parsed at CLI runtime.
+Direct docblock parsing is the FALLBACK, only for a component with no definition yet. Reworded
+to say so. F11's own paragraph above is left as the historical record of what round 1 actually
+wrote — this correction lives in the changeset and here, not by rewriting round 1's account.
+
+**R9 (stale hints) — fixed.** `TreeChart`'s manual-select row had lost its "a HIERARCHY
+(`TreeNode`), not flat rows" hint somewhere before generation landed (verified: `TreeNode` is
+`tree-chart.tsx`'s real exported data-shape interface) — restored, matching `TreemapChart`'s
+own "a HIERARCHY (`TreemapNode`), not flat rows" hint style. `Gantt`'s row comment claimed
+`viewMode` "never existed" and that "RM-196 renamed it" to `defaultViewMode` — both false:
+`viewMode` still exists today as a real, `codeOnly` CONTROLLED prop
+(`gantt.definition.ts`'s `codeOnly` list), and RM-196
+(`roadmap/chart-definitions/RM-196-rename-data-keys-and-series.md`) never mentions Gantt or
+`viewMode` at all. The row still shows `defaultViewMode` (correct — it's the prop that sets
+the initial view UNCONTROLLED, which is what a reader reaching for a default wants), but the
+comment now says why `viewMode` is the wrong prop for this row instead of claiming it doesn't
+exist.
+
+**R10 (review-round codes in code comments) — fixed.** Removed "F03"/"F09" and similar
+review-round codes from `chart-selection-docs.mjs`, `arg-types.ts`, `chart-for.mjs`, `gen.mjs`
+and (found along the way, same file family) `arg-types.test.ts` — every comment now describes
+the behaviour itself, not which review round motivated it. This RM file keeps its own F0x/R
+labels; those are the roadmap record's own citation convention, not code comments.
+
+**`chart_for` regression baseline — rebuilt.** 25 lines changed, all `avoidWhen`, across
+exactly four families: 7 lines where the matched shape was `HeatmapChart`'s calendar variant
+and 4 where it was `BarChart`'s diverging-bar variant (R1's per-shape fix — the only families
+that mechanism could touch), plus 6 lines where the matched shape was `PieChart`'s and 8 where
+it was `AreaChart`'s (R3's JSDoc text fix — unrelated mechanism, same file). No `name`, `pkg`,
+`score` or `matchedShape` value changed anywhere in the fixture — confirmed by diffing only
+`avoidWhen` lines appearing in the diff. `chart-for-regression.test.mjs` passes clean against
+the rebuilt fixture.
+
+### Gates (review round 2)
+
+`pnpm gen && pnpm gen:check`, twice each — clean and deterministic both times (second `gen`
+run: "nothing changed"; both `gen:check` runs: "every generated artifact is fresh"). CLI
+tests: `node --test packages/cli/test/*.mjs` — 411/411 (408 prior + 3 new `shapeIndex`/
+`renderTable`-escaping tests); one of four reruns hit the known ENOENT/ENOTEMPTY shells race
+(9 failures), the other three ran clean, confirming it's the pre-existing flake, not a
+regression. `@elabs-ai/components-charts`: `typecheck` clean, `lint` 0 errors / 72
+pre-existing warnings (same count as round 1, none in a file this round touched), `test` 190
+files / 3981 tests passed (3980 prior + 1 new `palette`-control test), 8 pre-existing skips.
+`pnpm check:changed` — 16/16 tasks successful (only the pre-existing `apps/home` e2e lint
+warning, unrelated to this round). Waterfall story
+(`packages/charts/src/charts/waterfall-chart.stories.tsx`) via the CLI vitest runner: 17/17 in
+both light and dark.

@@ -756,7 +756,8 @@ const AREA_PALETTE_SLOTS: SeriesPaletteSlots = { Area: "fill" };
 /**
  * @dataShape measures over time where magnitude matters — stacked, or as a stream with
  *   offset="wiggle"
- * @avoidWhen fewer than about 4 points — a bar chart reads the same data faster
+ * @avoidWhen one series, or series that don't add up to a meaningful total — use a line
+ *   chart; fewer than about 4 points — a bar chart reads the same data faster
  */
 export const AreaChart = forwardRef<HTMLDivElement, AreaChartProps>(
   function AreaChart(rawProps, ref) {
