@@ -61,3 +61,26 @@ Ship ADR 0042 Appendix A.3 exactly:
 ## Test / gate
 
 `pnpm --filter @elabs-ai/components-charts typecheck lint test`, `pnpm check --rule charts-deprecated-usage,charts-group-drift,chart-default-prose`, `pnpm gen && pnpm gen:check` (the codemod map gains the rows), Storybook autodocs notes checked in Chromium.
+
+## Deviations
+
+- **Unit and Dumbbell** are named above and in `data-labels.ts`'s own docblock as eventual
+  `dataLabelsGroup` applicants, but neither family has a `labels` prop today. None was added
+  here — this item only renames `showValues`, and neither family has one to rename. Adding a
+  `labels` prop to Unit and Dumbbell is a follow-up for whichever future item gives them a
+  value-label config.
+- **Applying `dataLabelsGroup` made `labels` a group key for the first time anywhere in the
+  package** (Bar and WaterfallChart are the two definitions this item itself renames onto the
+  group). That is what first exposed Pie's and Ring's own, pre-existing `labels` fields as
+  `charts-group-drift` findings — not a stale snapshot; before this item, `labels` was not yet
+  a key any rule checked other definitions against. Fixed properly, not baselined: `PieChart`
+  and `RingChart` now also apply `dataLabelsGroup`, so their own richer `labels` field is a
+  declared override, the same pattern this item already uses for Bar and WaterfallChart. The
+  group is now applied by seven definitions: `Bar` (part), `WaterfallChart`, `FunnelChart`,
+  `HeatmapChart`, `TreemapChart`, `PieChart` and `RingChart`.
+- **ChoroplethChart's and the Scatter part's own `labels`** were flagged by the same mechanism.
+  They already carry the `data-labels` meaning (ADR 0042 Appendix A.9) rather than a different
+  one — place-name and point labels ARE data labels for those two, already checked against the
+  group and deliberately left alone. They are recorded in `charts-group-drift`'s `NOT_DRIFT`
+  exception list instead of the group, citing Appendix A.9 — the owner's approval of Appendix A
+  on 2026-09-27 is the maintainer decision this records, the same way RM-190 recorded `zoom`.

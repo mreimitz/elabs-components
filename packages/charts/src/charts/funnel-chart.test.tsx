@@ -17,6 +17,7 @@ import { afterEach, describe, expect, it, vi, beforeAll } from "vitest";
 import { render } from "@testing-library/react";
 import type * as MotionReact from "motion/react";
 import { FunnelChart } from "./funnel-chart";
+import { FunnelChart as FunnelChartDouble } from "../test";
 import { LocaleProvider } from "@elabs-ai/components-ui";
 import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 
@@ -479,6 +480,50 @@ describe("FunnelChart — `showValues` → `labels` (RM-193, ADR 0042 A.3 row 13
     warn.mockRestore();
   });
 
+  // RM-193 review P1-2: the test above never compares `showValues={false}` against
+  // `labels={false}` directly — only each against the bare/default `true` case. A mutation
+  // that made `isDataLabelsOn` ignore `{ show: false }` (so `showValues={false}` kept
+  // showing the value) left it, and every other test in this describe block, green.
+  it("`showValues={false}` and `labels={false}` render the identical value label", () => {
+    stubMeasurementForLabels();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { container, rerender } = render(
+      <FunnelChart
+        data={sampleData}
+        showLabels={false}
+        showPercentage={false}
+        showValues={false}
+      />,
+    );
+    const showValuesFalseText = valueText(container);
+    expect(showValuesFalseText).toBe("");
+    rerender(
+      <FunnelChart data={sampleData} showLabels={false} showPercentage={false} labels={false} />,
+    );
+    expect(valueText(container)).toBe(showValuesFalseText);
+    warn.mockRestore();
+  });
+
+  it("`labels={{ show: false }}` turns the value label off, same as the plain flag", () => {
+    stubMeasurementForLabels();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { container, rerender } = render(
+      <FunnelChart data={sampleData} showLabels={false} showPercentage={false} labels={false} />,
+    );
+    const flagOffText = valueText(container);
+    expect(flagOffText).toBe("");
+    rerender(
+      <FunnelChart
+        data={sampleData}
+        labels={{ show: false }}
+        showLabels={false}
+        showPercentage={false}
+      />,
+    );
+    expect(valueText(container)).toBe(flagOffText);
+    warn.mockRestore();
+  });
+
   it("warns once in development, however often it renders", () => {
     stubMeasurementForLabels();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -496,6 +541,14 @@ describe("FunnelChart — `showValues` → `labels` (RM-193, ADR 0042 A.3 row 13
     vi.stubEnv("NODE_ENV", "production");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     render(<FunnelChart data={sampleData} showValues />);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  // RM-193 review P2-8, mirrors HeatmapChart's "keeps the ./test double silent" coverage.
+  it("`showValues` keeps the ./test double silent under the default deprecatedProps", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    render(<FunnelChartDouble data={sampleData} showValues />);
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });

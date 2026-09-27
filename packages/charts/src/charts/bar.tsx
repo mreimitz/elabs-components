@@ -185,12 +185,22 @@ export interface BarShowValuesSpec {
    * Default: every bar is labelled.
    */
   filter?: (datum: Record<string, unknown>, index: number) => boolean;
+  /**
+   * Explicit on/off, the shared `data-labels` group's own member: `false` turns the
+   * label off even though the rest of this object may be a real spec (`placement`,
+   * `visibility`, `filter`). Unset: an object means on, same as every other
+   * {@link BarShowValues} member.
+   */
+  show?: boolean;
 }
 
 /**
  * `true`/`"outside"` place the value label just past the bar's far end;
- * `"inside"` places it just inside; a {@link BarShowValuesSpec} adds `"auto"`
- * placement and hover-only visibility. See {@link BarProps.labels}.
+ * `"inside"` places it just inside; a {@link BarShowValuesSpec} adds an explicit
+ * `show` on/off, hover-only visibility, and its own `"auto"` placement — fits the
+ * label inside the bar when there's room, else outside. Its default placement is
+ * therefore `"auto"`, not `"outside"`: `{ show: true }` is NOT the same as `true`.
+ * See {@link BarProps.labels}.
  */
 export type BarShowValues = boolean | "outside" | "inside" | BarShowValuesSpec;
 
@@ -270,11 +280,14 @@ export interface BarProps {
    * A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than
    * shrinking below `text-meta`. Default: off.
    *
-   * A {@link BarShowValuesSpec} (RM-110) adds `"auto"` placement and
-   * hover-only visibility. In a stack drawn from a layout (percent, diverging,
-   * ordered or totalled — RM-113) each segment centres its label whatever the
-   * placement, a percent segment prints its share, and a segment shorter than
-   * 24 px along the value axis stays unlabelled.
+   * A {@link BarShowValuesSpec} (RM-110) adds `"auto"` placement, hover-only
+   * visibility and an explicit `show` on/off. The object form's `placement`
+   * defaults to `"auto"` (inside when the label fits, else outside) — so
+   * `{ show: true }` is NOT the same as `true`, which always places the label
+   * outside. In a stack drawn from a layout (percent, diverging, ordered or
+   * totalled — RM-113) each segment centres its label whatever the placement,
+   * a percent segment prints its share, and a segment shorter than 24 px
+   * along the value axis stays unlabelled.
    */
   labels?: BarShowValues;
   /**
@@ -862,8 +875,12 @@ const BarInner = memo(function BarInner({
     const segmentFits =
       !bar.extent || (isHorizontal ? barW : barHeight) >= MIN_SEGMENT_LABEL_LENGTH;
     const passesFilter = labelSpec?.filter ? labelSpec.filter(bar.datum, bar.index) : true;
+    // RM-193 review P2-7: a bare object always meant "on" — `labelSpec?.show` (the shared
+    // `data-labels` group's own member, structurally assignable onto this spec since every
+    // field of it is optional) is an explicit override when present, so `{ show: false }`
+    // truly turns the label off instead of being ignored as "just some other spec".
     const showLabel =
-      Boolean(labelMode) &&
+      (labelSpec?.show ?? Boolean(labelMode)) &&
       thickness >= MIN_LABEL_BAR_WIDTH &&
       settled &&
       hoverGate &&

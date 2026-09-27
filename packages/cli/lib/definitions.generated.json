@@ -1077,6 +1077,9 @@
                   "kind": "enum",
                   "values": ["inside", "outside", "auto"]
                 },
+                "show": {
+                  "kind": "boolean"
+                },
                 "visibility": {
                   "kind": "enum",
                   "values": ["always", "hover"]
@@ -9045,6 +9048,7 @@
           },
           "group": null,
           "kind": "object",
+          "overrides": "data-labels",
           "tier": "advanced"
         },
         "legend": {
@@ -9285,7 +9289,7 @@
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state"],
+      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state", "data-labels"],
       "id": "PieChart",
       "kind": "chart",
       "label": "Pie chart",
@@ -9940,6 +9944,7 @@
               "kind": "object"
             }
           ],
+          "overrides": "data-labels",
           "tier": "advanced"
         },
         "margin": {
@@ -10055,7 +10060,7 @@
           "unit": "px"
         }
       },
-      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state"],
+      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state", "data-labels"],
       "id": "RingChart",
       "kind": "chart",
       "label": "Ring chart",

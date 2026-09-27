@@ -9311,7 +9311,7 @@
             "name": "labels",
             "optional": true,
             "type": "BarShowValues",
-            "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement and hover-only visibility. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled.",
+            "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement, hover-only visibility and an explicit `show` on/off. The object form's `placement` defaults to `\"auto\"` (inside when the label fits, else outside) — so `{ show: true }` is NOT the same as `true`, which always places the label outside. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled.",
             "kind": "union"
           },
           {
@@ -16976,10 +16976,10 @@
         "status": "status=\"loading\" → the same grid as skeleton cells in --muted"
       },
       "antiPatterns": [
-        "steps: 0 (the continuous ramp) when the reader must compare exact values — opacity is not countable; keep the stepped ramp or turn showValues on.",
+        "steps: 0 (the continuous ramp) when the reader must compare exact values — opacity is not countable; keep the stepped ramp or turn labels on.",
         "emptyValue=\"blank\" on data that contains real zeroes — a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.",
         "Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) — it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.",
-        "Leaning on the darkest ramp step to say \"this is the peak\" — colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign."
+        "Leaning on the darkest ramp step to say \"this is the peak\" — colour alone; highlight draws the ring, and a diverging palette needs labels or its negative hatch for sign."
       ],
       "dataShapes": [
         "two categorical axes (weekday by hour, for example) with one numeric value per cell — ticket volume, event counts; many small cells favour mode=\"dot\" over the default cell fill",
@@ -20334,7 +20334,7 @@
             "name": "labels",
             "optional": true,
             "type": "BarShowValues",
-            "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement and hover-only visibility. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled.",
+            "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement, hover-only visibility and an explicit `show` on/off. The object form's `placement` defaults to `\"auto\"` (inside when the label fits, else outside) — so `{ show: true }` is NOT the same as `true`, which always places the label outside. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled.",
             "kind": "union"
           },
           {
@@ -25564,7 +25564,7 @@
             "name": "labels",
             "optional": true,
             "type": "BarShowValues",
-            "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement and hover-only visibility. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled.",
+            "description": "Print each bar's value as a `HaloText` label (the `text-chart-value` role, 800-weight — lieflat G3 Chunky Bars). `true`/`\"outside\"` place it just past the bar's far end; `\"inside\"` places it just inside. A negative bar's label is signed with a \"−\" (U+2212, not a hyphen) glyph. A bar narrower than `MIN_LABEL_BAR_WIDTH` hides its label rather than shrinking below `text-meta`. Default: off. A {@link BarShowValuesSpec} (RM-110) adds `\"auto\"` placement, hover-only visibility and an explicit `show` on/off. The object form's `placement` defaults to `\"auto\"` (inside when the label fits, else outside) — so `{ show: true }` is NOT the same as `true`, which always places the label outside. In a stack drawn from a layout (percent, diverging, ordered or totalled — RM-113) each segment centres its label whatever the placement, a percent segment prints its share, and a segment shorter than 24 px along the value axis stays unlabelled.",
             "kind": "union"
           },
           {
@@ -27330,7 +27330,7 @@
             "name": "labelOverflow",
             "optional": true,
             "type": "\"ellipsis\" | \"hide\"",
-            "description": "How a name too long for its tile is handled (#280). - `\"ellipsis\"` (default) — clip it to the tile with `…`. - `\"hide\"` — draw it only when the WHOLE name fits (and, with `showValues`, its value line too); otherwise draw nothing. Applies to leaf labels and group title bands alike — a truncated header is the same noise as a truncated tile name.",
+            "description": "How a name too long for its tile is handled (#280). - `\"ellipsis\"` (default) — clip it to the tile with `…`. - `\"hide\"` — draw it only when the WHOLE name fits (and, with `labels`, its value line too); otherwise draw nothing. Applies to leaf labels and group title bands alike — a truncated header is the same noise as a truncated tile name.",
             "defaultValue": "\"ellipsis\"",
             "kind": "enum"
           },
@@ -27853,7 +27853,7 @@
             "name": "labelOverflow",
             "optional": true,
             "type": "\"ellipsis\" | \"hide\"",
-            "description": "How a name too long for its tile is handled (#280). - `\"ellipsis\"` (default) — clip it to the tile with `…`. - `\"hide\"` — draw it only when the WHOLE name fits (and, with `showValues`, its value line too); otherwise draw nothing. Applies to leaf labels and group title bands alike — a truncated header is the same noise as a truncated tile name.",
+            "description": "How a name too long for its tile is handled (#280). - `\"ellipsis\"` (default) — clip it to the tile with `…`. - `\"hide\"` — draw it only when the WHOLE name fits (and, with `labels`, its value line too); otherwise draw nothing. Applies to leaf labels and group title bands alike — a truncated header is the same noise as a truncated tile name.",
             "defaultValue": "\"ellipsis\"",
             "kind": "enum"
           },

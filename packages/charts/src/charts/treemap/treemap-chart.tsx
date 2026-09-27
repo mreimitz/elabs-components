@@ -75,12 +75,12 @@ const MIN_LABEL_WIDTH = 32;
 const MIN_LABEL_HEIGHT = 16;
 const DEFAULT_LABEL_MIN_AREA = 1200;
 const LABEL_PADDING_X = 6;
-/** A tile printing its value (`showValues`) stacks two lines, so it needs
+/** A tile printing its value (`labels`) stacks two lines, so it needs
  * roughly twice the name's height before the second line is drawn. */
 const MIN_VALUE_LABEL_HEIGHT = 36;
 /** Half the vertical distance between the name line and the value line. */
 const VALUE_LINE_OFFSET = 8;
-/** So `showValues={false}` never re-resolves a set formatter per render. */
+/** So `labels={false}` never re-resolves a set formatter per render. */
 const NO_VALUES: readonly number[] = [];
 /** Opacity a group's tiles fade to when a DIFFERENT legend row is hovered (RM-118 R3). */
 const LEGEND_DIM_OPACITY = 0.35;
@@ -115,7 +115,7 @@ export interface TreemapChartProps extends ChartSelectionProps, ChartInteraction
    *
    * - `"ellipsis"` (default) — clip it to the tile with `…`.
    * - `"hide"` — draw it only when the WHOLE name fits (and, with
-   *   `showValues`, its value line too); otherwise draw nothing. Applies to
+   *   `labels`, its value line too); otherwise draw nothing. Applies to
    *   leaf labels and group title bands alike — a truncated header is the
    *   same noise as a truncated tile name.
    */

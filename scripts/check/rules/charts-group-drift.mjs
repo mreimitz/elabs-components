@@ -28,18 +28,33 @@
  *     DensityScatter. Only the navigator groups own `zoom` — a window over an ordered axis —
  *     and none of these charts can apply them: a map, a tree and a density plot zoom their own
  *     viewport. Same word, same user meaning, no shared group.
+ *   - `labels` on ChoroplethChart and the Scatter part. ADR 0042 Appendix A.9 checked both
+ *     against the `data-labels` group and left them alone: "place-name and point labels: data
+ *     labels, already the `data-labels` meaning" — RM-193 is the item that made `labels` a
+ *     group key at all (by applying `dataLabelsGroup` to Bar and others), which is what first
+ *     surfaced these two as findings. The owner approved Appendix A, including this row, on
+ *     2026-09-27 — that approval is the maintainer decision this entry records, the same way
+ *     RM-190 recorded the `zoom` entries above.
  * Declared gap: a group's own code-only members (callbacks, nodes) are not in the snapshot's
  * group data, so a family callback named like one is not seen.
  */
 import { CHARTS_PKG, chartsSnapshot, missingSnapshot } from "./charts-deprecated-usage.mjs";
 
-/** `Id::prop` → why it is not drift (ADR 0042 A.5). Grows only by a maintainer decision. */
+/** `Id::prop` → why it is not drift (ADR 0042 A.5, A.9). Grows only by a maintainer decision. */
 export const NOT_DRIFT = new Map([
   ["ChoroplethChart::zoom", "a map viewport zoom (ADR 0042 A.5), not the navigator window"],
   ["TreeChart::zoom", "a tree viewport zoom (ADR 0042 A.5), not the navigator window"],
   [
     "DensityScatterChart::zoom",
     "a plot viewport zoom, wheel + drag pan (ADR 0042 A.5 cites it), not the navigator window",
+  ],
+  [
+    "ChoroplethChart::labels",
+    "a place-name label mode, already checked against data-labels and left alone (ADR 0042 A.9, owner-approved 2026-09-27)",
+  ],
+  [
+    "Scatter::labels",
+    "a point label mode, already checked against data-labels and left alone (ADR 0042 A.9, owner-approved 2026-09-27)",
   ],
 ]);
 

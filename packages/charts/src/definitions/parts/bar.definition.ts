@@ -92,6 +92,10 @@ export const BAR_PART = /* @__PURE__ */ definePart<BarProps>()({
             fields: {
               placement: field.enum({ values: ["inside", "outside", "auto"] }),
               visibility: field.enum({ values: ["always", "hover"] }),
+              // RM-193 review P2-7: the shared `data-labels` group's own on/off member —
+              // `show: false` turns the label off even though the rest of the object is a
+              // real spec.
+              show: field.boolean(),
             },
           }),
         ],

@@ -22,6 +22,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type * as MotionReact from "motion/react";
 import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 import { TreemapChart, type TreemapNode } from "./treemap-chart";
+import { TreemapChart as TreemapChartDouble } from "../../test";
 import { seriesPatternFills, seriesPatterns, stubHighDecoration } from "../high-decoration-fixture";
 
 // Provide a ResizeObserver stub so the effect does not throw in jsdom.
@@ -358,8 +359,27 @@ describe("TreemapChart", () => {
       expect(valueTexts(container)).toEqual([]);
       rerender(<TreemapChart data={twoTiles} depth={1} labelMinArea={0} showValues />);
       expect(valueTexts(container)).toEqual(["1,500", "400"]);
+      // RM-193 review P2-8: the checks above only ever read the value SPANS' text, never
+      // the surrounding DOM — a mutation changing placement/paint but keeping the same
+      // text content would still pass. `labels` (bare `true`) must render byte-identical.
+      const oldHtml = container.innerHTML;
       rerender(<TreemapChart data={twoTiles} depth={1} labelMinArea={0} labels />);
       expect(valueTexts(container)).toEqual(["1,500", "400"]);
+      expect(container.innerHTML).toBe(oldHtml);
+      spy.mockRestore();
+      warn.mockRestore();
+    });
+
+    it("`showValues={false}` and `labels={false}` render the identical DOM", () => {
+      const spy = mockBox(640, 400);
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      const { container, rerender } = render(
+        <TreemapChart data={twoTiles} depth={1} labelMinArea={0} showValues={false} />,
+      );
+      expect(valueTexts(container)).toEqual([]);
+      const showValuesFalseHtml = container.innerHTML;
+      rerender(<TreemapChart data={twoTiles} depth={1} labelMinArea={0} labels={false} />);
+      expect(container.innerHTML).toBe(showValuesFalseHtml);
       spy.mockRestore();
       warn.mockRestore();
     });
@@ -386,6 +406,14 @@ describe("TreemapChart", () => {
       render(<TreemapChart data={twoTiles} depth={1} labelMinArea={0} showValues />);
       expect(warn).not.toHaveBeenCalled();
       spy.mockRestore();
+      warn.mockRestore();
+    });
+
+    // RM-193 review P2-8, mirrors HeatmapChart's "keeps the ./test double silent" coverage.
+    it("`showValues` keeps the ./test double silent under the default deprecatedProps", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      render(<TreemapChartDouble data={twoTiles} showValues />);
+      expect(warn).not.toHaveBeenCalled();
       warn.mockRestore();
     });
 
