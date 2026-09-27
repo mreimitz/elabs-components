@@ -475,9 +475,17 @@ describe("HeatmapChart renamed props (RM-194)", () => {
   });
 
   it("showValues → labels: new-wins, and says which one was dropped", () => {
+    plot.width = 400;
+    plot.height = 300;
     resetWarnOnce();
     const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    render(<HeatmapChart {...base} data={punchCard} labels={false} showValues />).unmount();
+    // RM-193 review P2-8: this used to assert only the warning, never what actually
+    // rendered — a mutation that dropped `new-wins` and kept `showValues` winning
+    // instead would still have passed every assertion here.
+    const { container } = render(
+      <HeatmapChart {...base} data={punchCard} labels={false} showValues />,
+    );
+    expect(container.querySelectorAll('[data-slot="halo-text"]')).toHaveLength(0);
     expect(deprecations(spy)).toEqual([
       [
         '[HeatmapChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels". ' +

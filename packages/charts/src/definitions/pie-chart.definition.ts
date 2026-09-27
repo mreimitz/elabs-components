@@ -24,6 +24,7 @@ import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { interactionCommons, selectionCommons } from "../charts/props/commons";
 import { chartStateGroup } from "../charts/props/chart-state";
+import { dataLabelsGroup } from "../charts/props/data-labels";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { legendGroup } from "../charts/props/legend";
 import type { PieChartProps } from "../charts/pie-chart";
@@ -45,6 +46,10 @@ export const PIE_CHART = /* @__PURE__ */ defineChart<PieChartProps>()({
     interactionCommons.group,
     frameSizeGroup,
     chartStateGroup,
+    // RM-193 review (charts-group-drift): applied so the own, richer `labels` field below
+    // (a `ReactNode`-shaped config, left to code) is a declared OVERRIDE of the group's
+    // plain flag, not an unrelated field that happens to share its name.
+    dataLabelsGroup,
   ],
   fields: {
     // Palette — RM-186: no default; unset keeps the family's own colours.

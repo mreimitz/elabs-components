@@ -8,7 +8,9 @@ keeps working, unchanged, until 6.0.0, and logs one warning in development namin
 replacement; when a caller sets both, `labels` wins.
 
 - `Bar`: `labels` replaces `showValues` one for one — same values (`true`/`false`/`"inside"`/
-  `"outside"`/an object), same defaults.
+  `"outside"`/an object), same defaults. Its own object spec also gained `show?: boolean`, the
+  shared `data-labels` group's on/off member, so `{ show: false }` turns the label off even
+  though the rest of the object is a real spec.
 - `FunnelChart`, `TreemapChart`: `labels` accepts a plain flag or `{ show }`, the shape a
   `showValues={true}` caller's value now takes internally. Defaults are unchanged (Funnel shows
   values, Treemap does not).
@@ -18,9 +20,10 @@ replacement; when a caller sets both, `labels` wins.
   — the same default `showValues` already computed, now resolved once on the definition instead
   of in the component.
 
-`@elabs-ai/components-charts`: a chart definition's `normalize(props, ctx)` hook (ADR 0042 §6)
-now actually runs — `HeatmapChart`'s is the first to use it, for the palette-dependent `labels`
-default described above.
+`@elabs-ai/components-charts`: `useResolvedChartProps` now calls a definition's optional
+`normalize(props, ctx)` hook (ADR 0042 §3, its base `ComponentDefinition` type) as part of its
+own memoized resolution. `HeatmapChart` is the only definition that declares one today — it uses
+it for the palette-dependent `labels` default described above; every other family is unaffected.
 
 ### Deprecated
 

@@ -358,6 +358,39 @@ describe("chart test doubles — contract violations throw", () => {
     expect(error).toBeInstanceOf(ChartContractError);
     expect((error as InstanceType<typeof ChartContractError>).prop).toBe("orientation");
   });
+
+  // RM-193 review P2-4: same lesson as the YAxis fix above, for `assertLabelChildrenContract`'s
+  // Bar check — resolving `showValues` → `labels` before validating named every violation
+  // "labels.placement", even for a caller who never wrote `labels`.
+  it("names `showValues.placement`, not `labels.placement`, when a nested Bar sets only the deprecated `showValues` (RM-193)", () => {
+    let error: unknown;
+    try {
+      render(
+        <BarChart data={[{ name: "Alpha", v: 30 }]}>
+          <BarPart dataKey="v" showValues={{ placement: "bogus" }} />
+        </BarChart>,
+      );
+    } catch (thrown) {
+      error = thrown;
+    }
+    expect(error).toBeInstanceOf(ChartContractError);
+    expect((error as InstanceType<typeof ChartContractError>).prop).toBe("showValues.placement");
+  });
+
+  it("still names `labels.placement` when a nested Bar sets the new `labels` name (RM-193)", () => {
+    let error: unknown;
+    try {
+      render(
+        <BarChart data={[{ name: "Alpha", v: 30 }]}>
+          <BarPart dataKey="v" labels={{ placement: "bogus" }} />
+        </BarChart>,
+      );
+    } catch (thrown) {
+      error = thrown;
+    }
+    expect(error).toBeInstanceOf(ChartContractError);
+    expect((error as InstanceType<typeof ChartContractError>).prop).toBe("labels.placement");
+  });
 });
 
 // ── (3) props round-trip out of the DOM ──────────────────────────────────────
@@ -833,10 +866,19 @@ describe("configureChartTestDouble({ deprecatedProps }) on a NESTED axis child",
       </LineChart>,
     );
     expect(warn).not.toHaveBeenCalled();
-    const payloadWithOldName = readChartDoubleProps(withOldName.container);
+    // The payload lives on the double's own root (`data-chart-props`), not on RTL's
+    // outer wrapper (`.container`) — reading `.container` itself has no such attribute,
+    // so `readChartDoubleProps` silently falls back to `{ component: "" }` on both sides
+    // and the comparison below passes no matter what `numTicks` did (RM-193 review P2-5).
+    const payloadWithOldName = readChartDoubleProps(
+      withOldName.container.querySelector("[data-chart-props]"),
+    );
+    expect(payloadWithOldName.component).not.toBe("");
     cleanup();
     const baseline = render(<LineChart data={data}>{null}</LineChart>);
-    expect(payloadWithOldName).toEqual(readChartDoubleProps(baseline.container));
+    expect(payloadWithOldName).toEqual(
+      readChartDoubleProps(baseline.container.querySelector("[data-chart-props]")),
+    );
     warn.mockRestore();
   });
 });
@@ -882,14 +924,22 @@ describe("configureChartTestDouble({ deprecatedProps }) on a NESTED Bar", () => 
       </BarChart>,
     );
     expect(warn).not.toHaveBeenCalled();
-    const payloadWithOldName = readChartDoubleProps(withOldName.container);
+    // Same fix as the nested-axis block above (RM-193 review P2-5): read the double's own
+    // root, not RTL's outer `.container` wrapper, or this compares `{ component: "" }` with
+    // itself no matter what `showValues` did.
+    const payloadWithOldName = readChartDoubleProps(
+      withOldName.container.querySelector("[data-chart-props]"),
+    );
+    expect(payloadWithOldName.component).not.toBe("");
     cleanup();
     const baseline = render(
       <BarChart data={data}>
         <BarPart dataKey="v" />
       </BarChart>,
     );
-    expect(payloadWithOldName).toEqual(readChartDoubleProps(baseline.container));
+    expect(payloadWithOldName).toEqual(
+      readChartDoubleProps(baseline.container.querySelector("[data-chart-props]")),
+    );
     warn.mockRestore();
   });
 });

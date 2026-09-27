@@ -1229,11 +1229,12 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
     const formatValue = useChartValueFormatter(valueFormat);
     const formatValueSet = useChartValueSetFormatterFactory(valueFormat);
     const resolvedMode: HeatmapMode = mode ?? (variant === "calendar" ? "dot" : "cell");
-    // RM-193 — `labels` replaces `showValues`; the palette-computed default now
-    // lives in `HEATMAP_CHART.normalize` (`HeatmapChartUnscoped` invokes it), so
-    // `labels` here is already resolved except for unwrapping the `{ show }`
-    // shape the `boolean-to-labels` alias transform produces for an old caller.
-    const resolvedShowValues = isDataLabelsOn(labels, palette === "diverging");
+    // RM-193 — `labels` replaces `showValues`; the palette-computed default now lives in
+    // `HEATMAP_CHART.normalize`, which `useResolvedChartProps` already ran (RM-193 review
+    // P2-6) before this shell ever sees `labels` — this only unwraps the `{ show }` shape
+    // the `boolean-to-labels` alias transform can still leave behind. No fallback here:
+    // duplicating `palette === "diverging"` a second time is what the review flagged.
+    const resolvedShowValues = isDataLabelsOn(labels, false);
     const margin = useMemo(
       () =>
         resolveChartMargin(
@@ -1548,14 +1549,11 @@ const HeatmapChartBase = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
 const HeatmapChartUnscoped = forwardRef<HTMLDivElement, HeatmapChartProps>(
   function HeatmapChart(rawProps, ref) {
     // RM-185: every default comes from the definition (`HEATMAP_CHART`), aliases first.
-    // RM-193: `HEATMAP_CHART.normalize` fills the palette-computed `labels` default —
-    // nothing else in the package calls a definition's `normalize`, so this chart calls
-    // its own, right after resolving.
-    const resolved = useResolvedChartProps(HEATMAP_CHART, rawProps);
-    // `normalize` only ever fills `labels` (still `P`, not the narrower `ResolvedProps`
-    // `resolved` already is) — the defaults it already filled are untouched.
-    const props = (HEATMAP_CHART.normalize?.(resolved, undefined) ??
-      resolved) as HeatmapChartShellProps;
+    // RM-193: `HEATMAP_CHART.normalize` fills the palette-computed `labels` default;
+    // `useResolvedChartProps` now calls it itself, inside its own memo (RM-193 review
+    // P2-6) — `labels` below is already resolved, not only the defaults `resolveProps`
+    // fills on its own.
+    const props = useResolvedChartProps(HEATMAP_CHART, rawProps) as HeatmapChartShellProps;
     // RM-145: the selection session + toolbar; a pass-through with gestures off.
     const containerSelection = useContainerSelection(props, props.x, {
       rows: props.data,

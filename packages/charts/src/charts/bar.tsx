@@ -185,6 +185,15 @@ export interface BarShowValuesSpec {
    * Default: every bar is labelled.
    */
   filter?: (datum: Record<string, unknown>, index: number) => boolean;
+  /**
+   * Explicit on/off, the shared `data-labels` group's own member (RM-193 review P2-7):
+   * `false` turns the label off even though the rest of this object is a real spec —
+   * every OTHER union member of {@link BarShowValues} (a bare object always meant "on")
+   * silently ignored it, so a value built generically for the group (`{ show: false }`,
+   * structurally assignable here since every field of this interface is optional) still
+   * rendered a label. Unset behaves exactly as before: an object means on.
+   */
+  show?: boolean;
 }
 
 /**
@@ -857,8 +866,12 @@ const BarInner = memo(function BarInner({
     const segmentFits =
       !bar.extent || (isHorizontal ? barW : barHeight) >= MIN_SEGMENT_LABEL_LENGTH;
     const passesFilter = labelSpec?.filter ? labelSpec.filter(bar.datum, bar.index) : true;
+    // RM-193 review P2-7: a bare object always meant "on" — `labelSpec?.show` (the shared
+    // `data-labels` group's own member, structurally assignable onto this spec since every
+    // field of it is optional) is an explicit override when present, so `{ show: false }`
+    // truly turns the label off instead of being ignored as "just some other spec".
     const showLabel =
-      Boolean(labelMode) &&
+      (labelSpec?.show ?? Boolean(labelMode)) &&
       thickness >= MIN_LABEL_BAR_WIDTH &&
       settled &&
       hoverGate &&

@@ -1182,6 +1182,31 @@ describe("BarChart richness (RM-113)", () => {
           '"showValues" was ignored because "labels" is set.',
       );
     });
+
+    // RM-193 review P2-7: `labels={{ placement: "inside" }}` (no `show`) correctly turns
+    // labels ON — any object used to mean on, unconditionally. `{ show: false }` is
+    // structurally assignable here too (every `BarShowValuesSpec` field is optional), and
+    // was rendering labels anyway, silently ignoring the one member that says "off".
+    it("`labels={{ show: false }}` turns the label off, even though it is otherwise a real spec", () => {
+      warnSpy();
+      const withShowFalse = barOf(
+        <Bar animate={false} dataKey="v" fill="var(--chart-1)" labels={{ show: false }} />,
+      );
+      expect(withShowFalse.querySelectorAll(".text-chart-value")).toHaveLength(0);
+    });
+
+    it('`labels={{ show: true, placement: "inside" }}` keeps the label on, same as the plain spec', () => {
+      warnSpy();
+      const withShowTrue = barOf(
+        <Bar
+          animate={false}
+          dataKey="v"
+          fill="var(--chart-1)"
+          labels={{ placement: "inside", show: true }}
+        />,
+      );
+      expect(withShowTrue.querySelectorAll(".text-chart-value").length).toBeGreaterThan(0);
+    });
   });
 
   it("a valueFormat that owns the sign prints one sign on a negative bar, not two", () => {

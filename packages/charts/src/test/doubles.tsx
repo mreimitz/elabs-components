@@ -714,7 +714,7 @@ export function assertLabelChildrenContract(children: ReactNode): void {
     if (!isValidElement(child)) return;
     const type = child.type as { displayName?: string; name?: string };
     const name = typeof child.type === "string" ? "" : (type.displayName ?? type.name ?? "");
-    let props = child.props as Record<string, unknown>;
+    const props = child.props as Record<string, unknown>;
     if (name === "Line" || name === "Area") {
       checkSeriesLabel(name, "seriesLabel", props.seriesLabel);
       checkValueLabels(name, "valueLabels", props.valueLabels);
@@ -724,13 +724,18 @@ export function assertLabelChildrenContract(children: ReactNode): void {
       // RM-193, same "fix round 2" as `assertAxisChildrenContract` above: a Bar nested
       // inside a container double never mounts, so its own alias check
       // (`createInertPart`, `./primitives.tsx`) never runs — resolve `showValues` →
-      // `labels` from the outside before reading it.
+      // `labels` from the outside for its warn/throw side effect only. Validation below
+      // still reads the untouched `props` (mirrors `assertAxisChildrenContract`'s comment
+      // at :613-615), so a violation names whichever key — old or new — the caller wrote,
+      // not always "labels" (RM-193 review P2-4).
       const aliases = (PART_DEFINITIONS as Record<string, { aliases?: AliasInput }>).Bar?.aliases;
-      props = resolveChartDoubleProps(name, props, aliases);
-      if (typeof props.labels === "object" && props.labels) {
-        const sv = props.labels as Record<string, unknown>;
-        checkOneOf(name, "labels.placement", sv.placement, ["inside", "outside", "auto"]);
-        checkOneOf(name, "labels.visibility", sv.visibility, ["always", "hover"]);
+      resolveChartDoubleProps(name, props, aliases);
+      const propName = props.labels !== undefined ? "labels" : "showValues";
+      const value = props.labels ?? props.showValues;
+      if (typeof value === "object" && value !== null) {
+        const sv = value as Record<string, unknown>;
+        checkOneOf(name, `${propName}.placement`, sv.placement, ["inside", "outside", "auto"]);
+        checkOneOf(name, `${propName}.visibility`, sv.visibility, ["always", "hover"]);
       }
     }
     const nested = props.children as ReactNode;

@@ -63,7 +63,18 @@ export function useResolvedChartProps<D extends AnyComponentDefinition, Props ex
   def: D,
   rawProps: Props,
 ): ResolvedProps<Props, D> {
-  return useMemo(() => resolveProps(def, renameChartProps(def, rawProps)), [def, rawProps]);
+  return useMemo(() => {
+    const resolved = resolveProps(def, renameChartProps(def, rawProps));
+    // RM-193 review (P2-6): a definition's optional `normalize` (ADR 0042 §3) runs here,
+    // inside the same memo as alias resolution and default-filling, so it recomputes only
+    // when `def`/`rawProps` actually change — not on every render. `HeatmapChart` is the
+    // only definition that declares one today (its palette-dependent `labels` default);
+    // every other family's `normalize` is `undefined`, so this is a no-op for them.
+    const normalize = def.normalize as
+      | ((props: ResolvedProps<Props, D>, ctx: unknown) => ResolvedProps<Props, D>)
+      | undefined;
+    return normalize?.(resolved, undefined) ?? resolved;
+  }, [def, rawProps]);
 }
 
 /**
