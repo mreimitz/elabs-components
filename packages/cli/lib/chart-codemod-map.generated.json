@@ -56,6 +56,24 @@
     },
     {
       "alias": {
+        "from": "zoomEnabled",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "zoom",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "zoomEnabled": "zoom"
+      },
+      "source": "ChoroplethChart",
+      "target": "ChoroplethChart"
+    },
+    {
+      "alias": {
         "from": "labels",
         "precedence": "new-wins",
         "removeIn": "6.0.0",
@@ -200,6 +218,78 @@
     },
     {
       "alias": {
+        "from": "window",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "windowSeconds",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "window": "windowSeconds"
+      },
+      "source": "LiveLineChart",
+      "target": "LiveLineChart"
+    },
+    {
+      "alias": {
+        "from": "align",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "plotAlign",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "align": "plotAlign"
+      },
+      "source": "PieChart",
+      "target": "PieChart"
+    },
+    {
+      "alias": {
+        "from": "hoveredNodeIndex",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "hoveredIndex",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "hoveredNodeIndex": "hoveredIndex"
+      },
+      "source": "SankeyChart",
+      "target": "SankeyChart"
+    },
+    {
+      "alias": {
+        "from": "onNodeHoverChange",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "onHoverChange",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "onNodeHoverChange": "onHoverChange"
+      },
+      "source": "SankeyChart",
+      "target": "SankeyChart"
+    },
+    {
+      "alias": {
         "from": "labels",
         "precedence": "new-wins",
         "removeIn": "6.0.0",
@@ -233,6 +323,42 @@
       },
       "source": "Sparkline",
       "target": "Sparkline"
+    },
+    {
+      "alias": {
+        "from": "zoomable",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "zoom",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "zoomable": "zoom"
+      },
+      "source": "TreeChart",
+      "target": "TreeChart"
+    },
+    {
+      "alias": {
+        "from": "align",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "plotAlign",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "align": "plotAlign"
+      },
+      "source": "TreeChart",
+      "target": "TreeChart"
     }
   ]
 }

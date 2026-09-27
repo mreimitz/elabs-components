@@ -227,7 +227,13 @@ export interface ChoroplethChartProps
   center?: [number, number];
   /** Translate offset [x, y]. If not provided, auto-calculated to center */
   translate?: [number, number];
-  /** Enable zoom and pan. Default: false */
+  /** Enable zoom and pan. Default: false. `zoomControls` alone still turns it on. */
+  zoom?: boolean;
+  /**
+   * Enable zoom and pan.
+   *
+   * @deprecated Since 5.6.0, use `zoom`. Removed in 6.0.0.
+   */
   zoomEnabled?: boolean;
   /** Minimum zoom scale. Default: 0.5 */
   zoomMin?: number;
@@ -1355,7 +1361,7 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>
       projectionScale,
       center,
       translate,
-      zoomEnabled,
+      zoom,
       zoomMin,
       zoomMax,
       initialZoom,
@@ -1534,7 +1540,7 @@ const ChoroplethChartBase = forwardRef<HTMLDivElement, ChoroplethChartBaseProps>
               thematic={thematic}
               translate={translate}
               width={width}
-              zoomEnabled={zoomEnabled || Boolean(zoomControls)}
+              zoomEnabled={zoom || Boolean(zoomControls)}
               zoomMax={zoomMax}
               zoomMin={zoomMin}
             >

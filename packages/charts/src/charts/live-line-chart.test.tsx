@@ -52,7 +52,10 @@ if (typeof window !== "undefined" && !("IntersectionObserver" in window)) {
   (globalThis as Record<string, unknown>).IntersectionObserver = StubIntersectionObserver;
 }
 
+import type { ReactElement } from "react";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { LiveLineChart as LiveLineChartDouble } from "../test";
 import { LiveLine } from "./live-line";
 import { LiveLineChart, type LiveLineChartProps, type LiveLinePoint } from "./live-line-chart";
 import { LiveXAxis } from "./live-x-axis";
@@ -169,5 +172,98 @@ describe("LiveXAxis / LiveYAxis — density-role className (#394)", () => {
     expect(label).not.toBeNull();
     expect(label).toHaveClass("text-meta");
     expect(label).not.toHaveClass("text-xs");
+  });
+});
+
+// ── RM-195: `window` → `windowSeconds` (ADR 0042 A.5 row 27) ──
+
+/** One render's markup, `useId` tokens renumbered so two renders compare. */
+function markupOf(ui: ReactElement): string {
+  const { container, unmount } = render(ui);
+  const html = container.innerHTML;
+  unmount();
+  const ids = [...new Set(html.match(/_r_[0-9a-z]+_|«r[0-9a-z]+»|:r[0-9a-z]+:/g) ?? [])];
+  return ids.reduce((out, id, i) => out.split(id).join(`@id${i}@`), html);
+}
+
+/** The `console.warn` calls that are deprecation warnings. */
+const deprecations = (spy: { mock: { calls: unknown[][] } }) =>
+  spy.mock.calls.filter(([message]) => String(message).includes("is deprecated"));
+
+describe("LiveLineChart renamed props (RM-195)", () => {
+  const chart = (props: Record<string, unknown>) => (
+    <LiveLineChart data={sampleData} value={59} {...props}>
+      <LiveLine dataKey="value" />
+      <LiveXAxis />
+    </LiveLineChart>
+  );
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+    vi.useRealTimers();
+  });
+
+  it("window renders exactly what windowSeconds renders", () => {
+    // `now` (the ring's clock and the axis's right edge) is `Date.now()` — freeze it so
+    // the two renders being compared land on the same instant.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW_SEC * 1000);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const viaOld = markupOf(chart({ window: 5 }));
+    expect(viaOld).toBe(markupOf(chart({ windowSeconds: 5 })));
+    expect(viaOld).not.toBe(markupOf(chart({})));
+  });
+
+  it("window warns once in development, naming windowSeconds", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(chart({ window: 5 })).unmount();
+    render(chart({ window: 5 })).unmount();
+    expect(deprecations(spy)).toEqual([
+      [
+        '[LiveLineChart] "window" is deprecated and will be removed in 6.0.0. ' +
+          'Use "windowSeconds".',
+      ],
+    ]);
+  });
+
+  it("window never warns in production", () => {
+    resetWarnOnce();
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(chart({ window: 5 })).unmount();
+    expect(deprecations(spy)).toEqual([]);
+  });
+
+  it("keeps the ./test double silent under the default deprecatedProps", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <LiveLineChartDouble data={sampleData} value={59} window={5}>
+        <LiveLine dataKey="value" />
+      </LiveLineChartDouble>,
+    ).unmount();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("lets windowSeconds win when both are given (new-wins)", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(NOW_SEC * 1000);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const viaBoth = markupOf(chart({ window: 5, windowSeconds: 30 }));
+    expect(viaBoth).toBe(markupOf(chart({ windowSeconds: 30 })));
+  });
+
+  it("says window was ignored when windowSeconds is also given", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(chart({ window: 5, windowSeconds: 30 })).unmount();
+    expect(deprecations(spy)).toEqual([
+      [
+        '[LiveLineChart] "window" is deprecated and will be removed in 6.0.0. ' +
+          'Use "windowSeconds". "window" was ignored because "windowSeconds" is set.',
+      ],
+    ]);
   });
 });

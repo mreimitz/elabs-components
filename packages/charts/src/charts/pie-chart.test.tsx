@@ -9,8 +9,11 @@
  * Real render + interaction fidelity is covered by the Storybook story build
  * (pnpm --filter @elabs-ai/components-docs test-storybook, story id: charts-piechart--default).
  */
-import { describe, expect, it, vi } from "vitest";
+import type { ReactElement } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render } from "@testing-library/react";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
+import { PieChart as PieChartDouble } from "../test";
 import { DEFAULT_HOVER_OFFSET, PieChart } from "./pie-chart";
 import { PieCenter } from "./pie-center";
 import { PieSlice } from "./pie-slice";
@@ -185,10 +188,10 @@ describe("PieChart radiusKey (angle × radius double encoding)", () => {
     expect(hitbox(0.5)).toBe(hitbox(45));
   });
 
-  it('centres the plot and lets labels overflow only with align="center"', () => {
-    const grid = (align?: "center") =>
+  it('centres the plot and lets labels overflow only with plotAlign="center"', () => {
+    const grid = (plotAlign?: "center") =>
       render(
-        <PieChart align={align} data={twoMeasureData} size={200}>
+        <PieChart data={twoMeasureData} plotAlign={plotAlign} size={200}>
           <PieSlice index={0} key="a" />
           <PieSlice index={1} key="b" />
         </PieChart>,
@@ -842,5 +845,89 @@ describe("PieChart margin (frame-size group)", () => {
     const svg = container.querySelector("svg");
     expect(svg?.getAttribute("width")).toBe("200");
     expect(svg?.getAttribute("height")).toBe("200");
+  });
+});
+
+// ── RM-195: `align` → `plotAlign` (ADR 0042 A.5 row 30) ──
+
+/** One render's markup, `useId` tokens renumbered so two renders compare. */
+function markupOf(ui: ReactElement): string {
+  const { container, unmount } = render(ui);
+  const html = container.innerHTML;
+  unmount();
+  const ids = [...new Set(html.match(/_r_[0-9a-z]+_|«r[0-9a-z]+»|:r[0-9a-z]+:/g) ?? [])];
+  return ids.reduce((out, id, i) => out.split(id).join(`@id${i}@`), html);
+}
+
+/** The `console.warn` calls that are deprecation warnings. */
+const deprecations = (spy: { mock: { calls: unknown[][] } }) =>
+  spy.mock.calls.filter(([message]) => String(message).includes("is deprecated"));
+
+describe("PieChart renamed props (RM-195)", () => {
+  const pie = (props: Record<string, unknown>) => (
+    <PieChart data={sampleData} size={200} {...props}>
+      <PieSlice index={0} key="a" />
+      <PieSlice index={1} key="b" />
+      <PieSlice index={2} key="c" />
+    </PieChart>
+  );
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it('align="center" renders exactly what plotAlign="center" renders', () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const viaOld = markupOf(pie({ align: "center" }));
+    expect(viaOld).toBe(markupOf(pie({ plotAlign: "center" })));
+    expect(viaOld).not.toBe(markupOf(pie({})));
+  });
+
+  it("align warns once in development, naming plotAlign", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(pie({ align: "center" })).unmount();
+    render(pie({ align: "center" })).unmount();
+    expect(deprecations(spy)).toEqual([
+      ['[PieChart] "align" is deprecated and will be removed in 6.0.0. Use "plotAlign".'],
+    ]);
+  });
+
+  it("align never warns in production", () => {
+    resetWarnOnce();
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(pie({ align: "center" })).unmount();
+    expect(deprecations(spy)).toEqual([]);
+  });
+
+  it("keeps the ./test double silent under the default deprecatedProps", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <PieChartDouble data={sampleData} align="center">
+        <PieSlice index={0} />
+      </PieChartDouble>,
+    ).unmount();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("lets plotAlign win when both are given (new-wins)", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const viaBoth = markupOf(pie({ align: "center", plotAlign: "start" }));
+    expect(viaBoth).toBe(markupOf(pie({ plotAlign: "start" })));
+  });
+
+  it("says align was ignored when plotAlign is also given", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(pie({ align: "center", plotAlign: "start" })).unmount();
+    expect(deprecations(spy)).toEqual([
+      [
+        '[PieChart] "align" is deprecated and will be removed in 6.0.0. ' +
+          'Use "plotAlign". "align" was ignored because "plotAlign" is set.',
+      ],
+    ]);
   });
 });

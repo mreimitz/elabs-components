@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, waitFor, within } from "storybook/test";
+import { expect, fireEvent, userEvent, waitFor, within } from "storybook/test";
 import { feature } from "topojson-client";
 import type { Topology } from "topojson-specification";
 import type { FeatureCollection, Geometry, MultiPolygon } from "geojson";
@@ -93,7 +93,7 @@ const meta = {
           "Regions shaded by a measure, on a real map projection.\n\n" +
           "**Deprecated since 5.6.0, removed in 6.0.0** — each old name still works and logs " +
           "one development warning: `emptyTitle` / `emptyMessage` → " +
-          "`empty: { title, message }`.",
+          "`empty: { title, message }`; `zoomEnabled` → `zoom`.",
       },
     },
   },
@@ -104,6 +104,10 @@ const meta = {
     },
     emptyMessage: {
       description: "Deprecated since 5.6.0 — use `empty.message`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    zoomEnabled: {
+      description: "Deprecated since 5.6.0 — use `zoom`. Removed in 6.0.0.",
       table: { category: "Deprecated" },
     },
   },
@@ -204,12 +208,32 @@ export const LoadingScaleHeightParity: Story = {
 export const ZoomEnabled: Story = {
   render: () => (
     <div className="h-72 w-full max-w-[560px]">
-      <ChoroplethChart data={worldData} aspectRatio="16 / 9" zoomEnabled>
+      <ChoroplethChart data={worldData} aspectRatio="16 / 9" zoom>
         <ChoroplethFeatureComponent />
         <ChoroplethTooltip getFeatureValue={getFeatureValue} valueLabel="Score" />
       </ChoroplethChart>
     </div>
   ),
+  /** `zoom` (RM-195: `zoomEnabled` → `zoom`) actually enables wheel zoom — the
+   *  feature group's transform changes after a wheel notch over the map. */
+  play: async ({ canvasElement }) => {
+    const transform = () =>
+      canvasElement
+        .querySelector(".choropleth-features")
+        ?.closest("g[transform]")
+        ?.getAttribute("transform");
+    await waitFor(() => expect(transform()).toBeTruthy());
+    const fitted = transform();
+
+    const svg = canvasElement.querySelector("svg");
+    if (!svg) throw new Error("expected an <svg> root");
+    // `fireEvent.wheel` dispatches straight at this node. A synthetic
+    // `userEvent` wheel gesture resolves a screen coordinate and can land the
+    // event on `document.body` instead of the map — dispatch on the target
+    // element itself.
+    fireEvent.wheel(svg, { deltaY: -100 });
+    await waitFor(() => expect(transform()).not.toBe(fitted));
+  },
 };
 
 /**

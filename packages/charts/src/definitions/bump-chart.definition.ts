@@ -6,6 +6,9 @@
  * the component (`resolveChartMargin`), `palette`/`valueFormat` stay bare,
  * resolved elsewhere — never a literal destructuring default.
  *
+ * RM-195 (ADR 0042 A.7): `highlightKey` widens to `string | number` — the value-key part it
+ * shares with Bar's `highlightKey` now. A type widening: no alias row, no warning.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -63,7 +66,8 @@ export const BUMP_CHART = /* @__PURE__ */ defineChart<BumpChartProps>()({
       tier: "essential",
       description: "lines: one line per entity. strip: a fixed-row filmstrip.",
     }),
-    highlightKey: field.string({
+    highlightKey: field.union({
+      of: [field.string(), field.number()],
       tier: "advanced",
       description: "The hero entity, drawn in ink; every other entity draws mono.",
     }),

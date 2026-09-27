@@ -123,7 +123,7 @@ export function CommandCenterLiveOps({
             paused={paused}
             style={{ height: 220 }}
             value={latest}
-            window={WINDOW_SECONDS / 2}
+            windowSeconds={WINDOW_SECONDS / 2}
           >
             <LiveLine dataKey="value" />
             <LiveXAxis />

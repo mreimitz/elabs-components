@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { DecorationProvider } from "@elabs-ai/components-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fireEvent, userEvent, waitFor } from "storybook/test";
@@ -12,6 +13,27 @@ const meta = {
   title: "Charts/SankeyChart",
   component: SankeyChart,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Flow between stages, edge width proportional to value.\n\n" +
+          "**Deprecated since 5.6.0, removed in 6.0.0** — each old name still works and logs " +
+          "one development warning: `hoveredNodeIndex` → `hoveredIndex`; `onNodeHoverChange` → " +
+          "`onHoverChange`.",
+      },
+    },
+  },
+  argTypes: {
+    hoveredNodeIndex: {
+      description: "Deprecated since 5.6.0 — use `hoveredIndex`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    onNodeHoverChange: {
+      description: "Deprecated since 5.6.0 — use `onHoverChange`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+  },
 } satisfies Meta<typeof SankeyChart>;
 
 export default meta;
@@ -97,6 +119,62 @@ export const WithAccessibleLabel: Story = {
       </SankeyChart>
     </div>
   ),
+};
+
+function ControlledHoverDemo() {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  return (
+    <div className="flex w-full max-w-[560px] flex-col gap-3">
+      <div className="h-72">
+        <SankeyChart data={funnelData} hoveredIndex={hoveredIndex} onHoverChange={setHoveredIndex}>
+          <SankeyLink />
+          <SankeyNode />
+        </SankeyChart>
+      </div>
+      <output
+        className="rounded-md border border-border bg-card px-3 py-2 text-body text-card-foreground"
+        data-testid="hovered-node-name"
+      >
+        {hoveredIndex === null ? "No node hovered." : (funnelData.nodes[hoveredIndex]?.name ?? "")}
+      </output>
+    </div>
+  );
+}
+
+/**
+ * `hoveredIndex` / `onHoverChange` (RM-195, ADR 0042 A.5 rows 28–29): the host
+ * owns the hover state and drives the highlight through props, the same
+ * contract Pie/Ring/Radar/Legend already use. Hovering a node fires
+ * `onHoverChange` with its index; the `<output>` below proves the round trip
+ * actually reaches the host, not just that the callback was called.
+ */
+export const ControlledHover: Story = {
+  args: { data: funnelData },
+  render: () => <ControlledHoverDemo />,
+  play: async ({ canvasElement }) => {
+    const output = canvasElement.querySelector('[data-testid="hovered-node-name"]');
+    if (!output) throw new Error("expected the hovered-node-name output");
+    expect(output.textContent).toBe("No node hovered.");
+
+    let nodeGroups: SVGGElement[] = [];
+    await waitFor(() => {
+      nodeGroups = Array.from(
+        canvasElement.querySelectorAll("g.sankey-nodes > g"),
+      ) as SVGGElement[];
+      expect(nodeGroups.length).toBeGreaterThan(0);
+    });
+
+    const target = nodeGroups[1] as SVGGElement;
+    await userEvent.hover(target);
+    await waitFor(() => {
+      expect(output.textContent).toBe(funnelData.nodes[1]?.name);
+    });
+
+    await userEvent.unhover(target);
+    await waitFor(() => {
+      expect(output.textContent).toBe("No node hovered.");
+    });
+  },
 };
 
 /** `status="loading"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives. */

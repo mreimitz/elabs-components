@@ -216,6 +216,25 @@ describe("resolveHeroEntity + orderRowsForRender (hero promotion)", () => {
     expect(resolveHeroEntity(rows, (d) => (d.nps as number) > 60)).toBe("Product 12");
   });
 
+  // RM-195 (ADR 0042 A.7): highlightKey widens to string | number — a type widening,
+  // matched `==`-free via String(...), no alias row, no warning.
+  it("resolves a NUMBER, matched against the entity via String()", () => {
+    const numericRows = [
+      { index: 0, datum: {}, entity: "3", values: {} },
+      { index: 1, datum: {}, entity: "7", values: {} },
+    ];
+    expect(resolveHeroEntity(numericRows, 3)).toBe("3");
+    expect(resolveHeroEntity(numericRows, 99)).toBeUndefined();
+  });
+
+  it("a numeric highlightKey resolves identically to the equivalent string", () => {
+    const numericRows = [
+      { index: 0, datum: {}, entity: "3", values: {} },
+      { index: 1, datum: {}, entity: "7", values: {} },
+    ];
+    expect(resolveHeroEntity(numericRows, 3)).toBe(resolveHeroEntity(numericRows, "3"));
+  });
+
   it("draws the hero LAST — every other row keeps its relative order", () => {
     const ordered = orderRowsForRender(rows, "Product 3");
     expect(ordered.at(-1)?.entity).toBe("Product 3");
@@ -332,6 +351,29 @@ describe("<ParallelCoordinatesChart /> render", () => {
     expect(
       container.querySelector('[data-slot="parallel-coordinates-hero-label"]'),
     ).toHaveTextContent("Product 3");
+  });
+
+  // RM-195 (ADR 0042 A.7): highlightKey widens to string | number — a type widening,
+  // matched `==`-free via String(...), no alias row, no warning.
+  it("promotes a NUMBER highlightKey to hero, matched against the entity via String()", () => {
+    const numericProducts = products.map((p, i) => ({ ...p, product: String(i) }));
+    const { container } = render(
+      <div style={{ width: 640, height: 320 }}>
+        <ParallelCoordinatesChart
+          data={numericProducts}
+          dimensions={dims}
+          entity="product"
+          highlightKey={3}
+        />
+      </div>,
+    );
+    const heroPath = container.querySelector(
+      '[data-entity="3"][data-slot="parallel-coordinates-path"]',
+    );
+    expect(heroPath).toHaveAttribute("stroke", "var(--chart-foreground)");
+    expect(
+      container.querySelector('[data-slot="parallel-coordinates-hero-label"]'),
+    ).toHaveTextContent("3");
   });
 
   // #280 — the hero's ink used to be `rowColors[originalRowIndex]`, so it

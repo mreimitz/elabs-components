@@ -107,7 +107,7 @@ function LiveTile() {
       accessibleLabel={a11y.live.label}
       data={points}
       value={points.at(-1)?.value ?? 0}
-      window={30}
+      windowSeconds={30}
     >
       <LiveLine dataKey="value" />
       <LiveXAxis />

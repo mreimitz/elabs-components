@@ -5,6 +5,10 @@
  * bare in the destructuring (`margin` is renamed to `marginProp` and merged internally),
  * so filling either would change what a caller who left it unset gets back.
  *
+ * RM-195 (ADR 0042 A.7): `highlightKey` widens to add `number` alongside its existing
+ * `string` and predicate forms — the value-key part it shares with Bar's `highlightKey` now.
+ * A type widening: no alias row, no warning.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -56,7 +60,8 @@ export const PARALLEL_COORDINATES_CHART =
         description: "3–6 axes, left to right.",
       }),
       highlightKey: partialFieldFor<ParallelCoordinatesChartProps["highlightKey"]>()(
-        field.string({
+        field.union({
+          of: [field.string(), field.number()],
           tier: "advanced",
           description: "Entity id promoted to the hero line. Unset: no hero.",
         }),

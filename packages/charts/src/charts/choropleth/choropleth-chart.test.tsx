@@ -1235,3 +1235,81 @@ describe("ChoroplethChart renamed props (RM-194)", () => {
     expect(screen.getByRole("button", { name: "Clear filters" })).toBeInTheDocument();
   });
 });
+
+// ── RM-195: `zoomEnabled` → `zoom` (ADR 0042 A.5 row 25) ──
+
+describe("ChoroplethChart renamed props (RM-195)", () => {
+  const map = (props: Record<string, unknown>) => (
+    <ChoroplethChart data={statesWithData(12)} {...props}>
+      <ChoroplethFeatureComponent />
+    </ChoroplethChart>
+  );
+
+  /** The zoomed features group carries `transform` only while zoom is active. */
+  const zoomed = (container: HTMLElement) =>
+    container.querySelector(".choropleth-features")!.closest("g[transform]") !== null;
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("zoomEnabled renders exactly what zoom renders", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const viaOld = markupOf(map({ zoomEnabled: true }));
+    expect(viaOld).toBe(markupOf(map({ zoom: true })));
+    expect(viaOld).not.toBe(markupOf(map({})));
+  });
+
+  it('"zoomControls" alone still turns zoom on', () => {
+    const { container } = render(map({ zoomControls: true }));
+    expect(zoomed(container)).toBe(true);
+  });
+
+  it("zoomEnabled warns once in development, naming zoom", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(map({ zoomEnabled: true })).unmount();
+    render(map({ zoomEnabled: true })).unmount();
+    expect(deprecations(spy)).toEqual([
+      ['[ChoroplethChart] "zoomEnabled" is deprecated and will be removed in 6.0.0. Use "zoom".'],
+    ]);
+  });
+
+  it("zoomEnabled never warns in production", () => {
+    resetWarnOnce();
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(map({ zoomEnabled: true })).unmount();
+    expect(deprecations(spy)).toEqual([]);
+  });
+
+  it("keeps the ./test double silent under the default deprecatedProps", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <ChoroplethChartDouble data={statesWithData(12)} zoomEnabled>
+        <ChoroplethFeatureComponent />
+      </ChoroplethChartDouble>,
+    ).unmount();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("lets zoom win when both are given (new-wins)", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { container } = render(map({ zoomEnabled: true, zoom: false }));
+    expect(zoomed(container)).toBe(false);
+  });
+
+  it("says zoomEnabled was ignored when zoom is also given", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(map({ zoomEnabled: true, zoom: false })).unmount();
+    expect(deprecations(spy)).toEqual([
+      [
+        '[ChoroplethChart] "zoomEnabled" is deprecated and will be removed in 6.0.0. ' +
+          'Use "zoom". "zoomEnabled" was ignored because "zoom" is set.',
+      ],
+    ]);
+  });
+});

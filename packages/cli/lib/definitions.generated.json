@@ -2377,7 +2377,15 @@
         "highlightKey": {
           "description": "The hero entity, drawn in ink; every other entity draws mono.",
           "group": null,
-          "kind": "string",
+          "kind": "union",
+          "of": [
+            {
+              "kind": "string"
+            },
+            {
+              "kind": "number"
+            }
+          ],
           "tier": "advanced"
         },
         "margin": {
@@ -3109,6 +3117,14 @@
           "since": "5.6.0",
           "to": "empty.message",
           "transform": "identity"
+        },
+        {
+          "from": "zoomEnabled",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "zoom",
+          "transform": "identity"
         }
       ],
       "codeOnly": [
@@ -3333,9 +3349,9 @@
           "tier": "advanced",
           "values": ["loading", "ready"]
         },
-        "zoomEnabled": {
+        "zoom": {
           "default": false,
-          "description": "Enable zoom and pan.",
+          "description": "Enable zoom and pan. `zoomControls` alone still turns it on.",
           "group": null,
           "kind": "boolean",
           "tier": "essential"
@@ -7876,7 +7892,16 @@
       "version": 1
     },
     "LiveLineChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "window",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "windowSeconds",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": ["children", "style"],
       "contract": {
         "dataKind": "array",
@@ -8049,7 +8074,7 @@
           "required": true,
           "tier": "essential"
         },
-        "window": {
+        "windowSeconds": {
           "default": 30,
           "description": "Visible time window, in seconds.",
           "group": null,
@@ -8588,7 +8613,15 @@
         "highlightKey": {
           "description": "Entity id promoted to the hero line. Unset: no hero.",
           "group": null,
-          "kind": "string",
+          "kind": "union",
+          "of": [
+            {
+              "kind": "string"
+            },
+            {
+              "kind": "number"
+            }
+          ],
           "tier": "advanced"
         },
         "maxInteractiveDatapoints": {
@@ -8667,7 +8700,16 @@
       "version": 1
     },
     "PieChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "align",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "plotAlign",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [
         "children",
         "datapointLabel",
@@ -8699,14 +8741,6 @@
           "group": "a11y",
           "kind": "string",
           "tier": "advanced"
-        },
-        "align": {
-          "default": "start",
-          "description": "Where the pie sits when narrower than its box.",
-          "group": null,
-          "kind": "enum",
-          "tier": "advanced",
-          "values": ["start", "center"]
         },
         "className": {
           "default": "",
@@ -8947,6 +8981,14 @@
           "kind": "enum",
           "tier": "essential",
           "values": ["categorical", "sequential", "diverging", "mono", "accent"]
+        },
+        "plotAlign": {
+          "default": "start",
+          "description": "Where the pie sits when narrower than its box.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["start", "center"]
         },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
@@ -9863,14 +9905,25 @@
       "version": 1
     },
     "SankeyChart": {
-      "aliases": [],
-      "codeOnly": [
-        "children",
-        "enterTransition",
-        "hoveredNodeIndex",
-        "margin",
-        "onNodeHoverChange"
+      "aliases": [
+        {
+          "from": "hoveredNodeIndex",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "hoveredIndex",
+          "transform": "identity"
+        },
+        {
+          "from": "onNodeHoverChange",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "onHoverChange",
+          "transform": "identity"
+        }
       ],
+      "codeOnly": ["children", "enterTransition", "hoveredIndex", "margin", "onHoverChange"],
       "contract": {
         "dataKind": "sankey",
         "requiredProps": ["data", "children"]
@@ -10917,7 +10970,24 @@
       "version": 1
     },
     "TreeChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "zoomable",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "zoom",
+          "transform": "identity"
+        },
+        {
+          "from": "align",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "plotAlign",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [
         "datapointLabel",
         "onDatapointClick",
@@ -10944,14 +11014,6 @@
           "group": "a11y",
           "kind": "string",
           "tier": "advanced"
-        },
-        "align": {
-          "default": "start",
-          "description": "Where the tree sits when smaller than its container.",
-          "group": null,
-          "kind": "enum",
-          "tier": "advanced",
-          "values": ["start", "center"]
         },
         "className": {
           "description": "Extra class names on the chart root.",
@@ -11089,6 +11151,14 @@
           "tier": "essential",
           "values": ["mono", "categorical"]
         },
+        "plotAlign": {
+          "default": "start",
+          "description": "Where the tree sits when smaller than its container.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["start", "center"]
+        },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
@@ -11122,6 +11192,13 @@
           "tier": "advanced",
           "values": ["loading", "ready"]
         },
+        "zoom": {
+          "default": false,
+          "description": "A pannable, pinch-zoomable canvas viewport.",
+          "group": null,
+          "kind": "boolean",
+          "tier": "advanced"
+        },
         "zoomRange": {
           "description": "The zoom range with zoomable: [min, max].",
           "group": null,
@@ -11131,13 +11208,6 @@
           "of": {
             "kind": "number"
           },
-          "tier": "advanced"
-        },
-        "zoomable": {
-          "default": false,
-          "description": "A pannable, pinch-zoomable canvas viewport.",
-          "group": null,
-          "kind": "boolean",
           "tier": "advanced"
         }
       },

@@ -756,7 +756,7 @@ const FAMILIES: Record<ChartFamilyName, Family> = {
         minimap
         onDatapointClick={s.onDatapointClick}
         onZoomChange={s.onZoomChange}
-        zoomable
+        zoom
       />
     ),
     hover: true,
@@ -1302,7 +1302,7 @@ describe("gesture owners", () => {
   });
 
   it("TreeChart: a zoomable tree stops native scroll-pan with active: false", async () => {
-    const tree = <TreeChart collapsible={false} data={orgTree} minimap zoomable />;
+    const tree = <TreeChart collapsible={false} data={orgTree} minimap zoom />;
     const shown = renderWith(undefined, tree);
     const box = (await waitForSelector(shown.container, '[data-slot="tree-chart"]')) as Element;
     expect(box.className).toMatch(/\boverflow-auto\b/);
