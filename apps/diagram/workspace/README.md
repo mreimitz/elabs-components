@@ -10,8 +10,8 @@ backend. Everything here is plain YAML, versioned by Git like the rest of the re
 - `components/` — reusable sub-diagrams. Any diagram becomes a component by moving it here.
 - `examples/` — the four v1 example diagrams (moved from `src/examples/` in DG-21).
 - Any other folder you create — free-form folders of diagrams (`customers/acme/…`).
-- `<name>.thumb.svg` beside a diagram — its thumbnail, written by the app after a clean
-  autosave (480×270, light theme). Versioned with the diagram.
+- `<name>.thumb.png` beside a diagram — its thumbnail, written by the app after a clean
+  autosave (a 480×270 PNG, light theme, about 25 KB). Versioned with the diagram.
 
 ## The two rules
 
