@@ -13,6 +13,7 @@ import { useSyncExternalStore } from "react";
 import { isPresenting } from "../interaction/presentation-mode";
 import { focusCanvasElement, focusedCanvasId } from "../panes/focus-canvas";
 import { WORKSPACE_ID } from "../shell/diagram-shell";
+import { currentMode } from "../shell/mode-store"; // view mode is read-only (maintainer 2026-09-27)
 import { createStore } from "./create-store";
 import type { CompiledDiagram } from "./compile-text";
 import { diagramStore, editActions } from "./diagram-store";
@@ -154,11 +155,13 @@ function fromCanvas(target: EventTarget | null): boolean {
 /**
  * ⌘/Ctrl+Z undoes, ⇧⌘/Ctrl+Z and Ctrl+Y redo, anywhere but in Monaco, a form field or a
  * dialog. Focus follows the change only when the key came from the canvas. Never while
- * presenting (DG-18): presentation is view-only and has no Undo button to show the change.
+ * presenting (DG-18) or in view mode (maintainer 2026-09-27): neither shows an Undo button,
+ * and view mode's whole point is that nothing on the canvas — including the file's own
+ * history — changes under the viewer.
  */
 export function onHistoryKeyDown(event: KeyboardEvent): void {
   if (event.defaultPrevented || event.altKey || !(event.metaKey || event.ctrlKey)) return;
-  if (isPresenting(window.location.hash)) return;
+  if (isPresenting(window.location.hash) || currentMode() !== "edit") return;
   const key = event.key.toLowerCase();
   const redo = (key === "z" && event.shiftKey) || (key === "y" && event.ctrlKey);
   if ((key !== "z" && !redo) || ownsUndo(event.target)) return;

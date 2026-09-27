@@ -17,6 +17,7 @@ import { toast } from "@elabs-ai/components-ui";
 import { resolveThemeIsDark } from "@elabs-ai/components-tokens";
 import { pictureOfCanvas, pngBlob, type Picture, type PictureScale } from "../io/export";
 import { diagramStore } from "../state/diagram-store";
+import { viewOverrideActions } from "../shell/view-overrides-store"; // view mode overrides (maintainer 2026-09-27)
 import { writeThumb } from "./client";
 import { askAboutDiskChange, tellFileGone } from "./live-reload";
 import { workspaceActions, workspaceStore } from "./workspace-store";
@@ -83,6 +84,11 @@ export function installAutosave(): () => void {
     // Plan §9.2: thumbnails are light. The exporter paints in the page's theme
     // (io/export.ts has no theme option), so a dark page skips the thumbnail.
     if (resolveThemeIsDark()) return;
+    // view mode overrides (maintainer 2026-09-27): never a viewer's own choice (review-r0's
+    // race — an in-view drag used to write while an override was showing). Read-only view mode
+    // means a save can only land while editing, when the canvas already shows the file's own
+    // values regardless — this is defence in depth, not a path this app can currently reach.
+    if (viewOverrideActions.hasOverride(path)) return;
     lastThumbAt = Date.now();
     try {
       await writeThumb(path, await thumbnailPng(await pictureOfCanvas(compiled.ast?.title)));
