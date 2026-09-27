@@ -107,7 +107,7 @@ export function MarketingCtaBanner({
                 emphasizeLast
                 fit="fill"
                 height={48}
-                label={proof.seriesLabel ?? proof.label}
+                accessibleLabel={proof.seriesLabel ?? proof.label}
                 values={proof.series}
                 variant="bar"
               />

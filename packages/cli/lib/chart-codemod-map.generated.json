@@ -1,3 +1,94 @@
 {
-  "mappings": []
+  "mappings": [
+    {
+      "alias": {
+        "from": "labels",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "messages",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "labels": "messages"
+      },
+      "source": "BulletChart",
+      "target": "BulletChart"
+    },
+    {
+      "alias": {
+        "from": "labels",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "messages",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "labels": "messages"
+      },
+      "source": "DensityScatterChart",
+      "target": "DensityScatterChart"
+    },
+    {
+      "alias": {
+        "from": "labels",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "messages",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "surface",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "labels": "messages"
+      },
+      "source": "Gauge",
+      "target": "Gauge"
+    },
+    {
+      "alias": {
+        "from": "labels",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "messages",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "surface",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "labels": "messages"
+      },
+      "source": "Sparkline",
+      "target": "Sparkline"
+    },
+    {
+      "alias": {
+        "from": "label",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "accessibleLabel",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "surface",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "label": "accessibleLabel"
+      },
+      "source": "Sparkline",
+      "target": "Sparkline"
+    }
+  ]
 }

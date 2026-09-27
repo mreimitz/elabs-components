@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-27T09:12:32.377Z",
+  "generatedAt": "2026-09-27T09:27:26.791Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22139,11 +22139,18 @@
               "kind": "union"
             },
             {
+              "name": "messages",
+              "optional": true,
+              "type": "BulletChartLabels & ChartMessages",
+              "description": "This chart's own words (the `messages` group, RM-191): the names interpolated into the auto-generated accessible description (`value`, `target`, `comparative`), and overrides of the catalogue's `charts.*` keys it prints (`charts.bulletChart.*`), for this chart only. The two key sets never collide: a catalogue key always starts with `charts.`.",
+              "kind": "object",
+              "group": "messages"
+            },
+            {
               "name": "labels",
               "optional": true,
               "type": "BulletChartLabels",
-              "description": "Caller-supplied names interpolated into the auto-generated accessible description.",
-              "kind": "object"
+              "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins."
             },
             {
               "name": "higherIsBetter",
@@ -25636,9 +25643,18 @@
               "group": "a11y"
             },
             {
+              "name": "messages",
+              "optional": true,
+              "type": "DensityScatterLabels & ChartMessages",
+              "description": "This chart's own words (the `messages` group, RM-191): the word-bag keys of `DensityScatterLabels` (tooltip headings, zone and selection names, the live-region template), and overrides of the catalogue's `charts.*` keys the shared parts it renders print (legend, loading text), for this chart only. The two key sets never collide: a catalogue key always starts with `charts.`.",
+              "kind": "object",
+              "group": "messages"
+            },
+            {
               "name": "labels",
               "optional": true,
-              "type": "DensityScatterLabels"
+              "type": "DensityScatterLabels",
+              "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins."
             },
             {
               "name": "onFrame",
@@ -27127,11 +27143,18 @@
               "kind": "array"
             },
             {
+              "name": "messages",
+              "optional": true,
+              "type": "Partial<GaugeLabels> & ChartMessages",
+              "description": "This gauge's own words (the `messages` group, RM-191): the word the composed accessible text uses for the target (`target`), and overrides of the catalogue's `charts.*` keys it prints (`charts.gauge.defaultLabel`), for this gauge only. The two key sets never collide: a catalogue key always starts with `charts.`.",
+              "kind": "object",
+              "group": "messages"
+            },
+            {
               "name": "labels",
               "optional": true,
               "type": "Partial<GaugeLabels>",
-              "description": "Overrides the shipped English words the composed accessible text uses (`target`).",
-              "kind": "object"
+              "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins."
             },
             {
               "name": "accessibleLabel",
@@ -32411,7 +32434,8 @@
         },
         "Sparkline": {
           "extends": [
-            "Omit<\n  SVGAttributes<SVGSVGElement>,\n  \"children\" | \"values\" | \"target\"\n>"
+            "Omit<SVGAttributes<SVGSVGElement>, \"children\" | \"values\" | \"target\">",
+            "ChartA11yProps"
           ],
           "props": [
             {
@@ -32448,8 +32472,7 @@
               "name": "label",
               "optional": true,
               "type": "string",
-              "description": "Accessible name. Default describes the series (and any references below).",
-              "kind": "string"
+              "description": "@deprecated Use `accessibleLabel` — the same string (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `accessibleLabel` wins."
             },
             {
               "name": "width",
@@ -32525,11 +32548,18 @@
               "kind": "string"
             },
             {
+              "name": "messages",
+              "optional": true,
+              "type": "SparklineLabels & ChartMessages",
+              "description": "Words for the reference facts in the default accessible name and the hover/keyboard readout (the `messages` group, RM-191). Sparkline prints no catalogue (`charts.*`) words of its own, so only these word-bag keys change what it says.",
+              "kind": "object",
+              "group": "messages"
+            },
+            {
               "name": "labels",
               "optional": true,
               "type": "SparklineLabels",
-              "description": "Words for the reference facts in the default accessible name and the hover/keyboard readout.",
-              "kind": "object"
+              "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins."
             },
             {
               "name": "pointLabels",
@@ -32537,6 +32567,24 @@
               "type": "readonly string[]",
               "description": "Index-aligned with `values` (e.g. `[\"Week 31\", \"Week 32\", …]`) — names each point in the hover/keyboard readout's header. Default header is `\"{i+1} of {n}\"`.",
               "kind": "array"
+            },
+            {
+              "name": "accessibleLabel",
+              "optional": true,
+              "type": "string",
+              "description": "Accessible name for the chart region. AT announces this when the container receives focus or is read in flow. Example: \"Monthly revenue bar chart\"",
+              "from": "ChartA11yProps",
+              "kind": "string",
+              "group": "a11y"
+            },
+            {
+              "name": "accessibleDescription",
+              "optional": true,
+              "type": "string",
+              "description": "Supplemental description (series names, value ranges, last values, etc.). Rendered as a visually-hidden `<span>` associated via `aria-describedby`. Example: \"Series: Revenue, Expenses. Range: 0–25,000.\"",
+              "from": "ChartA11yProps",
+              "kind": "string",
+              "group": "a11y"
             }
           ]
         },

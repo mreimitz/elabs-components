@@ -94,7 +94,7 @@ function KpiTargetBulletCard({ metric, locale }: { metric: KpiMetric; locale: st
           bands={metric.bullet}
           comparative={metric.priorYear}
           higherIsBetter={metric.higherIsBetter}
-          labels={{ value: metric.label, target: "target", comparative: "last year" }}
+          messages={{ value: metric.label, target: "target", comparative: "last year" }}
           size="sm"
           target={metric.target}
           value={metric.actual}

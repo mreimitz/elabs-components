@@ -2011,7 +2011,16 @@
       "version": 1
     },
     "BulletChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "labels",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "messages",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [],
       "contract": {
         "dataKind": "none",
@@ -2076,23 +2085,6 @@
           "kind": "boolean",
           "tier": "advanced"
         },
-        "labels": {
-          "description": "Names interpolated into the accessible description.",
-          "fields": {
-            "comparative": {
-              "kind": "string"
-            },
-            "target": {
-              "kind": "string"
-            },
-            "value": {
-              "kind": "string"
-            }
-          },
-          "group": null,
-          "kind": "object",
-          "tier": "advanced"
-        },
         "locale": {
           "description": "BCP 47 locale the numbers are formatted in.",
           "group": null,
@@ -2143,6 +2135,14 @@
           "description": "Most digits printed after the decimal point.",
           "group": null,
           "kind": "number",
+          "tier": "advanced"
+        },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
           "tier": "advanced"
         },
         "min": {
@@ -2283,7 +2283,7 @@
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "frame-size"],
+      "groups": ["a11y", "frame-size", "messages"],
       "id": "BulletChart",
       "kind": "chart",
       "label": "Bullet chart",
@@ -3951,7 +3951,16 @@
       "version": 1
     },
     "DensityScatterChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "labels",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "messages",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [
         "colorBy",
         "defaultSelection",
@@ -3961,7 +3970,6 @@
         "formatX",
         "formatY",
         "hiddenKeys",
-        "labels",
         "onFrame",
         "onHiddenKeysChange",
         "onSelectionChange",
@@ -4120,6 +4128,14 @@
           "overrides": "frame-size",
           "tier": "advanced"
         },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
+          "tier": "advanced"
+        },
         "palette": {
           "description": "Colour ramp the marks draw from.",
           "group": null,
@@ -4240,7 +4256,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y", "frame-size"],
+      "groups": ["a11y", "frame-size", "messages"],
       "id": "DensityScatterChart",
       "kind": "chart",
       "label": "Density scatter plot",
@@ -5753,7 +5769,16 @@
       "version": 1
     },
     "Gauge": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "labels",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "messages",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": ["children", "enterTransition", "formatOptions", "remainingLabel"],
       "description": "A single value on a radial notch dial, 0–100.",
       "fields": {
@@ -5857,15 +5882,12 @@
           },
           "tier": "advanced"
         },
-        "labels": {
-          "description": "Overrides the shipped English words the accessible text uses.",
-          "fields": {
-            "target": {
-              "kind": "string"
-            }
-          },
-          "group": null,
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
           "kind": "object",
+          "open": true,
           "tier": "advanced"
         },
         "milestones": {
@@ -5995,7 +6017,7 @@
           "unit": "px"
         }
       },
-      "groups": ["a11y"],
+      "groups": ["a11y", "messages"],
       "id": "Gauge",
       "kind": "surface",
       "label": "Gauge",
@@ -10636,10 +10658,39 @@
       "version": 1
     },
     "Sparkline": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "labels",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "messages",
+          "transform": "identity"
+        },
+        {
+          "from": "label",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "accessibleLabel",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": ["formatValue"],
       "description": "A word-sized trend, as bars or a line.",
       "fields": {
+        "accessibleDescription": {
+          "description": "Accessible description read after the name.",
+          "group": "a11y",
+          "kind": "string",
+          "tier": "advanced"
+        },
+        "accessibleLabel": {
+          "description": "Accessible name, when the visible title is missing or not enough.",
+          "group": "a11y",
+          "kind": "string",
+          "tier": "advanced"
+        },
         "band": {
           "description": "A [lo, hi] normal range drawn as a quiet filled zone.",
           "group": null,
@@ -10702,36 +10753,18 @@
           "kind": "boolean",
           "tier": "essential"
         },
-        "label": {
-          "description": "Accessible name.",
-          "group": null,
-          "kind": "string",
-          "tier": "essential"
-        },
-        "labels": {
-          "description": "Words for the reference facts in the accessible name and readout.",
-          "fields": {
-            "band": {
-              "kind": "string"
-            },
-            "baseline": {
-              "kind": "string"
-            },
-            "target": {
-              "kind": "string"
-            },
-            "value": {
-              "kind": "string"
-            }
-          },
-          "group": null,
-          "kind": "object",
-          "tier": "advanced"
-        },
         "lastValueSuffix": {
           "description": "Appended to the last-value text and the accessible name.",
           "group": null,
           "kind": "string",
+          "tier": "advanced"
+        },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
           "tier": "advanced"
         },
         "pointLabels": {
@@ -10783,7 +10816,7 @@
           "unit": "px"
         }
       },
-      "groups": [],
+      "groups": ["a11y", "messages"],
       "id": "Sparkline",
       "kind": "surface",
       "label": "Sparkline",

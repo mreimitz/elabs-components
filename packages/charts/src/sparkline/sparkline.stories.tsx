@@ -7,6 +7,23 @@ const meta = {
   component: Sparkline,
   tags: ["autodocs"],
   parameters: { layout: "centered" },
+  // RM-191 (ADR 0042 A.1): the autodocs note for each renamed prop.
+  argTypes: {
+    label: {
+      description:
+        "Deprecated (removed in 6.0.0): use `accessibleLabel` — the same value. Until then `label` still " +
+        "works and logs one development warning; when both are set, `accessibleLabel` wins.",
+      table: { category: "Deprecated" },
+      control: false,
+    },
+    labels: {
+      description:
+        "Deprecated (removed in 6.0.0): use `messages` — the same value. Until then `labels` still " +
+        "works and logs one development warning; when both are set, `messages` wins.",
+      table: { category: "Deprecated" },
+      control: false,
+    },
+  },
 } satisfies Meta<typeof Sparkline>;
 
 export default meta;
@@ -15,11 +32,11 @@ type Story = StoryObj<typeof meta>;
 const ACTIVITY = [2, 5, 1, 8, 4, 12, 7, 18];
 
 export const Default: Story = {
-  args: { values: ACTIVITY, label: "Edits per week" },
+  args: { values: ACTIVITY, accessibleLabel: "Edits per week" },
 };
 
 export const Line: Story = {
-  args: { values: ACTIVITY, variant: "line", label: "Trend" },
+  args: { values: ACTIVITY, variant: "line", accessibleLabel: "Trend" },
 };
 
 export const InText: Story = {
@@ -36,14 +53,14 @@ export const Empty: Story = {
 };
 
 export const WithTarget: Story = {
-  args: { values: ACTIVITY, target: 15, label: "Edits per week, against a target of 15" },
+  args: { values: ACTIVITY, target: 15, accessibleLabel: "Edits per week, against a target of 15" },
 };
 
 export const WithBaseline: Story = {
   args: {
     values: ACTIVITY,
     baseline: [4, 3, 6, 5, 9, 8, 5, 11],
-    labels: { baseline: "last year" },
+    messages: { baseline: "last year" },
   },
 };
 
@@ -59,7 +76,7 @@ export const AllReferences: Story = {
     baseline: [4, 3, 6, 5, 9, 8, 5, 11],
     band: [4, 10],
     showLastValue: true,
-    labels: { baseline: "last year" },
+    messages: { baseline: "last year" },
     width: 120,
   },
 };
@@ -99,7 +116,7 @@ export const WithReadout: Story = {
     target: 15,
     baseline: [4, 3, 6, 5, 9, 8, 5, 11],
     band: [4, 10],
-    labels: { baseline: "last year" },
+    messages: { baseline: "last year" },
     pointLabels: [
       "Week 27",
       "Week 28",
@@ -110,7 +127,7 @@ export const WithReadout: Story = {
       "Week 33",
       "Week 34",
     ],
-    label: "Edits per week, against a target of 15",
+    accessibleLabel: "Edits per week, against a target of 15",
     width: 140,
   },
 };
@@ -123,5 +140,5 @@ export const WithReadout: Story = {
  */
 export const NotInteractive: Story = {
   name: "interactive={false}",
-  args: { values: ACTIVITY, interactive: false, label: "Edits per week" },
+  args: { values: ACTIVITY, interactive: false, accessibleLabel: "Edits per week" },
 };

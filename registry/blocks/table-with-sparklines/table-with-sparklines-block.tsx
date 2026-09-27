@@ -55,7 +55,7 @@ const columns: ColumnDef<ServiceTrend>[] = [
         width={140}
         height={28}
         formatValue={(value) => integer.format(value)}
-        label={`${row.original.service}, last 7 days: ${row.original.daily
+        accessibleLabel={`${row.original.service}, last 7 days: ${row.original.daily
           .map((value) => integer.format(value))
           .join(", ")} requests per second; target ${integer.format(row.original.target)}`}
         className="w-full min-w-24"

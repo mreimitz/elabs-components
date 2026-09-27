@@ -18,7 +18,7 @@ export function SparkStatCards() {
           <Sparkline
             values={revenueSeries}
             variant="line"
-            label="Revenue trend, last 8 weeks"
+            accessibleLabel="Revenue trend, last 8 weeks"
             width={160}
             height={40}
             className="w-full"
@@ -36,7 +36,7 @@ export function SparkStatCards() {
           <Sparkline
             values={ordersSeries}
             variant="bar"
-            label="Orders trend, last 8 weeks"
+            accessibleLabel="Orders trend, last 8 weeks"
             width={160}
             height={40}
             className="w-full"
@@ -55,7 +55,7 @@ export function SparkStatCards() {
           <Sparkline
             values={refundRateSeries}
             variant="line"
-            label="Refund-rate trend"
+            accessibleLabel="Refund-rate trend"
             width={160}
             height={40}
             className="w-full"

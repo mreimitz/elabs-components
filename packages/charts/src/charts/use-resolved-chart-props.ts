@@ -35,15 +35,33 @@ function aliasWarning(id: string, row: NormalizedAliasRow): string {
   return `[${id}] "${row.from}" is deprecated and will be removed in ${row.removeIn}. Use "${row.to}".`;
 }
 
+/** `rawProps` with each old name mapped to its new one, warning once per old name in development. */
+function renameChartProps<Props extends object>(
+  def: AnyComponentDefinition,
+  rawProps: Props,
+): Props {
+  return applyAliases(def, rawProps, (row) =>
+    warnChartOnce(`${def.id}.${row.from}`, aliasWarning(def.id, row)),
+  );
+}
+
 /** `rawProps` with renamed props mapped and the definition's defaults filled in. */
 export function useResolvedChartProps<D extends AnyComponentDefinition, Props extends object>(
   def: D,
   rawProps: Props,
 ): ResolvedProps<Props, D> {
-  return useMemo(() => {
-    const renamed = applyAliases(def, rawProps, (row) =>
-      warnChartOnce(`${def.id}.${row.from}`, aliasWarning(def.id, row)),
-    );
-    return resolveProps(def, renamed);
-  }, [def, rawProps]);
+  return useMemo(() => resolveProps(def, renameChartProps(def, rawProps)), [def, rawProps]);
+}
+
+/**
+ * `rawProps` with renamed props mapped, and nothing else: no defaults filled. For a surface
+ * whose definition describes its props but whose defaults still live in its own
+ * destructuring (Gauge, Sparkline — RM-191), so a rename never changes what an unset prop
+ * reads. Same rows, same once-per-name development warning as `useResolvedChartProps`.
+ */
+export function useRenamedChartProps<Props extends object>(
+  def: AnyComponentDefinition,
+  rawProps: Props,
+): Props {
+  return useMemo(() => renameChartProps(def, rawProps), [def, rawProps]);
 }

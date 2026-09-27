@@ -46,12 +46,13 @@
 "use client";
 
 import { Children, forwardRef, isValidElement, type CSSProperties, type ReactNode } from "react";
-import type { AliasInput } from "@elabs-ai/components-ui/definition";
+import { type AliasInput, applyAliases } from "@elabs-ai/components-ui/definition";
 import { ChartA11yLabel, useChartA11yContainerProps } from "../charts/chart-a11y";
 import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
 // The registry (RM-177): pure at runtime (`charts-definitions-pure`), never a
 // charts barrel — see the header's ENGINE ISOLATION note.
-import { CHART_DEFINITIONS } from "../definitions/registry";
+import { CHART_DEFINITIONS, SURFACE_DEFINITIONS } from "../definitions/registry";
+import { Sparkline as RealSparkline, type SparklineProps } from "../sparkline/sparkline";
 import {
   assertChartContract,
   assertChartSpecContract,
@@ -73,7 +74,15 @@ export { ChartCard } from "../chart-card/chart-card";
 export type { ChartCardProps } from "../chart-card/chart-card";
 export { ChartFrame } from "../chart-frame/chart-frame";
 export type { ChartFrameProps } from "../chart-frame/chart-frame";
-export { Sparkline } from "../sparkline/sparkline";
+// Sparkline — RM-191: the REAL component, behind the double's rename policy. An old name
+// (`label`, `labels`) is judged here under `configureChartTestDouble({ deprecatedProps })` —
+// silent by default — and the real Sparkline then receives only the new names, so it never
+// adds a development warning of its own.
+export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Sparkline(props, ref) {
+  const aliases = SURFACE_DEFINITIONS.Sparkline.aliases;
+  resolveChartDoubleProps("Sparkline", props as unknown as Record<string, unknown>, aliases);
+  return <RealSparkline {...applyAliases(aliases, props)} ref={ref} />;
+});
 export type { SparklineLabels, SparklineProps } from "../sparkline/sparkline";
 // Legend engine — RM-118. `RampLegend`/`SizeLegend` touch only react,
 // `@elabs-ai/components-ui`, `chart-formatters` and (`SizeLegend`) the pure

@@ -193,7 +193,7 @@ export function CommandCenterLiveOps({
                         className="w-full"
                         fit="fill"
                         height={28}
-                        label={`${service.name} requests per second, trailing 20 minutes`}
+                        accessibleLabel={`${service.name} requests per second, trailing 20 minutes`}
                         values={service.traffic}
                       />
                     </div>

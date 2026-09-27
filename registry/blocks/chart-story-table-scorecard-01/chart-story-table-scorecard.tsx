@@ -134,7 +134,7 @@ export function ChartStoryTableScorecard({ className }: { className?: string }) 
                   emphasizeLast
                   fitDomain
                   height={24}
-                  label={`${row.depot}: on-time share, last twelve months`}
+                  accessibleLabel={`${row.depot}: on-time share, last twelve months`}
                   values={row.trend}
                   variant="line"
                   width={96}

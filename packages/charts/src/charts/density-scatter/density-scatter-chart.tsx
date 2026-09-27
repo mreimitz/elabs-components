@@ -62,6 +62,8 @@ import { cn, useControllableState, useLocale } from "@elabs-ai/components-ui";
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { ChartA11yLabel, useChartA11yContainerProps } from "../chart-a11y";
+import { ChartMessagesScope } from "../chart-messages";
+import type { ChartMessages } from "../props/messages";
 import {
   ChartPlotRoot,
   type ChartPlotHeight,
@@ -97,6 +99,7 @@ import type { ChartTooltipRect } from "../tooltip/tooltip-box";
 import { useContainerSelection } from "../selection/container-selection";
 import { DENSITY_SCATTER_CHART } from "../../definitions/density-scatter-chart.definition";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
+import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
 import {
   type BinGrid,
   binPoints,
@@ -137,6 +140,10 @@ import { tickTargetForWidth } from "../tick-targets";
 
 // ── Props ───────────────────────────────────────────────────────────────────
 
+/**
+ * The chart's own words — the word-bag keys of `messages` (RM-191: they moved there from
+ * `labels`, unchanged).
+ */
 export interface DensityScatterLabels {
   /**
    * Axis-gutter hint and slider group name. Default "Along x".
@@ -283,6 +290,18 @@ export interface DensityScatterChartProps
   margin?: number | Partial<Margin>;
   accessibleLabel?: string;
   accessibleDescription?: string;
+  /**
+   * This chart's own words (the `messages` group, RM-191): the word-bag keys of
+   * `DensityScatterLabels` (tooltip headings, zone and selection names, the live-region
+   * template), and overrides of the catalogue's `charts.*` keys the shared parts it renders
+   * print (legend, loading text), for this chart only. The two key sets never collide: a
+   * catalogue key always starts with `charts.`.
+   */
+  messages?: DensityScatterLabels & ChartMessages;
+  /**
+   * @deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still
+   * read until 6.0.0, with one development warning; when both are set, `messages` wins.
+   */
   labels?: DensityScatterLabels;
   /** Per-frame statistics (stories, diagnostics). */
   onFrame?: (stats: DensityFrameStats) => void;
@@ -397,12 +416,15 @@ function modeFor(event: {
 
 // ── Component ───────────────────────────────────────────────────────────────
 
-/**
- * @dataShape hundreds of thousands of rows of two continuous measures — where the points pile up, and which zone each falls in
- * @avoidWhen under ~20k rows — use ScatterChart, which keeps labels, shapes and per-point marks
- */
-export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChartProps>(
-  function DensityScatterChart(rawProps, forwardedRef) {
+/** The props `DensityScatterChart` hands its body: old names mapped, defaults filled. */
+type ResolvedDensityScatterChartProps = ResolvedProps<
+  DensityScatterChartProps,
+  typeof DENSITY_SCATTER_CHART
+>;
+
+/** The chart itself, under its `messages` scope; `DensityScatterChart` below resolves its props. */
+const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatterChartProps>(
+  function DensityScatterChartBody(resolvedProps, forwardedRef) {
     // RM-185: every default comes from the definition (`DENSITY_SCATTER_CHART`);
     // `formatX`/`formatY`/`formatValue` keep their own inline default — a
     // function value, not modeled by the (pure, serializable) definition.
@@ -443,7 +465,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       margin: marginProp,
       accessibleLabel,
       accessibleDescription,
-      labels: labelsProp,
+      messages: labelsProp,
       onFrame,
       renderer: rendererPref,
       hiddenKeys: hiddenKeysProp,
@@ -453,7 +475,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       style,
       palette,
       ...props
-    } = useResolvedChartProps(DENSITY_SCATTER_CHART, rawProps);
+    } = resolvedProps;
     // RM-187: the default formats read the LocaleProvider locale.
     const { locale } = useLocale();
     const defaultFormat = useMemo(() => makeDefaultFormat(locale), [locale]);
@@ -462,7 +484,7 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
     const formatY = formatYProp ?? defaultFormat;
     const formatValue = formatValueProp ?? defaultFormat;
     const labels = { ...DEFAULT_LABELS, ...labelsProp };
-    // RM-185 review fix3: `labels.xRange`/`yRange`/`from`/`to` are `@deprecated`
+    // RM-185 review fix3: `messages.xRange`/`yRange`/`from`/`to` are `@deprecated`
     // (the range thumbs now default to the shared `charts.selection.range*`
     // strings) but still compose the thumbs' old names when a caller set any
     // of them, so a caller that localised these keeps working.
@@ -470,8 +492,8 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
       if (labelsProp?.[key] === undefined) return;
       warnChartOnce(
         `DensityScatterChart.labels.${key}`,
-        `[DensityScatterChart] \`labels.${key}\` is deprecated: the range thumbs now default to ` +
-          `the shared "Range start/end, {axis}" wording. \`labels.${key}\` still composes the ` +
+        `[DensityScatterChart] \`messages.${key}\` is deprecated: the range thumbs now default to ` +
+          `the shared "Range start/end, {axis}" wording. \`messages.${key}\` still composes the ` +
           `thumbs' old name for one minor; removed in 6.0.0.`,
       );
     });
@@ -1773,6 +1795,25 @@ export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChar
           ) : null}
         </ChartPlotRoot>,
       ),
+    );
+  },
+);
+DensityScatterChartBody.displayName = "DensityScatterChartBody";
+
+/**
+ * @dataShape hundreds of thousands of rows of two continuous measures — where the points pile up, and which zone each falls in
+ * @avoidWhen under ~20k rows — use ScatterChart, which keeps labels, shapes and per-point marks
+ */
+export const DensityScatterChart = forwardRef<HTMLDivElement, DensityScatterChartProps>(
+  function DensityScatterChart(rawProps, ref) {
+    // RM-185: every default comes from the definition (`DENSITY_SCATTER_CHART`). RM-191:
+    // `labels` is read as `messages` (ADR 0042 A.1 row 4), with one development warning, and
+    // the `messages` group scopes this chart's `charts.*` overrides to its subtree.
+    const props = useResolvedChartProps(DENSITY_SCATTER_CHART, rawProps);
+    return (
+      <ChartMessagesScope messages={props.messages}>
+        <DensityScatterChartBody {...props} ref={ref} />
+      </ChartMessagesScope>
     );
   },
 );

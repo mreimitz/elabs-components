@@ -1,12 +1,17 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
+import { cleanup } from "@testing-library/react";
+import { Sparkline as SparklineDouble } from "../test";
 
 import { CHART_RESIZE_DEBOUNCE_MS } from "../charts/layout-size";
 import { Sparkline } from "./sparkline";
 
 describe("Sparkline", () => {
   it("renders one bar per value with an accessible name", () => {
-    const { container } = render(<Sparkline values={[1, 4, 2, 8]} label="Edits per week" />);
+    const { container } = render(
+      <Sparkline values={[1, 4, 2, 8]} accessibleLabel="Edits per week" />,
+    );
     expect(screen.getByRole("img", { name: "Edits per week" })).toBeInTheDocument();
     expect(container.querySelectorAll("rect")).toHaveLength(4);
   });
@@ -264,7 +269,7 @@ describe("Sparkline", () => {
         <Sparkline
           values={[10, 20, 82]}
           baseline={[8, 15, 76]}
-          labels={{ baseline: "last year" }}
+          messages={{ baseline: "last year" }}
         />,
       );
       expect(container.querySelector('[data-slot="sparkline-baseline"]')).toBeInTheDocument();
@@ -448,5 +453,115 @@ describe("Sparkline", () => {
       fireEvent.pointerMove(svg, { clientX: 0, clientY: 10 });
       expect(status.textContent).toBe(afterFocus);
     });
+  });
+});
+
+// ── RM-191 renames (ADR 0042 A.1) ────────────────────────────────────────────
+//
+// Each renamed prop: the old name renders the same DOM as the new one, warns once in
+// development and never in production, the `./test` double stays silent under its default
+// `deprecatedProps: "ignore"`, and when both names are set the new one wins (`new-wins`).
+
+/** `container.innerHTML` with React's per-root `useId` values made comparable. */
+const rm191Html = (container: HTMLElement) =>
+  container.innerHTML.replace(/«r[0-9a-z]+»|:r[0-9a-z]+:|_r_[0-9a-z]+_/g, "«id»");
+
+const rm191WarnSpy = () => vi.spyOn(console, "warn").mockImplementation(() => {});
+
+describe.each([
+  {
+    row: "row 3",
+    old: "labels",
+    renamed: "messages",
+    oldValue: { target: "goal" },
+    newValue: { target: "aim" },
+    name: "Trend of 3 values, latest 8, goal 6",
+    both: "Trend of 3 values, latest 8, aim 6",
+  },
+  {
+    row: "row 5",
+    old: "label",
+    renamed: "accessibleLabel",
+    oldValue: "Edits per week",
+    newValue: "Edits, weekly",
+    name: "Edits per week",
+    both: "Edits, weekly",
+  },
+] as const)("Sparkline `$old` → `$renamed` (RM-191, $row)", (row) => {
+  afterEach(() => {
+    cleanup();
+    resetWarnOnce();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  const base = { values: [2, 5, 8], target: 6 };
+  const withOld = (value: unknown = row.oldValue) => ({ ...base, [row.old]: value });
+
+  it("the old name renders the same DOM as the new one", () => {
+    rm191WarnSpy();
+    const renamed = render(<Sparkline {...base} {...{ [row.renamed]: row.oldValue }} />).container;
+    const old = render(<Sparkline {...withOld()} />).container;
+    expect(rm191Html(old)).toBe(rm191Html(renamed));
+    expect(old.querySelector("svg")).toHaveAccessibleName(row.name);
+  });
+
+  it("warns once in development, however often it renders", () => {
+    const warn = rm191WarnSpy();
+    const { rerender } = render(<Sparkline {...withOld()} />);
+    rerender(<Sparkline {...withOld(row.newValue)} />);
+    render(<Sparkline {...withOld()} />);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      `[Sparkline] "${row.old}" is deprecated and will be removed in 6.0.0. Use "${row.renamed}".`,
+    );
+  });
+
+  it("never warns in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = rm191WarnSpy();
+    render(<Sparkline {...withOld()} />);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("the ./test double stays silent under its default, and still reads the old name", () => {
+    const warn = rm191WarnSpy();
+    const { container } = render(<SparklineDouble {...withOld()} />);
+    expect(warn).not.toHaveBeenCalled();
+    expect(container.querySelector("svg")).toHaveAccessibleName(row.name);
+  });
+
+  it("both names set: the new one wins", () => {
+    rm191WarnSpy();
+    const { container } = render(<Sparkline {...withOld()} {...{ [row.renamed]: row.newValue }} />);
+    expect(container.querySelector("svg")).toHaveAccessibleName(row.both);
+  });
+});
+
+describe("Sparkline accessibleDescription (the a11y group, RM-191)", () => {
+  it("describes the chart through a hidden element; unset, the DOM is unchanged", () => {
+    const plain = render(<Sparkline values={[2, 5, 8]} />).container;
+    expect(plain.querySelector("[aria-describedby]")).toBeNull();
+    const { container } = render(
+      <Sparkline values={[2, 5, 8]} accessibleDescription="Rising for three weeks." />,
+    );
+    expect(container.querySelector("svg")).toHaveAccessibleDescription("Rising for three weeks.");
+  });
+});
+
+describe("Sparkline in the A2UI catalogue (RM-191)", () => {
+  afterEach(() => {
+    cleanup();
+    resetWarnOnce();
+    vi.restoreAllMocks();
+  });
+
+  it("a stored surface's `label` still names the chart, with no warning", async () => {
+    const { CHARTS_A2UI_BINDINGS } = await import("../a2ui/charts-catalog");
+    const Bound = CHARTS_A2UI_BINDINGS.Sparkline!;
+    const warn = rm191WarnSpy();
+    const { container } = render(<Bound values={[2, 5, 8]} label="Edits per week" />);
+    expect(container.querySelector("svg")).toHaveAccessibleName("Edits per week");
+    expect(warn).not.toHaveBeenCalled();
   });
 });

@@ -222,7 +222,7 @@ function KpiTreeCard({ metric, selected, locale, currency, pillOnRight }: KpiTre
         <Sparkline
           fitDomain
           height={28}
-          label={`${metric.name}, last 12 months`}
+          accessibleLabel={`${metric.name}, last 12 months`}
           values={metric.monthly.slice(-12)}
           variant="line"
           // Growing across, the chart's open/close pill sits on the card's right edge, mid-height — the sparkline stops short of it.

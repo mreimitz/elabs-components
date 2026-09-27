@@ -252,7 +252,7 @@ function TrendCard() {
             </span>
             <Sparkline
               height={28}
-              label={`${trend.name}, twelve weeks`}
+              accessibleLabel={`${trend.name}, twelve weeks`}
               values={trend.values}
               width={96}
             />
