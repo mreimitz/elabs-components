@@ -7,6 +7,7 @@
 # supports the site over a site-to-site VPN.
 diagram: "0"
 title: Qlik Sense Enterprise on Windows, on premises with a DMZ
+description: How a DMZ reverse proxy, a shared repository and file share, Active Directory and a licensing check fit together.
 direction: TB
 nodeStyle: card
 legend: auto

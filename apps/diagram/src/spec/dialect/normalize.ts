@@ -298,6 +298,7 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
     ast: {
       version: DIALECT_VERSION,
       title: pick(raw, "title", rootBad),
+      description: pick(raw, "description", rootBad), // DG-68
       direction: pick(raw, "direction", rootBad) ?? "LR",
       nodeStyle: pick(raw, "nodeStyle", rootBad) ?? "icon",
       theme: pick(raw, "theme", rootBad),

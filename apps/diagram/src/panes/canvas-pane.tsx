@@ -421,7 +421,8 @@ function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: Diag
           {...waveProps}
         >
           {/* DG-08: title block top-left, legend bottom-left (both in the exported picture). */}
-          <TitleBlock title={spec.title} meta={source}>
+          {/* DG-68: the diagram's own description, one sentence under the title. */}
+          <TitleBlock title={spec.title} description={spec.description} meta={source}>
             {/* Wave-2 review m4: the stale badge sits in the top band, under the title card —
                 measured against bottom-centre on the four examples at 1920 and 1440, it costs
                 the fit less zoom (Qlik Cloud 0.760 vs 0.740 at 1920). Always mounted — a live

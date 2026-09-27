@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
 diagram: "0"
 title: Qlik Cloud (SaaS) with a customer-hosted Data Gateway and on-premises sources
+description: How Qlik Cloud reaches on-prem sources through a customer-hosted Data Gateway # DG-68
 direction: LR # LR | TB — the ELK direction
 nodeStyle: icon # icon | card — default node variant (D5)
 theme: qlik # optional brand theme family for the canvas
