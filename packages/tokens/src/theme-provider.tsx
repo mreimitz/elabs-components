@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import {
@@ -695,8 +696,67 @@ export function ThemeProvider({
    * reload it is the persisted variant's own scheme. Seeded lazily below.
    */
   const intendedSchemeRef = useRef<ThemeScheme | undefined>(undefined);
-  const [motionPreference, setMotionState] = useState<MotionPreference>(defaultMotionPreference);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  // The motion preference is read DURING render (an external store), not
+  // loaded in an effect: a chart that mounts with the page must see a saved
+  // "full" or "reduced" in its first client render. Loaded one commit late, a
+  // saved "full" under an OS that asks for reduced motion would first read as
+  // reduced, and an entrance that latches reduced motion (charts'
+  // `useStillEntrance`) would stay still for good.
+  //
+  // SSR: the server snapshot is `defaultMotionPreference`, and the OS store's
+  // server snapshot is `false`, so hydration renders exactly what the server
+  // did and nothing latches reduced motion during it. The client values apply
+  // one commit after hydration: a saved "reduced" then remounts a latched
+  // entrance at rest, and a saved "full" changes nothing.
+  //
+  // `motionOverrideRef` holds the value `setMotionPreference` chose, so the
+  // setter works with `motionStorageKey={null}` too; the persisted value (or
+  // the default) shows through until the setter first runs.
+  const motionOverrideRef = useRef<MotionPreference | null>(null);
+  const motionListenersRef = useRef(new Set<() => void>());
+  const subscribeMotionPreference = useCallback(
+    (onChange: () => void) => {
+      const listeners = motionListenersRef.current;
+      listeners.add(onChange);
+      // Another tab changed the saved preference: the newest choice wins.
+      // `key === null` is another tab clearing storage: fall back as well.
+      const onStorage = (event: StorageEvent) => {
+        if (motionStorageKey === null || (event.key !== null && event.key !== motionStorageKey))
+          return;
+        motionOverrideRef.current = null;
+        onChange();
+      };
+      if (typeof window !== "undefined") window.addEventListener("storage", onStorage);
+      return () => {
+        listeners.delete(onChange);
+        if (typeof window !== "undefined") window.removeEventListener("storage", onStorage);
+      };
+    },
+    [motionStorageKey],
+  );
+  const readMotionPreference = useCallback(
+    () =>
+      motionOverrideRef.current ??
+      readStoredMotionPreference(motionStorageKey) ??
+      defaultMotionPreference,
+    [motionStorageKey, defaultMotionPreference],
+  );
+  const readServerMotionPreference = useCallback(
+    () => defaultMotionPreference,
+    [defaultMotionPreference],
+  );
+  const motionPreference = useSyncExternalStore(
+    subscribeMotionPreference,
+    readMotionPreference,
+    readServerMotionPreference,
+  );
+  // The OS setting, from the same store `useReducedMotion` reads, so the two
+  // agree from the first render.
+  const prefersReducedMotion = useSyncExternalStore(
+    subscribeOsReducedMotion,
+    readOsReducedMotion,
+    readServerReducedMotion,
+  );
   const [decoration, setDecorationState] = useState<DecorationLevel | null>(defaultDecoration);
   const [density, setDensityState] = useState<DensityMode>(defaultDensity);
   const [register, setRegisterState] = useState<TasteRegister>(defaultRegister);
@@ -733,28 +793,12 @@ export function ThemeProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Hydrate the motion preference from storage, apply it, and track the OS
-  // reduced-motion setting live (so "system" and useReducedMotion stay correct).
+  // Write the motion preference to the DOM whenever it changes: on mount (a
+  // saved value), after hydration, and when another tab changes it. The setter
+  // below also writes it at once.
   useEffect(() => {
-    let initial = defaultMotionPreference;
-    if (motionStorageKey && typeof window !== "undefined") {
-      const stored = window.localStorage.getItem(motionStorageKey);
-      if (isMotionPreference(stored)) initial = stored;
-    }
-    setMotionState(initial);
-    applyMotionPreference(initial, attributeTarget);
-
-    // Same feature detection as `useReducedMotion` below — jsdom has no
-    // `matchMedia`, and a provider that throws on mount takes the whole app's
-    // test suite with it.
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-    const mql = window.matchMedia(REDUCED_MOTION_QUERY);
-    const onChange = () => setPrefersReducedMotion(mql.matches);
-    onChange();
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    applyMotionPreference(motionPreference, attributeTarget);
+  }, [motionPreference, attributeTarget]);
 
   // Hydrate the decoration override from storage, then apply (null follows theme).
   useEffect(() => {
@@ -903,11 +947,17 @@ export function ThemeProvider({
 
   const setMotionPreference = useCallback(
     (next: MotionPreference) => {
-      setMotionState(next);
+      motionOverrideRef.current = next;
       applyMotionPreference(next, attributeTarget);
+      // A blocked or full storage must not stop the page following the choice.
       if (motionStorageKey && typeof window !== "undefined") {
-        window.localStorage.setItem(motionStorageKey, next);
+        try {
+          window.localStorage.setItem(motionStorageKey, next);
+        } catch {
+          // The choice holds for this page; it is just not saved.
+        }
       }
+      for (const onChange of motionListenersRef.current) onChange();
     },
     [motionStorageKey, attributeTarget],
   );
@@ -1087,6 +1137,48 @@ export function useTasteProfile(): {
 }
 
 /**
+ * Whether the OS asks for reduced motion. Feature-detected, not just
+ * SSR-guarded: `useReducedMotion` is documented as safe to call from ANY
+ * library component, and jsdom (every consumer package's test environment)
+ * implements no `matchMedia`. A bare call here would crash the consumer's tests
+ * on mount, and a stub in one package's test setup would only hide it from
+ * that package.
+ */
+function readOsReducedMotion(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
+}
+
+/**
+ * The saved motion preference, or `null` when none is saved, the key is
+ * disabled, or storage cannot be read (a sandboxed frame, privacy mode).
+ */
+function readStoredMotionPreference(storageKey: string | null): MotionPreference | null {
+  if (!storageKey || typeof window === "undefined") return null;
+  try {
+    const stored = window.localStorage.getItem(storageKey);
+    return isMotionPreference(stored) ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The server never knows the OS setting: it renders full motion. */
+function readServerReducedMotion(): boolean {
+  return false;
+}
+
+/** Follow live changes of the OS reduced-motion setting. */
+function subscribeOsReducedMotion(onChange: () => void): () => void {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return () => {};
+  }
+  const mql = window.matchMedia(REDUCED_MOTION_QUERY);
+  mql.addEventListener("change", onChange);
+  return () => mql.removeEventListener("change", onChange);
+}
+
+/**
  * Resolve the EFFECTIVE reduced-motion boolean for JS-driven animation (the CSS
  * `--motion-factor` gate cannot reach a JS timeline, e.g. Motion/Framer). Same
  * precedence as the CSS gate: user-explicit beats the OS setting.
@@ -1104,21 +1196,15 @@ export function useTasteProfile(): {
  */
 export function useReducedMotion(): boolean {
   const ctx = useContext(ThemeContext);
-  const [osReducedMotion, setOsReducedMotion] = useState(false);
-
-  useEffect(() => {
-    // Feature-detected, not just SSR-guarded: this hook is documented as safe
-    // to call from ANY library component, and jsdom (every consumer package's
-    // test environment) implements no `matchMedia`. A bare call here crashes
-    // the consumer's tests on mount — and a stub in one package's test setup
-    // would only hide it from that package.
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-    const mql = window.matchMedia(REDUCED_MOTION_QUERY);
-    const onChange = () => setOsReducedMotion(mql.matches);
-    onChange();
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
+  // Read during render, not in an effect: the first client frame already
+  // carries the OS setting, so no animation starts for one frame before a
+  // reduced-motion setting lands. The server snapshot is `false`, and React
+  // re-renders with the client value after hydration, so SSR stays consistent.
+  const osReducedMotion = useSyncExternalStore(
+    subscribeOsReducedMotion,
+    readOsReducedMotion,
+    readServerReducedMotion,
+  );
 
   const preference = ctx?.motionPreference ?? "system";
   if (preference === "reduced") return true;

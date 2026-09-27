@@ -1,7 +1,7 @@
 ---
 id: RM-188
 title: "Reference marks and axes: one reference painter, one trend painter, `chart-style-constants`, shared axes, one zoom-control component"
-status: planned
+status: done
 priority: P1
 effort: L (4 days)
 wave: 3
@@ -52,3 +52,17 @@ source: docs/review/2026-09-25-charts-unification-review.md F19, F20, F21, F24, 
 ## Test / gate
 
 `pnpm --filter @elabs-ai/components-charts typecheck lint test`, `pnpm check:test`, `pnpm check --rule chart-style-constants,chart-hairline,charts-honesty`, `pnpm test:stories` on the touched families, keyboard path exercised, Chromium light and dark at 380 / 600 / 900 px.
+
+## Open follow-ups
+
+- The analytic `trend` still draws through the derived-series `LinePath` (`analytic-series-layer.tsx`), not `TrendRule`: it is a multi-point path with the derived-series label, legend and tooltip wiring, not a two-point rule.
+- `live-x-axis.tsx` keeps its own copy of the crosshair label fade (`labelFadeOpacity`); it should call `crosshairLabelOpacity` from `axis-title.tsx` like `XAxis` and `BarXAxis` now do. The file was outside this item's `touches`.
+- Bar overlays (`bar-overlays.tsx`) have no rule to map: they are per-bar markers (a tick or dot) and per-bar spans, not a line across the plot, so there is no reference rule to draw them through. Left unchanged.
+- Heatmap's axes stay hand-rolled: they are categorical SVG `<text>` labels with a stride rule, while the shared category axis paints HTML labels with a fit cascade — moving them is a pixel change.
+- DensityScatter keeps its own nice-step tick generator and y target: its step thresholds (1.5 / 3.5 / 7.5) differ from d3's (√2 / √10 / √50), so the shared generator would change tick values. Only the x target moved onto the tick table.
+- From review round 1:
+  - `ChoroplethZoomLabels` has no `group` key, so a consumer who translates Choropleth's button names by passing an object to `zoomControls` cannot translate the group's "Chart zoom" name the same way (it still comes from the chart messages).
+  - `ChartZoomControls`' `appearance` is a visual variant that also switches behaviour: `aria-disabled` + handler guard (`segmented`) vs native `disabled` (`overlay`, `toolbar`), the button order, and the root element (`ButtonGroup` for `toolbar`). Split the behaviour out of the visual axis.
+  - The hosts replace the base root `data-slot` (`tree-chart-viewport-controls`, `choropleth-zoom-controls`) instead of keeping `chart-zoom-controls` on the root and adding their own part slot.
+  - `DistributionChart` resolves its analytics twice: once for the domain extents in the container, once in the annotation host.
+  - `BarXAxis` / `BarYAxis` `titlePlacement="inside"` hangs in a fixed plot corner and paints over the last column (vertical) or the first row (horizontal), legible on its halo; stepping around the bar would need mark-aware placement.

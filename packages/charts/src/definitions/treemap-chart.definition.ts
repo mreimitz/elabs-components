@@ -14,6 +14,7 @@
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
+import { chartStateGroup } from "../charts/props/chart-state";
 import { interactionCommons, selectionCommons } from "../charts/props/commons";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { legendGroup } from "../charts/props/legend";
@@ -22,6 +23,7 @@ import type { TreemapChartProps } from "../charts/treemap/treemap-chart";
 import { looseFieldFor } from "../charts/props/typed-field";
 import { aspectRatioField, classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
+import { messagesGroup } from "../charts/props/messages";
 
 /** `treemap-chart.tsx`'s own `DEFAULT_LABEL_MIN_AREA` — not exported, and that module
  * renders JSX, so the value is copied rather than imported. */
@@ -33,7 +35,13 @@ export const TREEMAP_CHART = /* @__PURE__ */ defineChart<TreemapChartProps>()({
   label: "Treemap",
   description: "A nested hierarchy sized by one measure, as nested rectangles.",
   specTypes: ["treemap"],
-  groups: [a11yGroup, selectionCommons.group, interactionCommons.group],
+  groups: [
+    messagesGroup,
+    a11yGroup,
+    selectionCommons.group,
+    interactionCommons.group,
+    chartStateGroup,
+  ],
   fields: {
     data: looseFieldFor<TreemapChartProps["data"]>()(
       field.object({

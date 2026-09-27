@@ -1,0 +1,4 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
+diagram: "0"
+colour: blue
+# expect: unknown-prop @ 3:1

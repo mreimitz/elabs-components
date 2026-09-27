@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
-import { expect, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
+import { Button } from "@elabs-ai/components-ui";
+import { ChartFrame } from "../chart-frame/chart-frame";
 import { contrastRgb, paintedSrgb } from "./on-mark-ink.story-measure";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { UnitChart } from "./unit-chart";
@@ -110,6 +112,71 @@ export const Default: Story = {
   },
 };
 
+/** Loading skeleton (RM-183) — shown while `status="loading"`, sized like the real chart. */
+export const Loading: Story = {
+  args: {
+    data: trafficSources,
+    layout: "waffle",
+    unitLabel: "one dot = one visit in a hundred",
+    status: "loading",
+  },
+  render: (args) => (
+    <div className="w-full max-w-[420px]">
+      <UnitChart {...args} />
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    // One `role="status" aria-live="polite"` region while loading, and only
+    // one — the RM-183 review flagged loading plays that checked the role
+    // but not the live-region contract or region count.
+    const statuses = await canvas.findAllByRole("status");
+    expect(statuses).toHaveLength(1);
+    expect(statuses[0]).toHaveAttribute("aria-live", "polite");
+  },
+};
+
+function UnitLoadingToReadyDemo() {
+  const [status, setStatus] = useState<"loading" | "ready">("loading");
+  return (
+    <div className="flex flex-col gap-3">
+      <Button className="self-start" onClick={() => setStatus("ready")} size="sm" variant="outline">
+        Finish loading
+      </Button>
+      <div className="w-full max-w-[420px]">
+        <UnitChart
+          data={trafficSources}
+          layout="waffle"
+          status={status}
+          unitLabel="one dot = one visit in a hundred"
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Regression lock (RM-183 review) — the ResizeObserver that measures the
+ * plot never attached while `status="loading"` hid the real chart node, so
+ * flipping to "ready" left the waffle blank until an unrelated resize fired.
+ * This exercises that exact transition end to end in a real browser.
+ */
+export const LoadingToReady: Story = {
+  name: "draws once loading finishes",
+  render: () => <UnitLoadingToReadyDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    expect(canvasElement.querySelectorAll('[data-slot="unit-chart-mark"]')).toHaveLength(0);
+
+    await userEvent.click(canvas.getByRole("button", { name: "Finish loading" }));
+
+    await waitFor(() => {
+      expect(
+        canvasElement.querySelectorAll('[data-slot="unit-chart-mark"]').length,
+      ).toBeGreaterThan(0);
+    });
+  },
+};
+
 /** Field — golden-angle phyllotaxis cluster per series (lieflat's "L14 Hundred Field"). */
 export const Field: Story = {
   args: {
@@ -138,6 +205,161 @@ export const Rows: Story = {
       <UnitChart {...args} />
     </div>
   ),
+};
+
+/**
+ * A short `ChartFrame plotHeight` (RM-183 review, F12 follow-up): once the legend takes its
+ * share of a 160px box, the waffle/field plot must still keep a real minimum height instead of
+ * being squeezed to a sliver — `plotMinHeight` in `unit-chart.tsx` reserves rows × a minimum
+ * mark row height (waffle) or a flat floor (field) before the legend gets anything.
+ *
+ * Widened to 600px (RM-183 review round 2, F1 regression): `plotHeight` sizes the PLOT only —
+ * the root stays auto height — so the legend must always end AT OR ABOVE the root's own bottom
+ * edge, never past it. A 420px-wide box hid the legend at this row count entirely, which is why
+ * the original story's assertion never caught the regression.
+ */
+export const InShortChartFrame: Story = {
+  name: "In a short ChartFrame (plotHeight=160)",
+  render: () => (
+    <div className="w-full max-w-[600px]">
+      <ChartFrame plotHeight={160} title="Traffic sources">
+        <UnitChart
+          data={trafficSources}
+          layout="waffle"
+          unitLabel="one dot = one visit in a hundred"
+        />
+      </ChartFrame>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const root = canvasElement.querySelector('[data-slot="unit-chart"]');
+    if (!(root instanceof HTMLElement)) throw new Error('[data-slot="unit-chart"] not found');
+    const plot = canvasElement.querySelector('[data-slot="unit-chart-plot"]');
+    if (!(plot instanceof HTMLElement)) throw new Error('[data-slot="unit-chart-plot"] not found');
+    const legend = canvasElement.querySelector('[data-slot="chart-legend"]');
+    if (!(legend instanceof HTMLElement)) throw new Error('[data-slot="chart-legend"] not found');
+    // M2 (RM-183 review round 2): the exact height the frame asked for, not
+    // just "at least the content floor" — G1's bug rendered exactly 100px
+    // (the floor) here regardless of the 160px `plotHeight`, which the old,
+    // looser `toBeGreaterThanOrEqual(100)` assertion could not tell apart.
+    const plotHeight = plot.getBoundingClientRect().height;
+    await expect(plotHeight).toBeGreaterThanOrEqual(159);
+    await expect(plotHeight).toBeLessThanOrEqual(161);
+    // F1 regression lock (RM-183 review round 2): `plotHeight` sizes the plot
+    // only — the legend must never spill past the root that lays it out.
+    await expect(legend.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+      root.getBoundingClientRect().bottom + 1,
+    );
+  },
+};
+
+/**
+ * `UnitChart`'s own `plotHeight` prop (no `ChartFrame` involved) at three
+ * heights — a regression lock for G1 (RM-183 review round 2): `ChartPlotBox`
+ * merged a caller's own inline `style` onto its already-resolved box style
+ * with a plain `{ ...boxStyle, ...style }` spread, and `unit-chart.tsx` built
+ * that `style` as `{ height: layout === "rows" ? rowsHeight : undefined, ... }`
+ * — an explicitly-`undefined`-valued `height` key still shadows `boxStyle`'s
+ * own resolved `height` in a spread (present-but-empty is not absent), so
+ * EVERY waffle/field plot rendered at the bare 100px content floor no matter
+ * what `plotHeight` asked for. Fixed at both ends: `unit-chart.tsx` no longer
+ * builds that key, and `ChartPlotBox`/`ChartPlotRoot` now drop an
+ * undefined-valued key from a caller's `style` before merging.
+ */
+export const OwnPlotHeight: Story = {
+  name: "Own plotHeight prop at 400 / 160 / 60, no ChartFrame",
+  render: () => (
+    <div className="flex flex-wrap items-start gap-8">
+      <div className="w-[300px]" data-testid="ph-400">
+        <UnitChart
+          data={trafficSources}
+          layout="waffle"
+          plotHeight={400}
+          unitLabel="one dot = one visit in a hundred"
+        />
+      </div>
+      <div className="w-[300px]" data-testid="ph-160">
+        <UnitChart
+          data={trafficSources}
+          layout="waffle"
+          plotHeight={160}
+          unitLabel="one dot = one visit in a hundred"
+        />
+      </div>
+      <div className="w-[300px]" data-testid="ph-60">
+        <UnitChart
+          data={trafficSources}
+          layout="waffle"
+          plotHeight={60}
+          unitLabel="one dot = one visit in a hundred"
+        />
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const plotHeightOf = (testId: string) => {
+      const wrapper = canvasElement.querySelector(`[data-testid="${testId}"]`);
+      if (!(wrapper instanceof HTMLElement)) throw new Error(`${testId} not found`);
+      const plot = wrapper.querySelector('[data-slot="unit-chart-plot"]');
+      if (!(plot instanceof HTMLElement))
+        throw new Error('[data-slot="unit-chart-plot"] not found');
+      return plot.getBoundingClientRect().height;
+    };
+    await expect(plotHeightOf("ph-400")).toBeGreaterThanOrEqual(399);
+    await expect(plotHeightOf("ph-400")).toBeLessThanOrEqual(401);
+    await expect(plotHeightOf("ph-160")).toBeGreaterThanOrEqual(159);
+    await expect(plotHeightOf("ph-160")).toBeLessThanOrEqual(161);
+    // Below the content floor (`plotMinHeight`, 100px for this data at the
+    // default 10 columns): the floor wins over the smaller requested height.
+    await expect(plotHeightOf("ph-60")).toBeGreaterThanOrEqual(99);
+    await expect(plotHeightOf("ph-60")).toBeLessThanOrEqual(101);
+  },
+};
+
+/**
+ * M3 (RM-183 review round 2, contained/optional): a 300px `ChartFrame` at two
+ * widths. Before G1's fix, the plot's requested height was silently erased
+ * and it grew to its own aspect ratio instead, pushing the legend past the
+ * frame's bottom edge; this re-checks that G1's fix (rather than a separate
+ * one) already closes it.
+ */
+export const WideChartFrames: Story = {
+  name: "In a 300px ChartFrame at two widths (M3 check)",
+  render: () => (
+    <div className="flex flex-wrap items-start gap-8">
+      <div className="w-[600px] max-w-full" data-testid="tile-600">
+        <ChartFrame plotHeight={300} title="Traffic sources">
+          <UnitChart
+            data={trafficSources}
+            layout="waffle"
+            unitLabel="one dot = one visit in a hundred"
+          />
+        </ChartFrame>
+      </div>
+      <div className="w-[900px] max-w-full" data-testid="tile-900">
+        <ChartFrame plotHeight={300} title="Traffic sources">
+          <UnitChart
+            data={trafficSources}
+            layout="waffle"
+            unitLabel="one dot = one visit in a hundred"
+          />
+        </ChartFrame>
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    for (const testId of ["tile-600", "tile-900"]) {
+      const wrapper = canvasElement.querySelector(`[data-testid="${testId}"]`);
+      if (!(wrapper instanceof HTMLElement)) throw new Error(`${testId} not found`);
+      const root = wrapper.querySelector('[data-slot="unit-chart"]');
+      if (!(root instanceof HTMLElement)) throw new Error('[data-slot="unit-chart"] not found');
+      const legend = wrapper.querySelector('[data-slot="chart-legend"]');
+      if (!(legend instanceof HTMLElement)) throw new Error('[data-slot="chart-legend"] not found');
+      await expect(legend.getBoundingClientRect().bottom).toBeLessThanOrEqual(
+        root.getBoundingClientRect().bottom + 1,
+      );
+    }
+  },
 };
 
 /** Waffle / Field / Rows side by side — the acceptance's cross-layout comparison. */

@@ -7,19 +7,22 @@ import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 
-vi.mock("@visx/responsive", () => {
+vi.mock("../chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;
     }) => React.createElement("div", null, children({ width: 900, height: 400 })),
   };
 });
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: 900, height: 400 }],
+// The real hook hands back one size object until the size changes; so does this.
+const MEASURED_BOX = { width: 900, height: 400 };
+vi.mock("../layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, MEASURED_BOX],
 }));
 
 import { AutoChart } from "../../auto-chart";
@@ -28,6 +31,7 @@ import { BarChart } from "../bar-chart";
 import { CandlestickChart } from "../candlestick-chart";
 import { ChartConfigProvider } from "../chart-config-context";
 import { DistributionChart } from "../distribution/distribution-chart";
+import { DumbbellChart } from "../dumbbell-chart";
 import { Line } from "../line";
 import { LABEL_LINE_HEIGHT } from "../labels/use-chart-labels";
 import { LineChart } from "../line-chart";
@@ -493,5 +497,61 @@ describe("AutoChart spec.analytics", () => {
     );
     const line = container.querySelector('[data-slot="chart-annotations-line"]');
     expect(Number(line?.getAttribute("data-value"))).toBeCloseTo(73.8, 10);
+  });
+});
+
+// RM-188 — `ifOverflow: "extend"` widens the value domain on every host.
+describe("ifOverflow: extend on Candlestick, Dumbbell and Distribution (RM-188)", () => {
+  const far = (values: readonly number[]) => Math.max(...values) * 10;
+
+  it("candlestick: extend keeps a far line on the plot; clip leaves it off", () => {
+    const value = far(DAILY_OHLC.map((d) => d.high));
+    const line = (ifOverflow: "clip" | "extend") =>
+      render(
+        <CandlestickChart analytics={[{ kind: "line", value, ifOverflow }]} data={DAILY_OHLC}>
+          <></>
+        </CandlestickChart>,
+      ).container.querySelector('[data-slot="chart-annotations-line"]');
+    expect(line("clip")).toBeNull();
+    expect(line("extend")).not.toBeNull();
+  });
+
+  it("dumbbell: extend keeps a far line on the plot; clip leaves it off", () => {
+    const data = [
+      { step: "Sign up", before: 40, after: 62 },
+      { step: "Verify", before: 30, after: 48 },
+    ];
+    const line = (ifOverflow: "clip" | "extend") =>
+      render(
+        <DumbbellChart
+          analytics={[{ kind: "line", value: 900, ifOverflow }]}
+          category="step"
+          data={data}
+          endKey="after"
+          startKey="before"
+        />,
+      ).container.querySelector('[data-slot="chart-annotations-line"]');
+    expect(line("clip")).toBeNull();
+    expect(line("extend")).not.toBeNull();
+  });
+
+  it("distribution histogram: extend grows the bin-edge domain to the line", () => {
+    const value = far(RESPONSE_TIMES.map((r) => r.hours));
+    const position = (ifOverflow: "clip" | "extend") => {
+      const { container } = render(
+        <div style={{ height: 300 }}>
+          <DistributionChart
+            analytics={[{ kind: "line", value, ifOverflow }]}
+            data={RESPONSE_TIMES}
+            kind="histogram"
+            valueKey="hours"
+          />
+        </div>,
+      );
+      const rule = container.querySelector('[data-slot="distribution-chart-reference-line"] line');
+      // One of x1 / y1 is the rule's value position, the other is 0.
+      return Math.abs(Number(rule?.getAttribute("x1")) + Number(rule?.getAttribute("y1")));
+    };
+    expect(position("clip")).toBeGreaterThan(position("extend"));
   });
 });

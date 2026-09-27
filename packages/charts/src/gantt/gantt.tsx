@@ -53,16 +53,8 @@ import {
   type ReactNode,
 } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { useReducedMotion } from "motion/react";
-import {
-  Calendar,
-  CalendarCheck,
-  ChevronLeft,
-  ChevronRight,
-  Maximize2,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
+import { Calendar, CalendarCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   cn,
   mergeRefs,
@@ -71,7 +63,6 @@ import {
   TooltipProvider,
   Skeleton,
   Tree,
-  useLocale,
   type TreeNode,
 } from "@elabs-ai/components-ui";
 import {
@@ -82,6 +73,8 @@ import {
   type ResolvedTask,
 } from "./gantt-context";
 import { useChartInteractionPolicy } from "../charts/chart-config-context";
+import { useResolvedChartProps } from "../charts/use-resolved-chart-props";
+import { GANTT } from "../definitions/gantt.definition";
 import { GanttTimescale, getHeaderHeight } from "./gantt-timescale";
 import { GanttColumnHeader, GanttGridOverlay, overlayColumnsWidth } from "./gantt-grid";
 import { GanttBar, dateToX } from "./gantt-bar";
@@ -91,6 +84,18 @@ import { GanttTimeBands } from "./gantt-time-bands";
 import { GanttMarkers } from "./gantt-markers";
 import { GanttTimeRanges } from "./gantt-time-ranges";
 import { GanttProgressLine } from "./gantt-progress-line";
+import { useChartTranslate } from "../charts/chart-messages";
+import { ChartZoomControls } from "../charts/gestures/chart-zoom-controls";
+import type { ChartMessages } from "../charts/props/messages";
+import { ChartMessagesScope } from "../charts/chart-messages";
+import { useLayoutMeasure } from "../charts/layout-size";
+
+/**
+ * The root's content box (inside its border), the box its own ResizeObserver
+ * reported before. Read when the root attaches, so the first frame already
+ * paints at the pane's width, not at `MIN_CANVAS_WIDTH` and then again.
+ */
+const ROOT_MEASURE = { box: "content-box" } as const;
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -609,6 +614,12 @@ function buildTreeNodes(flatTasks: ResolvedTask[]): TreeNode<ResolvedTask>[] {
 
 export interface GanttProps
   extends Omit<HTMLAttributes<HTMLDivElement>, "onSelect">, VariantProps<typeof ganttVariants> {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** Task data. */
   tasks: GanttTask[];
   /** Row height override (px). Defaults to density-derived value. */
@@ -761,10 +772,11 @@ function GanttLoadingState({
   rowHeight?: number;
   rowCount?: number;
 }) {
-  const { t } = useLocale();
+  const t = useChartTranslate();
   return (
     <div role="status" aria-live="polite" className="flex min-h-0 flex-1 overflow-hidden">
-      <span className="sr-only">{t("loading")}</span>
+      {/* RM-185: the shared chart loading key — ChartCard, ChartFrame and AutoChart use it too. */}
+      <span className="sr-only">{t("charts.chart.loading")}</span>
 
       {/* Left pane: label skeletons */}
       <div
@@ -805,6 +817,14 @@ function GanttLoadingState({
   );
 }
 
+/** Gantt's own catalogue keys for its zoom words (RM-188: read by `ChartZoomControls`). */
+const GANTT_ZOOM_MESSAGE_KEYS = {
+  group: "charts.gantt.zoom",
+  zoomIn: "charts.gantt.zoomIn",
+  zoomOut: "charts.gantt.zoomOut",
+  reset: "charts.gantt.zoomToFit",
+} as const;
+
 // ── Gantt.Toolbar ─────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -828,7 +848,7 @@ const VIEW_MODE_LABEL_KEYS: Record<GanttTimeUnit, string> = {
 
 function GanttToolbar({ className, ...props }: GanttToolbarProps) {
   const { state, actions, meta } = useGantt();
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const offered = meta.viewModes ?? DEFAULT_VIEW_MODES;
   // Keep the active unit reachable (and pressed) even when it is outside the
   // offered set — e.g. `defaultViewMode="auto"` resolving to `second`.
@@ -836,7 +856,6 @@ function GanttToolbar({ className, ...props }: GanttToolbarProps) {
   const zoom = meta.zoom;
   const canZoomIn = !!zoom?.enabled && zoom.pixelsPerDay < zoom.max;
   const canZoomOut = !!zoom?.enabled && zoom.pixelsPerDay > zoom.min;
-  const iconButton = "h-7 w-7 px-0";
   const now = Date.now();
   const todayInDomain =
     !!meta.timeline &&
@@ -869,41 +888,19 @@ function GanttToolbar({ className, ...props }: GanttToolbarProps) {
         ))}
       </ButtonGroup>
       {zoom?.enabled ? (
-        <ButtonGroup aria-label={t("charts.gantt.zoom")} className="ms-1">
-          <Button
-            size="sm"
-            variant="outline"
-            className={iconButton}
-            aria-label={t("charts.gantt.zoomOut")}
-            title={t("charts.gantt.zoomOut")}
-            disabled={!canZoomOut}
-            onClick={() => actions.zoomBy(1 / 1.5)}
-          >
-            <ZoomOut aria-hidden="true" className="size-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className={iconButton}
-            aria-label={t("charts.gantt.zoomIn")}
-            title={t("charts.gantt.zoomIn")}
-            disabled={!canZoomIn}
-            onClick={() => actions.zoomBy(1.5)}
-          >
-            <ZoomIn aria-hidden="true" className="size-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className={iconButton}
-            aria-label={t("charts.gantt.zoomToFit")}
-            title={t("charts.gantt.zoomToFit")}
-            disabled={!(zoom.fit > 0)}
-            onClick={() => actions.zoomToFit()}
-          >
-            <Maximize2 aria-hidden="true" className="size-4" />
-          </Button>
-        </ButtonGroup>
+        // RM-188: the shared `ChartZoomControls` in its `toolbar` appearance
+        // (zoom out, zoom in, fit — the connected group this toolbar drew).
+        <ChartZoomControls
+          appearance="toolbar"
+          canReset={zoom.fit > 0}
+          canZoomIn={canZoomIn}
+          canZoomOut={canZoomOut}
+          className="ms-1"
+          messageKeys={GANTT_ZOOM_MESSAGE_KEYS}
+          onReset={() => actions.zoomToFit()}
+          onZoomIn={() => actions.zoomBy(1.5)}
+          onZoomOut={() => actions.zoomBy(1 / 1.5)}
+        />
       ) : null}
       {todayInDomain ? (
         <Button
@@ -946,7 +943,7 @@ function GanttRowList({
 }: GanttRowListProps) {
   const { state, actions, meta } = useGantt();
   const { flatTasks, rowHeight, columns, visibleTasks } = meta;
-  const { t } = useLocale();
+  const t = useChartTranslate();
 
   // With a column grid, columns 1..N render as an aria-hidden overlay; reserve
   // their width on the right so the Tree's name (column 0) truncates before them.
@@ -1088,6 +1085,7 @@ function GanttBars({
   onEscapeToTree,
   focusBarOnSelect,
 }: GanttBarsProps) {
+  const tChart = useChartTranslate();
   const { state, actions, meta } = useGantt();
 
   // ── Keyboard dependency-create (link mode) — #260 ──────────────────────────
@@ -1145,17 +1143,22 @@ function GanttBars({
   const confirmLink = useCallback(() => {
     if (linkSourceId && linkCursorId && linkSourceId !== linkCursorId) {
       onDependencyCreate?.(linkSourceId, linkCursorId);
-      setLiveAnnouncement(`Linked ${nameOf(linkSourceId)} to ${nameOf(linkCursorId)}`);
+      setLiveAnnouncement(
+        tChart("charts.gantt.linked", {
+          source: nameOf(linkSourceId),
+          target: nameOf(linkCursorId),
+        }),
+      );
     }
     setLinkSourceId(null);
     setLinkCursorId(null);
-  }, [linkSourceId, linkCursorId, onDependencyCreate, nameOf, setLiveAnnouncement]);
+  }, [linkSourceId, linkCursorId, onDependencyCreate, nameOf, setLiveAnnouncement, tChart]);
 
   const cancelLink = useCallback(() => {
-    if (linkSourceId) setLiveAnnouncement("Link cancelled");
+    if (linkSourceId) setLiveAnnouncement(tChart("charts.gantt.linkCancelled"));
     setLinkSourceId(null);
     setLinkCursorId(null);
-  }, [linkSourceId, setLiveAnnouncement]);
+  }, [linkSourceId, setLiveAnnouncement, tChart]);
 
   // Roving tabindex: active bar = selected bar if visible, else first visible
   const activeBarId = useMemo(() => {
@@ -1403,7 +1406,7 @@ function ScrollToTaskButton({
 }) {
   const viewport = use(GanttViewportContext);
   const { actions } = useGantt();
-  const { t } = useLocale();
+  const t = useChartTranslate();
   if (!viewport || viewport.width <= 0) return null;
   const x1 = dateToX(task.start, domainStart, domainEnd, canvasWidth);
   const x2 = task.isMilestone ? x1 : dateToX(task.end, domainStart, domainEnd, canvasWidth);
@@ -1480,7 +1483,7 @@ function GanttBody({
   ...props
 }: GanttBodyProps) {
   const { meta } = useGantt();
-  const { t } = useLocale();
+  const t = useChartTranslate();
   // Header height tracks the number of stacked timescale rows so the corner cell
   // and the (optional) column-header strip stay aligned with the timescale.
   const headerHeight = getHeaderHeight(meta.scales.length);
@@ -1527,6 +1530,8 @@ function GanttBody({
   // commits the new positions: a transition only starts when the transition property is
   // already in the element's style at the moment the value changes.
   const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // One reduced-motion source (RM-189): the tokens hook — the person's own
+  // motion setting wins over the OS.
   const prefersReducedMotion = useReducedMotion();
   const armZoomTransition = useCallback(() => {
     const el = scrollRef.current;
@@ -1771,24 +1776,12 @@ type GanttComponent = ReturnType<typeof forwardRef<HTMLDivElement, GanttProps>> 
   Markers: typeof GanttMarkers;
 };
 
-/**
- * Gantt — interactive, accessible Gantt/timeline chart.
- *
- * ```tsx
- * <Gantt tasks={tasks} defaultViewMode="week">
- *   <Gantt.Toolbar />
- *   <Gantt.Body domainStart={start} domainEnd={end} canvasWidth={800} />
- * </Gantt>
- * ```
- *
- * @dataShape tasks or phases across a timeline, with dependencies between them
- * @avoidWhen it is not really scheduled work — a dumbbell chart shows a single before and
- *   after
- */
-export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
-  {
+// Unwrapped implementation; the public docblock sits on `Gantt` below (RM-187).
+const GanttUnscoped = forwardRef<HTMLDivElement, GanttProps>(function Gantt(rawProps, ref) {
+  // RM-185: every default comes from the definition (`GANTT`), aliases first.
+  const {
     tasks,
-    density = "comfortable",
+    density,
     rowHeight: rowHeightProp,
     viewMode,
     defaultViewMode,
@@ -1824,15 +1817,13 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
     sort,
     onSortChange,
     onColumnResize,
-    labelColumnWidth = 240,
-    loading = false,
+    labelColumnWidth,
+    loading,
     className,
     children,
     ...props
-  },
-  ref,
-) {
-  const { t } = useLocale();
+  } = useResolvedChartProps(GANTT, rawProps);
+  const t = useChartTranslate();
   const resolvedDensity: "comfortable" | "compact" = density ?? "comfortable";
   const resolvedRowHeight = rowHeightProp ?? ROW_HEIGHT[resolvedDensity];
 
@@ -1904,22 +1895,12 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
   //
   // The timeline pane is measured (root width − label column) so the preset can
   // also floor at "fit" and the canvas never runs narrower than the pane.
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const [rootWidth, setRootWidth] = useState(0);
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width ?? 0;
-      setRootWidth((prev) => (Math.abs(prev - width) < 1 ? prev : width));
-    });
-    observer.observe(el);
-    setRootWidth(el.getBoundingClientRect().width);
-    return () => observer.disconnect();
-    // The root only exists once the chart has tasks and is not loading — re-attach then.
-  }, [loading, tasks.length]);
-  const mergedRef = useMemo(() => mergeRefs(ref, rootRef), [ref]);
-  const paneWidth = Math.max(0, rootWidth - resolvedLabelColumnWidth);
+  // The root's content box, on the one chart measurement path. The root only
+  // exists once the chart has tasks and is not loading; it is measured when it
+  // attaches, so the mount commit already has the pane's width.
+  const [measureRoot, rootBox] = useLayoutMeasure(ROOT_MEASURE);
+  const mergedRef = useMemo(() => mergeRefs(ref, measureRoot), [ref, measureRoot]);
+  const paneWidth = Math.max(0, rootBox.width - resolvedLabelColumnWidth);
   const presetPxPerDay = presetPixelsPerDay(
     resolvedViewMode,
     domainStart,
@@ -2122,6 +2103,33 @@ export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
         </div>
       </TooltipProvider>
     </GanttProvider>
+  );
+}) as unknown as GanttComponent;
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
+/**
+ * Gantt — interactive, accessible Gantt/timeline chart.
+ *
+ * ```tsx
+ * <Gantt tasks={tasks} defaultViewMode="week">
+ *   <Gantt.Toolbar />
+ *   <Gantt.Body domainStart={start} domainEnd={end} canvasWidth={800} />
+ * </Gantt>
+ * ```
+ *
+ * @dataShape tasks or phases across a timeline, with dependencies between them
+ * @avoidWhen it is not really scheduled work — a dumbbell chart shows a single before and
+ *   after
+ */
+export const Gantt = forwardRef<HTMLDivElement, GanttProps>(function Gantt(
+  { messages, ...props },
+  ref,
+) {
+  return (
+    <ChartMessagesScope messages={messages}>
+      <GanttUnscoped {...props} ref={ref} />
+    </ChartMessagesScope>
   );
 }) as unknown as GanttComponent;
 

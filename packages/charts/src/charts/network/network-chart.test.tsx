@@ -356,3 +356,17 @@ describe("NetworkChart — drag to peek (force only)", () => {
     expect(screen.getByRole("button", { name: "Alpha, one, value 9, 2 links" })).toBeTruthy();
   });
 });
+
+// RM-184 — `useResolvedChartProps` + `chartStateGroup` adoption.
+describe("NetworkChart — status and empty (RM-184)", () => {
+  it("shows the loading skeleton when status is loading", () => {
+    render(<NetworkChart layout="circular" links={LINKS} nodes={NODES} status="loading" />);
+    expect(screen.getByRole("status")).toBeInTheDocument();
+  });
+
+  it("shows the empty state when there are no nodes and status is not loading", () => {
+    render(<NetworkChart layout="circular" links={[]} nodes={[]} />);
+    const empty = screen.getByRole("status");
+    expect(empty).toHaveAttribute("data-slot", "network-chart-empty");
+  });
+});

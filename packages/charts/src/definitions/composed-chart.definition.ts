@@ -31,13 +31,13 @@ import {
   classNameField,
   hoverCategoryField,
   loadingLabelField,
-  marginField,
   revealSignatureField,
   rowsField,
   xDataKeyField,
   xScaleField,
   yDomainTweenDurationField,
 } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 export const COMPOSED_CHART = /* @__PURE__ */ defineChart<ComposedChartProps>()({
@@ -53,12 +53,14 @@ export const COMPOSED_CHART = /* @__PURE__ */ defineChart<ComposedChartProps>()(
     navigatorCommons.group,
     selectionGestureCommons.group,
     analyticsCommons.group,
+    frameSizeGroup,
   ],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: rowsField,
     xDataKey: xDataKeyField,
     xScale: xScaleField,
-    margin: marginField,
     animationDuration: motionGroup.fields.animationDuration,
     animationEasing: animationEasingField,
     enterTransition: motionGroup.fields.enterTransition,
@@ -66,7 +68,6 @@ export const COMPOSED_CHART = /* @__PURE__ */ defineChart<ComposedChartProps>()(
     // No default here: `ComposedChartPlot` leaves it unset (its shell applies one).
     yDomainTweenDuration: yDomainTweenDurationField,
     aspectRatio: aspectRatioField,
-    plotHeight: frameSizeGroup.fields.plotHeight,
     className: classNameField,
     status: chartStateGroup.fields.status,
     loadingLabel: loadingLabelField,

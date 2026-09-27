@@ -16,11 +16,11 @@
 import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@visx/responsive", () => {
+vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (dims: { width: number; height: number }) => React.ReactNode;
@@ -40,6 +40,12 @@ const motionState = vi.hoisted(() => ({ reduced: false as boolean | null }));
 vi.mock("motion/react", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useReducedMotion: () => motionState.reduced,
+}));
+// RM-189: the reveal clip and LiveLineChart read reduced motion from the tokens
+// package hook (the person's explicit preference before the OS setting).
+vi.mock("@elabs-ai/components-tokens", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useReducedMotion: () => motionState.reduced === true,
 }));
 
 import { LiveLine } from "./live-line";

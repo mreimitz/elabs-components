@@ -2,7 +2,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// @visx/responsive uses ResizeObserver + real DOM measurement which jsdom
+// ChartParentSize uses ResizeObserver + real DOM measurement which jsdom
 // lacks. Mock ParentSize to supply a fixed viewport so ChartInner renders
 // real geometry — the technique `bar-chart.test.tsx` uses. Real
 // render/interaction/a11y is covered by the Storybook build (Charts/WaterfallChart).
@@ -10,11 +10,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // so #603's narrow-width regression can render at 380px while every other
 // test here keeps the default 560×288.
 const mockParentSize = vi.hoisted(() => ({ width: 560, height: 288 }));
-vi.mock("@visx/responsive", () => {
+vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;
@@ -75,13 +75,15 @@ describe("WaterfallChart", () => {
   });
 
   it("renders signed step labels and unsigned total labels by default", () => {
-    // Default `valueFormat` is "compact" (DEFAULT_CHART_VALUE_FORMAT), so the
-    // 1000-magnitude total compacts to "1K" while the smaller step deltas do
-    // not. A "total" row is an absolute value, not a delta, so it renders
+    // Default `valueFormat` is "compact" (DEFAULT_CHART_VALUE_FORMAT). RM-187
+    // (#250): the bar labels are ONE set, so the 1000-magnitude total prints
+    // "1,000" beside the hundreds-magnitude deltas — never "1K" next to "−100".
+    // A "total" row is an absolute value, not a delta, so it renders
     // unsigned; "step" rows render signed with a real minus (`−`, U+2212),
     // never `Intl`'s own ASCII hyphen.
     render(<WaterfallChart data={grossToNet} />);
-    expect(screen.getByText("1K")).toBeInTheDocument();
+    expect(screen.getByText("1,000")).toBeInTheDocument();
+    expect(screen.queryByText("1K")).toBeNull();
     expect(screen.getByText("−100")).toBeInTheDocument();
     expect(screen.getByText("−300")).toBeInTheDocument();
   });
@@ -611,5 +613,45 @@ describe("WaterfallChart RM-122", () => {
     expect(container.querySelector(".sr-only")?.textContent ?? "").not.toMatch(
       /1,000|1,070|1,085|1,075/,
     );
+  });
+});
+
+describe("WaterfallChart selection paint-back (RM-185)", () => {
+  const byLabel: Record<string, "selected" | "associated" | "excluded"> = {
+    Refunds: "selected",
+    COGS: "associated",
+    Ops: "excluded",
+  };
+  const states = (category: unknown) => byLabel[String(category)] ?? "associated";
+
+  it("forwards selectionStates/dimExcluded to the inner BarChart, which paints the tri-state", () => {
+    const { container } = render(<WaterfallChart data={grossToNet} selectionStates={states} />);
+    // grossToNet: Gross, Refunds, COGS, Ops, Net — only Refunds/COGS/Ops are
+    // named; Gross and Net fall back to "associated". Exact counts, not
+    // toBeGreaterThan(0), so double-painting a step would fail this.
+    const selected = container.querySelectorAll('[data-selection="selected"]');
+    const excluded = container.querySelectorAll('[data-selection="excluded"]');
+    expect(selected).toHaveLength(1);
+    expect(excluded).toHaveLength(1);
+    expect(container.querySelectorAll('[data-selection="associated"]')).toHaveLength(3);
+    // Counting the wrapper attribute alone would still pass if the actual dim,
+    // frame or outline stopped rendering — assert the paint itself.
+    expect(excluded[0]?.querySelector('[data-slot="chart-selection-mark-dim"]')).not.toBeNull();
+    expect(excluded[0]?.querySelector('[data-slot="chart-selection-mark-frame"]')).not.toBeNull();
+    expect(selected[0]?.querySelector('[data-slot="chart-selection-mark-outline"]')).not.toBeNull();
+  });
+
+  it("without selectionStates, the DOM stays byte-identical (no data-selection anywhere)", () => {
+    const { container } = render(<WaterfallChart data={grossToNet} />);
+    expect(container.querySelectorAll("[data-selection]").length).toBe(0);
+  });
+
+  it("dimExcluded={false} keeps the excluded attribute but paints no dim", () => {
+    const { container } = render(
+      <WaterfallChart data={grossToNet} dimExcluded={false} selectionStates={states} />,
+    );
+    const excluded = container.querySelectorAll('[data-selection="excluded"]');
+    expect(excluded).toHaveLength(1);
+    expect(excluded[0]?.querySelector('[data-slot="chart-selection-mark-dim"]')).toBeNull();
   });
 });

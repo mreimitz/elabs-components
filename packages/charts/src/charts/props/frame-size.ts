@@ -16,7 +16,12 @@ import type { ChartPlotHeight, Responsive } from "../responsive";
  * family takes per-side values (`margin?: Partial<Margin>`).
  */
 export interface FrameSizeGroupProps {
+  /**
+   * Height of the plot: pixels, or `{ aspect }` as width divided by height.
+   * Set `{ base, medium, narrow }` to vary it by breakpoint.
+   */
   plotHeight?: Responsive<ChartPlotHeight>;
+  /** Space around the plot, in pixels: one number for every side, or per side. */
   margin?: number | Partial<Margin>;
 }
 

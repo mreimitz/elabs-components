@@ -4,12 +4,15 @@ import type { SankeyNode as SankeyNodeType } from "d3-sankey";
 import { motion } from "motion/react";
 import { useCallback, useId, useMemo } from "react";
 import { HaloText } from "../../marks/halo-text";
-import { intFmt } from "../chart-formatters";
+import { useChartPalette } from "../chart-context";
+import { useChartFormatters } from "../chart-formatters";
 import { transitionWithDelay } from "../motion-utils";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "../series-pattern";
 import { useHighDecorationOf } from "../use-high-decoration";
 import { useTextMeasurerOf } from "../use-text-measurer";
 import { type SankeyLinkDatum, type SankeyNodeDatum, useSankey } from "./sankey-context";
+import { sankeyNodeColors } from "./sankey-link";
+import { useChartTranslate } from "../chart-messages";
 
 // Helper to get node index from link source/target
 type NodeOrIndex = SankeyNodeType<SankeyNodeDatum, SankeyLinkDatum> | number;
@@ -46,8 +49,6 @@ export interface SankeyNodeProps {
    */
   formatValue?: (value: number) => string;
 }
-
-const defaultValueText = (value: number) => `${intFmt(value)} sessions`;
 
 interface AnimatedNodeProps {
   x: number;
@@ -277,8 +278,19 @@ export function SankeyNode({
   fadedOpacity = 0.4,
   showLabels = true,
   getNodeColor: getNodeColorProp,
-  formatValue = defaultValueText,
+  formatValue: formatValueProp,
 }: SankeyNodeProps) {
+  // RM-187: the default "<n> sessions" line is a catalogue message, its
+  // number formatted in the LocaleProvider locale.
+  const { intFmt } = useChartFormatters();
+  const t = useChartTranslate();
+  const formatValue = useCallback(
+    (value: number) =>
+      formatValueProp
+        ? formatValueProp(value)
+        : t("charts.sankey.nodeValue", { value: intFmt(value) }),
+    [formatValueProp, intFmt, t],
+  );
   const {
     nodes,
     links,
@@ -301,17 +313,9 @@ export function SankeyNode({
   // offset and drives the pitch-aware visibility policy below (#276).
   const { lineHeightPx, measure } = useTextMeasurerOf(containerRef);
 
-  // Default colors using CSS variables
-  const defaultColors = useMemo(
-    () => [
-      "var(--chart-1)",
-      "var(--chart-2)",
-      "var(--chart-3)",
-      "var(--chart-4)",
-      "var(--chart-5)",
-    ],
-    [],
-  );
+  // Default colors: the container's palette through `resolvePalette` (RM-186).
+  const palette = useChartPalette();
+  const defaultColors = useMemo(() => sankeyNodeColors(palette), [palette]);
 
   // Get color for a node
   const getColor = useCallback(

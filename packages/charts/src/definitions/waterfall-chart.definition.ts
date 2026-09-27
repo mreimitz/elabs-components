@@ -12,12 +12,16 @@
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
-import { analyticsCommons, interactionCommons } from "../charts/props/commons";
+import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
+import { chartStateGroup } from "../charts/props/chart-state";
+import { analyticsCommons, interactionCommons, selectionCommons } from "../charts/props/commons";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { valueFormatGroup } from "../charts/props/value-format";
 import type { WaterfallChartProps } from "../charts/waterfall-chart";
-import { annotationsField, classNameField, marginField } from "./cartesian-fields";
+import { annotationsField, classNameField } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
+import { messagesGroup } from "../charts/props/messages";
 
 const endpointFields = {
   show: /* @__PURE__ */ field.boolean(),
@@ -30,8 +34,17 @@ export const WATERFALL_CHART = /* @__PURE__ */ defineChart<WaterfallChartProps>(
   label: "Waterfall chart",
   description: "How a starting total becomes an ending total, one signed step at a time.",
   specTypes: ["waterfall"],
-  groups: [a11yGroup, interactionCommons.group, analyticsCommons.group],
+  groups: [
+    messagesGroup,
+    a11yGroup,
+    frameSizeGroup,
+    interactionCommons.group,
+    analyticsCommons.group,
+    selectionCommons.group,
+  ],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: field.array({
       of: field.object({
         fields: {
@@ -129,28 +142,30 @@ export const WATERFALL_CHART = /* @__PURE__ */ defineChart<WaterfallChartProps>(
       tier: "advanced",
       description: "The steps that explain the bridge, named on the chart with a note.",
     }),
-    plotHeight: frameSizeGroup.fields.plotHeight,
     height: field.number({
       unit: "px",
       tier: "advanced",
       deprecated: { since: "5.0.0", replacement: "plotHeight", removeIn: "6.0.0" },
       description: "Height of the plot in pixels. Use plotHeight.",
     }),
-    margin: marginField,
     className: classNameField,
     annotations: annotationsField,
+    status: chartStateGroup.fields.status,
   },
-  codeOnly: [...interactionCommons.codeOnly],
+  codeOnly: [...interactionCommons.codeOnly, ...selectionCommons.codeOnly],
   defaults: {
     connectors: true,
     dataFormat: "differences",
     grid: true,
+    // Rises and falls wear the theme's first two series colours — the same pair a
+    // two-series BarChart draws — so a bridge reads in the theme's own chart colours.
     negativeFill: "var(--chart-2)",
     orientation: "vertical",
     positiveFill: "var(--chart-1)",
     showValues: true,
     sort: "data",
     totalFill: "var(--chart-foreground)",
+    status: DEFAULT_CHART_STATUS,
   },
   targets: [
     { id: "step", label: "Step", role: "dimension", from: { field: "label" }, min: 1, max: 1 },

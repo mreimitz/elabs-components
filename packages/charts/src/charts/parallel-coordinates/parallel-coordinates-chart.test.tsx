@@ -1,12 +1,15 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// react-use-measure uses ResizeObserver for layout measurement, which jsdom
-// does not implement. Mock it to return a fixed size so the chart's inner
+// `useLayoutMeasure` reads the layout box, which jsdom does not lay out.
+// Mock it to return a fixed size so the chart's inner
 // render gate (width > 0 && height > 0) is satisfied — the same technique
 // `dumbbell-chart.test.tsx` uses.
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: 640, height: 320 }],
+// The real hook hands back one size object until the size changes; so does this.
+const MEASURED_BOX = { width: 640, height: 320 };
+vi.mock("../layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, MEASURED_BOX],
 }));
 
 import type { ChartDatapoint } from "../chart-datapoint";
@@ -444,5 +447,59 @@ describe("<ParallelCoordinatesChart /> render", () => {
       </div>,
     );
     expect(container.querySelectorAll(TARGET)).toHaveLength(0);
+  });
+});
+
+// RM-184 — `useResolvedChartProps` + `chartStateGroup` adoption.
+describe("ParallelCoordinatesChart — status and empty (RM-184)", () => {
+  it("shows the loading skeleton when status is loading", () => {
+    render(
+      <ParallelCoordinatesChart
+        data={products}
+        dimensions={dims}
+        entity="product"
+        status="loading"
+      />,
+    );
+    expect(screen.getByRole("status")).toBeInTheDocument();
+  });
+
+  it("shows the empty state when there are no rows and status is not loading", () => {
+    render(<ParallelCoordinatesChart data={[]} dimensions={dims} entity="product" />);
+    const empty = screen.getByRole("status");
+    expect(empty).toHaveAttribute("data-slot", "parallel-coordinates-chart-empty");
+  });
+});
+
+// The messages group (RM-187 follow-up): a per-chart override reaches this chart's words.
+describe("ParallelCoordinatesChart — messages", () => {
+  it("prints a `messages` override in place of the catalogue's words", () => {
+    render(
+      <ParallelCoordinatesChart
+        data={[]}
+        dimensions={dims}
+        entity="product"
+        messages={{
+          "charts.chart.emptyTitle": "Keine Daten",
+          "charts.chart.emptyMessage": "Nichts zu zeichnen.",
+        }}
+      />,
+    );
+    expect(screen.getByText("Keine Daten")).toBeInTheDocument();
+    expect(screen.getByText("Nichts zu zeichnen.")).toBeInTheDocument();
+    expect(screen.queryByText("No data")).toBeNull();
+  });
+
+  it("keeps the catalogue's words for every key the override leaves unset", () => {
+    render(
+      <ParallelCoordinatesChart
+        data={[]}
+        dimensions={dims}
+        entity="product"
+        messages={{ "charts.chart.emptyTitle": "Keine Daten" }}
+      />,
+    );
+    expect(screen.getByText("Keine Daten")).toBeInTheDocument();
+    expect(screen.getByText("No data to plot.")).toBeInTheDocument();
   });
 });

@@ -18,6 +18,11 @@ import { cleanup, render, screen, fireEvent, within, act } from "@testing-librar
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GanttStatus, GanttTask, GanttTimeUnit, GanttViewMode, Status } from "./gantt";
 import { buildVirtualizedTasks } from "./gantt-virtualized-fixture";
+import {
+  type MotionPreference,
+  ThemeProvider,
+  useMotionPreference,
+} from "@elabs-ai/components-tokens";
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -41,11 +46,22 @@ function makeMotionElement(tag: string) {
   });
 }
 
+// One stand-in per tag, made once: a fresh component type on every
+// `motion.<tag>` read would remount the element on every render, which hides
+// whether the component itself keeps its nodes.
+const motionElements = new Map<string, ReturnType<typeof makeMotionElement>>();
+
 vi.mock("motion/react", () => ({
   motion: new Proxy({} as Record<string, ReturnType<typeof makeMotionElement>>, {
-    get: (_target, tag: string) => makeMotionElement(tag),
+    get: (_target, tag: string) => {
+      let element = motionElements.get(tag);
+      if (!element) {
+        element = makeMotionElement(tag);
+        motionElements.set(tag, element);
+      }
+      return element;
+    },
   }),
-  useReducedMotion: () => false,
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
 }));
 
@@ -500,7 +516,9 @@ describe("Gantt", () => {
     render(<Gantt tasks={[]} loading style={{ height: 280 }} />);
     const status = screen.getByRole("status");
     expect(status).toBeInTheDocument();
-    expect(status.textContent).toMatch(/Loading/);
+    // RM-185 review: pins the shared `charts.chart.loading` key (not the
+    // generic `t("loading")`) — a revert to the old key must fail this.
+    expect(status).toHaveTextContent("Loading chart…");
   });
 
   it("loading state renders skeleton rows (aria-hidden shimmer panes)", () => {
@@ -808,6 +826,52 @@ describe("Gantt v2 — zoom (P2)", () => {
     render(<Gantt tasks={baseTasks} pixelsPerDay={48} style={{ height: 300 }} />);
     const large = parseFloat((screen.getByLabelText(/^timeline$/i) as HTMLElement).style.width);
     expect(large).toBeGreaterThan(small);
+  });
+});
+
+describe("Gantt — the timeline pane's width", () => {
+  it("comes through the shared measurement, read when the root attaches", () => {
+    // An observer that never reports: the width can only come from the read
+    // on attach, so the mount commit already has it (no 600 px first frame).
+    const original = globalThis.ResizeObserver;
+    class SilentResizeObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+    globalThis.ResizeObserver = SilentResizeObserver as unknown as typeof ResizeObserver;
+    // jsdom lays nothing out: the root is rendered, with a 1400px content box.
+    const rects = vi
+      .spyOn(Element.prototype, "getClientRects")
+      .mockImplementation(() => [new DOMRect(0, 0, 1400, 300)] as unknown as DOMRectList);
+    const realGetComputedStyle = window.getComputedStyle.bind(window);
+    const computed = vi.spyOn(window, "getComputedStyle").mockImplementation((el, pseudo) => {
+      const style = realGetComputedStyle(el, pseudo);
+      if (el.getAttribute("data-slot") !== "gantt") return style;
+      return new Proxy(style, {
+        get(target, prop) {
+          if (prop === "width") return "1400px";
+          if (prop === "height") return "300px";
+          if (prop === "boxSizing") return "content-box";
+          const value = Reflect.get(target, prop, target);
+          return typeof value === "function" ? value.bind(target) : value;
+        },
+      });
+    });
+    try {
+      // 20 days at 1 px/day is far narrower than the pane, so the canvas
+      // fills the pane: 1400 − the 200px label column.
+      render(
+        <Gantt tasks={baseTasks} labelColumnWidth={200} pixelsPerDay={1} style={{ height: 300 }} />,
+      );
+      expect(parseFloat((screen.getByLabelText(/^timeline$/i) as HTMLElement).style.width)).toBe(
+        1200,
+      );
+    } finally {
+      rects.mockRestore();
+      computed.mockRestore();
+      globalThis.ResizeObserver = original;
+    }
   });
 });
 
@@ -1415,5 +1479,46 @@ describe("Gantt virtualized story fixture is deterministic (#275)", () => {
     // A real assertion, not a vacuous one — the fixture actually renders progress fills.
     expect(first.length).toBeGreaterThan(0);
     expect(second).toEqual(first);
+  });
+});
+
+// ── Reduced motion is latched (RM-189 follow-up review) ────────────────────
+// The bar's clip reveal and the milestone's pop-in are keyed on reduced motion
+// so a switch to reduced lands them at rest. The key is latched: switching
+// reduced motion off again must not remount (and so replay) a mark already shown.
+
+describe("Gantt entrance marks under a motion switch", () => {
+  it("keeps every bar and milestone node when reduced motion is switched off again", () => {
+    const tasks: GanttTask[] = [
+      ...baseTasks,
+      { id: "m1", name: "Launch Day", start: d(10), end: d(10), isMilestone: true },
+    ];
+    const handle: { set?: (next: MotionPreference) => void } = {};
+    function CaptureMotion() {
+      handle.set = useMotionPreference().setMotionPreference;
+      return null;
+    }
+    const { container } = render(
+      <ThemeProvider defaultMotionPreference="reduced" motionStorageKey={null}>
+        <CaptureMotion />
+        <Gantt tasks={tasks} style={{ height: 400 }} />
+      </ThemeProvider>,
+    );
+    // The bar clip carries the progress fill; the milestone is the rotated diamond.
+    const marks = () => [
+      ...Array.from(container.querySelectorAll('[data-slot="gantt-bar-progress"]')).map(
+        (progress) => progress.parentElement,
+      ),
+      ...Array.from(container.querySelectorAll("span.rotate-45")),
+    ];
+    const before = marks();
+    // Two bars with progress above zero, plus the milestone.
+    expect(before).toHaveLength(3);
+    act(() => {
+      handle.set?.("full");
+    });
+    const after = marks();
+    expect(after).toHaveLength(before.length);
+    after.forEach((node, i) => expect(node).toBe(before[i]));
   });
 });

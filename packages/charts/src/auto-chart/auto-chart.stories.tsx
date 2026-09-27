@@ -800,6 +800,43 @@ export const UnitInferred: Story = inferenceStory(
 );
 
 /**
+ * `AutoChart`'s own `plotHeight` prop, forwarded straight to `UnitChart`'s
+ * `plotHeight` (not the deprecated `height` alias) — a regression lock for G1
+ * (RM-183 review round 2): a `ChartPlotBox` bug erased every resolved plot
+ * height on `layout="waffle"`/`"field"`, collapsing this to the 100px content
+ * floor regardless of the 400px asked for here.
+ */
+export const UnitPlotHeight: Story = {
+  name: "Unit plotHeight forwarding (400px)",
+  render: () => (
+    <div className="w-full max-w-[600px]">
+      <AutoChart
+        plotHeight={400}
+        spec={{
+          data: [
+            { mode: "Cycled", share: 41 },
+            { mode: "Walked", share: 35 },
+            { mode: "Drove", share: 12 },
+            { mode: "Bus", share: 12 },
+          ],
+          x: "mode",
+          series: ["share"],
+          emphasis: "editorial",
+          title: "How people got to work",
+        }}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const plot = canvasElement.querySelector('[data-slot="unit-chart-plot"]');
+    if (!(plot instanceof HTMLElement)) throw new Error('[data-slot="unit-chart-plot"] not found');
+    const height = plot.getBoundingClientRect().height;
+    await expect(height).toBeGreaterThanOrEqual(399);
+    await expect(height).toBeLessThanOrEqual(401);
+  },
+};
+
+/**
  * A series known only by its column key (no `label`) is NOT end-labelled
  * (RM-110), so the legend engine's default shows a legend — forwarded
  * through `spec.legend` into `LineChart`'s own `legend` prop
@@ -1109,10 +1146,16 @@ export const ChoroplethSpec: Story = {
   },
   play: async ({ canvasElement }) => {
     // The fixture is a dynamic import: the first paint is the status region.
-    await waitFor(() =>
-      expect(canvasElement.querySelectorAll(".choropleth-features path").length).toBeGreaterThan(
-        10,
-      ),
+    // The wait is for that chunk's network fetch, not for the chart: in a
+    // full-suite run the request queues behind the runner's own module loads
+    // and was measured at 3.7–4.2 s before the map painted, so `waitFor`'s 1 s
+    // default expired first. The budget covers that fetch plus headroom.
+    await waitFor(
+      () =>
+        expect(canvasElement.querySelectorAll(".choropleth-features path").length).toBeGreaterThan(
+          10,
+        ),
+      { timeout: 10_000 },
     );
     const plot = canvasElement.querySelector("[data-chart-breakpoint]");
     const tier = plot?.getAttribute("data-chart-breakpoint");

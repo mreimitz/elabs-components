@@ -4,7 +4,7 @@
  * `heatmap-chart.test.tsx` cannot exercise this: jsdom never gives
  * `ParentSize` a non-zero box, so `HeatmapBody` (the cells, the mouse
  * handlers) never renders there — see that file's docblock. This file mocks
- * `@visx/responsive` the same way `line-chart.test.tsx`/`bar-chart.test.tsx`
+ * `ChartParentSize` the same way `line-chart.test.tsx`/`bar-chart.test.tsx`
  * do, so the body renders and a real `mouseEnter` on a cell can be asserted
  * against `HeatmapLegend`'s marker.
  */
@@ -38,14 +38,14 @@ beforeAll(() => {
   }
 });
 
-// @visx/responsive uses ResizeObserver + real DOM measurement, which jsdom
+// ChartParentSize uses ResizeObserver + real DOM measurement, which jsdom
 // lacks. Mock ParentSize to supply a fixed viewport so the heatmap body
 // actually renders its cells.
-vi.mock("@visx/responsive", () => {
+vi.mock("../chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;

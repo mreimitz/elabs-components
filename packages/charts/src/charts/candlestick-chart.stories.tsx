@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
 import { CandlestickChart } from "./candlestick-chart";
+import { chartCssVars } from "./chart-context";
 import { Candlestick } from "./candlestick";
 import { Grid } from "./grid";
 import { XAxis } from "./x-axis";
@@ -28,12 +29,17 @@ const meta = {
   component: CandlestickChart,
   tags: ["autodocs"],
   // Charts need a concrete sized parent — ParentSize reads actual DOM dimensions.
+  // A story that sizes its own charts (several widths) opts out with
+  // `parameters: { candlestickFrame: false }`.
   decorators: [
-    (Story) => (
-      <div className="h-72 w-[560px] rounded-lg border border-border bg-card p-4">
+    (Story, { parameters }) =>
+      parameters.candlestickFrame === false ? (
         <Story />
-      </div>
-    ),
+      ) : (
+        <div className="h-72 w-[560px] rounded-lg border border-border bg-card p-4">
+          <Story />
+        </div>
+      ),
   ],
   parameters: { layout: "centered" },
 } satisfies Meta<typeof CandlestickChart>;
@@ -41,7 +47,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default — OHLC candles with grid, axes and tooltip. Uses --chart-1 (positive) and --chart-5 (negative) tokens. */
+/**
+ * Default — OHLC candles with grid, axes and tooltip. Rising candles are hollow
+ * (a --chart-1 outline) and falling candles solid (--chart-5), so up and down
+ * differ by shape as well as colour.
+ */
 export const Default: Story = {
   render: () => (
     <CandlestickChart data={ohlcData}>
@@ -52,6 +62,94 @@ export const Default: Story = {
       <ChartTooltip />
     </CandlestickChart>
   ),
+};
+
+/**
+ * `status="loading"` (RM-182): a skeleton in the plot box the chart will fill,
+ * with one polite status message per chart, at 380, 600 and 900 px.
+ */
+export const Loading: Story = {
+  parameters: { candlestickFrame: false },
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="w-full" key={width} style={{ maxWidth: width }}>
+          <CandlestickChart data={ohlcData} status="loading">
+            <Grid horizontal vertical />
+            <Candlestick />
+            <XAxis />
+            <YAxis />
+            <ChartTooltip />
+          </CandlestickChart>
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvas, canvasElement }) => {
+    const statuses = canvas.getAllByRole("status");
+    await expect(statuses).toHaveLength(3);
+    for (const status of statuses) {
+      await expect(status).toHaveAttribute("aria-live", "polite");
+      await expect(status).toHaveTextContent("Loading chart…");
+      const skeleton = status.querySelector('[data-slot="skeleton"]');
+      await expect(skeleton).toHaveAttribute("aria-hidden", "true");
+      // The skeleton fills the reserved plot box, so nothing moves when the data lands.
+      await waitFor(() => expect(status.getBoundingClientRect().height).toBeGreaterThan(0));
+      await expect(skeleton?.getBoundingClientRect().height).toBe(
+        status.getBoundingClientRect().height,
+      );
+    }
+    await expect(canvasElement.querySelector("svg")).toBeNull();
+  },
+};
+
+/** Every candle body the chart drew, with its hollow/solid kind. */
+const candleBodies = (root: Element) =>
+  Array.from(root.querySelectorAll<SVGRectElement>("[data-candle-body]"));
+
+/**
+ * Rising vs falling — a rising candle (close above open) draws a HOLLOW body: an
+ * outline in the rising colour on the plot's own ground. A falling candle draws a
+ * SOLID body. The shape is the second channel beside colour (WCAG 1.4.1): in
+ * greyscale, an up day still reads apart from a down day. The wicks are unchanged.
+ */
+export const RisingAndFalling: Story = {
+  name: "Rising (hollow) and falling (solid)",
+  render: () => (
+    <CandlestickChart data={ohlcData} animationDuration={0}>
+      <Grid horizontal />
+      <Candlestick animate={false} />
+      <XAxis />
+      <YAxis />
+    </CandlestickChart>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(candleBodies(canvasElement)).toHaveLength(ohlcData.length));
+    const bodies = candleBodies(canvasElement);
+    // Data order: each body's kind follows its own open/close.
+    const expected = ohlcData.map((d) => (d.close >= d.open ? "hollow" : "solid"));
+    await expect(bodies.map((body) => body.dataset.candleBody)).toEqual(expected);
+    await expect(expected).toContain("hollow");
+    await expect(expected).toContain("solid");
+    for (const body of bodies) {
+      const hollow = body.dataset.candleBody === "hollow";
+      // A hollow body is painted in the plot's ground; a solid one in its own colour.
+      await expect(body.getAttribute("fill")).toBe(
+        hollow ? chartCssVars.background : "url(#candlestick-negative)",
+      );
+      await expect(body.getAttribute("stroke")).toBe(
+        hollow ? "url(#candlestick-positive)" : "url(#candlestick-negative)",
+      );
+      // The hollow outline actually paints: 2 px on a candle at least 4 px wide, 1 px on a
+      // thinner one, and it leaves a hole (an SVG stroke paints half inside the body).
+      if (hollow) {
+        const width = Number(body.getAttribute("width"));
+        const stroke = Number.parseFloat(getComputedStyle(body).strokeWidth);
+        await expect(stroke).toBe(width < 4 ? 1 : 2);
+        await expect(width - stroke).toBeGreaterThan(0);
+      }
+    }
+  },
 };
 
 /** No animation — useful for screenshot tests and reduced-motion contexts. */
@@ -104,9 +202,9 @@ function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: 
 }
 
 /**
- * High decoration (ADR 0011, #257) — rising and falling bodies each draw their
- * own series pattern (diagonal hatch / dots) inside a solid outline, so the
- * up/down split survives without hue. At decoration 0–7 this is `NoAnimation`.
+ * High decoration (ADR 0011, #257) — a falling (solid) body fills with its series
+ * pattern inside a solid outline; a rising body stays hollow, as at every level,
+ * since it has no fill to texture. At decoration 0–7 this is `NoAnimation`.
  */
 export const HighDecoration: Story = {
   tags: ["!dev"],
@@ -123,6 +221,44 @@ export const HighDecoration: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
-    await waitFor(() => expectSeriesPatterns(canvasElement, ".chart-candlesticks rect", 2));
+    await waitFor(() => expectSeriesPatterns(canvasElement, ".chart-candlesticks rect", 1));
+    // Only falling bodies are patterned; every rising body is still hollow.
+    for (const body of candleBodies(canvasElement)) {
+      const patterned = (body.getAttribute("fill") ?? "").startsWith("url(#bp-series-");
+      await expect(patterned).toBe(body.dataset.candleBody === "solid");
+    }
+  },
+};
+
+/** Every colour a story's marks paint (fill, stroke, gradient stops), as one string. */
+const paintedColors = (root: Element) =>
+  Array.from(root.querySelectorAll("*"))
+    .flatMap((el) => ["fill", "stroke", "stop-color", "style"].map((a) => el.getAttribute(a) ?? ""))
+    .join(" ");
+
+/**
+ * `palette="diverging"` (RM-186): rising candles take `chartCssVars.signPositive`,
+ * falling ones `signNegative` — the two ends of the diverging ramp. The pair shares
+ * one lightness, so the hollow (rising) and solid (falling) bodies carry the sign
+ * where the hue cannot.
+ */
+export const Palette: Story = {
+  render: () => (
+    <CandlestickChart data={ohlcData} palette="diverging">
+      <Grid horizontal vertical />
+      <Candlestick />
+      <XAxis />
+      <YAxis />
+      <ChartTooltip />
+    </CandlestickChart>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      expect(paintedColors(canvasElement)).toContain(chartCssVars.signPositive);
+      expect(paintedColors(canvasElement)).toContain(chartCssVars.signNegative);
+      expect(paintedColors(canvasElement)).not.toContain("var(--chart-5)");
+    });
+    const kinds = new Set(candleBodies(canvasElement).map((body) => body.dataset.candleBody));
+    await expect(kinds).toEqual(new Set(["hollow", "solid"]));
   },
 };

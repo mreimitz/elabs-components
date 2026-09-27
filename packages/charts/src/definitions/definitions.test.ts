@@ -11,13 +11,19 @@
  *   comparing the two is now an identity check, not a value pin — this suite is what still pins
  *   the VALUES. A deliberate contract change (a rename touching `requiredProps`/`propNamedKeys`/…)
  *   updates `CONTRACT_GOLDEN` in the same PR; anything else failing here is a real drift.
+ * - Golden defaults: each definition whose component resolves its props through
+ *   `useResolvedChartProps` has `defaults` deep-equal to a FROZEN fixture
+ *   (`__fixtures__/defaults-golden.ts`, `DEFAULTS_GOLDEN`), and no such component is missing a
+ *   row. After adoption this is the only thing that pins a default's VALUE.
  * - Defaults parity: rendering each fixture with every definition default passed explicitly
  *   (`resolveProps`) gives the same DOM as rendering it with none. Charts are rendered as their
- *   fixture; parts inside their fixture's host chart.
+ *   fixture; parts inside their fixture's host chart. For an adopted family both renders read
+ *   the same definition, so parity only guards the component's reads of RAW props (a default
+ *   left in the destructuring, a raw prop read past the hook), not the default values.
  * - Direction: no definition module imports the registry or the component bindings.
  * - `useResolvedChartProps`: aliases first, then defaults; memoised; one warning per old name.
  *
- * jsdom has no layout, so the measurement seams (`@visx/responsive`, `react-use-measure`,
+ * jsdom has no layout, so the measurement seams (`ChartParentSize`, `useLayoutMeasure`,
  * `getBoundingClientRect`, `ResizeObserver`, `getTotalLength`) are stubbed to a fixed box, as
  * in the interaction policy test.
  */
@@ -43,10 +49,10 @@ import {
 
 const BOX = vi.hoisted(() => ({ width: 640, height: 320 }));
 
-vi.mock("@visx/responsive", async () => {
+vi.mock("../charts/chart-parent-size", async () => {
   const { createElement: h, Fragment } = await import("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => ReactNode;
@@ -54,25 +60,32 @@ vi.mock("@visx/responsive", async () => {
   };
 });
 
-vi.mock("react-use-measure", () => ({
-  default: () => [
-    () => undefined,
-    { ...BOX, top: 0, left: 0, right: BOX.width, bottom: BOX.height, x: 0, y: 0 },
-  ],
+vi.mock("../charts/layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, BOX],
 }));
 
+import { BulletChartBase } from "../charts/bullet-chart";
 import { Candlestick } from "../charts/candlestick";
 import { ChoroplethFeature } from "../charts/choropleth/choropleth-feature";
+import { FunnelChartBody } from "../charts/funnel-chart";
 import { LiveLine } from "../charts/live-line";
+import { NetworkChartBody } from "../charts/network/network-chart";
+import { PieChartBase } from "../charts/pie-chart";
 import { PieSlice } from "../charts/pie-slice";
 import { RadarArea } from "../charts/radar-area";
 import { RadarAxis } from "../charts/radar-axis";
+import { RadarChartBase } from "../charts/radar-chart";
 import { RadarGrid } from "../charts/radar-grid";
 import { RadarLabels } from "../charts/radar-labels";
 import { Ring } from "../charts/ring";
+import { RingChartBase } from "../charts/ring-chart";
 import { SeriesBar } from "../charts/series-bar";
 import { SankeyLink } from "../charts/sankey/sankey-link";
 import { SankeyNode } from "../charts/sankey/sankey-node";
+import { TreeChartBody } from "../charts/tree-chart";
+import { TreemapChartBase } from "../charts/treemap/treemap-chart";
+import { UnitChartBody } from "../charts/unit-chart";
 import { useResolvedChartProps } from "../charts/use-resolved-chart-props";
 import { installCanvasContextStub } from "../test/primitives";
 import { AREA_FIXTURE } from "./__fixtures__/area.fixture";
@@ -87,6 +100,7 @@ import { CHART_CARD_FIXTURE } from "./__fixtures__/chart-card.fixture";
 import { CHOROPLETH_CHART_FIXTURE } from "./__fixtures__/choropleth-chart.fixture";
 import { COMPOSED_CHART_FIXTURE } from "./__fixtures__/composed-chart.fixture";
 import { CONTRACT_GOLDEN } from "./__fixtures__/contract-golden";
+import { type AdoptedChartDefinitionId, DEFAULTS_GOLDEN } from "./__fixtures__/defaults-golden";
 import { DENSITY_SCATTER_CHART_FIXTURE } from "./__fixtures__/density-scatter-chart.fixture";
 import { DISTRIBUTION_CHART_FIXTURE } from "./__fixtures__/distribution-chart.fixture";
 import { DUMBBELL_CHART_FIXTURE } from "./__fixtures__/dumbbell-chart.fixture";
@@ -198,6 +212,34 @@ const COMPONENTS: Readonly<Record<string, JSXElementConstructor<never>>> = {
   ChoroplethFeature,
 };
 
+/**
+ * Every family whose UNWRAPPED base component takes the family's own public props and still
+ * carries its own hardcoded destructuring defaults, independent of
+ * `CHART_DEFINITIONS[id].defaults`: the six radial/part-to-whole families (RM-183 review fix3),
+ * plus Treemap, Tree and Network (wave-3 review). Used only by the "defaults reality" suite below;
+ * every other suite renders through `COMPONENTS[id]`, the public `useResolvedChartProps`-wrapped
+ * export.
+ *
+ * Not reachable this way, so not listed: families whose inner component takes
+ * `ResolvedProps<…>` (Heatmap, Choropleth, Dumbbell, Scatter, Candlestick) or that destructure the
+ * resolved props in the public component itself (Line, Area, Composed, Bar, LiveLine, Waterfall,
+ * Sankey, ParallelCoordinates, Distribution, DensityScatter, Bump, Gantt) — the definition is their
+ * ONLY default source, so there is no second one to drift from it.
+ */
+const BASE_COMPONENTS: Readonly<
+  Partial<Record<ChartDefinitionId, JSXElementConstructor<AnyProps>>>
+> = {
+  PieChart: PieChartBase as unknown as JSXElementConstructor<AnyProps>,
+  RingChart: RingChartBase as unknown as JSXElementConstructor<AnyProps>,
+  FunnelChart: FunnelChartBody as unknown as JSXElementConstructor<AnyProps>,
+  RadarChart: RadarChartBase as unknown as JSXElementConstructor<AnyProps>,
+  UnitChart: UnitChartBody as unknown as JSXElementConstructor<AnyProps>,
+  BulletChart: BulletChartBase as unknown as JSXElementConstructor<AnyProps>,
+  TreemapChart: TreemapChartBase as unknown as JSXElementConstructor<AnyProps>,
+  TreeChart: TreeChartBody as unknown as JSXElementConstructor<AnyProps>,
+  NetworkChart: NetworkChartBody as unknown as JSXElementConstructor<AnyProps>,
+};
+
 // ── jsdom seams ─────────────────────────────────────────────────────────────
 
 let canvasStub: ReturnType<typeof installCanvasContextStub> | null = null;
@@ -302,6 +344,26 @@ function fixtureElement(
   return createElement(LocaleProvider, {
     locale: "en-US",
     children: createElement(componentFor(chart.id), chartProps, ...children),
+  });
+}
+
+/**
+ * Like {@link fixtureElement}, but the chart root is an explicit component rather than
+ * `componentFor(chart.id)` — used by the "defaults reality" suite below to render the fixture
+ * through the family's UNWRAPPED base instead of its public, `useResolvedChartProps`-wrapped
+ * export (RM-183 review fix3).
+ */
+function fixtureElementWithRoot(
+  chart: ChartFixture,
+  root: JSXElementConstructor<AnyProps>,
+  rootProps: AnyProps,
+) {
+  const children = chart.children.map((child) =>
+    createElement(componentFor(child.component), child.props),
+  );
+  return createElement(LocaleProvider, {
+    locale: "en-US",
+    children: createElement(root, rootProps, ...children),
   });
 }
 
@@ -450,7 +512,71 @@ describe("golden contract", () => {
   );
 });
 
+// ── Golden defaults ─────────────────────────────────────────────────────────
+//
+// Once a component resolves its props through its own definition, the parity suite below renders
+// the SAME `defaults` object twice (once filled by the hook, once passed explicitly), so a changed
+// definition default is invisible to it. `DEFAULTS_GOLDEN` is a frozen, hand-kept fixture with no
+// relationship to the registry: the one place an adopted family's default VALUES are pinned.
+
+describe("golden defaults", () => {
+  const CHARTS_SRC = join(dirname(fileURLToPath(import.meta.url)), "..");
+  const sourceFiles = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) return entry.name === "__fixtures__" ? [] : sourceFiles(path);
+      return /\.tsx?$/.test(entry.name) && !/\.(test|test-d|stories)\.tsx?$/.test(entry.name)
+        ? [path]
+        : [];
+    });
+
+  /** The definition id behind every `useResolvedChartProps(<CONST>, …)` call in shipped code. */
+  const adoptedIds = (): string[] => {
+    const files = sourceFiles(CHARTS_SRC);
+    const idOfConst = new Map<string, string>();
+    for (const file of files.filter((f) => f.endsWith(".definition.ts"))) {
+      const match = /export const ([A-Z][A-Z0-9_]*)\s*=[\s\S]*?\bid:\s*"([A-Za-z]+)"/.exec(
+        readFileSync(file, "utf8"),
+      );
+      if (match?.[1] && match[2]) idOfConst.set(match[1], match[2]);
+    }
+    const ids = new Set<string>();
+    for (const file of files) {
+      const source = readFileSync(file, "utf8");
+      for (const [, name = ""] of source.matchAll(
+        /useResolvedChartProps\(\s*([A-Z][A-Z0-9_]*)\b/g,
+      )) {
+        ids.add(idOfConst.get(name) ?? `<unknown definition constant ${name}>`);
+      }
+    }
+    return [...ids].sort();
+  };
+
+  it("DEFAULTS_GOLDEN has a row for exactly the definitions a component resolves through (a family that adopts adds its row)", () => {
+    expect(Object.keys(DEFAULTS_GOLDEN).sort()).toStrictEqual(adoptedIds());
+  });
+
+  it.each(Object.keys(DEFAULTS_GOLDEN).filter((id) => id in CHART_DEFINITIONS))(
+    "%s: the chart definition's defaults match the golden fixture",
+    (id) => {
+      const chartId = id as AdoptedChartDefinitionId;
+      expect(CHART_DEFINITIONS[chartId].defaults).toStrictEqual(DEFAULTS_GOLDEN[chartId]);
+    },
+  );
+
+  it.each(Object.keys(PART_DEFINITIONS) as PartDefinitionId[])(
+    "%s: the part definition's defaults match the golden fixture",
+    (id) => {
+      expect(PART_DEFINITIONS[id].defaults).toStrictEqual(DEFAULTS_GOLDEN[id]);
+    },
+  );
+});
+
 // ── Defaults parity ─────────────────────────────────────────────────────────
+//
+// For a family that resolves its props through its definition (every row of `DEFAULTS_GOLDEN`),
+// the bare and the explicit render read the same defaults, so this suite only guards the
+// component's reads of RAW props; the golden suite above pins the default values themselves.
 
 describe("defaults parity", () => {
   // A live chart places its window at the current time: freeze the clock so every render of
@@ -511,6 +637,40 @@ describe("defaults parity", () => {
       );
       expect(bare.length).toBeGreaterThan(0);
       expect(explicit).toBe(bare);
+    },
+  );
+});
+
+// ── Defaults reality (RM-183 review fix3) ──────────────────────────────────
+//
+// "Golden defaults" above pins each family's `CHART_DEFINITIONS[id].defaults` VALUES against a
+// hand-copied fixture — real, but it never renders anything, so it cannot catch a default that
+// is well-formed but wrong in a way that only shows up on screen (e.g. right type, wrong value,
+// with no accompanying `DEFAULTS_GOLDEN` update). This suite closes that gap with an actual DOM
+// comparison that (unlike "defaults parity") is NOT tautological: it renders the SAME bare fixture
+// props through two DIFFERENT components — the public, `useResolvedChartProps`-wrapped export
+// (which fills unset props from `CHART_DEFINITIONS[id].defaults`) and the family's UNWRAPPED base
+// (which fills the very same unset props from its OWN hardcoded JS destructuring defaults). A
+// definition default that drifts from the component's real one makes the two renders disagree.
+//
+// Proven live during review: temporarily setting `PIE_CHART.defaults.hoverOffset` to `999` (real
+// default `10`) turned this suite's `PieChart` case red while every "defaults parity" case (which
+// reads both sides from the same mutated object) stayed green — then reverted.
+describe("defaults reality (RM-183 review fix3)", () => {
+  it.each(Object.keys(BASE_COMPONENTS) as ChartDefinitionId[])(
+    "%s: the public component's DOM matches its unwrapped base's DOM for the same bare props",
+    (id) => {
+      const fixture = CHART_FIXTURES[id];
+      const base = BASE_COMPONENTS[id]!;
+      // A first render warms every module-level cache both compared renders then share.
+      markup(fixtureElement(fixture, fixture.props));
+      const wrapped = markup(fixtureElement(fixture, fixture.props));
+      const bare = markup(fixtureElementWithRoot(fixture, base, fixture.props));
+      expect(wrapped.length).toBeGreaterThan(0);
+      // Not vacuous: two empty states would compare equal too (wave-3 review F1 — the
+      // Treemap fixture rendered "No data" through BOTH components).
+      expect(wrapped).not.toMatch(/data-slot="[a-z-]*-empty"/);
+      expect(bare).toBe(wrapped);
     },
   );
 });

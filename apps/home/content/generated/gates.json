@@ -42,10 +42,22 @@
     "source": "scripts/check/rules/catalog-visitor-copy.mjs"
   },
   {
+    "id": "chart-default-prose",
+    "doc": "A default stated in a chart prop's TSDoc (`Default: 1100`, `` Default `\"none\"` ``, `@default false`) matches that prop's definition default in the snapshot — when they disagree, fix the prose, never the default.",
+    "category": "components",
+    "source": "scripts/check/rules/chart-default-prose.mjs"
+  },
+  {
     "id": "chart-hairline",
     "doc": "Draw chart furniture with `--chart-grid` at full opacity and `CHART_HAIRLINE_WIDTH` (never a dimming `opacity`/`strokeOpacity` or another numeric `strokeWidth`), and never alias `--chart-grid` to `var(--border)`; one element may opt out with `// chart-hairline-exempt: <reason>`.",
     "category": "components",
     "source": "scripts/check/rules/chart-hairline.mjs"
+  },
+  {
+    "id": "chart-style-constants",
+    "doc": "Name chart dash, opacity and duration values through the shared constants (`CHART_DASH` in `chart-stroke.ts`, `chart-opacity.ts`, `animation.ts`) instead of literals; the count of literals left in `packages/charts/src` only goes down.",
+    "category": "components",
+    "source": "scripts/check/rules/chart-style-constants.mjs"
   },
   {
     "id": "chart-unit-caption",
@@ -64,6 +76,18 @@
     "doc": "The runtime import closure of charts `definitions/**` and `charts/props/**` reaches only `@elabs-ai/components-ui/definition` and allow-listed pure leaves — never React/visx/d3/motion/ui at runtime (`import type` exempt; test/fixture files and `definitions/components.ts` exempt as roots only; ADR 0042 §11).",
     "category": "packages",
     "source": "scripts/check/rules/charts-definitions-pure.mjs"
+  },
+  {
+    "id": "charts-deprecated-usage",
+    "doc": "No deprecated chart prop name (an alias row of the definition snapshot, e.g. `<HeatmapChart showValues>` once it is renamed) in stories, Markdown code fences, templates, registry blocks or non-test package source — write the new name, so consumers never see a deprecation warning for code they did not write; tests, the `./test` double and history docs are exempt.",
+    "category": "repo",
+    "source": "scripts/check/rules/charts-deprecated-usage.mjs"
+  },
+  {
+    "id": "charts-group-drift",
+    "doc": "A chart definition takes a prop named like a prop-group key (`palette`, `status`, `align`, `plotHeight`, …) from that group — apply the group; an own field of the same name then overrides it — never as a family field of its own; the keys that drift today only shrink, and the one exception list (`zoom` on Choropleth, Tree and DensityScatter, ADR 0042 A.5) grows only by a maintainer decision.",
+    "category": "components",
+    "source": "scripts/check/rules/charts-group-drift.mjs"
   },
   {
     "id": "charts-honesty",

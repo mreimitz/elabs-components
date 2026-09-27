@@ -1,6 +1,9 @@
+import { Children, createElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import {
+  applyPercentStackAxes,
   computeBarStackLayout,
+  cumulativeStackOffsets,
   cumulativeStackSegments,
   groupBarRows,
   insetStackSegment,
@@ -290,5 +293,97 @@ describe("groupBarRows", () => {
     );
     expect(groups.map((g) => g.name)).toEqual(["B", "A"]);
     expect(groups[0]?.rows.map((r) => r.n)).toEqual([1, 3]);
+  });
+});
+
+// RM-182 (review F14): the one copy of the cumulative loop and the percent-axis cloning
+// that BarChart and ComposedChart used to hold each.
+describe("cumulativeStackOffsets", () => {
+  it("starts each series at the running total of the numeric values before it", () => {
+    const offsets = cumulativeStackOffsets(
+      [
+        { a: 10, b: 5, c: 2 },
+        { a: -4, b: "n/a", c: 3 },
+      ],
+      ["a", "b", "c"],
+    );
+    expect([...(offsets.get(0) ?? [])]).toEqual([
+      ["a", 0],
+      ["b", 10],
+      ["c", 15],
+    ]);
+    // A non-numeric value adds nothing; a negative one subtracts.
+    expect([...(offsets.get(1) ?? [])]).toEqual([
+      ["a", 0],
+      ["b", -4],
+      ["c", -4],
+    ]);
+  });
+
+  it("gives a missing row no entry and feeds cumulativeStackSegments unchanged", () => {
+    const data = [{ a: 1, b: 2 }, null, { a: 3, b: 4 }];
+    const offsets = cumulativeStackOffsets(data, ["a", "b"]);
+    expect(offsets.has(1)).toBe(false);
+    expect(
+      cumulativeStackSegments(data[2] as Record<string, unknown>, ["a", "b"], offsets.get(2)),
+    ).toEqual([
+      [0, 3],
+      [3, 7],
+    ]);
+  });
+});
+
+function YAxis(_props: Record<string, unknown>) {
+  return null;
+}
+function ChartTooltip(_props: Record<string, unknown>) {
+  return null;
+}
+function Grid(_props: Record<string, unknown>) {
+  return null;
+}
+
+function propsOf(children: ReactNode): Record<string, unknown>[] {
+  return Children.toArray(children)
+    .filter(isValidElement)
+    .map((child) => (child as ReactElement<Record<string, unknown>>).props);
+}
+
+describe("applyPercentStackAxes", () => {
+  it("BarChart: every YAxis without a format of its own prints percent", () => {
+    const out = applyPercentStackAxes([
+      createElement(YAxis, { key: "a" }),
+      createElement(YAxis, { key: "b", valueFormat: "currency" }),
+      createElement(Grid, { key: "g" }),
+      createElement(ChartTooltip, { key: "t" }),
+    ]);
+    const [plain, own, grid, tooltip] = propsOf(out);
+    expect(plain).toEqual({ valueFormat: "percent" });
+    expect(own).toEqual({ valueFormat: "currency" });
+    expect(grid).toEqual({});
+    expect(tooltip).toEqual({});
+  });
+
+  it("ComposedChart: only the stack axis, domain pinned to [0, 1], tooltip rows plain numbers", () => {
+    const out = applyPercentStackAxes(
+      [
+        createElement(YAxis, { key: "left" }),
+        createElement(YAxis, { key: "right", yAxisId: "right" }),
+        createElement(YAxis, { key: "own", domain: [0, 2], formatValue: String }),
+        createElement(ChartTooltip, { key: "t" }),
+        createElement(ChartTooltip, { key: "u", unit: "%" }),
+      ],
+      {
+        isStackAxis: (props) => props.yAxisId === undefined,
+        pinDomain: true,
+        tooltipNumbers: true,
+      },
+    );
+    const [left, right, own, tooltip, unitTooltip] = propsOf(out);
+    expect(left).toEqual({ domain: [0, 1], valueFormat: "percent" });
+    expect(right).toEqual({ yAxisId: "right" });
+    expect(own).toEqual({ domain: [0, 2], formatValue: String });
+    expect(tooltip).toEqual({ valueFormat: "number" });
+    expect(unitTooltip).toEqual({ unit: "%" });
   });
 });

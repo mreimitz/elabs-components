@@ -164,6 +164,17 @@ export function useMeasuredChartBreakpoint<E extends Element = HTMLDivElement>(
   const ref = useCallback(
     (next: E | null) => {
       setNode(next);
+      // Resolve the tier in the SAME commit that hands us the node (wave-3 review F2): waiting
+      // for the layout effect below costs one extra render, and in between a child that
+      // measures its node on attach (`useLayoutMeasure`) lays out at the "wide" placeholder tier
+      // — a navigator strip mounts 40 px thick, then CSS-transitions to its narrow 32 px. Same
+      // read as the effect's
+      // first `update`, so this only moves that result one render earlier; it never differs.
+      if (next) {
+        const width = next.getBoundingClientRect().width;
+        const tier = breakpointForWidth(width);
+        setMeasured((prev) => (prev === tier ? prev : tier));
+      }
       assignRef(forwardedRef, next);
     },
     [forwardedRef],
@@ -259,6 +270,17 @@ export function useChartHostPlotHeight(): ChartHostPlotHeight | undefined {
   return useChartConfig().plotHeight;
 }
 
+/**
+ * Internal (not exported from the package barrel): whether the chart sits inside a
+ * `ChartFrame` — i.e. a frame that would size its body around a registering plot box. A chart
+ * whose ready state never registers (TreeChart's natural size) reads this so its loading state
+ * does not register either: registering only while loading would drop the frame's bounded body
+ * for the skeleton and restore it on ready, changing the frame's height at the handoff.
+ */
+export function useInsideChartFrame(): boolean {
+  return useContext(ChartFramePlotConsumerContext) !== undefined;
+}
+
 /** Register with the enclosing frame while `active` (a plot box that sizes itself). */
 function useRegisterFramePlotConsumer(active: boolean): void {
   const register = useContext(ChartFramePlotConsumerContext);
@@ -283,7 +305,8 @@ export function warnChartOnce(key: string, message: string): void {
   warnOnce(`charts:${key}`, message);
 }
 
-function validPlotHeight(value: unknown): ChartPlotHeight | undefined {
+/** Internal: a plot height the plot box would honour, else `undefined` (warned once). */
+export function validPlotHeight(value: unknown): ChartPlotHeight | undefined {
   if (value === undefined) return undefined;
   if (typeof value === "number" && Number.isFinite(value) && value > 0) return value;
   if (typeof value === "object" && value !== null && "aspect" in value) {
@@ -301,6 +324,27 @@ function validPlotHeight(value: unknown): ChartPlotHeight | undefined {
 
 function plotHeightStyle(value: ChartPlotHeight): CSSProperties {
   return typeof value === "number" ? { height: value } : { aspectRatio: `${value.aspect} / 1` };
+}
+
+/**
+ * `{ ...a, ...b }` treats an explicitly-`undefined`-valued key in `b` as "set
+ * to nothing", NOT "unset" — it still shadows `a`'s own value for that key
+ * (RM-183 review round 2, G1: a caller building
+ * `{ height: condition ? x : undefined }` and spreading it last erased an
+ * already-resolved `height`/`minHeight` from `boxStyle` this way, collapsing
+ * `UnitChart`'s waffle/field plot to its bare content floor no matter what
+ * `plotHeight` asked for). Strips those keys instead of forwarding them, so a
+ * caller's conditional style object only ever ADDS to the resolved box, never
+ * blanks a rung that already spoke.
+ */
+export function definedStyle(style: CSSProperties | undefined): CSSProperties {
+  if (!style) return {};
+  const out: CSSProperties = {};
+  for (const key of Object.keys(style) as (keyof CSSProperties)[]) {
+    const value = style[key];
+    if (value !== undefined) (out as Record<string, unknown>)[key] = value;
+  }
+  return out;
 }
 
 export interface ChartPlotBoxInput {
@@ -418,7 +462,7 @@ export const ChartPlotRoot = forwardRef<HTMLDivElement, ChartPlotRootProps>(func
       // container that goes through this root gets the house ring instead.
       className: props.tabIndex === 0 ? cn("focus-ring", props.className) : props.className,
       "data-chart-breakpoint": breakpoint,
-      style: { ...boxStyle, ...style },
+      style: { ...boxStyle, ...definedStyle(style) },
     },
     createElement(ChartBreakpointScope, { breakpoint }, children),
   );
@@ -447,6 +491,6 @@ export const ChartPlotBox = forwardRef<
   return createElement("div", {
     ...props,
     ref,
-    style: { ...boxStyle, ...fillShrink, ...style },
+    style: { ...boxStyle, ...fillShrink, ...definedStyle(style) },
   });
 });

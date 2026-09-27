@@ -1,6 +1,6 @@
 "use client";
 
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "./chart-parent-size";
 import { scaleLinear, scaleTime } from "@visx/scale";
 import { bisector } from "d3-array";
 import type { Transition } from "motion/react";
@@ -20,15 +20,22 @@ import {
   useState,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
-import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 // Analytics — RM-138 / RM-139
 import type { ChartAnalytic } from "./analytics/types";
+import type { ChartAnnotation } from "./annotations/annotation-types";
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
-import { ChartProvider, type LineConfig, type Margin } from "./chart-context";
-import { shortDateFmt } from "./chart-formatters";
-import { DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
+import {
+  type ChartPalette,
+  ChartPaletteProvider,
+  ChartProvider,
+  type LineConfig,
+  type Margin,
+  resolveSignPalette,
+} from "./chart-context";
+import { useChartFormatters } from "./chart-formatters";
+import { type ChartStatus, DEFAULT_CHART_LIFECYCLE } from "./chart-phase";
 import { decimateOhlcData, maxRenderPointsForWidth } from "./decimate-time-series";
 import { filterDataByXDomain } from "./filter-data-by-x-domain";
 import { useChartInteraction } from "./use-chart-interaction";
@@ -43,6 +50,16 @@ import {
   type Responsive,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
+import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
+import { CANDLESTICK_CHART } from "../definitions/candlestick-chart.definition";
+import { DEFAULT_CARTESIAN_MARGIN, resolveChartMargin } from "./chart-margin";
+import { ChartLoadingPlot } from "./chart-loading-plot";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { TooltipGroupProps } from "./props/tooltip";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
+import { useAnalyticsExtents } from "./analytics/analytics-context";
+import { widenDomainForAnalytics } from "./analytics/resolve-analytics";
 
 export interface OHLCDataPoint {
   date: Date;
@@ -52,13 +69,14 @@ export interface OHLCDataPoint {
   close: number;
 }
 
-export interface CandlestickChartProps extends ChartNavigatorProps {
+export interface CandlestickChartProps
+  extends ChartNavigatorProps, FrameSizeGroupProps, Pick<ChartStateGroupProps, "status"> {
   /** OHLC data array */
   data: OHLCDataPoint[];
   /** Key in data for the x-axis (date). Default: "date" */
   xDataKey?: string;
-  /** Chart margins */
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. Default: 40 on every side. */
+  margin?: number | Partial<Margin>;
   /** Animation duration in milliseconds. Default: 1100 */
   animationDuration?: number;
   /** Motion enter transition (spring or cubic-bezier tween). */
@@ -74,6 +92,12 @@ export interface CandlestickChartProps extends ChartNavigatorProps {
   plotHeight?: Responsive<ChartPlotHeight>;
   /** Additional class name for the container */
   className?: string;
+  /**
+   * Loading vs ready (RM-182). `"loading"` shows a skeleton in the plot box the
+   * chart will fill, with one polite status message, until the data is ready.
+   * Default: `"ready"`.
+   */
+  status?: ChartStatus;
   /** Inline styles for the container (e.g. { height: 320 }) */
   style?: React.CSSProperties;
   /** Gap between candles as fraction of slot width (0–1). Default: 0.2. Ignored when candleWidth is set. */
@@ -96,9 +120,13 @@ export interface CandlestickChartProps extends ChartNavigatorProps {
    * a trend, or a computed line/band. Unset: no change.
    */
   analytics?: readonly ChartAnalytic[];
+  /**
+   * Declarative annotations in data units — text notes, ranges and reference
+   * lines (RM-111). Always honoured at runtime through the shared annotation
+   * layer; RM-188 declares the prop so it is typed and documented.
+   */
+  annotations?: readonly ChartAnnotation[];
 }
-
-const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
 
 /** The navigator shadow pools each candle's wick: its low and its high (RM-140). */
 const CANDLESTICK_VALUE_KEYS = ["low", "high"] as const;
@@ -107,6 +135,8 @@ interface ChartInnerProps {
   width: number;
   height: number;
   data: Record<string, unknown>[];
+  /** The container's `palette` (RM-186); unset keeps `--chart-1` / `--chart-5`. */
+  palette?: ChartPalette;
   xDataKey: string;
   margin: Margin;
   animationDuration: number;
@@ -132,6 +162,7 @@ const ChartCore = memo(function ChartCore({
   width,
   height,
   data,
+  palette,
   xDataKey,
   margin,
   animationDuration,
@@ -190,6 +221,7 @@ const ChartCore = memo(function ChartCore({
     return visible.length > 0 ? visible : data;
   }, [data, xAccessor, xDomain]);
 
+  const analyticsExtents = useAnalyticsExtents();
   const yScale = useMemo(() => {
     let minVal = Number.POSITIVE_INFINITY;
     let maxVal = Number.NEGATIVE_INFINITY;
@@ -209,13 +241,17 @@ const ChartCore = memo(function ChartCore({
     if (maxVal === Number.NEGATIVE_INFINITY) {
       maxVal = 100;
     }
-    const padding = (maxVal - minVal) * 0.05 || 1;
+    // RM-188: an `ifOverflow: "extend"` analytic (or a derived series) widens
+    // the price domain through the shared extents, before the 5 % padding —
+    // the same path BarChart and the time-series shell take. None set: unchanged.
+    const [lo, hi] = widenDomainForAnalytics([minVal, maxVal], analyticsExtents, undefined);
+    const padding = (hi - lo) * 0.05 || 1;
     return scaleLinear({
       range: [innerHeight, 0],
-      domain: [minVal - padding, maxVal + padding],
+      domain: [lo - padding, hi + padding],
       nice: true,
     });
-  }, [innerHeight, valueRows]);
+  }, [innerHeight, valueRows, analyticsExtents]);
 
   const columnWidth = slotWidth;
   const bandWidth = candleWidthProp ?? slotWidth * (1 - candleGap);
@@ -230,9 +266,10 @@ const ChartCore = memo(function ChartCore({
     [data, innerWidth],
   );
 
+  const { shortDateFmt } = useChartFormatters();
   const dateLabels = useMemo(
     () => data.map((d) => shortDateFmt.format(xAccessor(d))),
-    [data, xAccessor],
+    [data, xAccessor, shortDateFmt],
   );
 
   // revealSignature replays enter.
@@ -336,18 +373,21 @@ const ChartCore = memo(function ChartCore({
     hoveredCandleIndex,
   };
 
+  const signColors = palette === undefined ? undefined : resolveSignPalette(palette);
+
   return (
     <ChartProvider value={contextValue}>
       <svg aria-hidden="true" height={height} width={width}>
         <defs>
-          {/* Default vertical gradients for positive/negative candles (chart-1 / chart-5) */}
+          {/* Default vertical gradients for positive/negative candles (chart-1 / chart-5;
+              a `palette` gives its gain / loss pair instead, RM-186) */}
           <linearGradient id="candlestick-positive" x1="0" x2="0" y1="1" y2="0">
-            <stop offset="0%" stopColor="var(--chart-1)" />
-            <stop offset="100%" stopColor="var(--chart-1)" />
+            <stop offset="0%" stopColor={signColors?.positive ?? "var(--chart-1)"} />
+            <stop offset="100%" stopColor={signColors?.positive ?? "var(--chart-1)"} />
           </linearGradient>
           <linearGradient id="candlestick-negative" x1="0" x2="0" y1="1" y2="0">
-            <stop offset="0%" stopColor="var(--chart-5)" />
-            <stop offset="100%" stopColor="var(--chart-5)" />
+            <stop offset="0%" stopColor={signColors?.negative ?? "var(--chart-5)"} />
+            <stop offset="100%" stopColor={signColors?.negative ?? "var(--chart-5)"} />
           </linearGradient>
           {defsChildren}
           {clipMarks ? (
@@ -364,27 +404,36 @@ const ChartCore = memo(function ChartCore({
           transform={`translate(${margin.left},${margin.top})`}
         >
           <rect fill="transparent" height={innerHeight} width={innerWidth} x={0} y={0} />
-          {restChildren}
+          {/* `Candlestick` reads the palette for its pattern ink (RM-186). */}
+          <ChartPaletteProvider value={palette}>{restChildren}</ChartPaletteProvider>
         </g>
       </svg>
     </ChartProvider>
   );
 });
 
-const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
+/** The props `CandlestickChartBase` renders from: resolved by `CANDLESTICK_CHART`, less the tooltip switch. */
+type CandlestickChartBaseProps = Omit<
+  ResolvedProps<CandlestickChartProps, typeof CANDLESTICK_CHART>,
+  "tooltip"
+>;
+
+const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartBaseProps>(
   function CandlestickChart(
     {
       data,
-      xDataKey = "date",
+      palette,
+      xDataKey,
       margin: marginProp,
-      animationDuration = DEFAULT_ANIMATION_DURATION_MS,
+      animationDuration,
       enterTransition,
       revealSignature,
       aspectRatio,
       plotHeight,
-      className = "",
+      className,
+      status,
       style,
-      candleGap = 0.2,
+      candleGap,
       candleWidth,
       xDomain,
       xDomainSlotCount,
@@ -417,7 +466,7 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
       [forwardedRef],
     );
 
-    const margin = { ...DEFAULT_MARGIN, ...marginProp };
+    const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
     const dataAsRecords = data as unknown as Record<string, unknown>[];
     const {
       role,
@@ -426,10 +475,23 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
       tabIndex,
       descId,
     } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
+    const plotBox = { aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT };
+
+    // RM-182: while loading, the same plot box holds a skeleton.
+    if (status === "loading") {
+      return (
+        <ChartLoadingPlot
+          className={className}
+          plotBox={plotBox}
+          ref={callbackRef}
+          style={{ touchAction: CHART_TOUCH_ACTION, ...style }}
+        />
+      );
+    }
 
     return (
       <ChartPlotRoot
-        plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
+        plotBox={plotBox}
         aria-describedby={ariaDescribedby}
         aria-label={ariaLabel}
         className={cn("relative w-full", className)}
@@ -439,7 +501,7 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
         tabIndex={tabIndex}
       >
         <ChartA11yLabel descId={descId} description={accessibleDescription} />
-        <ParentSize debounceTime={10}>
+        <ChartParentSize>
           {({ width, height }) => (
             <TimeSeriesNavigatorHost
               containerRef={internalRef}
@@ -464,6 +526,7 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
             >
               {(domain) => (
                 <ChartInner
+                  palette={palette}
                   animationDuration={animationDuration}
                   candleGap={candleGap}
                   candleWidthProp={candleWidth}
@@ -483,7 +546,7 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartProps>(
               )}
             </TimeSeriesNavigatorHost>
           )}
-        </ParentSize>
+        </ChartParentSize>
       </ChartPlotRoot>
     );
   },
@@ -499,7 +562,7 @@ const CANDLESTICK_ANALYTICS_DEFAULTS = {
 };
 
 // Hover readout — a default `ChartTooltip` unless one is given or `tooltip={false}`
-export interface CandlestickChartProps {
+export interface CandlestickChartProps extends Pick<TooltipGroupProps, "tooltip"> {
   /**
    * Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the
    * chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`,
@@ -512,7 +575,9 @@ export interface CandlestickChartProps {
  * @avoidWhen the data is not OHLC-shaped — a line of closing values is enough
  */
 export const CandlestickChart = forwardRef<HTMLDivElement, CandlestickChartProps>(
-  function CandlestickChart({ tooltip = true, ...props }, ref) {
+  function CandlestickChart(rawProps, ref) {
+    // RM-182: every default comes from the definition (`CANDLESTICK_CHART`), aliases first.
+    const { tooltip, ...props } = useResolvedChartProps(CANDLESTICK_CHART, rawProps);
     const children = useDefaultChartTooltip(props.children, tooltip);
     return useAnnotatedChart(
       CandlestickChartBase,
@@ -527,3 +592,15 @@ export const CandlestickChart = forwardRef<HTMLDivElement, CandlestickChartProps
 CandlestickChart.displayName = "CandlestickChart";
 
 export default CandlestickChart;
+
+// Palette — RM-186
+export interface CandlestickChartProps {
+  /**
+   * Colour ramp for the candles (RM-186): rising candles take the palette's
+   * gain colour and falling ones its loss colour (`"diverging"` is the sign
+   * pair, any other palette its first two colours). Unset: `--chart-1` /
+   * `--chart-5`, as before. Whatever the palette, a rising body is drawn
+   * hollow and a falling one solid, so the two never differ by colour alone.
+   */
+  palette?: ChartPalette;
+}

@@ -2,6 +2,7 @@
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { curveMonotoneX } from "@visx/curve";
+import { expect } from "storybook/test";
 import { LiveLine } from "./live-line";
 import { LiveLineChart } from "./live-line-chart";
 import { LiveXAxis } from "./live-x-axis";
@@ -44,6 +45,46 @@ export const Default: Story = {
     data: sampleData,
     value: latestValue,
     children: null,
+  },
+};
+
+/**
+ * `status="loading"` (RM-182): a skeleton in the 300 px plot box the chart will
+ * fill, with one polite status message per chart, at 380, 600 and 900 px.
+ */
+export const Loading: Story = {
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="w-full" key={width} style={{ maxWidth: width }}>
+          <LiveLineChart data={sampleData} status="loading" value={latestValue} window={30}>
+            <LiveLine dataKey="value" curve={curveMonotoneX} />
+            <LiveXAxis />
+            <LiveYAxis />
+            <ChartTooltip />
+          </LiveLineChart>
+        </div>
+      ))}
+    </div>
+  ),
+  args: {
+    data: sampleData,
+    value: latestValue,
+    children: null,
+  },
+  play: async ({ canvas, canvasElement }) => {
+    const statuses = canvas.getAllByRole("status");
+    await expect(statuses).toHaveLength(3);
+    for (const status of statuses) {
+      await expect(status).toHaveAttribute("aria-live", "polite");
+      await expect(status).toHaveTextContent("Loading chart…");
+      const skeleton = status.querySelector('[data-slot="skeleton"]');
+      await expect(skeleton).toHaveAttribute("aria-hidden", "true");
+      // The plotHeight default (300 px) is reserved, and the skeleton fills it.
+      await expect(status.getBoundingClientRect().height).toBe(300);
+      await expect(skeleton?.getBoundingClientRect().height).toBe(300);
+    }
+    await expect(canvasElement.querySelector("svg")).toBeNull();
   },
 };
 

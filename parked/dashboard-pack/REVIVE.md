@@ -57,7 +57,9 @@ is the whole re-registration; the gate count goes 89 → 91.
   `"./dashboard/schema.json"` to BOTH `exports` and `publishConfig.exports`; re-add `"schemas"`
   to `files`; re-add the runtime dependencies `@dnd-kit/core` and `zustand`, and the `ajv`
   devDependency. (`@dnd-kit/core` is still in `packages/data`, which declares its own copy —
-  keep the versions in step.)
+  keep the versions in step.) `DashboardSheet` also imports `react-use-measure`, which charts no
+  longer declares: either port it to the internal `useLayoutMeasure`
+  (`src/charts/layout-size.ts`) or re-add `react-use-measure ^2.1.7` as a runtime dependency.
 - **`packages/charts/tsup.config.ts`** — re-add `"dashboard/index"` to `PUBLIC` and
   `"dashboard/test/index"` as a third entry in the second pass.
 - **`packages/cli`** — restore the `dashboard-spec` verb group: `cmdDashboardSpec` in

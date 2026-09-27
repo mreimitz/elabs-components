@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
+diagram: "0"
+zones:
+  - id: a
+    children:
+      - id: api
+        parent: b
+  - id: b
+# expect: parent-conflict @ 7:17
+# expect: missing-owner @ 4:9
+# expect: missing-owner @ 8:9

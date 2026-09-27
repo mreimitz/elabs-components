@@ -1,4 +1,4 @@
-// @visx/responsive's ParentSize uses ResizeObserver + real DOM measurement which
+// ChartParentSize uses ResizeObserver + real DOM measurement which
 // jsdom cannot satisfy. We mock it to supply a fixed 560×288 size so ChartInner
 // renders (same strategy as @elabs-ai/components-flow tests mock @xyflow/react).
 // Real render, interaction and a11y are covered by the Storybook story tests.
@@ -6,11 +6,11 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@visx/responsive", () => {
+vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;
@@ -244,10 +244,155 @@ describe("CandlestickChart value axis under a window (RM-165)", () => {
   });
 });
 
+/** Every candle body, in data order: the rects that carry `data-candle-body`. */
+function bodies(container: Element): Element[] {
+  return Array.from(container.querySelectorAll("[data-candle-body]"));
+}
+
+/** Each candle's wick: the first rect of its group. */
+function wicks(container: Element): Element[] {
+  return Array.from(container.querySelectorAll(".chart-candlesticks > g > rect:first-child"));
+}
+
+// Owner decision 2026-09-27: rising candles are HOLLOW, falling candles SOLID — the
+// non-colour channel between a gain and a loss (WCAG 1.4.1), at every decoration level.
+describe("Candlestick rising vs falling: hollow vs solid bodies", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("draws a rising body hollow and a falling body solid", () => {
+    const { container } = render(
+      <CandlestickChart data={minimalData} animationDuration={0}>
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    const [rising, falling] = bodies(container);
+    // Rising: outline only, in the rising colour, on the plot's own ground.
+    expect(rising).toHaveAttribute("data-candle-body", "hollow");
+    expect(rising).toHaveAttribute("fill", "var(--chart-background)");
+    expect(rising).toHaveAttribute("stroke", "url(#candlestick-positive)");
+    // Falling: filled with its colour, outlined in the same.
+    expect(falling).toHaveAttribute("data-candle-body", "solid");
+    expect(falling).toHaveAttribute("fill", "url(#candlestick-negative)");
+    expect(falling).toHaveAttribute("stroke", "url(#candlestick-negative)");
+    // On a candle at least 4 px wide the hollow outline is 2 px, heavier than the solid
+    // body's own 1 px outline, and a hole is left inside it; the wicks are unchanged.
+    expect(Number(rising?.getAttribute("width"))).toBeGreaterThanOrEqual(4);
+    expect(rising).toHaveAttribute("stroke-width", "2");
+    expect(falling).toHaveAttribute("stroke-width", "1");
+    expect(Number(rising?.getAttribute("width")) - 2).toBeGreaterThan(0);
+    const [risingWick, fallingWick] = wicks(container);
+    expect(risingWick).toHaveAttribute("width", "1.5");
+    expect(fallingWick).toHaveAttribute("width", "1.5");
+    expect(risingWick).toHaveAttribute("fill", "url(#candlestick-positive)");
+    expect(fallingWick).toHaveAttribute("fill", "url(#candlestick-negative)");
+  });
+
+  it("thins the hollow outline to 1 px on a candle narrower than 4 px, so the hole survives", () => {
+    // Enough rows that each candle is under 4 px wide in the 560 px test plot.
+    const many = Array.from({ length: 150 }, (_, i) => ({
+      date: new Date(Date.UTC(2024, 0, 1 + i)),
+      open: 100 + i,
+      high: 106 + i,
+      low: 98 + i,
+      close: 104 + i,
+    }));
+    const { container } = render(
+      <CandlestickChart data={many} animationDuration={0}>
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    const hollow = bodies(container);
+    expect(hollow).toHaveLength(many.length);
+    for (const body of hollow) {
+      const width = Number(body.getAttribute("width"));
+      expect(width).toBeLessThan(4);
+      expect(width).toBeGreaterThan(1);
+      expect(body).toHaveAttribute("data-candle-body", "hollow");
+      expect(body).toHaveAttribute("stroke-width", "1");
+      // An SVG stroke paints half inside the body: the hole is the width minus the stroke.
+      expect(width - 1).toBeGreaterThan(0);
+    }
+  });
+
+  it("keeps the split while the candles enter (animated branch)", () => {
+    const { container } = render(
+      <CandlestickChart data={minimalData}>
+        <Candlestick />
+      </CandlestickChart>,
+    );
+    expect(bodies(container).map((body) => body.getAttribute("data-candle-body"))).toEqual([
+      "hollow",
+      "solid",
+    ]);
+  });
+
+  it("draws an unchanged candle (open equals close) as a flat hollow body", () => {
+    const flat = [
+      {
+        date: new Date("2024-01-02"),
+        open: 100,
+        high: 104,
+        low: 97,
+        close: 100,
+      },
+    ];
+    const { container } = render(
+      <CandlestickChart data={flat} animationDuration={0}>
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    const [body] = bodies(container);
+    expect(body).toHaveAttribute("data-candle-body", "hollow");
+    expect(body).toHaveAttribute("height", "1");
+    expect(body).toHaveAttribute("stroke", "url(#candlestick-positive)");
+  });
+
+  it("keeps the split under the diverging palette and a caller's own colours", () => {
+    const diverging = render(
+      <CandlestickChart data={minimalData} animationDuration={0} palette="diverging">
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    expect(bodies(diverging.container).map((b) => b.getAttribute("data-candle-body"))).toEqual([
+      "hollow",
+      "solid",
+    ]);
+    const stops = (id: string) =>
+      Array.from(diverging.container.querySelectorAll(`#${id} stop`)).map((stop) =>
+        stop.getAttribute("stop-color"),
+      );
+    expect(new Set(stops("candlestick-positive"))).toEqual(new Set(["var(--chart-div-pos-2)"]));
+    expect(new Set(stops("candlestick-negative"))).toEqual(new Set(["var(--chart-div-neg-2)"]));
+    diverging.unmount();
+
+    const custom = render(
+      <CandlestickChart data={minimalData} animationDuration={0}>
+        <Candlestick animate={false} negativeFill="var(--chart-4)" positiveFill="var(--chart-3)" />
+      </CandlestickChart>,
+    );
+    const [rising, falling] = bodies(custom.container);
+    expect(rising).toHaveAttribute("fill", "var(--chart-background)");
+    expect(rising).toHaveAttribute("stroke", "var(--chart-3)");
+    expect(falling).toHaveAttribute("fill", "var(--chart-4)");
+  });
+
+  it("fills a rising body when the author gives it a body pattern", () => {
+    const { container } = render(
+      <CandlestickChart data={minimalData} animationDuration={0}>
+        <Candlestick animate={false} bodyPatternPositive="url(#author-positive)" />
+      </CandlestickChart>,
+    );
+    const [rising] = bodies(container);
+    expect(rising).toHaveAttribute("data-candle-body", "solid");
+    expect(rising).toHaveAttribute("fill", "var(--chart-1)");
+    expect(container.querySelector('rect[fill="url(#author-positive)"]')).not.toBeNull();
+  });
+});
+
 describe("Candlestick decoration pattern channel (ADR 0011, #257)", () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it("patterns rising and falling bodies with distinct series patterns at high decoration", () => {
+  it("patterns only the falling (solid) bodies at high decoration; rising bodies stay hollow", () => {
     stubHighDecoration();
     const { container } = render(
       <CandlestickChart data={minimalData} animationDuration={0}>
@@ -255,11 +400,13 @@ describe("Candlestick decoration pattern channel (ADR 0011, #257)", () => {
       </CandlestickChart>,
     );
     const ids = seriesPatterns(container).map((pattern) => pattern.id);
-    expect(ids).toHaveLength(2);
-    const bodyFills = new Set(
-      seriesPatternFills(container, "rect").map((r) => r.getAttribute("fill")),
-    );
-    expect([...bodyFills].sort()).toEqual(ids.map((id) => `url(#${id})`).sort());
+    expect(ids).toHaveLength(1);
+    const [rising, falling] = bodies(container);
+    expect(rising).toHaveAttribute("data-candle-body", "hollow");
+    expect(rising).toHaveAttribute("fill", "var(--chart-background)");
+    expect(falling).toHaveAttribute("data-candle-body", "solid");
+    expect(falling).toHaveAttribute("fill", `url(#${ids[0]})`);
+    expect(seriesPatternFills(container, "rect")).toEqual([falling]);
   });
 
   it("stays solid at low decoration and never overrides an author body pattern", () => {
@@ -282,5 +429,32 @@ describe("Candlestick decoration pattern channel (ADR 0011, #257)", () => {
       </CandlestickChart>,
     );
     expect(seriesPatterns(container)).toHaveLength(0);
+  });
+
+  it("inks the falling pattern in the container's palette, keeping --chart-5 unset (RM-186)", () => {
+    // Each pattern's colour references.
+    const inkOf = (container: Element) =>
+      seriesPatterns(container).map((pattern) => [
+        ...new Set(
+          Array.from(pattern.querySelectorAll("*"))
+            .flatMap((el) => [el.getAttribute("fill"), el.getAttribute("stroke")])
+            .filter((value): value is string => value?.startsWith("var(") ?? false),
+        ),
+      ]);
+    stubHighDecoration();
+    const unset = render(
+      <CandlestickChart data={minimalData} animationDuration={0}>
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    expect(inkOf(unset.container)).toEqual([["var(--chart-5)"]]);
+    unset.unmount();
+
+    const { container } = render(
+      <CandlestickChart data={minimalData} animationDuration={0} palette="diverging">
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    expect(inkOf(container)).toEqual([["var(--chart-div-neg-2)"]]);
   });
 });

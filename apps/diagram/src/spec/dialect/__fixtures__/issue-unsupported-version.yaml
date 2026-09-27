@@ -1,0 +1,3 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
+diagram: "1"
+# expect: unsupported-version @ 2:10

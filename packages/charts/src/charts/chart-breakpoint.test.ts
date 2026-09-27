@@ -4,6 +4,7 @@ import {
   CHART_BREAKPOINT_THRESHOLDS,
   type ChartPlotHeight,
   DEFAULT_CHART_PLOT_HEIGHT,
+  definedStyle,
   isResponsiveByBreakpoint,
   resolveDensityForBreakpoint,
   resolvePlotBoxStyle,
@@ -171,5 +172,30 @@ describe("resolvePlotBoxStyle (ADR 0039 §3 precedence)", () => {
         "wide",
       ),
     ).toEqual({ height: "100%" });
+  });
+});
+
+describe("definedStyle (RM-183 review round 2, G1)", () => {
+  it("drops an explicitly-undefined-valued key instead of forwarding it", () => {
+    // `{ ...a, ...b }` still shadows `a`'s key when `b`'s own value is
+    // `undefined` — a key that is PRESENT but empty is not the same as a key
+    // that is ABSENT. `ChartPlotBox`/`ChartPlotRoot` spread a caller's own
+    // `style` last onto their already-resolved box style; a caller building
+    // `{ height: condition ? x : undefined }` used to erase a resolved
+    // `height`/`minHeight` this way (`UnitChart`'s waffle/field plot collapsed
+    // to its bare content floor no matter what `plotHeight` asked for).
+    expect(definedStyle({ height: undefined, minHeight: 100 })).toEqual({ minHeight: 100 });
+    expect({ height: 240, ...definedStyle({ height: undefined, minHeight: 100 }) }).toEqual({
+      height: 240,
+      minHeight: 100,
+    });
+  });
+
+  it("keeps every defined key, including falsy ones", () => {
+    expect(definedStyle({ height: 0, opacity: 0 })).toEqual({ height: 0, opacity: 0 });
+  });
+
+  it("returns an empty object for undefined input", () => {
+    expect(definedStyle(undefined)).toEqual({});
   });
 });

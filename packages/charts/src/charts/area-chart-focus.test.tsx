@@ -7,18 +7,18 @@
  * consumer, mounted as a sibling of `TimeSeriesChartInner` inside `AreaChart`
  * — can never see a real `focusOnHover` there. This file mirrors
  * `line-chart.test.tsx`'s lighter mocking strategy instead (only
- * `@visx/responsive`, to supply a fixed viewport jsdom cannot measure) so the
+ * `ChartParentSize`, to supply a fixed viewport jsdom cannot measure) so the
  * real `ChartSeriesModeProvider` context and real `Area` rendering are both
  * exercised.
  */
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-vi.mock("@visx/responsive", () => {
+vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;

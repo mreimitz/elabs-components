@@ -1,7 +1,8 @@
 "use client";
 
 import { localPoint } from "@visx/event";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import {
   type CSSProperties,
   forwardRef,
@@ -13,10 +14,15 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, Skeleton, StatePanel } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import type { ChartLegendEntry } from "../chart-context";
 import type { ChartInteractionProps } from "../chart-datapoint";
+import { ChartLoadingLabel } from "../chart-loading-label";
+import { DEFAULT_CHART_STATUS, type ChartStatus } from "../chart-phase";
+import type { ChartEmptyState } from "../props/chart-state";
+import { useResolvedChartProps } from "../use-resolved-chart-props";
+import { TREEMAP_CHART } from "../../definitions/treemap-chart.definition";
 import {
   ChartDatapointLayer,
   ChartDatapointProvider,
@@ -39,6 +45,7 @@ import { ChartTooltipBox } from "../tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "../tooltip/tooltip-content";
 import {
   computeTreemapLayout,
+  hasPlottableLeaf,
   type TreemapLayoutResult,
   type TreemapLeafDatum,
   type TreemapNode,
@@ -53,7 +60,10 @@ import {
   useChartSelection,
 } from "../chart-selection";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "../chart-breakpoint";
-import { layoutSize } from "../layout-size";
+import { useLayoutMeasure } from "../layout-size";
+import { useChartTranslate } from "../chart-messages";
+import type { ChartMessages } from "../props/messages";
+import { ChartMessagesScope } from "../chart-messages";
 
 export type { TreemapNode, TreemapPalette } from "./treemap-layout";
 
@@ -75,6 +85,12 @@ const NO_VALUES: readonly number[] = [];
 const LEGEND_DIM_OPACITY = 0.35;
 
 export interface TreemapChartProps extends ChartSelectionProps, ChartInteractionProps {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** The hierarchy. A leaf needs a `value`; a parent's explicit `value` (if any)
    * must equal the sum of its children (dev-validated — see `validateTreemapData`). */
   data: TreemapNode;
@@ -172,6 +188,10 @@ export interface TreemapChartProps extends ChartSelectionProps, ChartInteraction
    * Unset renders nothing (R1).
    */
   legend?: ContainerLegendProp;
+  /** Show the loading skeleton until the data is ready (ADR 0042 §9). Default `"ready"`. */
+  status?: ChartStatus;
+  /** Title and message shown when there is nothing to plot. */
+  empty?: ChartEmptyState;
 }
 
 interface TooltipState {
@@ -222,6 +242,8 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     accessibleLabel,
     accessibleDescription,
     legend,
+    status = DEFAULT_CHART_STATUS,
+    empty,
     onDatapointClick: _onDatapointClick,
     copyValueOnActivate: _copyValueOnActivate,
     datapointLabel: _datapointLabel,
@@ -229,6 +251,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   }: TreemapChartProps,
   forwardedRef,
 ) {
+  const tChart = useChartTranslate();
   // Dev-only structural validation — throws synchronously on a bad tree shape,
   // memoized so a stable `data` reference is only re-validated when it changes.
   useMemo(() => {
@@ -236,16 +259,18 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   }, [data]);
 
   const internalRef = useRef<HTMLDivElement | null>(null);
+  const [measureRef, measuredBox] = useLayoutMeasure();
   const ref = useCallback(
     (node: HTMLDivElement | null) => {
       internalRef.current = node;
+      measureRef(node);
       if (typeof forwardedRef === "function") {
         forwardedRef(node);
       } else if (forwardedRef) {
         (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
       }
     },
-    [forwardedRef],
+    [forwardedRef, measureRef],
   );
 
   const {
@@ -256,24 +281,17 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     descId,
   } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
+  // The one chart measurement path (RM-189): `useLayoutMeasure` on the node the
+  // ref callback hands it. The last non-zero box is kept, as before — a root that
+  // collapses to 0 (a hidden tab) holds its layout instead of redrawing at 0.
   const [sz, setSz] = useState({ w: 0, h: 0 });
-  const measure = useCallback(() => {
-    if (!internalRef.current) {
-      return;
-    }
-    const { width: w, height: h } = layoutSize(internalRef.current);
-    if (w > 0 && h > 0) {
-      setSz({ w, h });
-    }
-  }, []);
-  useEffect(() => {
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (internalRef.current) {
-      ro.observe(internalRef.current);
-    }
-    return () => ro.disconnect();
-  }, [measure]);
+  if (
+    measuredBox.width > 0 &&
+    measuredBox.height > 0 &&
+    (measuredBox.width !== sz.w || measuredBox.height !== sz.h)
+  ) {
+    setSz({ w: measuredBox.width, h: measuredBox.height });
+  }
 
   // Drilldown (#349-adjacent, RM-025): which top-level group (by index) is
   // currently zoomed in, if any. Only meaningful at depth: 2.
@@ -298,6 +316,19 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
       }),
     [data, sz.w, sz.h, depth, gap, palette, otherThreshold, monoLeafColor, monoBandColor],
   );
+
+  // Empty is a STATE of the chart region, not an exit from it (#256, ADR 0042
+  // §4 chart-state). Decided from the DATA, never from `baseLayout`: the
+  // layout is empty until the first measurement, and at `depth: 2` a
+  // one-level hierarchy emits groups but no `leaves` — neither means "no
+  // data". `status: "loading"` wins over an empty result, same precedence as
+  // Heatmap.
+  const isEmpty = status !== "loading" && !hasPlottableLeaf(data, depth);
+  // Read as locals, never inline in the JSX below: a literal default inside a
+  // `title={…}`/`aria-label={…}` expression trips the `microcopy` gate (ADR
+  // 0017), which cannot see a fallback already resolved up here.
+  const emptyTitle = empty?.title ?? tChart("charts.chart.emptyTitle");
+  const emptyMessage = empty?.message ?? tChart("charts.chart.emptyMessage");
 
   // Selection input (RM-073): keyed by the leaf name (the category).
   const selection = useChartSelection();
@@ -512,6 +543,8 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     return display === CATEGORY_AXIS_ELLIPSIS ? null : display;
   };
 
+  // One reduced-motion source (RM-189): the tokens hook — the person's own
+  // motion setting wins over the OS.
   const prefersReducedMotion = useReducedMotion();
   const transition = prefersReducedMotion
     ? { duration: 0 }
@@ -532,253 +565,276 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
       tabIndex={tabIndex}
     >
       <ChartA11yLabel description={accessibleDescription} descId={descId} />
-      {sz.w > 0 && sz.h > 0 && (
+      {status === "loading" ? (
         <>
-          <svg
-            aria-hidden="true"
-            className="absolute inset-0 h-full w-full"
-            height={sz.h}
-            role="presentation"
-            viewBox={`0 0 ${sz.w} ${sz.h}`}
-            width={sz.w}
-          >
-            {patternIndices.size > 0 && (
-              <defs>
-                {Array.from(patternIndices, ([color, patternIndex]) =>
-                  makeSeriesPattern(
-                    patternIndex,
-                    seriesPatternId(patternIndex, patternScope),
-                    color,
-                  ),
-                )}
-              </defs>
-            )}
-            <rect fill="var(--chart-background)" height={sz.h} width={sz.w} x={0} y={0} />
-            {depth === 2 &&
-              activeLayout.groups.map((group, groupIndex) => {
-                const box = rectStyle(group);
-                const bandWidth = box.width;
-                // Canvas measuring ignores CSS `uppercase`, so measure the cased text.
-                const groupLabel =
-                  bandWidth >= MIN_LABEL_WIDTH && group.bandHeight >= MIN_LABEL_HEIGHT
-                    ? fitLabel(group.name.toUpperCase(), bandWidth, measureGroupLabel)
+          <Skeleton className="absolute inset-0 size-full" />
+          <ChartLoadingLabel text={tChart("charts.chart.loading")} />
+        </>
+      ) : isEmpty ? (
+        <div aria-live="polite" className="size-full" data-slot="treemap-chart-empty" role="status">
+          <StatePanel
+            actions={empty?.action}
+            className="size-full gap-1 overflow-hidden py-2"
+            description={emptyMessage}
+            kind="empty"
+            title={emptyTitle}
+          />
+        </div>
+      ) : (
+        sz.w > 0 &&
+        sz.h > 0 && (
+          <>
+            <svg
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full"
+              height={sz.h}
+              role="presentation"
+              viewBox={`0 0 ${sz.w} ${sz.h}`}
+              width={sz.w}
+            >
+              {patternIndices.size > 0 && (
+                <defs>
+                  {Array.from(patternIndices, ([color, patternIndex]) =>
+                    makeSeriesPattern(
+                      patternIndex,
+                      seriesPatternId(patternIndex, patternScope),
+                      color,
+                    ),
+                  )}
+                </defs>
+              )}
+              <rect fill="var(--chart-background)" height={sz.h} width={sz.w} x={0} y={0} />
+              {depth === 2 &&
+                activeLayout.groups.map((group, groupIndex) => {
+                  const box = rectStyle(group);
+                  const bandWidth = box.width;
+                  // Canvas measuring ignores CSS `uppercase`, so measure the cased text.
+                  const groupLabel =
+                    bandWidth >= MIN_LABEL_WIDTH && group.bandHeight >= MIN_LABEL_HEIGHT
+                      ? fitLabel(group.name.toUpperCase(), bandWidth, measureGroupLabel)
+                      : null;
+                  return (
+                    <g
+                      data-slot="treemap-group"
+                      key={group.id}
+                      // `undefined` (never a literal `1`) keeps the DOM byte-identical to
+                      // before RM-118 when no legend row is hovered — React omits an
+                      // `undefined`-valued attribute entirely rather than printing it.
+                      opacity={isGroupDimmed(groupIndex) ? LEGEND_DIM_OPACITY : undefined}
+                    >
+                      <motion.rect
+                        animate={{ x: box.x, y: box.y, width: bandWidth, height: group.bandHeight }}
+                        fill={group.color}
+                        initial={false}
+                        transition={transition}
+                      />
+                      {groupLabel !== null && (
+                        <HaloText
+                          className="text-chart-source uppercase"
+                          data-slot="treemap-group-label"
+                          dominantBaseline="middle"
+                          textAnchor="start"
+                          x={box.x + LABEL_PADDING_X}
+                          y={box.y + group.bandHeight / 2}
+                        >
+                          {groupLabel}
+                        </HaloText>
+                      )}
+                    </g>
+                  );
+                })}
+              {activeLayout.leaves.map((leaf) => {
+                const box = rectStyle(leaf);
+                const area = box.width * box.height;
+                // A leaf a caller annotates itself (#280) skips the native label so
+                // the tile carries one annotation, never two.
+                const labelsHidden = hideLeafLabel?.(leaf) ?? false;
+                let leafLabel =
+                  !labelsHidden &&
+                  area >= labelMinArea &&
+                  box.width >= MIN_LABEL_WIDTH &&
+                  box.height >= MIN_LABEL_HEIGHT
+                    ? fitLabel(leaf.name, box.width, measureLeafLabel)
                     : null;
-                return (
+                let valueLabel: string | null = null;
+                if (showValues && leafLabel !== null && box.height >= MIN_VALUE_LABEL_HEIGHT) {
+                  const text = formatTileValue(leaf.value);
+                  // A number is never ellipsised — it fits whole or is omitted.
+                  if (measureValueLabel(text) <= box.width - LABEL_PADDING_X * 2) {
+                    valueLabel = text;
+                  }
+                }
+                // "hide" (#280): the name is only a label paired with its value —
+                // if the value did not fit, the name alone is the same noise a
+                // truncated name would have been, so drop it too.
+                if (labelOverflow === "hide" && showValues && valueLabel === null) {
+                  leafLabel = null;
+                }
+                const labelCenterY = box.y + box.height / 2;
+                const isActive = datapointsEnabled;
+                const selectionPaint = resolveMarkPaint(selection, {
+                  category: leaf.name,
+                  datum: leaf as unknown as Record<string, unknown>,
+                  seriesKey: leaf.groupName ?? undefined,
+                });
+                const leafNode = (
                   <g
-                    data-slot="treemap-group"
-                    key={group.id}
-                    // `undefined` (never a literal `1`) keeps the DOM byte-identical to
-                    // before RM-118 when no legend row is hovered — React omits an
-                    // `undefined`-valued attribute entirely rather than printing it.
-                    opacity={isGroupDimmed(groupIndex) ? LEGEND_DIM_OPACITY : undefined}
+                    data-slot="treemap-leaf"
+                    key={leaf.id}
+                    // Same `undefined`-when-not-dimmed reasoning as the group `<g>` above.
+                    opacity={isGroupDimmed(leaf.groupIndex) ? LEGEND_DIM_OPACITY : undefined}
                   >
                     <motion.rect
-                      animate={{ x: box.x, y: box.y, width: bandWidth, height: group.bandHeight }}
-                      fill={group.color}
+                      animate={{ x: box.x, y: box.y, width: box.width, height: box.height }}
+                      className={cn(isActive && "cursor-pointer")}
+                      data-treemap-leaf-id={leaf.id}
+                      fill={leafFill(leaf.color)}
                       initial={false}
+                      onClick={
+                        isActive
+                          ? (event) => {
+                              const target = leafTargets.find((t) => t.id === leaf.id);
+                              if (target) {
+                                activateDatapoint?.(target, event, "pointer");
+                              }
+                            }
+                          : undefined
+                      }
+                      onMouseEnter={(event) => handleLeafEnter(leaf, event)}
+                      onMouseLeave={handleLeafLeave}
+                      onMouseMove={(event) => handleLeafMove(leaf, event)}
                       transition={transition}
                     />
-                    {groupLabel !== null && (
+                    {leafLabel !== null && (
                       <HaloText
-                        className="text-chart-source uppercase"
-                        data-slot="treemap-group-label"
+                        className="text-chart-value"
+                        data-slot="treemap-leaf-label"
                         dominantBaseline="middle"
                         textAnchor="start"
                         x={box.x + LABEL_PADDING_X}
-                        y={box.y + group.bandHeight / 2}
+                        y={valueLabel !== null ? labelCenterY - VALUE_LINE_OFFSET : labelCenterY}
                       >
-                        {groupLabel}
+                        {leafLabel}
+                      </HaloText>
+                    )}
+                    {valueLabel !== null && (
+                      <HaloText
+                        className="text-chart-source tabular-nums"
+                        data-slot="treemap-leaf-value"
+                        dominantBaseline="middle"
+                        textAnchor="start"
+                        x={box.x + LABEL_PADDING_X}
+                        y={labelCenterY + VALUE_LINE_OFFSET}
+                      >
+                        {valueLabel}
                       </HaloText>
                     )}
                   </g>
                 );
-              })}
-            {activeLayout.leaves.map((leaf) => {
-              const box = rectStyle(leaf);
-              const area = box.width * box.height;
-              // A leaf a caller annotates itself (#280) skips the native label so
-              // the tile carries one annotation, never two.
-              const labelsHidden = hideLeafLabel?.(leaf) ?? false;
-              let leafLabel =
-                !labelsHidden &&
-                area >= labelMinArea &&
-                box.width >= MIN_LABEL_WIDTH &&
-                box.height >= MIN_LABEL_HEIGHT
-                  ? fitLabel(leaf.name, box.width, measureLeafLabel)
-                  : null;
-              let valueLabel: string | null = null;
-              if (showValues && leafLabel !== null && box.height >= MIN_VALUE_LABEL_HEIGHT) {
-                const text = formatTileValue(leaf.value);
-                // A number is never ellipsised — it fits whole or is omitted.
-                if (measureValueLabel(text) <= box.width - LABEL_PADDING_X * 2) {
-                  valueLabel = text;
-                }
-              }
-              // "hide" (#280): the name is only a label paired with its value —
-              // if the value did not fit, the name alone is the same noise a
-              // truncated name would have been, so drop it too.
-              if (labelOverflow === "hide" && showValues && valueLabel === null) {
-                leafLabel = null;
-              }
-              const labelCenterY = box.y + box.height / 2;
-              const isActive = datapointsEnabled;
-              const selectionPaint = resolveMarkPaint(selection, {
-                category: leaf.name,
-                datum: leaf as unknown as Record<string, unknown>,
-                seriesKey: leaf.groupName ?? undefined,
-              });
-              const leafNode = (
-                <g
-                  data-slot="treemap-leaf"
-                  key={leaf.id}
-                  // Same `undefined`-when-not-dimmed reasoning as the group `<g>` above.
-                  opacity={isGroupDimmed(leaf.groupIndex) ? LEGEND_DIM_OPACITY : undefined}
-                >
-                  <motion.rect
-                    animate={{ x: box.x, y: box.y, width: box.width, height: box.height }}
-                    className={cn(isActive && "cursor-pointer")}
-                    data-treemap-leaf-id={leaf.id}
-                    fill={leafFill(leaf.color)}
-                    initial={false}
-                    onClick={
-                      isActive
-                        ? (event) => {
-                            const target = leafTargets.find((t) => t.id === leaf.id);
-                            if (target) {
-                              activateDatapoint?.(target, event, "pointer");
-                            }
-                          }
-                        : undefined
-                    }
-                    onMouseEnter={(event) => handleLeafEnter(leaf, event)}
-                    onMouseLeave={handleLeafLeave}
-                    onMouseMove={(event) => handleLeafMove(leaf, event)}
-                    transition={transition}
-                  />
-                  {leafLabel !== null && (
-                    <HaloText
-                      className="text-chart-value"
-                      data-slot="treemap-leaf-label"
-                      dominantBaseline="middle"
-                      textAnchor="start"
-                      x={box.x + LABEL_PADDING_X}
-                      y={valueLabel !== null ? labelCenterY - VALUE_LINE_OFFSET : labelCenterY}
-                    >
-                      {leafLabel}
-                    </HaloText>
-                  )}
-                  {valueLabel !== null && (
-                    <HaloText
-                      className="text-chart-source tabular-nums"
-                      data-slot="treemap-leaf-value"
-                      dominantBaseline="middle"
-                      textAnchor="start"
-                      x={box.x + LABEL_PADDING_X}
-                      y={labelCenterY + VALUE_LINE_OFFSET}
-                    >
-                      {valueLabel}
-                    </HaloText>
-                  )}
-                </g>
-              );
-              // Unresolved → the leaf is returned untouched (opt-out DOM unchanged).
-              return selectionPaint["data-selection"] === undefined ? (
-                leafNode
-              ) : (
-                <ChartSelectionMark
-                  key={leaf.id}
-                  paint={selectionPaint}
-                  shape={<rect height={box.height} width={box.width} x={box.x} y={box.y} />}
-                >
-                  {leafNode}
-                </ChartSelectionMark>
-              );
-            })}
-          </svg>
-
-          {/* Group-zoom controls: real <button>s outside the aria-hidden SVG,
-              positioned over each band. Pointer AND keyboard operable. */}
-          {showGroupZoomControls && (
-            <div className="pointer-events-none absolute inset-0" data-slot="treemap-zoom-layer">
-              {baseLayout.groups.map((group, index) => {
-                const box = rectStyle(group);
-                return (
-                  <button
-                    aria-label={`Zoom into ${group.name}`}
-                    className="pointer-events-auto absolute rounded-sm focus-ring"
-                    data-slot="treemap-zoom-target"
-                    key={group.id}
-                    onClick={() => setActiveGroupIndex(index)}
-                    style={{ left: box.x, top: box.y, width: box.width, height: group.bandHeight }}
-                    type="button"
-                  />
+                // Unresolved → the leaf is returned untouched (opt-out DOM unchanged).
+                return selectionPaint["data-selection"] === undefined ? (
+                  leafNode
+                ) : (
+                  <ChartSelectionMark
+                    key={leaf.id}
+                    paint={selectionPaint}
+                    shape={<rect height={box.height} width={box.width} x={box.x} y={box.y} />}
+                  >
+                    {leafNode}
+                  </ChartSelectionMark>
                 );
               })}
-            </div>
-          )}
+            </svg>
 
-          {/* Back control — the only way OUT of a drilled-in view, a real
+            {/* Group-zoom controls: real <button>s outside the aria-hidden SVG,
+              positioned over each band. Pointer AND keyboard operable. */}
+            {showGroupZoomControls && (
+              <div className="pointer-events-none absolute inset-0" data-slot="treemap-zoom-layer">
+                {baseLayout.groups.map((group, index) => {
+                  const box = rectStyle(group);
+                  return (
+                    <button
+                      aria-label={tChart("charts.treemap.zoomInto", { name: group.name })}
+                      className="pointer-events-auto absolute rounded-sm focus-ring"
+                      data-slot="treemap-zoom-target"
+                      key={group.id}
+                      onClick={() => setActiveGroupIndex(index)}
+                      style={{
+                        left: box.x,
+                        top: box.y,
+                        width: box.width,
+                        height: group.bandHeight,
+                      }}
+                      type="button"
+                    />
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Back control — the only way OUT of a drilled-in view, a real
               <button> so it is reachable without a mouse. */}
-          {drilldownEnabled && activeGroupIndex != null && (
-            <button
-              className="absolute top-2 left-2 z-10 rounded-md bg-card px-2.5 py-1 text-chart-source text-foreground shadow-ring-sm focus-ring"
-              data-slot="treemap-back"
-              onClick={() => setActiveGroupIndex(null)}
-              type="button"
-            >
-              ← {rootLabel}
-            </button>
-          )}
+            {drilldownEnabled && activeGroupIndex != null && (
+              <button
+                className="absolute top-2 left-2 z-10 rounded-md bg-card px-2.5 py-1 text-chart-source text-foreground shadow-ring-sm focus-ring"
+                data-slot="treemap-back"
+                onClick={() => setActiveGroupIndex(null)}
+                type="button"
+              >
+                ← {rootLabel}
+              </button>
+            )}
 
-          {tooltip && (
-            <ChartTooltipBox
-              // The hovered leaf tile — the same box as its datapoint target, unpadded.
-              avoid={rectStyle(tooltip.leaf)}
-              containerHeight={sz.h}
-              containerRef={internalRef}
-              containerWidth={sz.w}
-              visible
-              x={tooltip.x}
-              y={tooltip.y}
-            >
-              <ChartTooltipContent
-                rows={
-                  [
-                    {
-                      color: tooltip.leaf.color,
-                      label: "Value",
-                      value: formatValue(tooltip.leaf.value),
-                    },
-                    {
-                      color: tooltip.leaf.color,
-                      label: "Share",
-                      value: formatShare(tooltip.leaf.share),
-                    },
-                    // The synthetic "Other" bucket has a second quantity a
-                    // reader needs beyond value/share: how many leaves were
-                    // folded into it (#247) — otherwise its cardinality is
-                    // unrecoverable on any surface, including this tooltip.
-                    ...(tooltip.leaf.isOther && tooltip.leaf.mergedCount
-                      ? [
-                          {
-                            color: tooltip.leaf.color,
-                            label: "Folded",
-                            value:
-                              tooltip.leaf.mergedCount === 1
-                                ? "1 category"
-                                : `${tooltip.leaf.mergedCount} categories`,
-                          },
-                        ]
-                      : []),
-                  ] satisfies TooltipRow[]
-                }
-                title={pathLabel(tooltip.leaf.path)}
-              />
-            </ChartTooltipBox>
-          )}
+            {tooltip && (
+              <ChartTooltipBox
+                // The hovered leaf tile — the same box as its datapoint target, unpadded.
+                avoid={rectStyle(tooltip.leaf)}
+                containerHeight={sz.h}
+                containerRef={internalRef}
+                containerWidth={sz.w}
+                visible
+                x={tooltip.x}
+                y={tooltip.y}
+              >
+                <ChartTooltipContent
+                  rows={
+                    [
+                      {
+                        color: tooltip.leaf.color,
+                        label: tChart("charts.tooltip.value"),
+                        value: formatValue(tooltip.leaf.value),
+                      },
+                      {
+                        color: tooltip.leaf.color,
+                        label: tChart("charts.treemap.share"),
+                        value: formatShare(tooltip.leaf.share),
+                      },
+                      // The synthetic "Other" bucket has a second quantity a
+                      // reader needs beyond value/share: how many leaves were
+                      // folded into it (#247) — otherwise its cardinality is
+                      // unrecoverable on any surface, including this tooltip.
+                      ...(tooltip.leaf.isOther && tooltip.leaf.mergedCount
+                        ? [
+                            {
+                              color: tooltip.leaf.color,
+                              label: tChart("charts.treemap.folded"),
+                              value:
+                                tooltip.leaf.mergedCount === 1
+                                  ? "1 category"
+                                  : `${tooltip.leaf.mergedCount} categories`,
+                            },
+                          ]
+                        : []),
+                    ] satisfies TooltipRow[]
+                  }
+                  title={pathLabel(tooltip.leaf.path)}
+                />
+              </ChartTooltipBox>
+            )}
 
-          <ChartDatapointLayer />
-        </>
+            <ChartDatapointLayer />
+          </>
+        )
       )}
     </ChartPlotRoot>,
   );
@@ -804,7 +860,9 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
 });
 
 // Unwrapped implementation; the public docblock sits on `TreemapChart` below.
-const TreemapChartBase = forwardRef<HTMLDivElement, TreemapChartProps>(
+// Exported ONLY for `definitions.test.ts`'s "defaults reality" suite (wave-3
+// review) — never re-exported from the package barrel.
+export const TreemapChartBase = forwardRef<HTMLDivElement, TreemapChartProps>(
   function TreemapChart(props, ref) {
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
@@ -828,6 +886,23 @@ TreemapChartBase.displayName = "TreemapChartBase";
 
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
+// Unwrapped implementation; the public docblock sits on `TreemapChart` below (RM-187).
+const TreemapChartUnscoped = forwardRef<HTMLDivElement, TreemapChartProps>(
+  function TreemapChart(props, ref) {
+    const resolved = useResolvedChartProps(TREEMAP_CHART, props);
+    return (
+      <ChartSelectionProvider
+        dimExcluded={resolved.dimExcluded}
+        selectionStates={resolved.selectionStates}
+      >
+        <TreemapChartBase {...resolved} ref={ref} />
+      </ChartSelectionProvider>
+    );
+  },
+);
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
 /**
  * `TreemapChart` — a two-level squarified treemap (RM-025). Area encodes
  * value straight from the `d3-hierarchy` layout (no sqrt); the default
@@ -844,18 +919,16 @@ TreemapChartBase.displayName = "TreemapChartBase";
  * @dataShape a nested hierarchy sized by one measure
  * @avoidWhen the hierarchy has fewer than 2 levels — a flat bar chart is clearer
  */
-export const TreemapChart = forwardRef<HTMLDivElement, TreemapChartProps>(
-  function TreemapChart(props, ref) {
-    return (
-      <ChartSelectionProvider
-        dimExcluded={props.dimExcluded}
-        selectionStates={props.selectionStates}
-      >
-        <TreemapChartBase {...props} ref={ref} />
-      </ChartSelectionProvider>
-    );
-  },
-);
+export const TreemapChart = forwardRef<HTMLDivElement, TreemapChartProps>(function TreemapChart(
+  { messages, ...props },
+  ref,
+) {
+  return (
+    <ChartMessagesScope messages={messages}>
+      <TreemapChartUnscoped {...props} ref={ref} />
+    </ChartMessagesScope>
+  );
+});
 TreemapChart.displayName = "TreemapChart";
 
 export default TreemapChart;

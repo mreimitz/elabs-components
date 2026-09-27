@@ -42,6 +42,7 @@ import type { ChartDatapointClickHandler } from "../charts/chart-datapoint";
 import type { ChartHoverCategory } from "../charts/chart-hover-link";
 import type { ChartSelectionStatesResolver } from "../charts/chart-selection";
 import type { ChartSelectionIntentHandler } from "../charts/selection/types"; // Selection chrome — RM-145
+import { resolvePalette } from "../charts/chart-context";
 import { useChartValueFormatter } from "../charts/chart-formatters";
 
 import {
@@ -151,30 +152,13 @@ import {
 // Palette cycling
 // ---------------------------------------------------------------------------
 
-/**
- * Twelve semantic chart color tokens.
- * These match `defaultScatterColors` from chart-context.tsx exactly.
- */
-const CHART_PALETTE = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-  "var(--chart-6)",
-  "var(--chart-7)",
-  "var(--chart-8)",
-  "var(--chart-9)",
-  "var(--chart-10)",
-  "var(--chart-11)",
-  "var(--chart-12)",
-] as const;
-
 /** Regex that matches only `var(--chart-N)` tokens (any positive integer N). */
 const CHART_TOKEN_RE = /^var\(--chart-[1-9]\d*\)$/;
 
+/** Series colour `index`: the categorical palette through `resolvePalette`, cycling all
+ * twelve series colours (RM-186). */
 function paletteColor(index: number): string {
-  return CHART_PALETTE[index % CHART_PALETTE.length] as string;
+  return resolvePalette("categorical", index + 1, { explicit: true })[index] as string;
 }
 
 /**
@@ -823,8 +807,13 @@ function renderChart(
   // (data order) applies, so an existing spec renders byte-identical wedges.
   const pieSort = spec.sort === "desc" || spec.sort === "none" ? spec.sort : undefined;
   const axisProps = resolveAxisSpecProps(spec.axes, orientation === "horizontal");
-  // Unit and distribution charts size themselves from their data; a numeric
-  // plot height still fixes their box, as the deprecated `height` did.
+  // Distribution charts size themselves from their data; a numeric plot
+  // height still fixes their box, as the deprecated `height` did. `UnitChart`
+  // no longer belongs here (RM-183 review round 2, F1): it now takes its own
+  // `plotHeight` prop and is forwarded directly, below, instead of through
+  // this fixed-box hack — which used to set the whole root's CSS height
+  // (legend included) and let the legend spill past it once the box was
+  // shorter than the plot's natural content.
   // charts-responsive-exempt: a pixel number is the documented fixed-box form for the families that take no plotHeight
   const fixedHeight = typeof plotHeight === "number" ? plotHeight : undefined;
 
@@ -1326,7 +1315,11 @@ function renderChart(
           data={unitData}
           layout="waffle"
           palette={isChartSpecPalette(spec.palette) ? spec.palette : undefined}
-          style={fixedHeight === undefined ? undefined : { height: fixedHeight }}
+          // RM-183 review round 2 (F1): `UnitChart`'s own `plotHeight` prop
+          // sizes its plot box only — forwarded directly instead of the old
+          // `style={{ height: fixedHeight }}`, which forced the WHOLE root
+          // (legend included) into that box and let the legend spill past it.
+          plotHeight={plotHeight}
           accessibleLabel={spec.title}
           accessibleDescription={spec.description ?? spec.altText}
           copyValueOnActivate={copyValueOnActivate}

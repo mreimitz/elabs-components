@@ -54,6 +54,8 @@ Ship ADR 0042 Appendix A.2 exactly:
 - `pnpm check --rule charts-deprecated-usage` green: no internal caller, story, doc or template uses an old name.
 - Each renamed prop carries `@deprecated` TSDoc naming the replacement, an autodocs note, and a `### Deprecated` bullet in the changeset (`docs/DEPRECATION.md` in full).
 - `numTicks` and `tickCount` both given: `numTicks` wins, exactly as `resolveAxisTickTarget` does today (test).
+- Inside ChartMultiples, `<YAxis position="right">` paints exactly like `orientation="right"` (test) — `multiples/facet-scope.tsx:73` reads the raw `props.orientation`, a prop read `charts-deprecated-usage` cannot see (RM-190).
+- AutoChart's `resolveAxisSpecProps` (`auto-chart/auto-chart.tsx:424`, `:432`) emits `position`, not `orientation` (test) — it reaches YAxis through a variable spread the rule cannot see (RM-190).
 
 ## Test / gate
 

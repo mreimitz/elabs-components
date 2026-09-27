@@ -7,7 +7,7 @@ import { useChartFrameValueTitlePublisher } from "../../chart-frame/chart-frame-
 import { type SpringConfig, useChartConfig } from "../chart-config-context";
 import { useAnalyticsReplacedKeys, useAnalyticsTooltipRows } from "../analytics/analytics-context";
 import { chartCssVars, type LineConfig, useChart, useChartStable } from "../chart-context";
-import { weekdayDateFmt } from "../chart-formatters";
+import { useChartFormatters } from "../chart-formatters";
 import { useChartSeriesMode } from "../time-series-chart-shell";
 import type { ChartValueFormat } from "../value-format";
 import { DateTicker } from "./date-ticker";
@@ -395,6 +395,7 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
   }, [indicatorColorProp, tooltipData]);
 
   // Title from date or category
+  const { weekdayDateFmt } = useChartFormatters();
   const title = useMemo(() => {
     if (!tooltipData) {
       return undefined;
@@ -411,7 +412,7 @@ const ChartTooltipInner = memo(function ChartTooltipInner({
     }
     // For line/area charts, use the date
     return weekdayDateFmt.format(xAccessor(tooltipData.point));
-  }, [tooltipData, barXAccessor, dateLabels, xAccessor, xScaleType]);
+  }, [tooltipData, barXAccessor, dateLabels, xAccessor, xScaleType, weekdayDateFmt]);
   const boxTitle = valueInTitle ? undefined : title;
 
   // The hovered marks the box keeps clear of, in container px (the pointer

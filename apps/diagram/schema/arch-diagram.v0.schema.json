@@ -1,0 +1,585 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "brand-ui architecture diagram (dialect v0)",
+  "description": "brand-ui architecture diagram, dialect v0.",
+  "type": "object",
+  "properties": {
+    "diagram": {
+      "enum": ["0", 0],
+      "description": "Dialect version: \"0\"."
+    },
+    "direction": {
+      "enum": ["LR", "TB"],
+      "default": "LR"
+    },
+    "flows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/flowItem"
+      }
+    },
+    "layout": {
+      "enum": ["auto", "manual"],
+      "default": "auto"
+    },
+    "legend": {
+      "anyOf": [
+        {
+          "enum": ["auto", "none"]
+        },
+        {
+          "type": "array",
+          "items": {
+            "enum": ["owners", "providers", "edges"]
+          }
+        }
+      ],
+      "default": "auto"
+    },
+    "nodeStyle": {
+      "enum": ["icon", "card"],
+      "default": "icon"
+    },
+    "nodes": {
+      "type": "array"
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": ["at", "text"],
+        "additionalProperties": false
+      }
+    },
+    "styles": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/style"
+      }
+    },
+    "theme": {
+      "type": "string",
+      "description": "Brand theme family for the canvas."
+    },
+    "title": {
+      "type": "string"
+    },
+    "zones": {
+      "type": "array"
+    }
+  },
+  "required": ["diagram"],
+  "additionalProperties": false,
+  "if": {
+    "required": ["layout"],
+    "properties": {
+      "layout": {
+        "const": "manual"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "zones": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/zone"
+        }
+      },
+      "nodes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/node"
+        }
+      }
+    }
+  },
+  "else": {
+    "properties": {
+      "zones": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/zoneAuto"
+        }
+      },
+      "nodes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/nodeAuto"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "zone": {
+      "type": "object",
+      "properties": {
+        "children": {
+          "type": "array",
+          "description": "Nested zones and nodes.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/zone"
+              },
+              {
+                "$ref": "#/$defs/node"
+              }
+            ]
+          }
+        },
+        "class": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Style classes from styles:."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "default": false
+        },
+        "description": {
+          "type": "string",
+          "description": "Longer supporting text."
+        },
+        "direction": {
+          "enum": ["LR", "TB"]
+        },
+        "icon": {
+          "type": "string",
+          "description": "Icon name vendor/name."
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z_](?:[A-Za-z0-9_-]*[A-Za-z0-9_])?$"
+        },
+        "kind": {
+          "enum": [
+            "cloud-account",
+            "region",
+            "vnet",
+            "subnet",
+            "cluster",
+            "on-prem",
+            "datacenter",
+            "trust-boundary",
+            "generic"
+          ],
+          "default": "generic"
+        },
+        "owner": {
+          "enum": ["customer", "saas", "hosted", "partner"]
+        },
+        "parent": {
+          "type": "string",
+          "description": "Parent zone id (alternative to nesting)."
+        },
+        "position": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": ["x", "y"],
+          "additionalProperties": false,
+          "description": "Top-left position; only under layout: manual."
+        },
+        "provider": {
+          "type": "string",
+          "description": "Vendor key, e.g. aws, azure, qlik."
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "Secondary line under the title."
+        },
+        "title": {
+          "type": "string",
+          "description": "Primary label."
+        }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+    "zoneAuto": {
+      "type": "object",
+      "properties": {
+        "children": {
+          "type": "array",
+          "description": "Nested zones and nodes.",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/zoneAuto"
+              },
+              {
+                "$ref": "#/$defs/nodeAuto"
+              }
+            ]
+          }
+        },
+        "class": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Style classes from styles:."
+        },
+        "collapsed": {
+          "type": "boolean",
+          "default": false
+        },
+        "description": {
+          "type": "string",
+          "description": "Longer supporting text."
+        },
+        "direction": {
+          "enum": ["LR", "TB"]
+        },
+        "icon": {
+          "type": "string",
+          "description": "Icon name vendor/name."
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z_](?:[A-Za-z0-9_-]*[A-Za-z0-9_])?$"
+        },
+        "kind": {
+          "enum": [
+            "cloud-account",
+            "region",
+            "vnet",
+            "subnet",
+            "cluster",
+            "on-prem",
+            "datacenter",
+            "trust-boundary",
+            "generic"
+          ],
+          "default": "generic"
+        },
+        "owner": {
+          "enum": ["customer", "saas", "hosted", "partner"]
+        },
+        "parent": {
+          "type": "string",
+          "description": "Parent zone id (alternative to nesting)."
+        },
+        "provider": {
+          "type": "string",
+          "description": "Vendor key, e.g. aws, azure, qlik."
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "Secondary line under the title."
+        },
+        "title": {
+          "type": "string",
+          "description": "Primary label."
+        }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+    "node": {
+      "type": "object",
+      "properties": {
+        "badges": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "class": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Style classes from styles:."
+        },
+        "description": {
+          "type": "string",
+          "description": "Longer supporting text."
+        },
+        "href": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string",
+          "description": "Icon name vendor/name."
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z_](?:[A-Za-z0-9_-]*[A-Za-z0-9_])?$"
+        },
+        "parent": {
+          "type": "string",
+          "description": "Parent zone id (alternative to nesting)."
+        },
+        "position": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": ["x", "y"],
+          "additionalProperties": false,
+          "description": "Top-left position; only under layout: manual."
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "Secondary line under the title."
+        },
+        "text": {
+          "type": "string",
+          "description": "Body text of a note node."
+        },
+        "title": {
+          "type": "string",
+          "description": "Primary label."
+        },
+        "tone": {
+          "enum": ["neutral", "info", "success", "warning", "destructive"]
+        },
+        "type": {
+          "enum": ["service", "actor", "datastore", "queue", "external", "note"],
+          "default": "service"
+        },
+        "variant": {
+          "enum": ["icon", "card"]
+        }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+    "nodeAuto": {
+      "type": "object",
+      "properties": {
+        "badges": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "class": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Style classes from styles:."
+        },
+        "description": {
+          "type": "string",
+          "description": "Longer supporting text."
+        },
+        "href": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string",
+          "description": "Icon name vendor/name."
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z_](?:[A-Za-z0-9_-]*[A-Za-z0-9_])?$"
+        },
+        "parent": {
+          "type": "string",
+          "description": "Parent zone id (alternative to nesting)."
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "Secondary line under the title."
+        },
+        "text": {
+          "type": "string",
+          "description": "Body text of a note node."
+        },
+        "title": {
+          "type": "string",
+          "description": "Primary label."
+        },
+        "tone": {
+          "enum": ["neutral", "info", "success", "warning", "destructive"]
+        },
+        "type": {
+          "enum": ["service", "actor", "datastore", "queue", "external", "note"],
+          "default": "service"
+        },
+        "variant": {
+          "enum": ["icon", "card"]
+        }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
+    "flowItem": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^\\s*([A-Za-z_](?:[A-Za-z0-9_-]*[A-Za-z0-9_])?)\\s*(<->|->|<-)\\s*([A-Za-z_](?:[A-Za-z0-9_-]*[A-Za-z0-9_])?)\\s*$",
+          "description": "a -> b, a <- b, a <-> b"
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "patternProperties": {
+            "^\\s*([A-Za-z_](?:[A-Za-z0-9_-]*[A-Za-z0-9_])?)\\s*(<->|->|<-)\\s*([A-Za-z_](?:[A-Za-z0-9_-]*[A-Za-z0-9_])?)\\s*$": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/$defs/flowShorthandValue"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "$ref": "#/$defs/flowObject"
+        }
+      ]
+    },
+    "flowObject": {
+      "type": "object",
+      "properties": {
+        "animated": {
+          "type": "boolean",
+          "default": false
+        },
+        "class": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Style classes from styles:."
+        },
+        "direction": {
+          "enum": ["forward", "back", "both"],
+          "default": "forward"
+        },
+        "from": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": ["data", "request", "access", "control", "network"],
+          "default": "data"
+        },
+        "label": {
+          "type": "string"
+        },
+        "protocol": {
+          "type": "string",
+          "description": "Mono badge, e.g. HTTPS 443, JDBC, Kafka."
+        },
+        "schedule": {
+          "type": "string",
+          "description": "e.g. real-time, hourly, nightly batch."
+        },
+        "secure": {
+          "enum": ["tls", "vpn", "private-link", "sso", "none"]
+        },
+        "step": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "style": {
+          "enum": ["solid", "dashed", "dotted"]
+        },
+        "to": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["from", "to"],
+      "additionalProperties": false
+    },
+    "flowShorthandValue": {
+      "type": "object",
+      "properties": {
+        "animated": {
+          "type": "boolean",
+          "default": false
+        },
+        "class": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Style classes from styles:."
+        },
+        "kind": {
+          "enum": ["data", "request", "access", "control", "network"],
+          "default": "data"
+        },
+        "label": {
+          "type": "string"
+        },
+        "protocol": {
+          "type": "string",
+          "description": "Mono badge, e.g. HTTPS 443, JDBC, Kafka."
+        },
+        "schedule": {
+          "type": "string",
+          "description": "e.g. real-time, hourly, nightly batch."
+        },
+        "secure": {
+          "enum": ["tls", "vpn", "private-link", "sso", "none"]
+        },
+        "step": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "style": {
+          "enum": ["solid", "dashed", "dotted"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "style": {
+      "type": "object",
+      "properties": {
+        "badge": {
+          "type": "string"
+        },
+        "tone": {
+          "enum": ["neutral", "info", "success", "warning", "destructive"]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

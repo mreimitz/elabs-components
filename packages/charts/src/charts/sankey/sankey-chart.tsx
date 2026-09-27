@@ -1,7 +1,7 @@
 "use client";
 
 import { localPoint } from "@visx/event";
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "../chart-parent-size";
 import { sankey, sankeyCenter, sankeyLinkHorizontal } from "@visx/sankey";
 import type { Transition } from "motion/react";
 import {
@@ -15,14 +15,26 @@ import {
   useState,
 } from "react";
 import type { SankeyLink } from "d3-sankey";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, Skeleton, StatePanel } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_DURATION_MS } from "../animation";
+import {
+  ChartA11yLabel,
+  type ChartA11yProps,
+  useChartA11yContainerProps,
+  useChartAutoSummary,
+} from "../chart-a11y";
 import {
   ChartDatapointLayer,
   ChartDatapointProvider,
   useChartDatapointsEnabled,
 } from "../chart-datapoint-layer";
 import type { ChartDatapointClickHandler } from "../chart-datapoint";
+import { ChartLoadingLabel } from "../chart-loading-label";
+import { DEFAULT_CHART_STATUS, type ChartStatus } from "../chart-phase";
+import type { ChartEmptyState } from "../props/chart-state";
+import { type ChartPalette, ChartPaletteProvider } from "../chart-context";
+import { useResolvedChartProps } from "../use-resolved-chart-props";
+import { SANKEY_CHART } from "../../definitions/sankey-chart.definition";
 import {
   type Margin,
   type SankeyLinkDatum,
@@ -38,6 +50,9 @@ import {
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
 } from "../chart-breakpoint";
+import { useChartTranslate } from "../chart-messages";
+import type { ChartMessages } from "../props/messages";
+import { ChartMessagesScope } from "../chart-messages";
 
 export interface SankeyData {
   nodes: SankeyNodeDatum[];
@@ -45,6 +60,12 @@ export interface SankeyData {
 }
 
 export interface SankeyChartProps {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** Sankey data with nodes and links */
   data: SankeyData;
   /** Chart margins */
@@ -84,6 +105,20 @@ export interface SankeyChartProps {
    * passing `"aggregate"`) is byte-identical to pre-RM-037 output.
    */
   mode?: SankeyMode;
+  /**
+   * Accessible name for the chart region. Combine with a generated
+   * description (RM-184): setting this with no `accessibleDescription` gets
+   * an auto summary — `"Sankey diagram, 5 nodes, 8 links"` — the counts an
+   * `aria-hidden` Sankey body withholds, the same shared seam `LineChart`,
+   * `AreaChart`, `BarChart`, `ScatterChart` and `PieChart` already use.
+   */
+  accessibleLabel?: ChartA11yProps["accessibleLabel"];
+  /** Supplemental description read by AT. Overrides the generated summary above. */
+  accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /** Show the loading skeleton until the data is ready (ADR 0042 §9). Default `"ready"`. */
+  status?: ChartStatus;
+  /** Title and message shown when there is nothing to plot. */
+  empty?: ChartEmptyState;
 }
 
 const DEFAULT_MARGIN: Margin = { top: 40, right: 180, bottom: 40, left: 180 };
@@ -485,70 +520,155 @@ function SankeyThreadsBody({
   svg: ReactNode;
   onKeyDown: (event: React.KeyboardEvent) => void;
 }) {
+  const tChart = useChartTranslate();
   const datapointsEnabled = useChartDatapointsEnabled();
   return (
     <div className="relative h-full w-full" onKeyDown={onKeyDown} ref={containerRef}>
       {svg}
-      {datapointsEnabled ? <ChartDatapointLayer label="Threads" /> : null}
+      {datapointsEnabled ? <ChartDatapointLayer label={tChart("charts.sankey.threads")} /> : null}
     </div>
   );
 }
 
+// Unwrapped implementation; the public docblock sits on `SankeyChart` below (RM-187).
+const SankeyChartUnscoped = forwardRef<HTMLDivElement, SankeyChartProps>(
+  function SankeyChart(props, ref) {
+    const tChart = useChartTranslate();
+    const {
+      data,
+      margin: marginProp,
+      animationDuration = DEFAULT_ANIMATION_DURATION_MS,
+      enterTransition,
+      revealSignature,
+      aspectRatio,
+      plotHeight,
+      nodeWidth = 16,
+      nodePadding = 24,
+      className = "",
+      children,
+      hoveredNodeIndex,
+      onNodeHoverChange,
+      mode = "aggregate",
+      accessibleLabel,
+      accessibleDescription,
+      status = DEFAULT_CHART_STATUS,
+      empty,
+      palette,
+    } = useResolvedChartProps(SANKEY_CHART, props);
+    const margin = { ...DEFAULT_MARGIN, ...marginProp };
+    // Labels (RM-184): the shared seam — an author-set accessibleLabel with no
+    // description gets a generated one, exactly as Line/Area/Bar/Scatter/Pie do.
+    const description = useChartAutoSummary("sankey", {
+      accessibleLabel,
+      accessibleDescription,
+      data: [],
+      graph: { nodes: data.nodes.length, links: data.links.length },
+    });
+    const {
+      role,
+      "aria-label": ariaLabel,
+      "aria-describedby": ariaDescribedby,
+      tabIndex,
+      descId,
+    } = useChartA11yContainerProps(accessibleLabel, description);
+    // Empty is a STATE of the chart region (ADR 0042 §4 chart-state), read from
+    // the raw `data.nodes`, so it is true before any layout runs.
+    // `status: "loading"` wins over an empty result.
+    const isEmpty = status !== "loading" && data.nodes.length === 0;
+    // Read as locals, never inline in the JSX below: a literal default inside
+    // a `title={…}`/`aria-label={…}` expression trips the `microcopy` gate
+    // (ADR 0017), which cannot see a fallback already resolved up here.
+    const emptyTitle = empty?.title ?? tChart("charts.chart.emptyTitle");
+    const emptyMessage = empty?.message ?? tChart("charts.chart.emptyMessage");
+
+    return (
+      <ChartPlotRoot
+        plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        ref={ref}
+        className={cn("relative w-full", className)}
+        role={role}
+        tabIndex={tabIndex}
+      >
+        <ChartA11yLabel descId={descId} description={description} />
+        {status === "loading" ? (
+          <>
+            <Skeleton className="absolute inset-0 size-full" />
+            <ChartLoadingLabel text={tChart("charts.chart.loading")} />
+          </>
+        ) : isEmpty ? (
+          <div
+            aria-live="polite"
+            className="size-full"
+            data-slot="sankey-chart-empty"
+            role="status"
+          >
+            <StatePanel
+              actions={empty?.action}
+              className="size-full gap-1 overflow-hidden py-2"
+              description={emptyMessage}
+              kind="empty"
+              title={emptyTitle}
+            />
+          </div>
+        ) : (
+          <ChartParentSize>
+            {({ width, height }) => (
+              <ChartPaletteProvider value={palette}>
+                <SankeyChartInner
+                  animationDuration={animationDuration}
+                  data={data}
+                  enterTransition={enterTransition}
+                  height={height}
+                  hoveredNodeIndexProp={hoveredNodeIndex}
+                  margin={margin}
+                  mode={mode}
+                  nodePadding={nodePadding}
+                  nodeWidth={nodeWidth}
+                  onNodeHoverChange={onNodeHoverChange}
+                  revealSignature={revealSignature}
+                  width={width}
+                >
+                  {children}
+                </SankeyChartInner>
+              </ChartPaletteProvider>
+            )}
+          </ChartParentSize>
+        )}
+      </ChartPlotRoot>
+    );
+  },
+);
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
 /**
  * @dataShape a weighted flow between named nodes, source to target
  * @avoidWhen the nodes have no real flow between them — use a network chart
  */
 export const SankeyChart = forwardRef<HTMLDivElement, SankeyChartProps>(function SankeyChart(
-  {
-    data,
-    margin: marginProp,
-    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
-    enterTransition,
-    revealSignature,
-    aspectRatio,
-    plotHeight,
-    nodeWidth = 16,
-    nodePadding = 24,
-    className = "",
-    children,
-    hoveredNodeIndex,
-    onNodeHoverChange,
-    mode = "aggregate",
-  },
+  { messages, ...props },
   ref,
 ) {
-  const margin = { ...DEFAULT_MARGIN, ...marginProp };
-
   return (
-    <ChartPlotRoot
-      plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
-      ref={ref}
-      className={cn("relative w-full", className)}
-    >
-      <ParentSize>
-        {({ width, height }) => (
-          <SankeyChartInner
-            animationDuration={animationDuration}
-            data={data}
-            enterTransition={enterTransition}
-            height={height}
-            hoveredNodeIndexProp={hoveredNodeIndex}
-            margin={margin}
-            mode={mode}
-            nodePadding={nodePadding}
-            nodeWidth={nodeWidth}
-            onNodeHoverChange={onNodeHoverChange}
-            revealSignature={revealSignature}
-            width={width}
-          >
-            {children}
-          </SankeyChartInner>
-        )}
-      </ParentSize>
-    </ChartPlotRoot>
+    <ChartMessagesScope messages={messages}>
+      <SankeyChartUnscoped {...props} ref={ref} />
+    </ChartMessagesScope>
   );
 });
 
 SankeyChart.displayName = "SankeyChart";
 
 export default SankeyChart;
+
+// Palette — RM-186
+export interface SankeyChartProps {
+  /**
+   * Colour ramp for the nodes (RM-186): five colours through
+   * `resolvePalette`, cycled; links and threads follow their source node. A
+   * `SankeyNode` `fill` / `getNodeColor` still wins. Unset: `--chart-1` …
+   * `--chart-5`, as before.
+   */
+  palette?: ChartPalette;
+}

@@ -60,6 +60,7 @@ Ship ADR 0042 Appendix A.5 exactly:
 - Each renamed prop carries `@deprecated` TSDoc naming the replacement, an autodocs note, and a `### Deprecated` bullet in the changeset (`docs/DEPRECATION.md` in full).
 - Choropleth `zoomControls` alone still turns zoom on (test).
 - Keyboard zoom and hover paths are exercised in play functions on Choropleth, Tree and Sankey.
+- `charts-group-drift` stays green through its `zoom` exception list (ChoroplethChart, TreeChart, DensityScatterChart — a viewport zoom, not the navigator window; ADR 0042 A.5), not through a larger baseline; `window` → `windowSeconds` and `align` → `plotAlign` each drop a baseline key (`pnpm check:update --rule charts-group-drift`) (RM-190).
 
 ## Test / gate
 

@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
+diagram: "0"
+zones:
+  - id: acct
+    provider: nope
+# expect: unknown-provider @ 5:15
+# expect: missing-owner @ 4:9

@@ -18,7 +18,7 @@
  */
 
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type * as MotionReact from "motion/react";
 import { TreemapChart, type TreemapNode } from "./treemap-chart";
 import { seriesPatternFills, seriesPatterns, stubHighDecoration } from "../high-decoration-fixture";
@@ -554,5 +554,78 @@ describe("TreemapChart legend (RM-118)", () => {
     const { container } = renderSized({ legend: true });
     expect(container.querySelector('[data-slot="container-legend-root"]')).toBeNull();
     expect(container.querySelector('[data-slot="ramp-legend"]')).toBeNull();
+  });
+});
+
+// RM-184 — `useResolvedChartProps` + `chartStateGroup` adoption.
+describe("TreemapChart — status and empty (RM-184)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  function stubMeasuredSize() {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      bottom: 400,
+      height: 400,
+      left: 0,
+      right: 640,
+      toJSON: () => ({}),
+      top: 0,
+      width: 640,
+      x: 0,
+      y: 0,
+    } as DOMRect);
+  }
+
+  it("shows the loading skeleton when status is loading", () => {
+    stubMeasuredSize();
+    render(<TreemapChart data={whereTheWorkWent} status="loading" />);
+    expect(screen.getByRole("status")).toBeInTheDocument();
+  });
+
+  it("shows the empty state when there are no leaves and status is not loading", () => {
+    stubMeasuredSize();
+    render(<TreemapChart data={{ name: "Root", value: 0 }} />);
+    const empty = screen.getByRole("status");
+    expect(empty).toHaveAttribute("data-slot", "treemap-chart-empty");
+  });
+
+  // Wave-3 review F1: emptiness is a fact about the DATA, never about the measured layout. At
+  // the default `depth: 2` a one-level hierarchy has no grandchildren, so the layout emits no
+  // `leaves` — only two groups — yet it is plainly not empty (the defaults-golden fixture).
+  it("draws a flat two-leaf hierarchy at the default depth as two tiles, never the empty panel", () => {
+    stubMeasuredSize();
+    const { container } = render(
+      <TreemapChart
+        data={{
+          name: "Root",
+          children: [
+            { name: "A", value: 40 },
+            { name: "B", value: 60 },
+          ],
+        }}
+      />,
+    );
+    expect(container.querySelector('[data-slot="treemap-chart-empty"]')).toBeNull();
+    expect(container.querySelectorAll('[data-slot="treemap-group"]')).toHaveLength(2);
+  });
+
+  it("an empty hierarchy (`children: []`) shows the empty panel, with no dev error", () => {
+    stubMeasuredSize();
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(<TreemapChart data={{ name: "Root", children: [] }} />);
+    expect(screen.getByRole("status")).toHaveAttribute("data-slot", "treemap-chart-empty");
+    expect(errors).not.toHaveBeenCalled();
+  });
+
+  it("is empty before the first measurement too, when the data has nothing to plot", () => {
+    // No size stub: jsdom measures 0 × 0, so the layout is still empty — the verdict is the data's.
+    const { container } = render(
+      <TreemapChart data={{ name: "Root", children: [{ name: "A", value: 0 }] }} />,
+    );
+    expect(container.querySelector('[data-slot="treemap-chart-empty"]')).not.toBeNull();
+  });
+
+  it("is NOT empty before the first measurement when the data has a positive leaf", () => {
+    const { container } = render(<TreemapChart data={whereTheWorkWent} />);
+    expect(container.querySelector('[data-slot="treemap-chart-empty"]')).toBeNull();
   });
 });

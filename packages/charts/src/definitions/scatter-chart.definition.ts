@@ -13,6 +13,8 @@
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { DEFAULT_ANIMATION_DURATION_MS } from "../charts/animation";
+import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
+import { chartStateGroup } from "../charts/props/chart-state";
 import {
   analyticsCommons,
   selectionCommons,
@@ -25,13 +27,14 @@ import { tooltipGroup } from "../charts/props/tooltip";
 import type { ScatterChartProps } from "../charts/scatter-chart";
 import {
   animationEasingField,
+  annotationsField,
   aspectRatioField,
   classNameField,
-  marginField,
   revealSignatureField,
   rowsField,
   xDataKeyField,
 } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 export const SCATTER_CHART = /* @__PURE__ */ defineChart<ScatterChartProps>()({
@@ -45,23 +48,27 @@ export const SCATTER_CHART = /* @__PURE__ */ defineChart<ScatterChartProps>()({
     selectionCommons.group,
     selectionGestureCommons.group,
     analyticsCommons.group,
+    frameSizeGroup,
   ],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: rowsField,
     xDataKey: xDataKeyField,
+    // Annotations — RM-188: declared (the shared annotation layer always drew them).
+    annotations: annotationsField,
     xScale: field.enum({
       values: ["time", "linear"],
       tier: "advanced",
       description: "Scale of the x axis: time or linear numbers.",
     }),
-    margin: marginField,
     animationDuration: motionGroup.fields.animationDuration,
     animationEasing: animationEasingField,
     enterTransition: motionGroup.fields.enterTransition,
     revealSignature: revealSignatureField,
     aspectRatio: aspectRatioField,
-    plotHeight: frameSizeGroup.fields.plotHeight,
     className: classNameField,
+    status: chartStateGroup.fields.status,
     legend: legendGroup.fields.legend,
     tooltip: tooltipGroup.fields.tooltip,
   },
@@ -75,6 +82,7 @@ export const SCATTER_CHART = /* @__PURE__ */ defineChart<ScatterChartProps>()({
     xDataKey: "date",
     animationDuration: DEFAULT_ANIMATION_DURATION_MS,
     className: "",
+    status: DEFAULT_CHART_STATUS,
     tooltip: true,
   },
   targets: [

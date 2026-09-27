@@ -1,7 +1,7 @@
 ---
 id: RM-190
 title: "Rename rules: `charts-deprecated-usage`, `chart-default-prose`, `charts-group-drift`; the 6.0 tripwire"
-status: planned
+status: done
 priority: P1
 effort: M (2 days)
 wave: 4

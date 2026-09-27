@@ -3,7 +3,7 @@
 import { scaleBand } from "@visx/scale";
 import { useId, useMemo } from "react";
 import { HaloText, PeakRing, seededRnd } from "../marks";
-import { defaultScatterColors, useChartStable, useYScale } from "./chart-context";
+import { resolvePalette, useChartStable, useYScale } from "./chart-context";
 import { chartRowCategory } from "./chart-hover-link";
 import {
   type ChartSelectionProps,
@@ -13,7 +13,6 @@ import {
 } from "./chart-selection";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import {
-  DEFAULT_SCATTER_SIZE_RANGE,
   resolveColorBy,
   resolveScatterSizeRadius,
   resolveShapeBy,
@@ -28,6 +27,8 @@ import { PointLabels, type ScatterLabels } from "./labels/point-labels";
 import { TrendLine } from "./trend-line";
 import { useHighDecoration } from "./use-high-decoration";
 import { Y_AXIS_DEFAULT_TICK_COUNT } from "./y-axis-ticks";
+import { SCATTER_PART } from "../definitions/parts/scatter.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 export interface ScatterProps extends Omit<SeriesMarkersProps, "animate"> {
   /** Y-scale group id (Recharts `yAxisId`). Default: `"left"`. */
@@ -527,35 +528,38 @@ function ScatterCustomMarkers({
   );
 }
 
-export function Scatter({
-  dataKey,
-  fill,
-  stroke,
-  strokeWidth = 2,
-  ringGap = 2,
-  outlineWidth = 0,
-  outlineColor,
-  radius = 5,
-  animate = true,
-  fadeOnHover = true,
-  inactiveOpacity = 0.5,
-  inactiveBlur = 2,
-  enterBlur = 2,
-  showActiveHighlight = true,
-  yGradient,
-  dropLines = false,
-  labelExtremes,
-  fadedOpacity = 0.35,
-  jitter,
-  yType = "number",
-  highlightKey,
-  sizeKey,
-  sizeRange = DEFAULT_SCATTER_SIZE_RANGE,
-  colorBy,
-  shapeBy,
-  trend = false,
-  labels,
-}: ScatterProps) {
+export function Scatter(rawProps: ScatterProps) {
+  // RM-182: the part's definition (SCATTER_PART) maps renamed props (no rows until wave 4)
+  // and fills its defaults before anything reads them.
+  const {
+    dataKey,
+    fill,
+    stroke,
+    strokeWidth,
+    ringGap,
+    outlineWidth,
+    outlineColor,
+    radius,
+    animate,
+    fadeOnHover,
+    inactiveOpacity,
+    inactiveBlur,
+    enterBlur,
+    showActiveHighlight,
+    yGradient,
+    dropLines,
+    labelExtremes,
+    fadedOpacity,
+    jitter,
+    yType,
+    highlightKey,
+    sizeKey,
+    sizeRange,
+    colorBy,
+    shapeBy,
+    trend = false,
+    labels,
+  } = useResolvedChartProps(SCATTER_PART, rawProps);
   const stable = useChartStable();
   const { data, xScale, xAccessor, innerHeight, lines, dateLabels } = stable;
   const selection = useChartSelection();
@@ -589,7 +593,7 @@ export function Scatter({
 
   // Effective color for isPaletteFill check (use the series palette color if no explicit fill)
   const effectiveColor =
-    resolvedFill ?? defaultScatterColors[seriesIndex % defaultScatterColors.length];
+    resolvedFill ?? resolvePalette("categorical", seriesIndex + 1, { explicit: true })[seriesIndex];
   const bpShape =
     high && isPaletteFill(effectiveColor as string) ? seriesMarkerShape(seriesIndex) : undefined;
 
@@ -621,8 +625,9 @@ export function Scatter({
     [seriesYScale, yType],
   );
 
-  const seriesColor =
-    defaultScatterColors[seriesIndex % defaultScatterColors.length] ?? defaultScatterColors[0];
+  const seriesColor = resolvePalette("categorical", seriesIndex + 1, { explicit: true })[
+    seriesIndex
+  ] as string;
   const finalFill = resolvedFill ?? seriesConfig?.stroke ?? seriesColor;
   const finalStroke = resolvedStroke ?? finalFill;
 

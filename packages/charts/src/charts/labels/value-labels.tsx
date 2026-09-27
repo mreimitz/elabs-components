@@ -2,10 +2,10 @@
 
 import { HaloText } from "../../marks/halo-text";
 import { chartCssVars } from "../chart-context";
-import { LinePeakLabels } from "../line";
 import { StaticSeriesPointMarker } from "../series-point-marker";
 import type { LabelPlacement } from "./label-layout";
 import { type ChartLabelBox, LABEL_FONT_SIZE, LABEL_LINE_HEIGHT } from "./use-chart-labels";
+import { LinePeakLabels } from "./line-peak-labels";
 import { seriesLabelInk } from "./series-label-ink";
 
 export interface ValueLabelsProps {

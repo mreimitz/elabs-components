@@ -12,6 +12,7 @@
  */
 
 import { createContext, type ReactNode, type RefObject, use } from "react";
+import type { ChartPalette } from "../chart-context";
 import type { HeatmapBucket } from "./heatmap-scale";
 
 /** How a cell encodes its value. */
@@ -26,7 +27,7 @@ export type HeatmapVariant = "matrix" | "calendar";
  * answer "which series", and a heatmap has one series whose number IS the
  * colour.
  */
-export type HeatmapPalette = "sequential" | "diverging" | "mono";
+export type HeatmapPalette = Extract<ChartPalette, "sequential" | "diverging" | "mono">;
 
 /**
  * What a cell with nothing to shade draws. `"quiet"` gives each of the two

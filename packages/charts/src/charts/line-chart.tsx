@@ -1,6 +1,6 @@
 "use client";
 
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "./chart-parent-size";
 import type { Transition } from "motion/react";
 import {
   Children,
@@ -16,7 +16,6 @@ import {
   useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
-import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
@@ -24,7 +23,14 @@ import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
-import type { ChartLegendEntry, LineConfig, Margin } from "./chart-context";
+import {
+  applySeriesPalette,
+  type ChartLegendEntry,
+  type ChartPalette,
+  type LineConfig,
+  type Margin,
+  type SeriesPaletteSlots,
+} from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import { ChartDatapointProvider } from "./chart-datapoint-layer";
 import {
@@ -32,19 +38,13 @@ import {
   ChartHoverLinkIndicator,
   ChartHoverLinkProvider,
 } from "./chart-hover-link";
-import { ChartLoadingLabel } from "./chart-loading-label";
+import { ChartLoadingAnnouncement, ChartLoadingLabel } from "./chart-loading-label";
 import {
   type ChartSelectionProps,
   ChartSelectionProvider,
   ChartSelectionSeriesLayer,
 } from "./chart-selection";
-import {
-  type ChartPhase,
-  type ChartStatus,
-  DEFAULT_CHART_STATUS,
-  DEFAULT_Y_DOMAIN_TWEEN_MS,
-  resolveRestingChartPhase,
-} from "./chart-phase";
+import { type ChartPhase, type ChartStatus, resolveRestingChartPhase } from "./chart-phase";
 import type { ChartRevealOn } from "./chart-reveal-clip";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
@@ -69,13 +69,24 @@ import {
   type Responsive,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
+import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
+import { LINE_CHART } from "../definitions/line-chart.definition";
+import { DEFAULT_CARTESIAN_MARGIN, resolveChartMargin } from "./chart-margin";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { LegendGroupProps } from "./props/legend";
+import type { TooltipGroupProps } from "./props/tooltip";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 export interface LineChartProps
   extends
     ChartSelectionProps,
     ChartHoverLinkProps,
     ChartNavigatorProps,
-    ChartSelectionGestureProps {
+    ChartSelectionGestureProps,
+    FrameSizeGroupProps,
+    Pick<LegendGroupProps, "legend">,
+    Pick<ChartStateGroupProps, "status"> {
   /** Data array - each item should have a date field and numeric values */
   data: Record<string, unknown>[];
   /** Key in data for the x-axis (date). Default: "date" */
@@ -94,8 +105,8 @@ export interface LineChartProps
    * of collapsing.
    */
   xScale?: ChartXScaleType;
-  /** Chart margins */
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. Default: 40 on every side. */
+  margin?: number | Partial<Margin>;
   /** Animation duration in milliseconds. Default: 1100 */
   animationDuration?: number;
   /** CSS easing for clip-reveal. Default: cubic-bezier(0.85, 0, 0.15, 1) */
@@ -188,8 +199,6 @@ export interface LineChartProps
    */
   legend?: ContainerLegendProp;
 }
-
-const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
 
 /** Series renderers that carry a dataKey but must not drive the shared y-domain. */
 const LINE_DOMAIN_EXCLUDED_NAMES = new Set([
@@ -435,13 +444,16 @@ function ChartInner({
   );
 }
 
-const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineChart(
+/** The props `LineChartPlot` renders from: resolved by `LINE_CHART`, less the tooltip switch. */
+type LineChartPlotProps = Omit<ResolvedProps<LineChartProps, typeof LINE_CHART>, "tooltip">;
+
+const LineChartPlot = forwardRef<HTMLDivElement, LineChartPlotProps>(function LineChart(
   {
     data,
-    xDataKey = "date",
+    xDataKey,
     xScale: xScaleType,
     margin: marginProp,
-    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
+    animationDuration,
     animationEasing,
     enterTransition,
     revealSignature,
@@ -449,14 +461,14 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
     replayOnClick,
     aspectRatio,
     plotHeight,
-    className = "",
-    status = DEFAULT_CHART_STATUS,
+    className,
+    status,
     loadingLabel,
-    yDomainTweenDuration = DEFAULT_Y_DOMAIN_TWEEN_MS,
-    yDomainTween = true,
+    yDomainTweenDuration,
+    yDomainTween,
     xDomain,
     xDomainSlotCount,
-    tweenYDomainOnXDomainChange = false,
+    tweenYDomainOnXDomainChange,
     style,
     onPhaseChange,
     children,
@@ -501,7 +513,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
   // Legend engine (RM-118). `children` is walked a second time here (cheap —
   // the same small tree `ChartInner` below also walks) so the legend items
   // and the container's own width measurement are both available BEFORE
-  // `ParentSize` mounts, at the level the legend needs to sit beside the plot.
+  // `ChartParentSize` mounts, at the level the legend needs to sit beside the plot.
   const lineConfigsForLegend = useStableValue(
     useMemo(() => extractLineConfigs(children), [children]),
   );
@@ -582,7 +594,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
     [ref],
   );
 
-  const margin = { ...DEFAULT_MARGIN, ...marginProp };
+  const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
   // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
   const description = useChartAutoSummary("line", {
     accessibleLabel,
@@ -633,7 +645,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
       <ChartA11yLabel descId={descId} description={description} />
       <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
         <ChartHoverLinkProvider hoverCategory={hoverCategory} onHoverCategory={onHoverCategory}>
-          <ParentSize debounceTime={10}>
+          <ChartParentSize>
             {({ width, height }) => (
               <ChartInner
                 animationDuration={animationDuration}
@@ -693,12 +705,13 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartProps>(function LineCh
                 {hoverLinked ? <ChartHoverLinkIndicator /> : null}
               </ChartInner>
             )}
-          </ParentSize>
+          </ChartParentSize>
         </ChartHoverLinkProvider>
       </ChartSelectionProvider>
       {showLoadingLabel ? (
         <ChartLoadingLabel exiting={chartPhase !== "loading"} text={loadingLabel} />
       ) : null}
+      {!showLoadingLabel && chartPhase === "loading" ? <ChartLoadingAnnouncement /> : null}
     </ChartPlotRoot>,
   );
   return containerSelection.wrap(legendWrapped);
@@ -720,7 +733,7 @@ export interface LineChartProps {
   analytics?: readonly ChartAnalytic[];
 }
 // Hover readout — a default `ChartTooltip` unless one is given or `tooltip={false}`
-export interface LineChartProps {
+export interface LineChartProps extends Pick<TooltipGroupProps, "tooltip"> {
   /**
    * Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the
    * chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`,
@@ -728,19 +741,37 @@ export interface LineChartProps {
    */
   tooltip?: boolean;
 }
+/** Which prop a series child's palette colour lands on (RM-186). */
+const LINE_PALETTE_SLOTS: SeriesPaletteSlots = { Line: "stroke" };
+
 /**
  * @dataShape one or more measures over continuous time, where the trend itself is the point
  * @avoidWhen many overlapping series (more than about 6) — use small multiples
  *   (ChartMultiples), a stream area chart or a composed chart
  */
-export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(function LineChart(
-  { tooltip = true, ...props },
-  ref,
-) {
-  const children = useDefaultChartTooltip(props.children, tooltip);
-  return useAnnotatedChart(LineChartPlot, { ...props, children }, ref);
-});
+export const LineChart = forwardRef<HTMLDivElement, LineChartProps>(
+  function LineChart(rawProps, ref) {
+    // RM-182: every default comes from the definition (`LINE_CHART`), aliases first.
+    const { tooltip, palette, ...props } = useResolvedChartProps(LINE_CHART, rawProps);
+    const seriesChildren = useMemo(
+      () => applySeriesPalette(props.children, palette, LINE_PALETTE_SLOTS),
+      [props.children, palette],
+    );
+    const children = useDefaultChartTooltip(seriesChildren, tooltip);
+    return useAnnotatedChart(LineChartPlot, { ...props, children }, ref);
+  },
+);
 
 export { Line, type LineProps } from "./line";
 
 export default LineChart;
+
+// Palette — RM-186
+export interface LineChartProps {
+  /**
+   * Colour ramp for the series (RM-186): each series child that sets no
+   * colour of its own takes the next colour of `resolvePalette(palette, n)`.
+   * Unset: every such series keeps `--chart-line-primary`, as before.
+   */
+  palette?: ChartPalette;
+}

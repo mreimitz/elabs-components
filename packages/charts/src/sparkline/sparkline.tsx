@@ -50,6 +50,7 @@ import { createPortal } from "react-dom";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { useChartInteractionPolicy } from "../charts/chart-config-context";
 import { makeValueFmt } from "../charts/chart-formatters";
+import { useLayoutMeasure } from "../charts/layout-size";
 import {
   type ChartTooltipPlacementMemory,
   type ChartTooltipPointer,
@@ -97,9 +98,10 @@ export interface SparklineProps extends Omit<
    * Sizing strategy. `"fixed"` (default) draws at exactly `width`×`height` —
    * unchanged no matter what CSS box (`className="w-full"`, a table cell,
    * …) the caller puts it in, exactly as before this prop existed. `"fill"`
-   * measures the real rendered width of that CSS box (a tiny, cleaned-up
-   * `ResizeObserver`, falling back to `width` before the first measurement
-   * or where `ResizeObserver` isn't available, e.g. jsdom) and draws the
+   * measures the real rendered width of that CSS box (the charts' shared
+   * resize timing: at once, then at most every 100 ms while it changes;
+   * falling back to `width` before the first measurement or where
+   * `ResizeObserver` isn't available, e.g. jsdom) and draws the
    * plot at that real pixel width instead — no CSS stretching, so line
    * strokes, the emphasized dot and the last-value label never distort.
    * Opt in per usage (a trend card, a scorecard cell) rather than globally,
@@ -245,36 +247,14 @@ function mergeRefs<T>(...refs: Array<ForwardedRef<T> | undefined>) { // microtyp
 }
 
 /**
- * `fit="fill"` support: measures the real rendered width of the SVG's own
- * CSS box (set by the caller's `className`, e.g. `w-full`) so the plot can
- * be drawn at that exact pixel width — no viewBox/CSS-box mismatch, so no
- * stretching. A no-op until `active`; falls back to `fallbackWidth` before
- * the first measurement and where `ResizeObserver` isn't available (jsdom
- * has none — `packages/charts/vitest.setup.ts` polyfills a no-op stub for
- * component mounting, which leaves this hook safely on its fallback there
- * too, exactly like every other `react-use-measure` consumer in this
- * package before an observation actually fires).
+ * `fit="fill"` support: the real rendered width of the SVG's own CSS content
+ * box (set by the caller's `className`, e.g. `w-full`), measured on the one
+ * chart measurement path, so the plot is drawn at that exact pixel width — no
+ * viewBox/CSS-box mismatch, so no stretching. The first width comes from the
+ * observer's first callback, as it always has; before it, at a zero width, and
+ * where nothing is laid out (jsdom) the plot keeps the `width` fallback.
  */
-function useFillWidth(
-  active: boolean,
-  fallbackWidth: number,
-  elRef: { current: SVGSVGElement | null },
-) {
-  const [measured, setMeasured] = useState<number | null>(null);
-  useEffect(() => {
-    if (!active) return;
-    const el = elRef.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width;
-      if (width) setMeasured(width);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `elRef` is a stable ref object, not reactive state
-  }, [active]);
-  return active ? (measured ?? fallbackWidth) : fallbackWidth;
-}
+const FILL_MEASURE = { box: "content-box", measureOnAttach: false } as const;
 
 export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Sparkline(
   {
@@ -301,8 +281,19 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
   ref,
 ) {
   const elRef = useRef<SVGSVGElement>(null);
-  const width = useFillWidth(fit === "fill", widthProp, elRef);
-  const svgRef = useMemo(() => mergeRefs(ref, elRef), [ref]);
+  const fill = fit === "fill";
+  const [measureRef, measured] = useLayoutMeasure(FILL_MEASURE);
+  // Hidden, the node measures 0. Keep the last real width so a re-shown
+  // sparkline paints at it, not at the `width` fallback, until it is measured.
+  const [filledWidth, setFilledWidth] = useState(0);
+  if (measured.width > 0 && measured.width !== filledWidth) setFilledWidth(measured.width);
+  const lastWidth = measured.width > 0 ? measured.width : filledWidth;
+  const width = fill && lastWidth > 0 ? lastWidth : widthProp;
+  // `fit="fixed"` never measures: the ref goes to the node only to fill.
+  const svgRef = useMemo(
+    () => mergeRefs(ref, elRef, fill ? measureRef : undefined),
+    [ref, fill, measureRef],
+  );
 
   // §1 of the behaviour contract: `interactive={false}`, a truthy caller
   // `aria-hidden`, or an empty series each turn every bit of the hover/

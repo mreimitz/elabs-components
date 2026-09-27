@@ -16,7 +16,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // after `vi.resetModules()` would also re-import React, and a component from a
 // second React instance cannot use the renderer's hooks.
 const motionState = vi.hoisted(() => ({ reduced: false }));
-vi.mock("motion/react", async (importOriginal) => ({
+// The one reduced-motion source (RM-189): the tokens hook.
+vi.mock("@elabs-ai/components-tokens", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useReducedMotion: () => motionState.reduced,
 }));

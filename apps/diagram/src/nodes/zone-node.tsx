@@ -19,13 +19,14 @@ import {
   FlowPort,
   NodeResizer,
   Position,
-  useFlowGroups,
   useReactFlow,
   type NodeProps,
 } from "@elabs-ai/components-flow";
 import { ServiceLogo } from "@elabs-ai/components-icons";
 import { Badge, IconButton, cn } from "@elabs-ai/components-ui";
 import {
+  KIND_LABEL,
+  OWNER_LABEL,
   ZONE_MIN_HEIGHT,
   ZONE_MIN_WIDTH,
   ZONE_NODE_TYPE,
@@ -35,6 +36,10 @@ import {
   type ZoneOwner,
 } from "./zone-data";
 import { zoneBodyVariants, zoneVariants } from "./zone-variants";
+// Wave-2 review M5: the header's classes live beside the probe that measures its minimum
+// width for ELK and auto-fit, so the two cannot drift apart.
+import { ZONE_HEADER_CLASS } from "../layout/zone-header-width";
+import { toggleZone } from "../layout/zone-folds";
 
 /**
  * The header glyph per kind, when the zone names no provider. Named Lucide imports: the
@@ -53,26 +58,10 @@ const KIND_GLYPH: Record<ZoneKind, ComponentType<LucideProps>> = {
   generic: Box,
 };
 
-/** The owner word in the header — the greyscale-proof channel for `owner` (WCAG 1.4.1). */
-export const OWNER_LABEL: Record<ZoneOwner, string> = {
-  customer: "Customer managed",
-  saas: "SaaS",
-  hosted: "Hosted",
-  partner: "Partner",
-};
-
-/** The kind, spelled out for assistive technology (sighted users read glyph + border). */
-const KIND_LABEL: Record<ZoneKind, string> = {
-  "cloud-account": "Cloud account",
-  region: "Region",
-  vnet: "Virtual network",
-  subnet: "Subnet",
-  cluster: "Cluster",
-  "on-prem": "On-premises",
-  datacenter: "Data center",
-  "trust-boundary": "Trust boundary",
-  generic: "Zone",
-};
+// Moved to zone-data.ts (wave-2 review M5: the header probe needs the words without
+// importing this component; m3: the compiler names zones with them); re-exported for
+// existing importers.
+export { KIND_LABEL, OWNER_LABEL } from "./zone-data";
 
 /**
  * A header clip box for an item that gives way to the title (wave-1 review M2): it starts
@@ -124,14 +113,19 @@ function useParentZoneOwner(parentId: string | undefined): ZoneOwner | undefined
  * collapse toggle, resizer, group ports) with the D3 boundary vocabulary on top —
  * `owner` × `kind` from `zoneVariants`, the provider mark in the header, the owner word
  * as a badge. Children are ordinary nodes with `parentId`; `useZoneAutofit` keeps the
- * zone wrapped around them and `useFlowGroups().toggleCollapse` folds it to a chip.
+ * zone wrapped around them and the header chevron folds it to a chip (`toggleZone`).
  *
  * The header band is `h-11` (44 px) — `ZONE_HEADER_HEIGHT`, the band `layoutFlowElk`
  * reserves above a group's children (see zone-data.ts).
  */
 export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeType>) {
-  const { toggleCollapse } = useFlowGroups();
-  const { updateNodeData } = useReactFlow();
+  const { getNodes, getEdges, setNodes, setEdges, updateNodeData } = useReactFlow();
+  // What `useFlowGroups().toggleCollapse` did, through the app's fold (zone-folds.ts).
+  const toggle = useCallback(() => {
+    const graph = toggleZone({ nodes: getNodes(), edges: getEdges() }, id);
+    setNodes(graph.nodes);
+    setEdges(graph.edges);
+  }, [getNodes, getEdges, setNodes, setEdges, id]);
   const count = useDirectChildCount(id);
   const collapsed = data.collapsed ?? false;
   const Glyph = KIND_GLYPH[data.kind];
@@ -168,10 +162,10 @@ export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeTyp
       <div
         data-slot="arch-zone-header"
         className={cn(
-          "flex h-11 shrink-0 items-center gap-2 px-3",
+          ZONE_HEADER_CLASS.band,
           // P4: library gap — no per-provider accent token; the rail is the neutral strong
           // rung and the provider mark carries the identity (DG-06-zone-primitives.md).
-          data.provider && "border-s-2 border-s-border-strong",
+          data.provider && ZONE_HEADER_CLASS.rail,
         )}
       >
         {data.provider ? (
@@ -193,18 +187,13 @@ export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeTyp
             title leaves: the owner first (`grow-100`, up to its content width), then the
             subtitle — which, or else the title, also takes whatever is left, pushing the
             toggle to the end. */}
-        <span
-          className={cn("min-w-0 truncate text-caption font-medium", !showSubtitle && "grow")}
-          title={data.title}
-        >
+        <span className={cn(ZONE_HEADER_CLASS.title, !showSubtitle && "grow")} title={data.title}>
           {data.title}
         </span>
         <span className="sr-only">{KIND_LABEL[data.kind]}</span>
         {showSubtitle ? (
           <span className={cn(headerClipBox, "grow")}>
-            <span className={cn(headerClipItem, "text-meta text-muted-foreground")}>
-              {data.subtitle}
-            </span>
+            <span className={cn(headerClipItem, ZONE_HEADER_CLASS.subtitle)}>{data.subtitle}</span>
           </span>
         ) : null}
         {showOwner ? (
@@ -212,7 +201,7 @@ export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeTyp
             {/* `me-px` keeps the badge's end border off the clip edge. */}
             <Badge
               variant="outline"
-              className={cn(headerClipItem, "me-px block text-meta uppercase")}
+              className={cn(headerClipItem, ZONE_HEADER_CLASS.owner)}
               title={OWNER_LABEL[data.owner]}
             >
               {OWNER_LABEL[data.owner]}
@@ -226,11 +215,7 @@ export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeTyp
           // The visible count only on the collapsed chip, behind a glyph no zone kind uses:
           // a bare number beside the owner badge read as part of it ("SAAS 1", wave-1
           // review m8). Expanded, the children themselves are on screen.
-          <span
-            aria-hidden="true"
-            data-slot="arch-zone-count"
-            className="flex shrink-0 items-center gap-1 text-meta tabular-nums text-muted-foreground"
-          >
+          <span aria-hidden="true" data-slot="arch-zone-count" className={ZONE_HEADER_CLASS.count}>
             <LayoutGrid size={12} />
             {count}
           </span>
@@ -242,7 +227,7 @@ export function ZoneNode({ id, data, selected, parentId }: NodeProps<ZoneNodeTyp
             collapsed ? <ChevronRight aria-hidden="true" /> : <ChevronDown aria-hidden="true" />
           }
           className="nodrag shrink-0"
-          onClick={() => toggleCollapse(id)}
+          onClick={toggle}
           size="icon-sm"
           variant="ghost"
         />

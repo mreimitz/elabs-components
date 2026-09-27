@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
 
-// @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
+// ChartParentSize uses ResizeObserver + real DOM measurement which jsdom lacks.
 // Mock ParentSize to supply a fixed 560×288 viewport so ChartInner renders
 // (the `line-chart.test.tsx` pattern).
-vi.mock("@visx/responsive", () => {
+vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;

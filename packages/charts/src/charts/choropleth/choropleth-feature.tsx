@@ -10,9 +10,11 @@ import { useHighDecorationOf } from "../use-high-decoration";
 import { useOnMarkInk } from "../use-on-mark-ink";
 import { useMountProgress } from "../use-mount-progress";
 import type { ColorScale } from "@elabs-ai/components-ui";
+import { resolvePalette, useChartPalette } from "../chart-context";
 import {
   type ChoroplethFeature as ChoroplethFeatureType,
   type ChoroplethOverlayConfig,
+  CHOROPLETH_COLOR_CYCLE,
   defaultChoroplethColors,
   useChoroplethInteraction,
   useChoroplethStable,
@@ -207,6 +209,7 @@ function resolveFeatureFill(
   noDataHatchFillUrl: string,
   colorScale?: ColorScale | null,
   valueKey?: string,
+  cycle: readonly string[] = defaultChoroplethColors,
 ): string {
   const patternId = getFeaturePattern?.(feature, index);
   if (patternId) {
@@ -228,7 +231,7 @@ function resolveFeatureFill(
   if (colorScale) {
     return colorScale.colorOf(feature.properties?.[valueKey ?? "value"] as never) ?? "var(--muted)";
   }
-  return defaultChoroplethColors[index % defaultChoroplethColors.length] ?? "var(--chart-1)";
+  return cycle[index % cycle.length] ?? "var(--chart-1)";
 }
 
 /**
@@ -450,6 +453,15 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
   noDataFill,
   labelTop,
 }: ChoroplethFeatureProps) {
+  // Palette — RM-186: the container's palette, cycled like the default five.
+  const palette = useChartPalette();
+  const featureColors = useMemo(
+    () =>
+      palette === undefined
+        ? defaultChoroplethColors
+        : resolvePalette(palette, CHOROPLETH_COLOR_CYCLE, { explicit: true }),
+    [palette],
+  );
   const {
     features,
     featurePaths,
@@ -522,6 +534,7 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
           noDataHatchFillUrl,
           colorScale,
           valueKey,
+          featureColors,
         ),
         feature,
         centroid: featureCentroids[index] ?? null,
@@ -540,6 +553,7 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
     pathGenerator,
     colorScale,
     valueKey,
+    featureColors,
   ]);
 
   // Overlay — RM-124: one stripes pattern per category, painted over the fill.

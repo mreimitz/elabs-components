@@ -46,6 +46,33 @@ export const Default: Story = {
   },
 };
 
+/** Loading skeleton (RM-183) — shown while `status="loading"`, sized like the real chart. */
+export const Loading: Story = {
+  render: (args) => (
+    <div className="h-72 w-[280px]">
+      <RingChart {...args}>
+        {ringData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+        <RingCenter defaultLabel="Channels" />
+      </RingChart>
+    </div>
+  ),
+  args: {
+    data: ringData,
+    strokeWidth: 14,
+    status: "loading",
+  },
+  play: async ({ canvas }) => {
+    // One `role="status" aria-live="polite"` region while loading, and only
+    // one — the RM-183 review flagged loading plays that checked the role
+    // but not the live-region contract or region count.
+    const statuses = await canvas.findAllByRole("status");
+    expect(statuses).toHaveLength(1);
+    expect(statuses[0]).toHaveAttribute("aria-live", "polite");
+  },
+};
+
 /** Fixed pixel size — bypasses ParentSize and uses a concrete dimension. */
 export const FixedSize: Story = {
   render: (args) => (

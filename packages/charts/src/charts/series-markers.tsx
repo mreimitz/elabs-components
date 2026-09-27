@@ -2,7 +2,7 @@
 
 import { type ReactNode, useCallback, useMemo } from "react";
 import { clipRevealTransition } from "./animation";
-import { defaultScatterColors, useChartHover, useChartStable, useYScale } from "./chart-context";
+import { resolvePalette, useChartHover, useChartStable, useYScale } from "./chart-context";
 import { useChartLegendHover } from "./chart-legend-hover";
 import {
   getSeriesMarkerVisualExtent,
@@ -148,8 +148,9 @@ export function SeriesMarkers({
 
   const seriesConfig = lines[seriesIndex];
   const yScale = useYScale(seriesConfig?.yAxisId);
-  const seriesColor =
-    defaultScatterColors[seriesIndex % defaultScatterColors.length] ?? defaultScatterColors[0];
+  const seriesColor = resolvePalette("categorical", seriesIndex + 1, { explicit: true })[
+    seriesIndex
+  ] as string;
 
   const resolvedFill = fill ?? seriesConfig?.stroke ?? seriesColor;
   const resolvedStroke = stroke ?? resolvedFill;

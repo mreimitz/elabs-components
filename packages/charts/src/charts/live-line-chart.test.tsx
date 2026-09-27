@@ -1,4 +1,4 @@
-// LiveLineChart uses @visx/responsive ParentSize (ResizeObserver + layout
+// LiveLineChart measures through ChartParentSize (ResizeObserver + layout
 // measurement) and a requestAnimationFrame-driven animation loop — neither
 // works correctly in jsdom. We mock ParentSize to supply a fixed size and stub
 // rAF as a no-op so the component can mount without stack-overflow or layout
@@ -12,11 +12,11 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@visx/responsive", () => {
+vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (dims: { width: number; height: number }) => React.ReactNode;

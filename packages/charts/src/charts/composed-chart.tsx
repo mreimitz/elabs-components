@@ -1,7 +1,7 @@
 "use client";
 
 import { ChartLegendHoverProvider } from "./chart-legend-hover";
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "./chart-parent-size";
 import { useChartConfig } from "./chart-config-context";
 import type { GridProps } from "./grid";
 import { tickTargetForHeight } from "./tick-targets";
@@ -35,14 +35,19 @@ import {
   useId,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
-import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { Area, type AreaProps } from "./area";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
 import { useDefaultChartTooltip } from "./tooltip/default-chart-tooltip";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
-import type { LineConfig, Margin } from "./chart-context";
+import {
+  applySeriesPalette,
+  type ChartPalette,
+  type LineConfig,
+  type Margin,
+  type SeriesPaletteSlots,
+} from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import { ChartDatapointProvider } from "./chart-datapoint-layer";
 import {
@@ -50,24 +55,23 @@ import {
   ChartHoverLinkIndicator,
   ChartHoverLinkProvider,
 } from "./chart-hover-link";
-import { ChartLoadingLabel } from "./chart-loading-label";
+import { ChartLoadingAnnouncement, ChartLoadingLabel } from "./chart-loading-label";
 import {
   type ChartSelectionProps,
   ChartSelectionProvider,
   ChartSelectionSeriesLayer,
 } from "./chart-selection";
-import {
-  type ChartPhase,
-  type ChartStatus,
-  DEFAULT_CHART_STATUS,
-  resolveRestingChartPhase,
-} from "./chart-phase";
+import { type ChartPhase, type ChartStatus, resolveRestingChartPhase } from "./chart-phase";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { findAxisValueFormat, lastLegendValue, legendWantsValues } from "./legend/legend-values";
 import type { ChartLegendEntry } from "./chart-context";
 import { Line, type LineProps } from "./line";
 import { SeriesBar, type SeriesBarProps, SeriesBarStackExtentsContext } from "./series-bar";
-import { computeBarStackLayout } from "./bar-stacking";
+import {
+  applyPercentStackAxes,
+  computeBarStackLayout,
+  cumulativeStackOffsets,
+} from "./bar-stacking";
 import { ChartSeriesModeProvider, TimeSeriesChartInner } from "./time-series-chart-shell";
 import type { ChartNavigatorProps } from "./navigator/types"; // Navigator — RM-140
 import type { ChartSelectionGestureProps } from "./selection/types"; // Selection gestures — RM-142
@@ -81,13 +85,24 @@ import {
   type Responsive,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
+import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
+import { COMPOSED_CHART } from "../definitions/composed-chart.definition";
+import { DEFAULT_CARTESIAN_MARGIN, resolveChartMargin } from "./chart-margin";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { LegendGroupProps } from "./props/legend";
+import type { TooltipGroupProps } from "./props/tooltip";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 export interface ComposedChartProps
   extends
     ChartSelectionProps,
     ChartHoverLinkProps,
     ChartNavigatorProps,
-    ChartSelectionGestureProps {
+    ChartSelectionGestureProps,
+    FrameSizeGroupProps,
+    Pick<LegendGroupProps, "legend">,
+    Pick<ChartStateGroupProps, "status"> {
   /** Data array — each row typically has a date and multiple numeric series */
   data: Record<string, unknown>[];
   /** Key for the x-axis (time). Default: "date" */
@@ -97,7 +112,8 @@ export interface ComposedChartProps
    * `"band"` = categorical x, `"linear"` = numeric x. See `LineChart.xScale`.
    */
   xScale?: ChartXScaleType;
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. Default: 40 on every side. */
+  margin?: number | Partial<Margin>;
   animationDuration?: number;
   animationEasing?: string;
   enterTransition?: Transition;
@@ -184,8 +200,6 @@ export interface ComposedChartProps
    */
   legend?: ContainerLegendProp;
 }
-
-const DEFAULT_MARGIN: Margin = { top: 40, right: 40, bottom: 40, left: 40 };
 
 function getChildComponentName(child: ReactElement): string {
   const childType = child.type as { displayName?: string; name?: string };
@@ -521,26 +535,10 @@ function withDualAxisTooltipRows(
  * values, which the axis' percent style would misprint.
  */
 function applyPercentStack(children: ReactNode): ReactNode {
-  return Children.map(children, (child) => {
-    if (!isValidElement(child)) return child;
-    const name = getChildComponentName(child);
-    if (name === "YAxis") {
-      const props = child.props as YAxisProps;
-      if (normalizeYAxisId(props.yAxisId) !== DEFAULT_Y_AXIS_ID) return child;
-      const ownFormat = props.valueFormat !== undefined || props.formatValue !== undefined;
-      return cloneElement(child as ReactElement<YAxisProps>, {
-        domain: props.domain ?? [0, 1],
-        ...(ownFormat ? {} : { valueFormat: "percent" as const }),
-      });
-    }
-    if (name === "ChartTooltip") {
-      const props = child.props as { unit?: string; valueFormat?: unknown };
-      if (props.unit != null || props.valueFormat != null) return child;
-      return cloneElement(child as ReactElement<{ valueFormat?: string }>, {
-        valueFormat: "number",
-      });
-    }
-    return child;
+  return applyPercentStackAxes(children, {
+    isStackAxis: (props) => normalizeYAxisId((props as YAxisProps).yAxisId) === DEFAULT_Y_AXIS_ID,
+    pinDomain: true,
+    tooltipNumbers: true,
   });
 }
 
@@ -696,24 +694,7 @@ function ChartInner({
       }
       return offsets;
     }
-    const offsets = new Map<number, Map<string, number>>();
-    for (let i = 0; i < data.length; i++) {
-      const d = data[i];
-      if (!d) {
-        continue;
-      }
-      const pointOffsets = new Map<string, number>();
-      let cumulative = 0;
-      for (const key of barDataKeys) {
-        pointOffsets.set(key, cumulative);
-        const v = d[key];
-        if (typeof v === "number") {
-          cumulative += v;
-        }
-      }
-      offsets.set(i, pointOffsets);
-    }
-    return offsets;
+    return cumulativeStackOffsets(data, barDataKeys);
   }, [data, barDataKeys, stacked, percentLayout]);
 
   const yScaleDomainMax = useMemo(
@@ -822,29 +803,35 @@ function ChartInner({
   );
 }
 
-const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(function ComposedChart(
+/** The props `ComposedChartPlot` renders from: resolved by `COMPOSED_CHART`, less the tooltip switch. */
+type ComposedChartPlotProps = Omit<
+  ResolvedProps<ComposedChartProps, typeof COMPOSED_CHART>,
+  "tooltip"
+>;
+
+const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartPlotProps>(function ComposedChart(
   {
     data,
-    xDataKey = "date",
+    xDataKey,
     xScale: xScaleType,
     margin: marginProp,
-    animationDuration = DEFAULT_ANIMATION_DURATION_MS,
+    animationDuration,
     animationEasing,
     enterTransition,
     revealSignature,
     yDomainTweenDuration,
     aspectRatio,
     plotHeight,
-    className = "",
-    status = DEFAULT_CHART_STATUS,
+    className,
+    status,
     loadingLabel,
     children,
     barSize,
     maxBarSize,
-    barGap = 4,
-    stacked = false,
-    stackGap = 0,
-    insetBars = true,
+    barGap,
+    stacked,
+    stackGap,
+    insetBars,
     onPhaseChange,
     copyValueOnActivate,
     onDatapointClick,
@@ -882,12 +869,12 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
 ) {
   const hoverLinked = hoverCategory !== undefined || onHoverCategory !== undefined;
   const internalRef = useRef<HTMLDivElement>(null);
-  const margin = { ...DEFAULT_MARGIN, ...marginProp };
+  const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
 
   // Legend engine (RM-118) — see the identical comment in `line-chart.tsx`.
   // `children` is walked a second time here (cheap) so the legend items and
   // the container's own width measurement are both available BEFORE
-  // `ParentSize` mounts, at the level the legend needs to sit beside the plot.
+  // `ChartParentSize` mounts, at the level the legend needs to sit beside the plot.
   const composedSeriesForLegend = useStableValue(
     useMemo(() => extractComposedSeries(children), [children]),
   );
@@ -1025,7 +1012,7 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
       <ChartSelectionProvider dimExcluded={dimExcluded} selectionStates={selectionStates}>
         <ChartHoverLinkProvider hoverCategory={hoverCategory} onHoverCategory={onHoverCategory}>
-          <ParentSize debounceTime={10}>
+          <ChartParentSize>
             {({ width, height }) => (
               <ChartInner
                 animationDuration={animationDuration}
@@ -1085,12 +1072,13 @@ const ComposedChartPlot = forwardRef<HTMLDivElement, ComposedChartProps>(functio
                 {hoverLinked ? <ChartHoverLinkIndicator /> : null}
               </ChartInner>
             )}
-          </ParentSize>
+          </ChartParentSize>
         </ChartHoverLinkProvider>
       </ChartSelectionProvider>
       {showLoadingLabel ? (
         <ChartLoadingLabel exiting={chartPhase !== "loading"} text={loadingLabel} />
       ) : null}
+      {!showLoadingLabel && chartPhase === "loading" ? <ChartLoadingAnnouncement /> : null}
     </ChartPlotRoot>,
   );
   return containerSelection.wrap(legendWrapped);
@@ -1126,7 +1114,7 @@ export interface ComposedChartProps {
   analytics?: readonly ChartAnalytic[];
 }
 // Hover readout — a default `ChartTooltip` unless one is given or `tooltip={false}`
-export interface ComposedChartProps {
+export interface ComposedChartProps extends Pick<TooltipGroupProps, "tooltip"> {
   /**
    * Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the
    * chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`,
@@ -1134,18 +1122,40 @@ export interface ComposedChartProps {
    */
   tooltip?: boolean;
 }
+/** Which prop a series child's palette colour lands on (RM-186). */
+const COMPOSED_PALETTE_SLOTS: SeriesPaletteSlots = {
+  SeriesBar: "fill",
+  Line: "stroke",
+  Area: "fill",
+};
+
 /**
  * @dataShape mixed marks on one shared axis — bars with a line target, for example
  * @avoidWhen a single mark type would do — reach for that container directly
  */
-export const ComposedChart = forwardRef<HTMLDivElement, ComposedChartProps>(function ComposedChart(
-  { tooltip = true, ...props },
-  ref,
-) {
-  const children = useDefaultChartTooltip(props.children, tooltip);
-  return useAnnotatedChart(ComposedChartPlot, { ...props, children }, ref);
-});
+export const ComposedChart = forwardRef<HTMLDivElement, ComposedChartProps>(
+  function ComposedChart(rawProps, ref) {
+    // RM-182: every default comes from the definition (`COMPOSED_CHART`), aliases first.
+    const { tooltip, palette, ...props } = useResolvedChartProps(COMPOSED_CHART, rawProps);
+    const seriesChildren = useMemo(
+      () => applySeriesPalette(props.children, palette, COMPOSED_PALETTE_SLOTS),
+      [props.children, palette],
+    );
+    const children = useDefaultChartTooltip(seriesChildren, tooltip);
+    return useAnnotatedChart(ComposedChartPlot, { ...props, children }, ref);
+  },
+);
 
 ComposedChart.displayName = "ComposedChart";
 
 export default ComposedChart;
+
+// Palette — RM-186
+export interface ComposedChartProps {
+  /**
+   * Colour ramp for the series (RM-186): each series child that sets no
+   * colour of its own takes the next colour of `resolvePalette(palette, n)`.
+   * Unset: every such series keeps `--chart-line-primary`, as before.
+   */
+  palette?: ChartPalette;
+}

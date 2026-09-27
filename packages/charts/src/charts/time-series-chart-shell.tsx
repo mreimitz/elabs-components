@@ -50,7 +50,7 @@ import {
 } from "./chart-hover-link"; // ChartMultiples — RM-120
 import { useFacetScopedChildren } from "../multiples/facet-scope"; // ChartMultiples — RM-120
 import { getDateFormat, makeValueSetFmt } from "./chart-formatters";
-import { useAreaStacked } from "./area";
+import { useAreaStacked } from "./area-stacked";
 import { SeriesEndLabels, SeriesKeyRow } from "./labels/series-end-labels";
 import {
   ChartSeriesKeyProvider,
@@ -1125,8 +1125,9 @@ const TimeSeriesChartCore = memo(function TimeSeriesChartCore({
         data: encoderSource,
         type: xScaleResolution.type,
         xDataKey,
+        locale,
       }),
-    [encoderSource, xScaleResolution.type, xDataKey],
+    [encoderSource, xScaleResolution.type, xDataKey, locale],
   );
 
   const bisectDate = useMemo(

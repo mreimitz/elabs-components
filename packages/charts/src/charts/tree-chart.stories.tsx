@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { Button, ToggleGroup, ToggleGroupItem } from "@elabs-ai/components-ui";
+import { ChartFrame } from "../chart-frame/chart-frame";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { TreeChart } from "./tree-chart";
 import type {
@@ -173,6 +174,23 @@ const teamTree: TreeNode<TeamData> = {
     },
   ],
 };
+
+/** Moves the mouse to a viewport point, the way a real move reaches a hovered
+ * node under it — the same technique `tooltip.stories.tsx`'s `moveMouse` uses. */
+async function moveMouseTo(doc: Document, clientX: number, clientY: number) {
+  const win = doc.defaultView as Window;
+  const target = doc.elementFromPoint(clientX, clientY) ?? doc.body;
+  const init: MouseEventInit = { bubbles: true, cancelable: true, clientX, clientY, view: win };
+  target.dispatchEvent(new PointerEvent("pointermove", { ...init, pointerType: "mouse" }));
+  target.dispatchEvent(new MouseEvent("mousemove", init));
+  await new Promise<void>((resolve) =>
+    win.requestAnimationFrame(() => win.requestAnimationFrame(() => resolve())),
+  );
+}
+
+function rectsOverlap(a: DOMRect, b: DOMRect): boolean {
+  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -349,6 +367,62 @@ export const Default: Story = {
       <TreeChart {...args} />
     </div>
   ),
+};
+
+/** `status="loading"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives. */
+export const Loading: Story = {
+  args: {
+    data: everythingThePlatformShips,
+    status: "loading",
+  },
+  render: (args) => (
+    <div className="h-[320px] w-full max-w-[400px] overflow-auto rounded-md border border-border">
+      <TreeChart {...args} />
+    </div>
+  ),
+};
+
+/**
+ * Regression lock (RM-184 review, F05): `ChartTooltipBox` receives the hovered
+ * node's own hit rect as `avoid`, so the tooltip box never lands back over the
+ * node it describes — the same policy every other chart's mark hover keeps.
+ * Forty nodes, not two: a tree this small always has room beside the pointer
+ * to fit inside the chart, so the box reliably takes the "inside" placement
+ * pass — the only pass `avoid` can change. A two-node tree left no room, so
+ * the box always took the "escape" pass instead and the lock passed whether
+ * or not `avoid` was wired up at all.
+ */
+export const TooltipAvoidsNode: Story = {
+  args: {
+    data: everythingThePlatformShips,
+    accessibleLabel: "Everything the platform ships",
+  },
+  render: (args) => (
+    <div className="h-[600px] w-full max-w-[900px]">
+      <TreeChart {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const tree = await canvas.findByRole("tree", { name: "Everything the platform ships" });
+    const node = within(tree).getAllByRole("treeitem")[2];
+    if (!node) throw new Error("expected a third treeitem to hover");
+    const doc = canvasElement.ownerDocument;
+    const nodeRect = node.getBoundingClientRect();
+    await moveMouseTo(doc, nodeRect.left + 2, nodeRect.top + 2);
+    await waitFor(() => {
+      expect(doc.querySelector('[data-slot="chart-tooltip-box"]')).not.toBeNull();
+    });
+    // The box springs to its target rect over ~100ms; give it room to settle
+    // before reading either assertion (the same wait the tooltip suite uses
+    // once a hover has landed — `tooltip.stories.tsx`'s `ClearOfPointer`).
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    const box = doc.querySelector('[data-slot="chart-tooltip-box"]') as HTMLElement;
+    await expect(box.dataset.placementPass).toBe("inside");
+    await expect(rectsOverlap(box.getBoundingClientRect(), node.getBoundingClientRect())).toBe(
+      false,
+    );
+  },
 };
 
 /** `orientation="tb"` — root on top, growing down; the same before/after
@@ -718,5 +792,51 @@ export const Static: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.queryByRole("tree")).toBeNull();
+  },
+};
+
+/** A `ChartFrame` around a tree that starts loading, with a button that finishes it. */
+function FramedLoadingTree() {
+  const [loading, setLoading] = useState(true);
+  return (
+    <div className="flex w-[900px] max-w-full flex-col gap-2">
+      <Button className="self-start" onClick={() => setLoading(false)} size="sm">
+        Finish loading
+      </Button>
+      <ChartFrame description="Loading, then ready" title="Framed tree">
+        <TreeChart data={smallOrgChart} status={loading ? "loading" : "ready"} />
+      </ChartFrame>
+    </div>
+  );
+}
+
+const nextFrames = async (count = 3) => {
+  for (let i = 0; i < count; i++) {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  }
+};
+
+/**
+ * Regression (wave-3 re-review): inside a `ChartFrame` a loading tree keeps the frame's
+ * bounded body, exactly as the ready tree does, so the frame's height does not change when the
+ * data arrives. Reserving the default plot box while loading registered the skeleton as a
+ * frame plot consumer: the frame grew to the 2:1 box (531 px at 900 px wide) and shrank back
+ * to 366 px on ready. Outside a frame the loading tree still reserves that box.
+ */
+export const FramedLoadingKeepsHeight: Story = {
+  tags: ["!dev", "!autodocs"],
+  args: { data: smallOrgChart },
+  render: () => <FramedLoadingTree />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const frame = () => canvasElement.querySelector<HTMLElement>('[data-slot="card"]')!;
+    await waitFor(() => expect(canvas.getByRole("status")).toBeInTheDocument());
+    await nextFrames();
+    const loadingHeight = frame().getBoundingClientRect().height;
+    await userEvent.click(canvas.getByRole("button", { name: "Finish loading" }));
+    await waitFor(() => expect(canvas.getByRole("tree")).toBeInTheDocument());
+    await nextFrames();
+    const readyHeight = frame().getBoundingClientRect().height;
+    expect(Math.abs(readyHeight - loadingHeight)).toBeLessThanOrEqual(1);
   },
 };

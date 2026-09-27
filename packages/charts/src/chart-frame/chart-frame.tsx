@@ -409,7 +409,7 @@ function DefaultDetail() {
       ) : (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            Rows:{" "}
+            {t("charts.chartFrame.summaryRows")}{" "}
             <span className="tabular-nums font-medium text-card-foreground">{rows.length}</span>
           </p>
           {stats.map((s) => (
@@ -417,19 +417,19 @@ function DefaultDetail() {
               <p className="text-xs font-medium text-card-foreground">{s.key}</p>
               <div className="flex gap-3 text-xs text-muted-foreground tabular-nums">
                 <span>
-                  min{" "}
+                  {t("charts.chartFrame.summaryMin")}{" "}
                   <CopyableValue className="text-card-foreground" value={exactValueString(s.min)}>
                     {format(s.min)}
                   </CopyableValue>
                 </span>
                 <span>
-                  max{" "}
+                  {t("charts.chartFrame.summaryMax")}{" "}
                   <CopyableValue className="text-card-foreground" value={exactValueString(s.max)}>
                     {format(s.max)}
                   </CopyableValue>
                 </span>
                 <span>
-                  avg{" "}
+                  {t("charts.chartFrame.summaryAvg")}{" "}
                   <CopyableValue className="text-card-foreground" value={exactValueString(s.mean)}>
                     {format(s.mean)}
                   </CopyableValue>
@@ -963,6 +963,19 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
   const notes = density === "xs" ? undefined : notesAll;
   const byline = density === "xs" ? undefined : bylineAll;
   const { t } = useLocale();
+  // RM-187: the footer words come from the catalogue; `footerLabels` still wins.
+  const footerWords = useMemo<ChartFooterLabels>(
+    () => ({
+      chart: t("charts.chartFrame.footerChart"),
+      map: t("charts.chartFrame.footerMap"),
+      table: t("charts.chartFrame.footerTable"),
+      source: t("charts.chartFrame.footerSource"),
+      getTheData: t("charts.chartFrame.footerGetTheData"),
+      downloadImage: t("charts.chartFrame.footerDownloadImage"),
+      downloadSvg: t("charts.chartFrame.footerDownloadSvg"),
+    }),
+    [t],
+  );
   // The footer row (RM-117) replaces the all-caps source row once there is
   // more than a plain source to show; a frame with only `source` keeps it.
   const footerRow = (
@@ -984,7 +997,7 @@ const ChartFrameInner = forwardRef<HTMLDivElement, ChartFrameInnerProps>(functio
         byline={shownByline}
         source={shownSource}
         actions={footerActions}
-        labels={footerLabels}
+        labels={{ ...footerWords, ...footerLabels }}
         className={rowClassName}
       />
     ) : shownSource ? (

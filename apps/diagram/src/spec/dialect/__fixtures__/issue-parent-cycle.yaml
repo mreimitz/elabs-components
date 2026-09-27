@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
+diagram: "0"
+zones:
+  - id: a
+    parent: b
+  - id: b
+    parent: a
+# expect: parent-cycle @ 5:13
+# expect: parent-cycle @ 7:13

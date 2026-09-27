@@ -31,7 +31,7 @@ const DOTS: Dot[] = [
   { id: "c", x: 120, y: 80 },
 ];
 
-// @visx-free, but `react-use-measure` needs a ResizeObserver jsdom does not
+// @visx-free, but `useLayoutMeasure` needs a ResizeObserver jsdom does not
 // have. Same local stub the other chart tests in this package use.
 beforeAll(() => {
   if (typeof window !== "undefined" && !window.ResizeObserver) {

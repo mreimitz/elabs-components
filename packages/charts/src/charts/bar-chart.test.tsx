@@ -1,14 +1,14 @@
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
+// ChartParentSize uses ResizeObserver + real DOM measurement which jsdom lacks.
 // Mock ParentSize to supply a fixed 560×288 viewport so ChartInner renders.
 // Real render/interaction/a11y is covered by the Storybook build (Charts/BarChart story).
-vi.mock("@visx/responsive", () => {
+vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;
@@ -121,6 +121,60 @@ describe("BarChart", () => {
       expect(label).toHaveClass("text-end");
       expect(label).toHaveClass("truncate");
       expect(label).toHaveClass("whitespace-nowrap");
+    });
+  });
+
+  // RM-188: the bar category axes draw their title through the shared
+  // `AxisTitle` — `BarXAxis` on the bottom of a vertical chart, `BarYAxis` on
+  // the left of a horizontal one, each `outside` (default) or `inside`.
+  describe("BarXAxis / BarYAxis — title and titlePlacement (RM-188)", () => {
+    const cases = [
+      { axis: "BarXAxis", orientation: "vertical", side: "bottom", placement: "outside" },
+      { axis: "BarXAxis", orientation: "vertical", side: "bottom", placement: "inside" },
+      { axis: "BarYAxis", orientation: "horizontal", side: "left", placement: "outside" },
+      { axis: "BarYAxis", orientation: "horizontal", side: "left", placement: "inside" },
+    ] as const;
+
+    it.each(cases)(
+      "$axis on a $orientation chart draws a $placement title on the $side side",
+      async ({ axis, orientation, side, placement }) => {
+        const Axis = axis === "BarXAxis" ? BarXAxis : BarYAxis;
+        const { container } = render(
+          <BarChart data={minimalData} orientation={orientation} xDataKey="month">
+            <Bar dataKey="value" fill="var(--chart-1)" />
+            <Axis title="Month" titlePlacement={placement} />
+          </BarChart>,
+        );
+        const title = await waitFor(() => {
+          const el = container.querySelector(
+            `[data-slot="axis-title"][data-side="${side}"][data-placement="${placement}"]`,
+          );
+          expect(el).not.toBeNull();
+          return el!;
+        });
+        expect(title.textContent).toBe("Month");
+        if (placement === "inside") {
+          // The inside title is ink (`aria-hidden` SVG) with an `sr-only` copy.
+          expect(title).toHaveAttribute("aria-hidden", "true");
+          const copy = title.nextElementSibling;
+          expect(copy).toHaveClass("sr-only");
+          expect(copy?.textContent).toBe("Month");
+        } else {
+          expect(title).not.toHaveAttribute("aria-hidden");
+        }
+      },
+    );
+
+    it("draws no title when none is given", async () => {
+      const { container } = render(
+        <BarChart data={minimalData} xDataKey="month">
+          <Bar dataKey="value" fill="var(--chart-1)" />
+          <BarXAxis />
+          <BarYAxis />
+        </BarChart>,
+      );
+      await waitFor(() => expect(container.querySelector(".text-chart-label")).not.toBeNull());
+      expect(container.querySelector('[data-slot="axis-title"]')).toBeNull();
     });
   });
 

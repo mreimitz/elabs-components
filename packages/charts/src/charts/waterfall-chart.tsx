@@ -13,6 +13,13 @@ import {
 } from "../marks";
 import type { BarOrientation } from "./bar-chart";
 import { BarChart } from "./bar-chart";
+import {
+  ChartSelectionMark,
+  type ChartSelectionProps,
+  type ChartSelectionStatesResolver,
+  resolveMarkPaint,
+  useChartSelection,
+} from "./chart-selection";
 import type { ChartAnnotation } from "./annotations/annotation-types"; // Annotations — RM-111
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import {
@@ -24,7 +31,7 @@ import { estimateTextWidth } from "./use-text-measurer"; // Annotations — RM-1
 import { BarXAxis } from "./bar-x-axis";
 import { BarYAxis } from "./bar-y-axis";
 import { ChartA11yLabel, type ChartA11yProps } from "./chart-a11y"; // RM-122 zoomToDifferences a11y note
-import { type Margin, useChart } from "./chart-context";
+import { type ChartPalette, type Margin, resolveSignPalette, useChart } from "./chart-context";
 import { type LabelBox, type LabelPlacement, layoutLabels } from "./labels/label-layout"; // RM-122 wave 2
 import { seriesLabelInk } from "./labels/series-label-ink"; // RM-122 wave 2
 import {
@@ -45,14 +52,26 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
-import { useChartValueFormatter } from "./chart-formatters";
+import { useChartValueFormatter, useChartValueSetFormatter } from "./chart-formatters";
 import { Grid } from "./grid";
 import { ChartTooltip } from "./tooltip";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
 import { useHighDecoration } from "./use-high-decoration";
 import { useResolvedRadius } from "./use-resolved-radius";
 import type { ChartValueFormat } from "./value-format";
-import { type ChartPlotHeight, type Responsive, warnChartOnce } from "./chart-breakpoint";
+import {
+  type ChartPlotHeight,
+  DEFAULT_CHART_PLOT_HEIGHT,
+  type Responsive,
+  warnChartOnce,
+} from "./chart-breakpoint";
+import { WATERFALL_CHART } from "../definitions/waterfall-chart.definition";
+import { ChartLoadingPlot } from "./chart-loading-plot";
+import type { ChartStatus } from "./chart-phase";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import type { ValueFormatGroupProps } from "./props/value-format";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 import {
   applyEndpoints,
   computeWaterfallZoomDomain,
@@ -63,6 +82,9 @@ import {
   type WaterfallEndpointOptions,
   type WaterfallSort,
 } from "./waterfall-steps"; // RM-122
+import { useChartTranslate } from "./chart-messages";
+import type { ChartMessages } from "./props/messages";
+import { ChartMessagesScope } from "./chart-messages";
 
 /**
  * WaterfallChart — RM-022.
@@ -288,11 +310,6 @@ function roundedRectPath(
     .join(" ");
 }
 
-// Rises and falls wear the theme's first two series colours — the same pair a
-// two-series BarChart draws — so a bridge reads in the theme's own chart colours.
-const DEFAULT_POSITIVE_FILL = "var(--chart-1)";
-const DEFAULT_NEGATIVE_FILL = "var(--chart-2)";
-const DEFAULT_TOTAL_FILL = "var(--chart-foreground)";
 const EMPTY_WATERFALL_TARGETS: ChartDatapointTarget[] = [];
 
 function fillForRow(
@@ -419,7 +436,11 @@ function WaterfallBars({
   const { barScale, bandWidth, yScale, margin, orientation, innerWidth, innerHeight } = useChart();
   const isHorizontal = orientation === "horizontal";
   const themeRadius = useResolvedRadius();
-  const format = useChartValueFormatter(valueFormat);
+  // #250: every bar label is one set — one notation across the whole chart.
+  const format = useChartValueSetFormatter(
+    rows.map((row) => Math.abs(row.value)),
+    valueFormat,
+  );
   const percentFormat = useChartValueFormatter({
     decimals: 1,
     optionalDecimals: false,
@@ -429,6 +450,10 @@ function WaterfallBars({
   const datapointsEnabled = useChartDatapointsEnabled();
   const activateDatapoint = useActivateDatapoint();
   const connectorWeight = connectors === "thick" ? 1.2 : 0.6;
+  // Selection paint-back (RM-185): resolved from `ChartSelectionProvider`, which the
+  // outer `WaterfallChart` mounts on the inner `BarChart` this mark renders inside —
+  // unset, `resolveMarkPaint` always returns "no paint" and the DOM stays unchanged.
+  const selection = useChartSelection<WaterfallRow>();
 
   // RM-122 zoomToDifferences: a checkpoint far above the steps' own swing
   // gets a domain that drops the zero baseline instead of squeezing every
@@ -940,9 +965,33 @@ function WaterfallBars({
           ) : null;
         }
 
+        // Selection paint-back (RM-185): a shared outline mirroring the drawn geometry
+        // — the bar's own box, or (a zoomed `QuietDot` point) a circle hugging the dot,
+        // regardless of whether `shape` above is the ordinary path, the point or a
+        // `UnitStack` — `resolveMarkPaint`/`ChartSelectionMark` no-op (byte-identical
+        // DOM) when no `selectionStates` resolver is set.
+        const paint = resolveMarkPaint(selection, { category: g.row.label, datum: g.row });
+        const outlineShape = g.isPoint ? (
+          <circle
+            cx={isHorizontal ? g.valuePx : g.x + g.width / 2}
+            cy={isHorizontal ? g.y + g.height / 2 : g.valuePx}
+            r={3}
+          />
+        ) : (
+          <rect height={g.height} width={g.width} x={g.x} y={g.y} />
+        );
+        const paintedShape =
+          paint["data-selection"] === undefined ? (
+            shape
+          ) : (
+            <ChartSelectionMark paint={paint} shape={outlineShape}>
+              {shape}
+            </ChartSelectionMark>
+          );
+
         return (
           <g key={`waterfall-row-${g.row.index}`}>
-            {shape}
+            {paintedShape}
             {labelNode}
           </g>
         );
@@ -955,7 +1004,22 @@ function WaterfallBars({
 
 // ── Public component ────────────────────────────────────────────────────────
 
-export interface WaterfallChartProps extends ChartInteractionProps<WaterfallStep> {
+export interface WaterfallChartProps
+  extends
+    ChartInteractionProps<WaterfallStep>,
+    // Selection paint-back (RM-185): a host tells the chart which steps are
+    // selected/associated/excluded, forwarded to the inner `BarChart`, which
+    // already paints the tri-state (F22).
+    ChartSelectionProps<WaterfallRow>,
+    FrameSizeGroupProps,
+    Pick<ChartStateGroupProps, "status">,
+    Pick<ValueFormatGroupProps, "valueFormat"> {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** Steps from gross to net — one row per bar. */
   data: WaterfallDatum[];
   /** Default `"vertical"`. */
@@ -1020,57 +1084,69 @@ export interface WaterfallChartProps extends ChartInteractionProps<WaterfallStep
    * `plotHeight={n}`); removed in 6.0.0.
    */
   height?: number;
-  /** Chart margins. */
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. Default: 40 on every side. */
+  margin?: number | Partial<Margin>;
   /** Additional class name for the container. */
   className?: string;
+  /**
+   * Loading vs ready (RM-182). `"loading"` shows a skeleton in the plot box the
+   * chart will fill, with one polite status message, until the data is ready.
+   * Default: `"ready"`.
+   */
+  status?: ChartStatus;
   /** Accessible name for the chart region. */
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT. */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
 }
 
-/**
- * @dataShape a running total with signed steps into and out of it
- * @avoidWhen there is no meaningful running total — use diverging bars instead
- */
-export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
-  function WaterfallChart(
-    {
+// Unwrapped implementation; the public docblock sits on `WaterfallChart` below (RM-187).
+const WaterfallChartUnscoped = forwardRef<HTMLDivElement, WaterfallChartProps>(
+  function WaterfallChart(rawProps, ref) {
+    const tChart = useChartTranslate();
+    // RM-182: every default comes from the definition (`WATERFALL_CHART`), aliases first.
+    const {
       accessibleDescription,
       accessibleLabel,
       analytics, // Analytics — RM-138
       annotations, // Annotations — RM-111
       callouts,
       className,
-      connectors = true,
+      connectors,
       copyValueOnActivate,
       data,
-      dataFormat = "differences",
+      dataFormat,
       datapointLabel,
       end,
-      grid = true,
+      grid,
       labels,
       plotHeight,
       height,
       margin,
       maxInteractiveDatapoints,
-      negativeFill = DEFAULT_NEGATIVE_FILL,
+      negativeFill: negativeFillResolved,
       onDatapointClick,
-      orientation = "vertical",
-      positiveFill = DEFAULT_POSITIVE_FILL,
-      showValues = true,
-      sort = "data",
+      orientation,
+      palette,
+      positiveFill: positiveFillResolved,
+      selectionStates,
+      dimExcluded,
+      showValues,
+      sort,
       start,
+      status,
       subtotalBy,
       subtotalLabel,
-      totalFill = DEFAULT_TOTAL_FILL,
+      totalFill,
       unit,
       valueFormat,
       zoomToDifferences,
-    },
-    ref,
-  ) {
+    } = useResolvedChartProps(WATERFALL_CHART, rawProps);
+    // Palette — RM-186: a caller's own `positiveFill` / `negativeFill` wins, then the
+    // palette's gain / loss pair, then the definition default (`--chart-1` / `--chart-2`).
+    const signColors = palette === undefined ? undefined : resolveSignPalette(palette);
+    const positiveFill = rawProps.positiveFill ?? signColors?.positive ?? positiveFillResolved;
+    const negativeFill = rawProps.negativeFill ?? signColors?.negative ?? negativeFillResolved;
     if (height !== undefined) {
       warnChartOnce(
         "WaterfallChart.height",
@@ -1096,7 +1172,12 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
       return resolved;
     }, [data, dataFormat, subtotalBy, subtotalLabel, sort, start, end]);
     const rows = useMemo(() => computeWaterfallRows(resolvedRows), [resolvedRows]);
-    const format = useChartValueFormatter(valueFormat);
+    // #250: the tooltip's value/before/after rows print in the same notation
+    // as the bar labels — one set across every row's magnitudes.
+    const format = useChartValueSetFormatter(
+      rows.flatMap((row) => [Math.abs(row.value), Math.abs(row.before), Math.abs(row.after)]),
+      valueFormat,
+    );
     const isHorizontal = orientation === "horizontal";
 
     // `QuietDot` (RM-017) is aria-hidden — the duty to restate the fact it
@@ -1113,6 +1194,21 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
     // Reporting stays inert (and this store unused) whenever `labels` is
     // unset, so a chart on the pre-existing path renders no extra DOM.
     const unpaintedStore = useUnpaintedLabelsStore();
+
+    // RM-182: while loading, the plot box the inner BarChart would size holds a skeleton.
+    if (status === "loading") {
+      return (
+        <div className={cn("w-full", className)} data-slot="waterfall-chart" ref={ref}>
+          <ChartLoadingPlot
+            className="w-full"
+            plotBox={{
+              plotHeight: plotHeight ?? height,
+              defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT,
+            }}
+          />
+        </div>
+      );
+    }
 
     return (
       <div className={cn("w-full", className)} data-slot="waterfall-chart" ref={ref}>
@@ -1138,6 +1234,13 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
             maxInteractiveDatapoints={maxInteractiveDatapoints}
             onDatapointClick={onDatapointClick as ChartDatapointClickHandler | undefined}
             orientation={orientation}
+            // Selection paint-back (RM-185): forwarded to the inner BarChart, which already
+            // paints the tri-state — `datum` is the raw `WaterfallRow`, cast like the other
+            // per-row callbacks above because BarChart's own datum type is `Record<string, unknown>`.
+            selectionStates={
+              selectionStates as ChartSelectionStatesResolver<Record<string, unknown>> | undefined
+            }
+            dimExcluded={dimExcluded}
             xDataKey="label"
           >
             {grid ? <Grid horizontal={!isHorizontal} vertical={isHorizontal} /> : null}
@@ -1162,17 +1265,17 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
                 return [
                   {
                     color: fillForRow(row, positiveFill, negativeFill, totalFill),
-                    label: "Value",
+                    label: tChart("charts.tooltip.value"),
                     value: formatSigned(row.value, format, row.kind === "step"),
                   },
                   {
                     color: "var(--chart-foreground-muted)",
-                    label: "Before",
+                    label: tChart("charts.waterfall.before"),
                     value: formatSigned(row.before, format, false),
                   },
                   {
                     color: "var(--chart-foreground-muted)",
-                    label: "After",
+                    label: tChart("charts.waterfall.after"),
                     value: formatSigned(row.after, format, false),
                   },
                 ];
@@ -1183,6 +1286,22 @@ export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
         </UnpaintedLabelsProvider>
         <UnpaintedLabels store={unpaintedStore} />
       </div>
+    );
+  },
+);
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
+/**
+ * @dataShape a running total with signed steps into and out of it
+ * @avoidWhen there is no meaningful running total — use diverging bars instead
+ */
+export const WaterfallChart = forwardRef<HTMLDivElement, WaterfallChartProps>(
+  function WaterfallChart({ messages, ...props }, ref) {
+    return (
+      <ChartMessagesScope messages={messages}>
+        <WaterfallChartUnscoped {...props} ref={ref} />
+      </ChartMessagesScope>
     );
   },
 );
@@ -1202,4 +1321,15 @@ export interface WaterfallChartProps {
    * `of: "value"` reduces the step values instead.
    */
   analytics?: readonly ChartAnalytic[];
+}
+
+// Palette — RM-186
+export interface WaterfallChartProps {
+  /**
+   * Colour ramp for the steps (RM-186): increases take the palette's gain
+   * colour and decreases its loss colour (`"diverging"` is the sign pair, any
+   * other palette its first two colours). `positiveFill` / `negativeFill` still
+   * win. Unset: `--chart-1` / `--chart-2`, as before.
+   */
+  palette?: ChartPalette;
 }

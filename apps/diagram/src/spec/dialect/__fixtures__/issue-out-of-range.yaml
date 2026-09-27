@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
+diagram: "0"
+nodes:
+  - id: a
+  - id: b
+flows:
+  - { from: a, to: b, step: 0 }
+# expect: out-of-range @ 7:29

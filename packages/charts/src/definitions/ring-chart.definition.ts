@@ -10,10 +10,12 @@ import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { DEFAULT_ANIMATION_DURATION_MS } from "../charts/animation";
 import { interactionCommons, selectionCommons } from "../charts/props/commons";
+import { chartStateGroup } from "../charts/props/chart-state";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import type { RingChartProps } from "../charts/ring-chart";
 import { looseFieldFor, partialFieldFor } from "../charts/props/typed-field";
 import { classNameField } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 export const RING_CHART = /* @__PURE__ */ defineChart<RingChartProps>()({
@@ -22,8 +24,20 @@ export const RING_CHART = /* @__PURE__ */ defineChart<RingChartProps>()({
   label: "Ring chart",
   description: "One proportion against its maximum, read as a single ring.",
   specTypes: [],
-  groups: [a11yGroup, selectionCommons.group, interactionCommons.group],
+  // RM-183 (F28): Ring shares Pie's frame-size/chart-state groups at the prop
+  // level, before the engine merge (RM-202). Not `valueFormatGroup` (RM-183
+  // review fix3): Ring has no value-formatted on-chart text yet, so none of
+  // that group's members would take effect — see `RingChartProps`' docblock.
+  groups: [
+    a11yGroup,
+    selectionCommons.group,
+    interactionCommons.group,
+    frameSizeGroup,
+    chartStateGroup,
+  ],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: looseFieldFor<RingChartProps["data"]>()(
       field.array({
         of: field.object({
@@ -41,6 +55,9 @@ export const RING_CHART = /* @__PURE__ */ defineChart<RingChartProps>()({
     ),
     size: field.number({ unit: "px", tier: "advanced", description: "Fixed pixel size." }),
     plotHeight: frameSizeGroup.fields.plotHeight,
+    margin: frameSizeGroup.fields.margin,
+    status: chartStateGroup.fields.status,
+    empty: chartStateGroup.fields.empty,
     strokeWidth: field.number({
       unit: "px",
       tier: "essential",
@@ -113,7 +130,7 @@ export const RING_CHART = /* @__PURE__ */ defineChart<RingChartProps>()({
   contract: {
     dataKind: "array",
     requiredProps: ["data", "children"],
-    hasStatus: false,
+    hasStatus: true,
     itemRequiredKeys: ["label", "value", "maxValue"],
     itemNumericKeys: ["value", "maxValue"],
   },

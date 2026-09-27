@@ -47,6 +47,25 @@ export const Default: Story = {
   },
 };
 
+/** Loading skeleton (RM-183) — shown while `status="loading"`, sized like the real chart. */
+export const Loading: Story = {
+  args: {
+    value: 82,
+    target: 100,
+    bands: REVENUE_BANDS,
+    size: "md",
+    status: "loading",
+  },
+  play: async ({ canvas }) => {
+    // One `role="status" aria-live="polite"` region while loading, and only
+    // one — the RM-183 review flagged loading plays that checked the role
+    // but not the live-region contract or region count.
+    const statuses = await canvas.findAllByRole("status");
+    expect(statuses).toHaveLength(1);
+    expect(statuses[0]).toHaveAttribute("aria-live", "polite");
+  },
+};
+
 /** A second reference (last year) drawn as a small triangle notch, a shape distinct from the target's tick. */
 export const WithComparative: Story = {
   args: {

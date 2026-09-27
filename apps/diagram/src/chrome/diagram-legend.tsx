@@ -60,6 +60,33 @@ const PROVIDER_LABEL_OVERRIDE: Record<string, string> = {
   k8s: "Kubernetes",
 };
 
+/** Wave-2 review M1: the user's own open/closed choice, kept for the browser session. */
+const OPEN_KEY = "diagram-legend-open";
+/** Tailwind's `xl` breakpoint (80rem). */
+const WIDE_QUERY = "(min-width: 80rem)";
+
+/**
+ * Open or closed at first: the user's choice this session if they made one; otherwise open on
+ * an `xl` window and closed below it, where the legend costs the fit zoom most.
+ */
+function initialOpen(): boolean {
+  try {
+    const kept = sessionStorage.getItem(OPEN_KEY);
+    if (kept !== null) return kept === "true";
+  } catch {
+    // Storage blocked: fall back to the width.
+  }
+  return window.matchMedia(WIDE_QUERY).matches;
+}
+
+function keepOpen(open: boolean) {
+  try {
+    sessionStorage.setItem(OPEN_KEY, String(open));
+  } catch {
+    // Storage blocked: the choice lasts until the legend remounts.
+  }
+}
+
 function providerLabel(provider: string): string {
   const override = PROVIDER_LABEL_OVERRIDE[provider];
   if (override) return override;
@@ -213,7 +240,12 @@ function ProvidersSection({ providers }: { providers: string[] }) {
 export function DiagramLegend({ mode }: DiagramLegendProps) {
   const nodes = useNodes();
   const edges = useEdges();
-  const [open, setOpen] = useState(true);
+  // Every example load remounts the canvas and this legend; the session keeps the choice.
+  const [open, setOpen] = useState(initialOpen);
+  const onOpenChange = (next: boolean) => {
+    setOpen(next);
+    keepOpen(next);
+  };
   const spec = useMemo(() => buildLegend(nodes, edges, mode), [nodes, edges, mode]);
 
   if (!spec) return null;
@@ -228,7 +260,7 @@ export function DiagramLegend({ mode }: DiagramLegendProps) {
       position="bottom-left"
       className={cn("pointer-events-auto", FLOATING_SURFACE)}
     >
-      <Collapsible open={open} onOpenChange={setOpen}>
+      <Collapsible open={open} onOpenChange={onOpenChange}>
         <CollapsibleTrigger asChild>
           <Button
             className="-m-1 h-auto gap-1.5 px-1.5 py-1 text-meta font-medium text-foreground hover:bg-accent"

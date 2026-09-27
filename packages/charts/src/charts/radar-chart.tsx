@@ -1,7 +1,7 @@
 "use client";
 
 import { Group } from "@visx/group";
-import { ParentSize } from "@visx/responsive";
+import { ChartParentSize } from "./chart-parent-size";
 import { scaleLinear } from "@visx/scale";
 import type { Transition } from "motion/react";
 import React, {
@@ -13,7 +13,7 @@ import React, {
   useState,
   forwardRef,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, StatePanel } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import {
@@ -24,11 +24,24 @@ import {
   RadarProvider,
 } from "./radar-context";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
-import type { ChartLegendEntry } from "./chart-context";
+import { type ChartLegendEntry, type ChartPalette, resolvePalette } from "./chart-context";
+import type { Margin } from "./chart-margin";
+import { resolveChartMargin } from "./chart-margin";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { sumLegendValue } from "./legend/legend-values";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { ValueFormatGroupProps } from "./props/value-format";
+import { RADAR_CHART } from "../definitions/radar-chart.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
-export interface RadarChartProps {
+/** Radar's margin is unset only via `RadarChartBase`'s own JS default (60); this is the
+ * fallback `resolveChartMargin` falls back to for a caller-supplied partial object. */
+const RADAR_DEFAULT_MARGIN: Margin = { top: 60, right: 60, bottom: 60, left: 60 };
+
+export interface RadarChartProps
+  extends
+    Pick<ChartStateGroupProps, "status" | "empty">,
+    Pick<ValueFormatGroupProps, "valueFormat" | "locale" | "currency" | "maxFractionDigits"> {
   /** Data array - each item represents a data series (polygon) */
   data: RadarData[];
   /** Metrics to display on the radar */
@@ -42,8 +55,11 @@ export interface RadarChartProps {
   plotHeight?: Responsive<ChartPlotHeight>;
   /** Number of concentric grid circles. Default: 5 */
   levels?: number;
-  /** Margin around the chart. Default: 60 */
-  margin?: number;
+  /**
+   * Space around the plot. One number for every side, or a per-side object.
+   * Default: 60.
+   */
+  margin?: number | Partial<Margin>;
   /** Enable animations. Default: true */
   animate?: boolean;
   /** Enter animation budget in ms. Default: 1100 */
@@ -77,15 +93,20 @@ export interface RadarChartProps {
    * over `metrics`.
    */
   legend?: ContainerLegendProp;
+  // RM-187: `locale`/`maxFractionDigits` feed the legend's value column too, through
+  // `useContainerLegend`; unset, the `LocaleProvider`'s locale and the format's own digits.
 }
 
 interface RadarChartInnerProps {
   width: number;
   height: number;
   data: RadarData[];
+  /** The container's `palette` (RM-186); unset keeps the twelve-colour cycle. */
+  palette?: ChartPalette;
   metrics: RadarMetric[];
   levels: number;
-  margin: number;
+  /** Resolved per-side margin (frame-size group) — always a full `Margin`. */
+  marginBox: Margin;
   animate: boolean;
   enterDurationMs: number;
   staggerScale: number;
@@ -102,9 +123,10 @@ function RadarChartInner({
   width,
   height,
   data,
+  palette,
   metrics,
   levels,
-  margin,
+  marginBox,
   animate,
   enterDurationMs,
   staggerScale,
@@ -131,9 +153,21 @@ function RadarChartInner({
     [isControlled, onHoverChange],
   );
 
-  // Use the smaller dimension
+  // frame-size group (RM-183, F33): Radar keeps drawing a `size × size`
+  // square SVG (`size = min(width, height)`, unchanged from before this
+  // group existed) — `marginBox` only insets the radius WITHIN that square,
+  // it never grows the SVG to the full `width × height` box. That keeps a
+  // non-square host (a wide `ChartFrame`, a fixed `plotHeight`) byte-identical
+  // to today: the square still sits flush with the box's short side, at any
+  // margin. Review (2026-09-26): an earlier draft centred the square inside
+  // the full rect instead, which silently re-centred Radar in every non-square
+  // host — reverted.
   const size = Math.min(width, height);
-  const radius = (size - margin * 2) / 2;
+  const contentW = size - marginBox.left - marginBox.right;
+  const contentH = size - marginBox.top - marginBox.bottom;
+  const radius = Math.min(contentW, contentH) / 2;
+  const cx = marginBox.left + contentW / 2;
+  const cy = marginBox.top + contentH / 2;
 
   // Scale for converting values (0-100) to radius
   const yScale = useCallback(
@@ -177,9 +211,12 @@ function RadarChartInner({
       if (item?.color) {
         return item.color;
       }
-      return defaultRadarColors[index % defaultRadarColors.length] as string;
+      return (
+        resolvePalette(palette, data.length, { explicit: true })[index] ??
+        (defaultRadarColors[index % defaultRadarColors.length] as string)
+      );
     },
-    [data],
+    [data, palette],
   );
 
   // Early return if dimensions not ready
@@ -210,7 +247,7 @@ function RadarChartInner({
   return (
     <RadarProvider value={contextValue}>
       <svg aria-hidden="true" height={size} style={{ overflow: "visible" }} width={size}>
-        <Group left={size / 2} top={size / 2}>
+        <Group left={cx} top={cy}>
           {children}
         </Group>
       </svg>
@@ -218,14 +255,14 @@ function RadarChartInner({
   );
 }
 
-/**
- * @dataShape several measures per entity, compared as an overall shape rather than value by
- *   value
- * @avoidWhen more than about 8 spokes, or absolute magnitude matters more than the shape
- */
-export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function RadarChart(
+// Unwrapped implementation; the public docblock sits on `RadarChart` below.
+// Exported (RM-183 review fix3, `defaults reality` in `definitions.test.ts`
+// only) so that suite can compare its OWN destructuring defaults — never
+// `CHART_DEFINITIONS.RadarChart.defaults` — against the public component's DOM.
+export const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(function RadarChart(
   {
     data,
+    palette,
     metrics,
     size: fixedSize,
     plotHeight,
@@ -243,10 +280,21 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
     accessibleLabel,
     accessibleDescription,
     legend,
+    status,
+    empty,
+    valueFormat,
+    locale,
+    currency,
+    maxFractionDigits,
   },
   forwardedRef,
 ) {
   const internalRef = useRef<HTMLDivElement | null>(null);
+
+  // frame-size group (RM-183, F33): `margin` — a number (uniform, the kind
+  // default of 60) or a per-side object; `resolveChartMargin` turns either
+  // into a full box `RadarChartInner` insets by.
+  const marginBox = resolveChartMargin(margin, RADAR_DEFAULT_MARGIN);
 
   // One hover state, two sources — a pointer over a polygon and a legend
   // item — lifted here (as `PieChart` does) so both write the same value.
@@ -265,7 +313,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
       data.map((d, i) => ({
         key: `${d.label}-${i}`,
         label: d.label,
-        color: d.color ?? (defaultRadarColors[i % defaultRadarColors.length] as string),
+        color: d.color ?? (resolvePalette(palette, data.length, { explicit: true })[i] as string),
         kind: "series" as const,
         // F09: the polygon's total over the chart's metrics, printed only
         // with `legend={{ values: true }}`.
@@ -274,7 +322,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
           "value",
         ),
       })),
-    [data, metrics],
+    [data, metrics, palette],
   );
   const containerLegend = useContainerLegend({
     legend,
@@ -282,6 +330,12 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
     hoveredIndex: effectiveHoveredIndex,
     onHoverChange: handleHoverChange,
     maxInteractive: "hover",
+    // value-format group (RM-183): unset renders through the legend's own
+    // default formatter, byte-identical to before this prop existed.
+    valueFormat,
+    currency,
+    maxFractionDigits,
+    locale,
   });
 
   const mergedRef = useCallback(
@@ -304,6 +358,56 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
     descId,
   } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
+  // chart-state group (RM-183): `status`/`empty`. Neither family had a
+  // loading/empty vocabulary before (F11) — both branches below reuse the
+  // SAME `ChartPlotRoot` sizing as the real chart so the box never jumps
+  // size when data arrives.
+  const isLoading = status === "loading";
+  const isEmptyState = Boolean(empty) && data.length === 0;
+  if (isLoading || isEmptyState) {
+    const statePanel = (
+      <StatePanel
+        kind={isLoading ? "loading" : "empty"}
+        title={empty?.title}
+        description={empty?.message}
+        actions={empty?.action}
+      />
+    );
+    // RM-183 review (minor): wrapped in `containerLegend.wrap` — the ready
+    // branch below mounts the legend, so loading/empty must too, or the
+    // layout jumps the moment `status` flips to `"ready"`.
+    if (fixedSize) {
+      return containerLegend.wrap(
+        <ChartPlotRoot
+          ref={mergedRef}
+          aria-describedby={ariaDescribedby}
+          aria-label={ariaLabel}
+          className={cn("relative flex items-center justify-center", className)}
+          role={role}
+          style={{ width: fixedSize, height: fixedSize }}
+          tabIndex={tabIndex}
+        >
+          <ChartA11yLabel descId={descId} description={accessibleDescription} />
+          {statePanel}
+        </ChartPlotRoot>,
+      );
+    }
+    return containerLegend.wrap(
+      <ChartPlotRoot
+        plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
+        ref={mergedRef}
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("relative w-full", className)}
+        role={role}
+        tabIndex={tabIndex}
+      >
+        <ChartA11yLabel descId={descId} description={accessibleDescription} />
+        {statePanel}
+      </ChartPlotRoot>,
+    );
+  }
+
   // If fixed size is provided, use it directly
   if (fixedSize) {
     return containerLegend.wrap(
@@ -318,6 +422,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
       >
         <ChartA11yLabel descId={descId} description={accessibleDescription} />
         <RadarChartInner
+          palette={palette}
           animate={animate}
           containerRef={internalRef}
           data={data}
@@ -326,7 +431,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
           height={fixedSize}
           hoveredIndexProp={effectiveHoveredIndex}
           levels={levels}
-          margin={margin}
+          marginBox={marginBox}
           metrics={metrics}
           motionReplayKey={motionReplayKey}
           onHoverChange={handleHoverChange}
@@ -339,7 +444,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
     );
   }
 
-  // Otherwise use ParentSize for responsive sizing
+  // Otherwise use ChartParentSize for responsive sizing
   return containerLegend.wrap(
     <ChartPlotRoot
       plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
@@ -351,9 +456,10 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <ParentSize debounceTime={100}>
+      <ChartParentSize>
         {({ width, height }) => (
           <RadarChartInner
+            palette={palette}
             animate={animate}
             containerRef={internalRef}
             data={data}
@@ -362,7 +468,7 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
             height={height}
             hoveredIndexProp={effectiveHoveredIndex}
             levels={levels}
-            margin={margin}
+            marginBox={marginBox}
             metrics={metrics}
             motionReplayKey={motionReplayKey}
             onHoverChange={handleHoverChange}
@@ -372,11 +478,35 @@ export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(function R
             {children}
           </RadarChartInner>
         )}
-      </ParentSize>
+      </ChartParentSize>
     </ChartPlotRoot>,
   );
 });
 
+RadarChartBase.displayName = "RadarChartBase";
+
+/**
+ * @dataShape several measures per entity, compared as an overall shape rather than value by
+ *   value
+ * @avoidWhen more than about 8 spokes, or absolute magnitude matters more than the shape
+ */
+export const RadarChart = forwardRef<HTMLDivElement, RadarChartProps>(
+  function RadarChart(rawProps, ref) {
+    // RM-183: every default comes from the definition (`RADAR_CHART`).
+    const props = useResolvedChartProps(RADAR_CHART, rawProps);
+    return <RadarChartBase {...props} ref={ref} />;
+  },
+);
 RadarChart.displayName = "RadarChart";
 
 export default RadarChart;
+
+// Palette — RM-186
+export interface RadarChartProps {
+  /**
+   * Colour ramp for the series (RM-186), through `resolvePalette`; an
+   * item's own `color` still wins. Unset: the twelve categorical colours,
+   * cycled, as before.
+   */
+  palette?: ChartPalette;
+}

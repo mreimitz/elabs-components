@@ -18,11 +18,11 @@ vi.mock("motion/react", async (importOriginal) => ({
 }));
 
 // jsdom lacks ResizeObserver-backed measurement: a fixed 560×288 plot box.
-vi.mock("@visx/responsive", () => {
+vi.mock("../chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;
@@ -41,6 +41,7 @@ import { Line } from "../line";
 import { LineChart } from "../line-chart";
 import { pinchWindow } from "../navigator/navigator-window";
 import { XAxis } from "../x-axis";
+import { ChartZoomControls } from "./chart-zoom-controls";
 import { type PinchFrame, usePinchGesture, WHEEL_PINCH_RATE } from "./use-pinch-gesture";
 
 afterEach(() => {
@@ -306,4 +307,24 @@ describe("category zoom (default on)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reset zoom" }));
     expect(onWindowChange).toHaveBeenLastCalledWith(null, { phase: "commit", source: "pointer" });
   });
+});
+
+describe("ChartZoomControls appearances", () => {
+  it.each(["overlay", "segmented", "toolbar"] as const)(
+    "%s: one root slot, and excluded from an export",
+    (appearance) => {
+      const { container } = render(
+        <ChartZoomControls
+          appearance={appearance}
+          onReset={() => {}}
+          onZoomIn={() => {}}
+          onZoomOut={() => {}}
+        />,
+      );
+      const root = container.firstElementChild;
+      expect(root).toHaveAttribute("data-slot", "chart-zoom-controls");
+      expect(root).toHaveAttribute("data-chart-export", "exclude");
+      expect(root).toHaveAttribute("role", "group");
+    },
+  );
 });

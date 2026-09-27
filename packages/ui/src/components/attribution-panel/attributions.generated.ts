@@ -2,7 +2,7 @@
 // Run `pnpm gen` after changing a dependency, a vendored font, or
 // scripts/attributions.sources.json. `pnpm gen:check` fails on a stale copy.
 //
-// 125 entries (data: 4, source: 20, font: 2, dependency: 99).
+// 123 entries (data: 4, source: 20, font: 2, dependency: 97).
 
 import type { Attribution } from "./attribution-types";
 
@@ -927,18 +927,6 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     note: null,
   },
   {
-    id: "@visx/responsive",
-    category: "dependency",
-    name: "@visx/responsive",
-    version: "4.0.1-alpha.0",
-    license: "MIT",
-    copyright: "@hshoff",
-    url: "https://www.npmjs.com/package/@visx/responsive",
-    usedBy: ["@elabs-ai/components-charts"],
-    required: false,
-    note: null,
-  },
-  {
     id: "@visx/sankey",
     category: "dependency",
     name: "@visx/sankey",
@@ -1327,18 +1315,6 @@ export const ATTRIBUTIONS: readonly Attribution[] = [
     copyright: "Brian Vaughn",
     url: "https://www.npmjs.com/package/react-resizable-panels",
     usedBy: ["@elabs-ai/components-ui"],
-    required: false,
-    note: null,
-  },
-  {
-    id: "react-use-measure",
-    category: "dependency",
-    name: "react-use-measure",
-    version: "2.1.7",
-    license: "MIT",
-    copyright: "Paul Henschel",
-    url: "https://www.npmjs.com/package/react-use-measure",
-    usedBy: ["@elabs-ai/components-charts"],
     required: false,
     note: null,
   },

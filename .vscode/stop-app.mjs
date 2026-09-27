@@ -1,4 +1,4 @@
-// Backs the "stop: home" / "stop: storybook" / "stop: all apps" tasks (see tasks.json).
+// Backs the "stop: home" / "stop: storybook" / "stop: diagram" / "stop: all apps" tasks (see tasks.json).
 // Usage: node .vscode/stop-app.mjs home:3000 [storybook:6006 …]
 //
 // For each <name>:<port> it kills the task wrapper (.vscode/start-<name>.mjs) AND the server

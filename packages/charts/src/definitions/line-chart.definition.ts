@@ -30,7 +30,6 @@ import {
   focusOnHoverField,
   hoverCategoryField,
   loadingLabelField,
-  marginField,
   nullsField,
   replayOnClickField,
   revealOnField,
@@ -43,6 +42,7 @@ import {
   yDomainTweenDurationField,
   yDomainTweenField,
 } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 export const LINE_CHART = /* @__PURE__ */ defineChart<LineChartProps>()({
@@ -58,12 +58,14 @@ export const LINE_CHART = /* @__PURE__ */ defineChart<LineChartProps>()({
     navigatorCommons.group,
     selectionGestureCommons.group,
     analyticsCommons.group,
+    frameSizeGroup,
   ],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     data: rowsField,
     xDataKey: xDataKeyField,
     xScale: xScaleField,
-    margin: marginField,
     animationDuration: motionGroup.fields.animationDuration,
     animationEasing: animationEasingField,
     enterTransition: motionGroup.fields.enterTransition,
@@ -71,7 +73,6 @@ export const LINE_CHART = /* @__PURE__ */ defineChart<LineChartProps>()({
     revealOn: revealOnField,
     replayOnClick: replayOnClickField,
     aspectRatio: aspectRatioField,
-    plotHeight: frameSizeGroup.fields.plotHeight,
     className: classNameField,
     status: chartStateGroup.fields.status,
     loadingLabel: loadingLabelField,

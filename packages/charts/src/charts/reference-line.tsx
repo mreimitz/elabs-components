@@ -21,18 +21,18 @@
 import { useLocale } from "@elabs-ai/components-ui";
 import { useId, useMemo } from "react";
 import { HaloText } from "../marks/halo-text";
+import { ReferenceRule } from "../marks/reference-rule";
 import { useReportOccupiedLabel } from "./analytics/analytics-context";
 import { analyticLabelText, computationName } from "./analytics/analytics-label";
 import { pooledRows } from "./analytics/resolve-analytics";
 import { resolveAnalyticValue } from "./analytics/stats";
 import type { AnalyticLabelMode, AnalyticValue } from "./analytics/types";
-import { chartCssVars, useChartStable, useYScale } from "./chart-context";
+import { useChartStable, useYScale } from "./chart-context";
 import { useChartValueFormatter } from "./chart-formatters";
 import { LABEL_FONT_SIZE } from "./labels/use-chart-labels";
 import { estimateTextWidth } from "./use-text-measurer";
-
-/** Dash pattern distinguishing a threshold from the axis' solid gridlines. */
-const REFERENCE_DASH = "4 3";
+import { REFERENCE_LINE_PART } from "../definitions/parts/reference-line.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 export interface ReferenceLineProps {
   /**
@@ -57,14 +57,13 @@ export interface ReferenceLineProps {
   strokeWidth?: number;
 }
 
-export function ReferenceLine({
-  value,
-  of,
-  label,
-  labelPosition = "end",
-  yAxisId,
-  strokeWidth = 1.5,
-}: ReferenceLineProps) {
+export function ReferenceLine(rawProps: ReferenceLineProps) {
+  // RM-182: the part's definition (REFERENCE_LINE_PART) maps renamed props (no rows until wave 4)
+  // and fills its defaults before anything reads them.
+  const { value, of, label, labelPosition, yAxisId, strokeWidth } = useResolvedChartProps(
+    REFERENCE_LINE_PART,
+    rawProps,
+  );
   const { innerWidth, innerHeight, data, lines } = useChartStable();
   const yScale = useYScale(yAxisId);
   const { t } = useLocale();
@@ -106,15 +105,8 @@ export function ReferenceLine({
 
   return (
     <g data-slot="chart-reference-line" data-value={resolved}>
-      <line
-        stroke={chartCssVars.foreground}
-        strokeDasharray={REFERENCE_DASH}
-        strokeWidth={strokeWidth}
-        x1={0}
-        x2={innerWidth}
-        y1={y}
-        y2={y}
-      />
+      {/* RM-188: the one reference painter (dashed `--chart-foreground`). */}
+      <ReferenceRule strokeWidth={strokeWidth} x1={0} x2={innerWidth} y1={y} y2={y} />
       {text ? (
         <HaloText className="text-meta" textAnchor={atEnd ? "end" : "start"} x={labelX} y={labelY}>
           {text}

@@ -22,6 +22,12 @@ vi.mock("motion/react", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useReducedMotion: () => motionState.reduced,
 }));
+// RM-189: the clip reads reduced motion from the tokens package hook (the
+// person's explicit preference before the OS setting), not `motion/react`.
+vi.mock("@elabs-ai/components-tokens", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useReducedMotion: () => motionState.reduced === true,
+}));
 
 import { ChartRevealClip, isRevealHeldForView, type RevealGateState } from "./chart-reveal-clip";
 

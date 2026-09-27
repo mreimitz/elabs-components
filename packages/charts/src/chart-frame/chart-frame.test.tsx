@@ -12,12 +12,12 @@ import { ChartLegend } from "../charts/chart-legend";
 import { ChartTooltip } from "../charts/tooltip";
 import { ChartConfigProvider } from "../charts/chart-config-context";
 
-// @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
-vi.mock("@visx/responsive", () => {
+// ChartParentSize uses ResizeObserver + real DOM measurement which jsdom lacks.
+vi.mock("../charts/chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;

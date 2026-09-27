@@ -14,8 +14,8 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { applyThemeVars } from "../on-mark-ink.fixtures";
 import { HeatmapChart } from "./heatmap-chart";
 
-vi.mock("@visx/responsive", () => ({
-  ParentSize: ({
+vi.mock("../chart-parent-size", () => ({
+  ChartParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => ReactNode;

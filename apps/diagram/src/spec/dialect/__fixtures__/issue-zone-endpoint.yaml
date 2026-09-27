@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
+diagram: "0"
+zones:
+  - id: vpc
+    children:
+      - id: api
+nodes:
+  - id: users
+    type: actor
+flows:
+  - users -> vpc
+# expect: zone-endpoint @ 11:14
+# expect: missing-owner @ 4:9

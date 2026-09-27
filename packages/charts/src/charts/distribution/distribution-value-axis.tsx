@@ -17,24 +17,35 @@
 import { chartCssVars } from "../chart-context";
 import type { DistributionGeometry } from "./distribution-geometry";
 import type { DistributionGroup } from "./distribution-groups";
-import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
+import { AxisRule } from "../../marks/reference-rule";
+import { Y_AXIS_DEFAULT_TICK_COUNT } from "../tick-targets";
+import { valueAxisTicks } from "../y-axis-ticks";
 
 export interface DistributionValueAxisProps {
   geometry: DistributionGeometry;
   groups: readonly DistributionGroup[];
   formatValue: (value: number) => string;
+  /**
+   * #250: builds ONE formatter for the axis' tick set, so the ticks never mix
+   * notations. Unset, each tick goes through `formatValue` on its own.
+   */
+  formatValueSet?: (values: readonly number[]) => (value: number) => string;
   /** Approximate tick count. Default 5. */
   tickCount?: number;
 }
 
 export function DistributionValueAxis({
-  formatValue,
+  formatValue: formatValueProp,
+  formatValueSet,
   geometry,
   groups,
-  tickCount = 5,
+  tickCount = Y_AXIS_DEFAULT_TICK_COUNT,
 }: DistributionValueAxisProps) {
   const horizontal = geometry.orientation === "horizontal";
-  const ticks = geometry.valueTicks(tickCount);
+  // RM-188: the shared value-axis tick generator (the one YAxis and Grid use)
+  // over the geometry's linear domain, at the one tick table's default count.
+  const ticks = valueAxisTicks({ ticks: geometry.valueTicks }, tickCount);
+  const formatValue = formatValueSet ? formatValueSet(ticks) : formatValueProp;
 
   return (
     <g data-slot="distribution-chart-axis">
@@ -44,9 +55,7 @@ export function DistributionValueAxis({
           <g key={tick}>
             {/* A gridline, not a rule: it runs the full cross extent so every
                 band is read against the same reference. */}
-            <line
-              stroke={chartCssVars.grid}
-              strokeWidth={CHART_HAIRLINE_WIDTH}
+            <AxisRule
               x1={horizontal ? position : 0}
               x2={horizontal ? position : geometry.plotWidth}
               y1={horizontal ? 0 : position}

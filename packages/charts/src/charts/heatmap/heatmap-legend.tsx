@@ -33,9 +33,9 @@ import { QuietDot } from "../../marks/quiet-dot";
 import { rampPositionOf } from "../legend/ramp-legend";
 import { HeatmapMissingMark } from "./heatmap-cell";
 import type { HeatmapEmptyValue } from "./heatmap-context";
+import { useChartTranslate } from "../chart-messages";
 
 /** Key captions for the two non-value states. */
-const HEATMAP_LEGEND_LABELS = { zero: "zero", missing: "no data" } as const;
 
 /**
  * The 45° hatch that marks a NEGATIVE step, mirroring the `<pattern>` the cells
@@ -60,6 +60,13 @@ export interface HeatmapLegendProps {
   /** Domain ceiling — the value the last swatch ends at. */
   hi: number;
   formatValue: (value: number) => string;
+  /**
+   * #250: builds ONE formatter for the legend's set of printed bounds (every
+   * step edge in `"ranges"`, `lo`/`hi` in `"endpoints"`), so the key never
+   * mixes notations. Unset,
+   * each bound goes through `formatValue` on its own, as before.
+   */
+  formatValueSet?: (values: readonly number[]) => (value: number) => string;
   emptyValue: HeatmapEmptyValue;
   /**
    * True for `steps: 0`. The swatches are then SAMPLES of a continuous scale,
@@ -97,7 +104,8 @@ export function HeatmapLegend({
   className,
   continuous,
   emptyValue,
-  formatValue,
+  formatValue: formatValueProp,
+  formatValueSet,
   hi,
   lo,
   missingCount = 0,
@@ -106,6 +114,7 @@ export function HeatmapLegend({
   labelMode = "endpoints",
   hover,
 }: HeatmapLegendProps) {
+  const tChart = useChartTranslate();
   if (swatches.length === 0) {
     return null;
   }
@@ -113,6 +122,14 @@ export function HeatmapLegend({
   const hasHover = typeof hover === "number" && Number.isFinite(hover);
   const markerT = hasHover ? rampPositionOf(hover as number, [lo, hi]) : null;
   const stepWidth = hi === lo ? 0 : (hi - lo) / swatches.length;
+  // #250: the set is exactly the labels the key PRINTS — every step bound in
+  // `"ranges"`, only `lo`/`hi` in `"endpoints"` (so an endpoints key over 0–1500
+  // still reads "0 … 1.5K", as before RM-187).
+  const bounds =
+    labelMode === "ranges"
+      ? swatches.map((_, index) => lo + stepWidth * index).concat(hi)
+      : [lo, hi];
+  const formatValue = formatValueSet ? formatValueSet(bounds) : formatValueProp;
   // `"ranges"` stretches each swatch over its label's column; `"endpoints"` keeps the 16 px step.
   const stepWidthClass = labelMode === "ranges" ? "w-full" : "w-4";
   const stepSpans = swatches.map((swatch, index) => (
@@ -144,8 +161,12 @@ export function HeatmapLegend({
     >
       <span className="sr-only">
         {continuous
-          ? `Colour scale: continuous, from ${formatValue(lo)} to ${formatValue(hi)}.`
-          : `Colour scale: ${swatches.length} steps from ${formatValue(lo)} to ${formatValue(hi)}.`}
+          ? tChart("charts.heatmap.legendContinuous", { lo: formatValue(lo), hi: formatValue(hi) })
+          : tChart("charts.heatmap.legendSteps", {
+              count: swatches.length,
+              lo: formatValue(lo),
+              hi: formatValue(hi),
+            })}
       </span>
       {labelMode === "endpoints" ? (
         <span aria-hidden="true" className="tabular-nums">
@@ -223,7 +244,7 @@ export function HeatmapLegend({
           <svg aria-hidden="true" className="shrink-0" height={10} role="presentation" width={10}>
             <QuietDot cx={5} cy={5} />
           </svg>
-          {HEATMAP_LEGEND_LABELS.zero}
+          {tChart("charts.heatmap.legendZero")}
         </span>
       ) : null}
       {emptyValue === "quiet" && missingCount > 0 ? (
@@ -233,7 +254,7 @@ export function HeatmapLegend({
                 square would be a second, different symbol for the state it names. */}
             <HeatmapMissingMark height={9} rx={4.5} width={9} x={0.5} y={0.5} />
           </svg>
-          {HEATMAP_LEGEND_LABELS.missing}
+          {tChart("charts.heatmap.legendMissing")}
         </span>
       ) : null}
     </div>

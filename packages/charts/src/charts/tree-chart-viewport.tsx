@@ -19,9 +19,10 @@
  * tree moves its top-left corner to `origin` in scroll pixels; every
  * tree ⇄ scroll conversion goes through it.
  */
-import { Maximize, Minus, Plus } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui";
+import { useChartTranslate } from "./chart-messages";
+import { ChartZoomControls } from "./gestures/chart-zoom-controls";
 
 /** The zoom range and step `CanvasShell` uses (React Flow's defaults). */
 export const TREE_ZOOM_MIN = 0.5;
@@ -262,37 +263,6 @@ export function useTreeZoom({
 
 // ── Controls ─────────────────────────────────────────────────────────────
 
-function ControlButton({
-  label,
-  onClick,
-  disabled,
-  children,
-}: {
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-  children: React.ReactNode;
-}) {
-  // The same recipe as the flow package's `ZoomControls`, so a tree and a
-  // canvas side by side read as one system.
-  return (
-    <button
-      aria-disabled={disabled || undefined}
-      aria-label={label}
-      className={cn(
-        "flex size-8 items-center justify-center text-foreground transition-colors duration-fast focus-ring hover:bg-surface-muted [&_svg]:size-4",
-        disabled && "opacity-50 hover:bg-transparent",
-      )}
-      onClick={() => {
-        if (!disabled) onClick();
-      }}
-      type="button"
-    >
-      {children}
-    </button>
-  );
-}
-
 export interface TreeChartZoomControlsProps {
   zoom: number;
   min: number;
@@ -303,7 +273,19 @@ export interface TreeChartZoomControlsProps {
   className?: string;
 }
 
-/** Zoom in / out / fit, in the flow package's chrome. Sits in the frame's bottom-right corner. */
+/** The tree's own catalogue keys for its zoom words (RM-188: read by `ChartZoomControls`). */
+const TREE_ZOOM_MESSAGE_KEYS = {
+  group: "charts.treeChart.zoom",
+  zoomIn: "charts.treeChart.zoomIn",
+  zoomOut: "charts.treeChart.zoomOut",
+  reset: "charts.treeChart.fitView",
+} as const;
+
+/**
+ * Zoom in / out / fit, in the flow package's chrome. Sits in the frame's
+ * bottom-right corner. RM-188: the shared `ChartZoomControls` in its
+ * `segmented` appearance (the same recipe, focusable at a limit).
+ */
 export function TreeChartZoomControls({
   zoom,
   min,
@@ -313,32 +295,19 @@ export function TreeChartZoomControls({
   onFitView,
   className,
 }: TreeChartZoomControlsProps) {
-  const { t } = useLocale();
   return (
-    <div
-      className={cn(
-        "pointer-events-auto flex divide-x overflow-hidden rounded-lg bg-surface-elevated shadow-ring-sm",
-        className,
-      )}
+    <ChartZoomControls
+      appearance="segmented"
+      canZoomIn={zoom < max}
+      canZoomOut={zoom > min}
+      className={className}
       data-slot="tree-chart-viewport-controls"
       data-zoom={zoom.toFixed(2)}
-      role="group"
-      aria-label={t("charts.treeChart.zoom")}
-    >
-      <ControlButton disabled={zoom >= max} label={t("charts.treeChart.zoomIn")} onClick={onZoomIn}>
-        <Plus aria-hidden="true" />
-      </ControlButton>
-      <ControlButton
-        disabled={zoom <= min}
-        label={t("charts.treeChart.zoomOut")}
-        onClick={onZoomOut}
-      >
-        <Minus aria-hidden="true" />
-      </ControlButton>
-      <ControlButton label={t("charts.treeChart.fitView")} onClick={onFitView}>
-        <Maximize aria-hidden="true" />
-      </ControlButton>
-    </div>
+      messageKeys={TREE_ZOOM_MESSAGE_KEYS}
+      onReset={onFitView}
+      onZoomIn={onZoomIn}
+      onZoomOut={onZoomOut}
+    />
   );
 }
 
@@ -385,7 +354,7 @@ export function TreeChartMiniMap({
   const boxW = Math.max(1, width * scale);
   const boxH = Math.max(1, height * scale);
   const dragging = useRef(false);
-  const { t } = useLocale();
+  const t = useChartTranslate();
 
   const centerFrom = (event: React.PointerEvent) => {
     const svg = ref.current;

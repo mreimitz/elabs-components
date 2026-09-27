@@ -681,6 +681,9 @@ export type {
   WaterfallEndpointOptions,
   WaterfallSort,
 } from "./waterfall-steps";
+// Waterfall selection paint-back — RM-185: the datum type `ChartSelectionProps`/
+// `ChartSelectionStatesResolver` is generic over, so a caller can name it.
+export type { WaterfallRow } from "./waterfall-chart";
 
 // Bump — RM-033
 export {
@@ -1048,3 +1051,6 @@ export {
   type ResolvedDistributionReferenceLine,
   resolveDistributionReferenceLines,
 } from "./distribution/distribution-reference-line";
+// Palette — RM-186: the one `resolveColorBy`'s option bag and result, so a caller of the
+// public export can name what it passes and gets back.
+export { type ResolveColorByOptions, type ResolvedColorBy } from "./chart-context";

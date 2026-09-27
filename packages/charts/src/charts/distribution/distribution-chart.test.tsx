@@ -1,7 +1,7 @@
 /**
  * DistributionChart smoke + budget tests.
  *
- * `@visx/responsive`'s `ParentSize` measures with a `ResizeObserver`, which
+ * `ChartParentSize` measures with a `ResizeObserver`, which
  * jsdom does not implement, so it is mocked to a concrete box — the same
  * precedent `choropleth-chart.test.tsx` sets. Full render + axe a11y across both
  * themes is the Storybook interaction suite's job
@@ -12,18 +12,40 @@
  */
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type * as DatapointLayer from "../chart-datapoint-layer";
 
 /** The mocked box. Mutable so a test can re-render the same chart at another height. */
 const mockSize = vi.hoisted(() => ({ width: 640, height: 320 }));
 
-vi.mock("@visx/responsive", () => ({
-  ParentSize: ({
+vi.mock("../chart-parent-size", () => ({
+  ChartParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => React.ReactNode;
     debounceTime?: number;
   }) => <>{children({ width: mockSize.width, height: mockSize.height })}</>,
 }));
+
+/**
+ * Renders of the strip's mark layer, counted through the one hook every render
+ * of it calls exactly once (`kinds/strip.tsx` registers its keyboard targets
+ * under `distribution-strip-<group>`, and no other layer uses that id). A pass-
+ * through: the real hook still runs.
+ */
+const stripRenders = vi.hoisted(() => ({ count: 0 }));
+
+vi.mock("../chart-datapoint-layer", async (importOriginal) => {
+  const actual = await importOriginal<typeof DatapointLayer>();
+  return {
+    ...actual,
+    useRegisterDatapointTargets: (
+      ...args: Parameters<typeof actual.useRegisterDatapointTargets>
+    ): void => {
+      if (args[0].startsWith("distribution-strip-")) stripRenders.count += 1;
+      actual.useRegisterDatapointTargets(...args);
+    },
+  };
+});
 
 if (!globalThis.ResizeObserver) {
   globalThis.ResizeObserver = class {
@@ -66,10 +88,6 @@ function replies(n: number, k: number, team: string) {
 }
 
 const DATA = [...replies(60, 3, "Support"), ...replies(60, 9, "Billing")];
-
-// Shared CI runners stall under load, so wall-clock budgets get slack there;
-// local budgets stay exact.
-const TIMING_SLACK = process.env.CI ? 4 : 1;
 
 describe("DistributionChart", () => {
   it("renders a box for every group, on one axis", () => {
@@ -455,29 +473,32 @@ describe("DistributionChart", () => {
    *
    * What jsdom CAN prove, deterministically, is the reason the hover is cheap:
    * the memoized mark layer is not re-rendered by the container's tooltip state,
-   * so a hover costs one tooltip, not 2,000 circles. That is asserted
-   * structurally (node identity) and as a RATIO against a full mount, which
-   * scales with the machine instead of fighting it.
+   * so a hover costs one tooltip, not 2,000 circles. That is asserted by
+   * COUNTING the strip's renders (zero more after the hover) and by node
+   * identity — never by a wall-clock ratio, which a loaded machine skews in
+   * either direction.
    */
   it("hovers one of 2,000 records without redrawing the strip", () => {
     const many = replies(2000, 17, "Support");
-    const mountStart = performance.now();
+    stripRenders.count = 0;
     const { container } = render(<DistributionChart data={many} kind="strip" valueKey="minutes" />);
-    const mountCost = performance.now() - mountStart;
     const dots = container.querySelectorAll('[data-slot="distribution-chart-record"]');
     expect(dots).toHaveLength(2000);
+    const rendersAtRest = stripRenders.count;
+    expect(rendersAtRest).toBeGreaterThan(0);
+    expect(document.querySelector('[data-slot="chart-tooltip-box"]')).toBeNull();
 
     const before = dots[500] as SVGCircleElement;
-    const start = performance.now();
     fireEvent.pointerEnter(before);
-    const elapsed = performance.now() - start;
 
-    // Structural: the same DOM nodes are still there, i.e. the memoized layer
-    // was not re-rendered by the tooltip's state change.
+    // The hover landed: the container's tooltip state changed and it painted…
+    expect(document.querySelector('[data-slot="chart-tooltip-box"]')).not.toBeNull();
+    // …yet the memoized strip rendered zero more times: a hover costs one
+    // tooltip, not another pass over 2,000 circles.
+    expect(stripRenders.count).toBe(rendersAtRest);
+    // Structural: the same DOM nodes are still there.
     const after = container.querySelectorAll('[data-slot="distribution-chart-record"]');
     expect(after[500]).toBe(before);
-    // …and the cost is a small fraction of drawing the strip, not another one.
-    expect(elapsed * 4).toBeLessThan(mountCost * TIMING_SLACK);
   });
 });
 
@@ -596,4 +617,97 @@ describe("the box/violin median tick reads on its own group's fill (#243)", () =
       }
     },
   );
+});
+
+describe("DistributionChart selection paint-back (RM-185, F22)", () => {
+  const GROUPED = [
+    { team: "Alpha", minutes: 10 },
+    { team: "Alpha", minutes: 12 },
+    { team: "Beta", minutes: 30 },
+    { team: "Beta", minutes: 34 },
+    { team: "Gamma", minutes: 50 },
+    { team: "Gamma", minutes: 54 },
+  ];
+  const states: Record<string, "selected" | "associated" | "excluded"> = {
+    Alpha: "selected",
+    Beta: "associated",
+    Gamma: "excluded",
+  };
+  const selectionStates = (category: string | number | Date) =>
+    states[String(category)] ?? "associated";
+
+  it.each(["box", "violin", "strip", "histogram"] as const)(
+    "kind=%s: a host's selectionStates paints one group's tri-state, keyed by groupKey",
+    (kind) => {
+      const { container } = render(
+        <DistributionChart
+          data={GROUPED}
+          groupKey="team"
+          kind={kind}
+          selectionStates={selectionStates}
+          valueKey="minutes"
+        />,
+      );
+      const selected = container.querySelectorAll('[data-selection="selected"]');
+      const excluded = container.querySelectorAll('[data-selection="excluded"]');
+      expect(selected.length).toBe(1);
+      expect(container.querySelectorAll('[data-selection="associated"]').length).toBe(1);
+      expect(excluded.length).toBe(1);
+      // Counting the wrapper attribute alone would still pass if the actual
+      // dim, frame or outline stopped rendering — assert the paint itself.
+      expect(excluded[0]!.querySelector('[data-slot="chart-selection-mark-dim"]')).not.toBeNull();
+      expect(excluded[0]!.querySelector('[data-slot="chart-selection-mark-frame"]')).not.toBeNull();
+      expect(
+        selected[0]!.querySelector('[data-slot="chart-selection-mark-outline"]'),
+      ).not.toBeNull();
+    },
+  );
+
+  it("without selectionStates, the DOM stays byte-identical (no data-selection anywhere)", () => {
+    const { container } = render(
+      <DistributionChart data={GROUPED} groupKey="team" kind="box" valueKey="minutes" />,
+    );
+    expect(container.querySelectorAll("[data-selection]").length).toBe(0);
+  });
+});
+
+describe("DistributionChart loading plot box (RM-185 review)", () => {
+  // With `plotHeight` unset, the ready root has no aspect-ratio fallback of its
+  // own — it just fills its parent (`h-full`) — so a fallback aspect ratio on
+  // the loading root would give the two DIFFERENT sizes inside a `ChartFrame`
+  // or an unsized parent, even though nothing else about the box changed. A
+  // jsdom render can't see actual layout, so this asserts the resolved inline
+  // style directly, on both roots.
+  it("with no plotHeight, the loading root carries no aspect-ratio style, matching the ready root", () => {
+    const { container: loading } = render(
+      <DistributionChart data={DATA} kind="histogram" status="loading" valueKey="minutes" />,
+    );
+    const loadingRoot = loading.querySelector<HTMLElement>('[data-status="loading"]');
+    expect(loadingRoot).not.toBeNull();
+    expect(loadingRoot!.style.aspectRatio).toBe("");
+    expect(loadingRoot!.className).toContain("h-full");
+
+    const { container: ready } = render(
+      <DistributionChart data={DATA} kind="histogram" valueKey="minutes" />,
+    );
+    const readyRoot = ready.querySelector<HTMLElement>('[data-slot="distribution-chart"]');
+    expect(readyRoot).not.toBeNull();
+    expect(readyRoot!.style.aspectRatio).toBe("");
+    expect(readyRoot!.className).toContain("h-full");
+  });
+
+  it("with plotHeight set, the loading root uses it (a real fallback aspect ratio, not h-full)", () => {
+    const { container } = render(
+      <DistributionChart
+        data={DATA}
+        kind="histogram"
+        plotHeight={260}
+        status="loading"
+        valueKey="minutes"
+      />,
+    );
+    const loadingRoot = container.querySelector<HTMLElement>('[data-status="loading"]');
+    expect(loadingRoot!.style.height).toBe("260px");
+    expect(loadingRoot!.className).not.toContain("h-full");
+  });
 });

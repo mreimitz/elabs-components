@@ -1,6 +1,7 @@
 {
-  // Debug profiles for the two web apps: the website (apps/home, Next.js on :3000)
-  // and Storybook (apps/docs, on :6006). Each launches Chrome with the debugger
+  // Debug profiles for the web apps: the website (apps/home, Next.js on :3000),
+  // Storybook (apps/docs, on :6006) and the diagram test app (apps/diagram, Vite on
+  // :5180). Each launches Chrome with the debugger
   // attached (set breakpoints in .tsx source via source maps):
   //   - F5 / "Run" runs the `preLaunchTask` (starts the dev server, waits until
   //     it's ready) then opens the app in a debuggable Chrome.
@@ -63,6 +64,21 @@
       "preLaunchTask": "dev: storybook",
       "postDebugTask": "stop: storybook",
       "presentation": { "group": "1_apps", "order": 2 }
+    },
+    {
+      "name": "📐 Diagram (apps/diagram)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5180",
+      // apps/diagram, not the repo root, for the same reason as Storybook: it is Vite's
+      // root, so pre-bundled deps (/node_modules/.vite/…) resolve their source maps there.
+      // Library code comes over /@fs/<absolute path> from packages/*/src, so breakpoints
+      // bind in the components as well as in the app.
+      "webRoot": "${workspaceFolder}/apps/diagram",
+      "userDataDir": "${workspaceFolder}/.vscode/.chrome/diagram",
+      "preLaunchTask": "dev: diagram",
+      "postDebugTask": "stop: diagram",
+      "presentation": { "group": "1_apps", "order": 3 }
     }
   ],
   "compounds": [

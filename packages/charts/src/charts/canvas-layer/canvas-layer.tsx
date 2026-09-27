@@ -84,6 +84,7 @@ import { ChartSelectionGestureScope } from "../selection/chart-gesture-layer";
 import type { GestureAxis } from "../selection/geometry";
 import type { ChartSelectionGestureProps } from "../selection/types";
 import { type CanvasSelectionMark, CanvasSelectionLayer } from "./canvas-selection";
+import { useChartTranslate } from "../chart-messages";
 
 /** A box in the layer's own CSS-pixel coordinate space. */
 export interface CanvasLayerRect {
@@ -182,7 +183,7 @@ function pointerPosition(
 function CanvasLayerImpl<T>(
   {
     accessibleDescription,
-    accessibleLabel = "Chart marks",
+    accessibleLabel: accessibleLabelProp,
     animateIn = false,
     className,
     draw,
@@ -211,6 +212,8 @@ function CanvasLayerImpl<T>(
   }: CanvasLayerProps<T>,
   forwardedRef: ForwardedRef<HTMLDivElement>,
 ) {
+  const tChart = useChartTranslate();
+  const accessibleLabel = accessibleLabelProp ?? tChart("charts.canvasLayer.label");
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [measureRef, bounds] = useLayoutMeasure();
   const descId = useId();

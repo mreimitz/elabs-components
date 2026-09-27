@@ -6849,7 +6849,11 @@
           "ChartSelectionProps",
           "ChartHoverLinkProps",
           "ChartNavigatorProps",
-          "ChartSelectionGestureProps"
+          "ChartSelectionGestureProps",
+          "FrameSizeGroupProps",
+          "Pick<LegendGroupProps, \"legend\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "Pick<TooltipGroupProps, \"tooltip\">"
         ],
         "props": [
           {
@@ -6877,9 +6881,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -6936,7 +6941,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -7124,6 +7130,13 @@
             "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off.",
             "defaultValue": "true",
             "kind": "boolean"
+          },
+          {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for the series (RM-186): each series child that sets no colour of its own takes the next colour of `resolvePalette(palette, n)`. Unset: every such series keeps `--chart-line-primary`, as before.",
+            "kind": "enum"
           },
           {
             "name": "selectionStates",
@@ -7450,7 +7463,7 @@
             "name": "loadingStroke",
             "optional": true,
             "type": "string",
-            "description": "Pulse stroke color while chart is loading. Default: var(--foreground)",
+            "description": "Pulse stroke color while chart is loading. Default: var(--chart-foreground)",
             "defaultValue": "\"var(--chart-foreground)\"",
             "kind": "color"
           },
@@ -7639,6 +7652,12 @@
             "optional": true,
             "type": "string",
             "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\""
+          },
+          {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "The plot height, as on the chart it stands in for — px, `{ aspect }`, or per breakpoint. Wins over `aspectRatio`, so the placeholder holds the box the loaded chart will fill."
           },
           {
             "name": "className",
@@ -8346,6 +8365,11 @@
         "description": "The same shares that would draw a pie draw countable marks instead once the spec asks for the editorial register — `emphasis: \"editorial\"` is the only difference between this story and a pie."
       },
       {
+        "id": "charts-autochart--unit-plot-height",
+        "name": "Unit plotHeight forwarding (400px)",
+        "description": "`AutoChart`'s own `plotHeight` prop, forwarded straight to `UnitChart`'s `plotHeight` (not the deprecated `height` alias) — a regression lock for G1 (RM-183 review round 2): a `ChartPlotBox` bug erased every resolved plot height on `layout=\"waffle\"`/`\"field\"`, collapsing this to the 100px content floor regardless of the 400px asked for here."
+      },
+      {
         "id": "charts-autochart--line-legend-from-column-keys",
         "name": "Line Legend From Column Keys",
         "description": "A series known only by its column key (no `label`) is NOT end-labelled (RM-110), so the legend engine's default shows a legend — forwarded through `spec.legend` into `LineChart`'s own `legend` prop (`LEGEND_ENGINE_TYPES`), never a second, `AutoChart`-owned implementation. The rendered `.legend-container` is byte-identical to an explicit `<LineChart legend>` built from the same normalized series (see `auto-chart.test.tsx`'s \"renders the identical legend DOM…\" test, and `LineChart`'s own `LegendToggle` story for the equivalent explicit call)."
@@ -8597,6 +8621,11 @@
         "id": "charts-axes--auto-chart-axes",
         "name": "Auto Chart Axes",
         "description": "The same axis controls from a serialisable `ChartSpec.axes`."
+      },
+      {
+        "id": "charts-axes--bar-axis-titles",
+        "name": "Bar Axis Titles",
+        "description": "Bar category-axis titles: `BarXAxis title` names the columns of a vertical chart, `BarYAxis title` the rows of a horizontal one — each `outside` (default, in the margin) or `inside` (in the plot corner the matching `XAxis`/`YAxis` uses; it does not step around bars, so it paints over the last column or the first row, legible on its halo)."
       }
     ],
     "block": null,
@@ -8643,7 +8672,11 @@
         "extends": [
           "ChartSelectionProps",
           "ChartSelectionGestureProps",
-          "ChartCategoryNavigatorProps"
+          "FrameSizeGroupProps",
+          "Pick<LegendGroupProps, \"legend\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "ChartCategoryNavigatorProps",
+          "Pick<TooltipGroupProps, \"tooltip\">"
         ],
         "props": [
           {
@@ -8664,9 +8697,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -8724,7 +8758,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -9319,6 +9354,18 @@
             "optional": true,
             "type": "CategoryAxisFit",
             "description": "How labels that do not fit their band are rescued (RM-108): - `\"auto\"` (default) — horizontal → two-line `wrap` → 45° tilt → ellipsis → stride → hidden; - `\"wrap\"` — the same cascade without the tilt rung (never rotates); - `\"tilt\"` — the pre-RM-108 cascade (skips `wrap`); - `\"off\"` — pins the pre-fit behaviour: full labels, count-capped stride, no measurement and no reserved axis space. The regression escape hatch."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the categories are (RM-188; the same part `XAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner — the same fixed corner `XAxis` uses. By design it does not step around marks, so on a vertical bar chart it paints over the LAST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -9351,6 +9398,18 @@
             "optional": true,
             "type": "number",
             "description": "The widest the label gutter may grow, in px. The gutter is measured from the labels and capped so a long name cannot eat the plot; the default cap suits one or two words. Raise it for rows whose names ARE the content — \"Send Invoice → Payment Reminder\" — and the chart still keeps its own minimum plot width. Default: 112."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the rows are (RM-188; the same part `YAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner — the same fixed corner `YAxis` uses. By design it does not step around marks, so on a horizontal bar chart it paints over the FIRST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -9565,6 +9624,18 @@
             "optional": true,
             "type": "string",
             "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
+          },
+          {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits after the decimal point in the value column (RM-187)."
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "Locale for the value and percent columns (RM-187); unset, the `LocaleProvider`'s."
           },
           {
             "name": "title",
@@ -9852,7 +9923,13 @@
     "api": [
       {
         "name": "BulletChart",
-        "extends": ["Omit<HTMLAttributes<HTMLDivElement>, \"children\">", "ChartA11yProps"],
+        "extends": [
+          "Omit<HTMLAttributes<HTMLDivElement>, \"children\">",
+          "ChartA11yProps",
+          "Pick<FrameSizeGroupProps, \"margin\" | \"plotHeight\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "Pick<ValueFormatGroupProps, \"locale\" | \"currency\" | \"maxFractionDigits\">"
+        ],
         "props": [
           {
             "name": "value",
@@ -9942,6 +10019,13 @@
             "kind": "boolean"
           },
           {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for the measure bar (RM-186): it takes the palette's first colour. Unset: `--chart-1`, as before.",
+            "kind": "enum"
+          },
+          {
             "name": "accessibleLabel",
             "optional": true,
             "type": "string",
@@ -9958,6 +10042,55 @@
             "from": "ChartA11yProps",
             "kind": "string",
             "group": "a11y"
+          },
+          {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "Height of the plot: pixels, or `{ aspect }` as width divided by height. Set `{ base, medium, narrow }` to vary it by breakpoint.",
+            "from": "FrameSizeGroupProps",
+            "kind": "responsive"
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot, in pixels: one number for every side, or per side.",
+            "from": "FrameSizeGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready.",
+            "from": "ChartStateGroupProps",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "BCP 47 locale the numbers are formatted in.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
+          },
+          {
+            "name": "currency",
+            "optional": true,
+            "type": "string",
+            "description": "ISO 4217 currency code for currency values.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
+          },
+          {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits printed after the decimal point.",
+            "from": "ValueFormatGroupProps",
+            "kind": "number"
           }
         ],
         "variants": null,
@@ -9969,6 +10102,11 @@
         "id": "charts-bulletchart--default",
         "name": "Default",
         "description": "`size=\"md\"` with bands + a target — the standard reading, axis included."
+      },
+      {
+        "id": "charts-bulletchart--loading",
+        "name": "Loading",
+        "description": "Loading skeleton (RM-183) — shown while `status=\"loading\"`, sized like the real chart."
       },
       {
         "id": "charts-bulletchart--with-comparative",
@@ -10043,8 +10181,20 @@
     "api": [
       {
         "name": "BumpChart",
-        "extends": ["ChartInteractionProps"],
+        "extends": [
+          "ChartInteractionProps",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">"
+        ],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -10135,8 +10285,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins."
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side.",
+            "kind": "union"
           },
           {
             "name": "aspectRatio",
@@ -10157,6 +10308,14 @@
             "optional": true,
             "type": "string",
             "kind": "string"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "accessibleLabel",
@@ -10263,6 +10422,11 @@
         "id": "charts-bumpchart--default",
         "name": "Default",
         "description": "`variant=\"lines\"` (default) — rank is derived from `share`; Atlas overtakes Nimbus in Q2 and the two lines visibly cross."
+      },
+      {
+        "id": "charts-bumpchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
       },
       {
         "id": "charts-bumpchart--highlighted",
@@ -10458,7 +10622,12 @@
     "api": [
       {
         "name": "CandlestickChart",
-        "extends": ["ChartNavigatorProps"],
+        "extends": [
+          "ChartNavigatorProps",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "Pick<TooltipGroupProps, \"tooltip\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -10478,9 +10647,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -10516,7 +10686,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -10525,6 +10696,14 @@
             "description": "Additional class name for the container",
             "defaultValue": "\"\"",
             "kind": "string"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-182). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "style",
@@ -10591,12 +10770,26 @@
             "group": "analytics"
           },
           {
+            "name": "annotations",
+            "optional": true,
+            "type": "readonly ChartAnnotation[]",
+            "description": "Declarative annotations in data units — text notes, ranges and reference lines (RM-111). Always honoured at runtime through the shared annotation layer; RM-188 declares the prop so it is typed and documented.",
+            "kind": "array"
+          },
+          {
             "name": "tooltip",
             "optional": true,
             "type": "boolean",
             "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off.",
             "defaultValue": "true",
             "kind": "boolean"
+          },
+          {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for the candles (RM-186): rising candles take the palette's gain colour and falling ones its loss colour (`\"diverging\"` is the sign pair, any other palette its first two colours). Unset: `--chart-1` / `--chart-5`, as before. Whatever the palette, a rising body is drawn hollow and a falling one solid, so the two never differ by colour alone.",
+            "kind": "enum"
           },
           {
             "name": "scrollbar",
@@ -10703,19 +10896,19 @@
             "name": "positiveFill",
             "optional": true,
             "type": "string",
-            "description": "Fill for positive (close >= open) candles. Color or url(#gradient). Default: --chart-1"
+            "description": "Colour of rising candles (close >= open): the outline of their HOLLOW body and their wick. Rising bodies are hollow and falling ones solid, so up and down differ by shape as well as colour. Color or url(#gradient). Default: --chart-1"
           },
           {
             "name": "negativeFill",
             "optional": true,
             "type": "string",
-            "description": "Fill for negative candles. Color or url(#gradient). Default: --chart-5"
+            "description": "Fill of falling candles (a solid body) and their wick. Color or url(#gradient). Default: --chart-5"
           },
           {
             "name": "bodyPatternPositive",
             "optional": true,
             "type": "string",
-            "description": "Optional pattern URL for body only (e.g. url(#pattern)). When set, body is drawn solid first, then pattern overlaid and masked to the body rect."
+            "description": "Optional pattern URL for the rising body (e.g. url(#pattern)). Setting it FILLS rising bodies — drawn solid first, then the pattern overlaid and masked to the body rect — instead of drawing them hollow."
           },
           {
             "name": "bodyPatternNegative",
@@ -10750,7 +10943,17 @@
       {
         "id": "charts-candlestickchart--default",
         "name": "Default",
-        "description": "Default — OHLC candles with grid, axes and tooltip. Uses --chart-1 (positive) and --chart-5 (negative) tokens."
+        "description": "Default — OHLC candles with grid, axes and tooltip. Rising candles are hollow (a --chart-1 outline) and falling candles solid (--chart-5), so up and down differ by shape as well as colour."
+      },
+      {
+        "id": "charts-candlestickchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-182): a skeleton in the plot box the chart will fill, with one polite status message per chart, at 380, 600 and 900 px."
+      },
+      {
+        "id": "charts-candlestickchart--rising-and-falling",
+        "name": "Rising (hollow) and falling (solid)",
+        "description": "Rising vs falling — a rising candle (close above open) draws a HOLLOW body: an outline in the rising colour on the plot's own ground. A falling candle draws a SOLID body. The shape is the second channel beside colour (WCAG 1.4.1): in greyscale, an up day still reads apart from a down day. The wicks are unchanged."
       },
       {
         "id": "charts-candlestickchart--no-animation",
@@ -10766,6 +10969,11 @@
         "id": "charts-candlestickchart--with-accessible-label",
         "name": "With Accessible Label",
         "description": "Accessible variant — announces label + description to screen readers on focus."
+      },
+      {
+        "id": "charts-candlestickchart--palette",
+        "name": "Palette",
+        "description": "`palette=\"diverging\"` (RM-186): rising candles take `chartCssVars.signPositive`, falling ones `signNegative` — the two ends of the diverging ramp. The pair shares one lightness, so the hollow (rising) and solid (falling) bodies carry the sign where the hue cannot."
       }
     ],
     "block": null,
@@ -11838,6 +12046,18 @@
             "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
           },
           {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits after the decimal point in the value column (RM-187)."
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "Locale for the value and percent columns (RM-187); unset, the `LocaleProvider`'s."
+          },
+          {
             "name": "title",
             "optional": true,
             "type": "string",
@@ -12141,8 +12361,16 @@
     "api": [
       {
         "name": "ChoroplethChart",
-        "extends": [],
+        "extends": ["FrameSizeGroupProps", "Pick<ChartStateGroupProps, \"status\">"],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -12153,8 +12381,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side.",
+            "kind": "union"
           },
           {
             "name": "animationDuration",
@@ -12331,6 +12560,14 @@
             "kind": "string"
           },
           {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
             "name": "children",
             "optional": false,
             "type": "ReactNode",
@@ -12357,6 +12594,13 @@
             "optional": true,
             "type": "ChoroplethKeyboardNavProps",
             "description": "When provided, a visually-hidden keyboard-navigation overlay is rendered so keyboard users can arrow-navigate through geographic features. Pass the same props accepted by ChoroplethKeyboardNav (getFeatureName, getFeatureValue, valueLabel, navLabel)."
+          },
+          {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for features drawn without a colour scale (RM-186): five colours through `resolvePalette`, cycled. A colour scale, `fill` or `getFeatureColor` still wins. Unset: `--chart-1` … `--chart-5`, as before.",
+            "kind": "enum"
           }
         ],
         "variants": null,
@@ -12438,6 +12682,16 @@
         "id": "charts-choroplethchart--default",
         "name": "Default",
         "description": "World choropleth with default chart token colors and a value tooltip."
+      },
+      {
+        "id": "charts-choroplethchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready map would use, at every width, so nothing moves once the data lands."
+      },
+      {
+        "id": "charts-choroplethchart--loading-scale-height-parity",
+        "name": "Loading Scale Height Parity",
+        "description": "Review fix4: `scale` set + `status=\"loading\"` must never build the live key from data that has no real values yet — that key's own domain/step text is fabricated (\"Colour scale: 4 steps from 0 to 1\"), and it doesn't take up the same room the ready key will once real values land. Not a jsdom test (`aspect-ratio` doesn't compute a real pixel height there) — a real browser is the only way to prove the loading and ready roots agree."
       },
       {
         "id": "charts-choroplethchart--zoom-enabled",
@@ -12540,7 +12794,11 @@
           "ChartSelectionProps",
           "ChartHoverLinkProps",
           "ChartNavigatorProps",
-          "ChartSelectionGestureProps"
+          "ChartSelectionGestureProps",
+          "FrameSizeGroupProps",
+          "Pick<LegendGroupProps, \"legend\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "Pick<TooltipGroupProps, \"tooltip\">"
         ],
         "props": [
           {
@@ -12568,8 +12826,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -12615,7 +12875,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -12775,6 +13036,13 @@
             "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off.",
             "defaultValue": "true",
             "kind": "boolean"
+          },
+          {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for the series (RM-186): each series child that sets no colour of its own takes the next colour of `resolvePalette(palette, n)`. Unset: every such series keeps `--chart-line-primary`, as before.",
+            "kind": "enum"
           },
           {
             "name": "selectionStates",
@@ -13525,6 +13793,18 @@
             "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
           },
           {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits after the decimal point in the value column (RM-187)."
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "Locale for the value and percent columns (RM-187); unset, the `LocaleProvider`'s."
+          },
+          {
             "name": "title",
             "optional": true,
             "type": "string",
@@ -13797,7 +14077,9 @@
       {
         "name": "DensityScatterChart",
         "extends": [
-          "Omit<\n  HTMLAttributes<HTMLDivElement>,\n  \"onSelect\" | \"onSelectionChange\"\n>"
+          "Omit<HTMLAttributes<HTMLDivElement>, \"onSelect\" | \"onSelectionChange\">",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">"
         ],
         "props": [
           {
@@ -14012,7 +14294,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>"
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot: one number for every side, or per side.",
+            "kind": "union"
           },
           {
             "name": "accessibleLabel",
@@ -14057,6 +14341,21 @@
             "name": "onHiddenKeysChange",
             "optional": true,
             "type": "(keys: ReadonlySet<string>) => void"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for `colorBy={{ kind: \"category\" }}` classes (RM-186), through `resolvePalette`. Unset: the twelve series tokens, as before. Zones keep their own `color`.",
+            "kind": "enum"
           }
         ],
         "variants": null,
@@ -14068,6 +14367,11 @@
         "id": "charts-densityscatterchart--two-hundred-thousand-points",
         "name": "Two Hundred Thousand Points",
         "description": "200,000 points of lateral-deviation traffic with two zones on the axes (a core band and an expanded envelope that narrows along x). Wheel-zoom into the funnel throat: the solid core resolves into individual dots; zoom out and it packs again. The readout is this machine's real bin time."
+      },
+      {
+        "id": "charts-densityscatterchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
       },
       {
         "id": "charts-densityscatterchart--one-million-points",
@@ -14093,6 +14397,11 @@
         "id": "charts-densityscatterchart--keyboard-range-selection",
         "name": "Keyboard Range Selection",
         "description": "Selection is an intersection. The play function drives the KEYBOARD path — the x-range slider thumbs are `role=\"slider\"` buttons in the axis gutter — and asserts the intent that leaves the chart and the live-region announcement."
+      },
+      {
+        "id": "charts-densityscatterchart--thumb-hit-bounds-across-widths",
+        "name": "Thumb Hit Bounds Across Widths",
+        "description": "Review fix4: the four range thumbs (x-start/x-end/y-start/y-end) must stay inside their own chart root and clear of each other at every width — the review before this one only checked ~900px, where the bug (x-start/y-start overlapping 10×10px at the bottom-left corner; x-end/y-end reaching past the root's own edges) was invisible."
       },
       {
         "id": "charts-densityscatterchart--legend-hide-and-select",
@@ -14166,8 +14475,23 @@
     "api": [
       {
         "name": "DistributionChart",
-        "extends": ["ChartInteractionProps", "ChartA11yProps", "ChartSelectionGestureProps"],
+        "extends": [
+          "ChartInteractionProps",
+          "ChartA11yProps",
+          "ChartSelectionGestureProps",
+          "ChartSelectionProps",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">"
+        ],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -14284,6 +14608,28 @@
             "group": "analytics"
           },
           {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Unset (default): fills the height its parent gives it, exactly as before this prop existed.",
+            "kind": "responsive"
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "number | Partial<DistributionMargin>",
+            "description": "Chart margins: one number for every side, or per side. Merged over the orientation's own default (`HORIZONTAL_MARGIN`/`VERTICAL_MARGIN`).",
+            "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
             "name": "className",
             "optional": true,
             "type": "string",
@@ -14395,6 +14741,22 @@
             "from": "ChartSelectionGestureProps",
             "kind": "enum",
             "group": "selection-gesture"
+          },
+          {
+            "name": "selectionStates",
+            "optional": true,
+            "type": "ChartSelectionStatesResolver<Record<string, unknown>>",
+            "description": "Maps a mark (category, optional series key, optional raw row) to its selection state. Unset → the chart renders exactly as before.",
+            "from": "ChartSelectionProps"
+          },
+          {
+            "name": "dimExcluded",
+            "optional": true,
+            "type": "boolean",
+            "description": "Dim `excluded` marks and add their non-hue channel (the dashed frame). Default `true`; `false` keeps the `data-selection` attribute (so a host can style it) but paints nothing.",
+            "from": "ChartSelectionProps",
+            "kind": "boolean",
+            "group": "selection"
           }
         ],
         "variants": null,
@@ -14406,6 +14768,11 @@
         "id": "charts-distributionchart--rung-histogram",
         "name": "F14 · Rung histogram",
         "description": "**F14 — rung histogram.** `unit` turns each bin into COUNTABLE rungs instead of a bar: one rung is five tickets (`unitLabel` renders that legend), so the reader can count the tall bin rather than measure it against an axis. The rung pitch is the plot's own count scale, so the stack fills the room it is given. The dashed flag is the median. Reach for a histogram when the bin EDGES carry meaning — here the first bucket is \"under 15 minutes\", which is the queue's actual promise."
+      },
+      {
+        "id": "charts-distributionchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
       },
       {
         "id": "charts-distributionchart--tick-box",
@@ -14436,6 +14803,11 @@
         "id": "charts-distributionchart--reference-line",
         "name": "Reference Line",
         "description": "A fixed threshold (an SLA, a spec limit) drawn across the shared value axis via `referenceLines` — dashed and haloed so it stays legible over a box body, and its fact (\"SLA: 60 min at 60\") is folded into the chart's own accessible description rather than riding on the dashed line alone."
+      },
+      {
+        "id": "charts-distributionchart--selection-states",
+        "name": "Selection states",
+        "description": "A host's `selectionStates` paints Support selected, Onboarding associated and Billing excluded, keyed by the `team` group — every kind paints the same whole-lane outline/dim, never per record."
       }
     ],
     "block": null,
@@ -14483,8 +14855,21 @@
     "api": [
       {
         "name": "DumbbellChart",
-        "extends": ["ChartSelectionProps", "ChartInteractionProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "ChartInteractionProps",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">"
+        ],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -14677,8 +15062,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins."
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side.",
+            "kind": "union"
           },
           {
             "name": "aspectRatio",
@@ -14699,6 +15085,14 @@
             "optional": true,
             "type": "string",
             "kind": "string"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-185). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "accessibleLabel",
@@ -14907,6 +15301,11 @@
         "description": "F12 Dumbbell Queue — hollow dot = before, ink dot = after, beads between count the units gained."
       },
       {
+        "id": "charts-dumbbellchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-185): a skeleton fills the same plot box the ready chart would use, at every width, so nothing moves once the data lands."
+      },
+      {
         "id": "charts-dumbbellchart--this-year-vs-last",
         "name": "This Year Vs Last",
         "description": "F6 Paired Rungs — two value columns (last year / this year), one line per category."
@@ -15067,7 +15466,7 @@
     "file": "packages/charts/src/charts/formatting.stories.tsx",
     "summary": "",
     "question": "",
-    "about": "The format engine: ChartValueFormat's object-spec form, YAxis unit/unitOn, and the XAxis date-format ladder across a short and a long time span.",
+    "about": "The format engine: ChartValueFormat's object-spec form, YAxis unit/unitOn, and the XAxis date-format ladder across a short and a long time span. GermanLocale shows charts following a de-DE LocaleProvider.",
     "intent": null,
     "api": [],
     "stories": [
@@ -15110,6 +15509,11 @@
         "id": "charts-formatting--metric-card-object-spec",
         "name": "Metric Card Object Spec",
         "description": "`MetricCard`'s `valueFormat` (`@elabs-ai/components-ui`) accepts the same object-spec shape as the chart engine — a deliberate twin (`packages/ui/src/lib/compact-number.ts`), since `ui` cannot import `charts`."
+      },
+      {
+        "id": "charts-formatting--german-locale",
+        "name": "German Locale",
+        "description": "Charts under `<LocaleProvider locale=\"de-DE\" messages={…}>` (RM-187): every number follows the provider's locale (`1.234`, `7,5`, `1.000`) and every chart word the app supplies in `messages` replaces the English default. No chart takes a prop for it."
       }
     ],
     "block": null,
@@ -15147,7 +15551,11 @@
     "api": [
       {
         "name": "FunnelChart",
-        "extends": [],
+        "extends": [
+          "Pick<FrameSizeGroupProps, \"margin\">",
+          "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
+          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"locale\" | \"currency\" | \"maxFractionDigits\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -15361,6 +15769,70 @@
             "description": "Stage-to-stage conversion — the % of the PREVIOUS stage's value, rendered as a small opaque plate (lieflat L13's \"62% GET THROUGH\" margin note — the number funnel readers actually want, distinct from the existing `showPercentage` badge which is always \"% of the first stage\"). The plate carries its own ground/ink pair (like `SegmentLabel`'s percentage pill), so it stays legible on any band fill in any theme — see #239. - `\"between\"` places one annotation at the boundary between each pair of adjacent segments. - `\"margin\"` stacks all transitions in a column near the funnel's leading edge (left edge for horizontal, top edge for vertical). - `false` (default) renders nothing — an existing `FunnelChart` with no `showConversion` prop is unaffected. When set, the interactive stage overlay (hover/click target) also gets a native `title` tooltip reading \"N% of previous stage · M% of first stage\".",
             "defaultValue": "false",
             "kind": "enum"
+          },
+          {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for the stages (RM-186): the chart-level colour becomes the palette's first colour unless `color` is set; a stage's own `color` still wins. Unset: `--chart-1`, as before.",
+            "kind": "enum"
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot, in pixels: one number for every side, or per side.",
+            "from": "FrameSizeGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready.",
+            "from": "ChartStateGroupProps",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "from": "ChartStateGroupProps",
+            "kind": "object"
+          },
+          {
+            "name": "valueFormat",
+            "optional": true,
+            "type": "ChartValueFormat",
+            "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
+            "from": "ValueFormatGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "BCP 47 locale the numbers are formatted in.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
+          },
+          {
+            "name": "currency",
+            "optional": true,
+            "type": "string",
+            "description": "ISO 4217 currency code for currency values.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
+          },
+          {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits printed after the decimal point.",
+            "from": "ValueFormatGroupProps",
+            "kind": "number"
           }
         ],
         "variants": null,
@@ -15372,6 +15844,16 @@
         "id": "charts-funnelchart--default",
         "name": "Default",
         "description": ""
+      },
+      {
+        "id": "charts-funnelchart--loading",
+        "name": "Loading",
+        "description": "Loading skeleton (RM-183) — shown while `status=\"loading\"`, sized like the real chart."
+      },
+      {
+        "id": "charts-funnelchart--loading-to-ready",
+        "name": "draws once loading finishes",
+        "description": "Regression lock (RM-183 review) — the ResizeObserver that measures the plot never attached while `status=\"loading\"` hid the real chart node, so flipping to \"ready\" left the funnel blank until an unrelated resize fired. This exercises that exact transition end to end in a real browser."
       },
       {
         "id": "charts-funnelchart--vertical",
@@ -15457,6 +15939,14 @@
           "VariantProps<typeof ganttVariants>"
         ],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "tasks",
             "optional": false,
@@ -16264,9 +16754,18 @@
           "ChartSelectionProps",
           "ChartInteractionProps",
           "ChartSelectionGestureProps",
+          "FrameSizeGroupProps",
           "ChartCategoryNavigatorProps"
         ],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -16426,8 +16925,9 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<HeatmapMargin>",
-            "description": "Plot-area insets. Merged over the variant's own defaults."
+            "type": "number | Partial<HeatmapMargin>",
+            "description": "Plot-area insets: one number for every side, or per side. Merged over the variant's own defaults.",
+            "kind": "union"
           },
           {
             "name": "aspectRatio",
@@ -16485,7 +16985,7 @@
             "name": "accessibleLabel",
             "optional": true,
             "type": "ChartA11yProps[\"accessibleLabel\"]",
-            "description": "Accessible name for the chart region. Defaults to a generated summary (\"Heatmap, 7 rows × 24 columns, peak 42 at Wed 14:00.\") — passing one both overrides it and is how the sentence gets localized.",
+            "description": "Accessible name for the chart region. Defaults to a generated summary (\"Heatmap, 7 rows × 24 columns, peak 42 at Wed 14:00.\") — passing one overrides it. The generated sentence is already localized: its words are the `charts.heatmap.*` messages and its numbers follow the `LocaleProvider`.",
             "kind": "string",
             "group": "a11y"
           },
@@ -16852,7 +17352,11 @@
           "ChartSelectionProps",
           "ChartHoverLinkProps",
           "ChartNavigatorProps",
-          "ChartSelectionGestureProps"
+          "ChartSelectionGestureProps",
+          "FrameSizeGroupProps",
+          "Pick<LegendGroupProps, \"legend\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "Pick<TooltipGroupProps, \"tooltip\">"
         ],
         "props": [
           {
@@ -16880,9 +17384,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -16937,7 +17442,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -17104,6 +17610,13 @@
             "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off.",
             "defaultValue": "true",
             "kind": "boolean"
+          },
+          {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for the series (RM-186): each series child that sets no colour of its own takes the next colour of `resolvePalette(palette, n)`. Unset: every such series keeps `--chart-line-primary`, as before.",
+            "kind": "enum"
           },
           {
             "name": "selectionStates",
@@ -17556,6 +18069,12 @@
             "description": "Aspect ratio as \"width / height\". Default: \"2 / 1\""
           },
           {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "The plot height, as on the chart it stands in for — px, `{ aspect }`, or per breakpoint. Wins over `aspectRatio`, so the placeholder holds the box the loaded chart will fill."
+          },
+          {
             "name": "className",
             "optional": true,
             "type": "string",
@@ -17995,6 +18514,11 @@
         "description": ""
       },
       {
+        "id": "charts-linechart--loading-placeholder-plot-height",
+        "name": "Loading placeholders, fixed plot height",
+        "description": ""
+      },
+      {
         "id": "charts-linechart--categorical-x-scale",
         "name": "Categorical X Scale",
         "description": ""
@@ -18123,6 +18647,11 @@
         "id": "charts-linechart--growth-desk",
         "name": "Lived-in: growth desk (moving average, forecast, navigator, range)",
         "description": "The way a growth desk actually uses a line: two and a half years of weekly actives, a four-week moving average to read through the noise, an eight-week seasonal forecast at the end, a mini-chart navigator opened on the last year, and a range gesture on the time axis that sizes any period — the caption under the chart reads the intent's `datapoints`. Analytics, navigator and selection are three independent props on the same chart; each one alone leaves the DOM as it was (ADR 0040)."
+      },
+      {
+        "id": "charts-linechart--palette",
+        "name": "Palette",
+        "description": "`palette` (RM-186): series with no `stroke` of their own take the palette's colours in order — here the two ends of the sequential ramp — instead of the single lead-line colour they share when `palette` is unset."
       }
     ],
     "block": null,
@@ -18152,7 +18681,7 @@
     "api": [
       {
         "name": "LiveLineChart",
-        "extends": [],
+        "extends": ["FrameSizeGroupProps", "Pick<ChartStateGroupProps, \"status\">"],
         "props": [
           {
             "name": "data",
@@ -18219,9 +18748,18 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: `{ top: 24, right: 16, bottom: 32, left: 16 }`.",
+            "kind": "union",
+            "group": "frame-size"
+          },
+          {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "Height of the plot: pixels, or `{ aspect }` (width divided by height), or `{ base, medium, narrow }` per breakpoint (RM-182). A host's or frame's plot height wins over the default. Default: 300 px.",
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "paused",
@@ -18244,6 +18782,14 @@
             "kind": "string"
           },
           {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-182). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
             "name": "style",
             "optional": true,
             "type": "React.CSSProperties"
@@ -18263,6 +18809,13 @@
             "description": "Supplemental description read by AT (e.g. metric name + current value).",
             "kind": "string",
             "group": "a11y"
+          },
+          {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for the lines (RM-186): each `LiveLine` that sets no `stroke` of its own takes the next colour of `resolvePalette(palette, n)`. Unset: `--chart-line-primary`, as before. Momentum colours are not affected.",
+            "kind": "enum"
           }
         ],
         "variants": null,
@@ -18342,6 +18895,11 @@
         "id": "charts-livelinechart--default",
         "name": "Default",
         "description": ""
+      },
+      {
+        "id": "charts-livelinechart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-182): a skeleton in the 300 px plot box the chart will fill, with one polite status message per chart, at 380, 600 and 900 px."
       },
       {
         "id": "charts-livelinechart--paused",
@@ -18824,7 +19382,11 @@
         "extends": [
           "ChartSelectionProps",
           "ChartSelectionGestureProps",
-          "ChartCategoryNavigatorProps"
+          "FrameSizeGroupProps",
+          "Pick<LegendGroupProps, \"legend\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "ChartCategoryNavigatorProps",
+          "Pick<TooltipGroupProps, \"tooltip\">"
         ],
         "props": [
           {
@@ -18845,9 +19407,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -18905,7 +19468,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -19500,6 +20064,18 @@
             "optional": true,
             "type": "CategoryAxisFit",
             "description": "How labels that do not fit their band are rescued (RM-108): - `\"auto\"` (default) — horizontal → two-line `wrap` → 45° tilt → ellipsis → stride → hidden; - `\"wrap\"` — the same cascade without the tilt rung (never rotates); - `\"tilt\"` — the pre-RM-108 cascade (skips `wrap`); - `\"off\"` — pins the pre-fit behaviour: full labels, count-capped stride, no measurement and no reserved axis space. The regression escape hatch."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the categories are (RM-188; the same part `XAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner — the same fixed corner `XAxis` uses. By design it does not step around marks, so on a vertical bar chart it paints over the LAST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -19532,6 +20108,18 @@
             "optional": true,
             "type": "number",
             "description": "The widest the label gutter may grow, in px. The gutter is measured from the labels and capped so a long name cannot eat the plot; the default cap suits one or two words. Raise it for rows whose names ARE the content — \"Send Invoice → Payment Reminder\" — and the chart still keeps its own minimum plot width. Default: 112."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the rows are (RM-188; the same part `YAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner — the same fixed corner `YAxis` uses. By design it does not step around marks, so on a horizontal bar chart it paints over the FIRST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -19748,6 +20336,18 @@
             "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
           },
           {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits after the decimal point in the value column (RM-187)."
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "Locale for the value and percent columns (RM-187); unset, the `LocaleProvider`'s."
+          },
+          {
             "name": "title",
             "optional": true,
             "type": "string",
@@ -19916,6 +20516,14 @@
         "extends": ["ChartInteractionProps<NetworkDatapointDatum>"],
         "props": [
           {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
+          {
             "name": "nodes",
             "optional": false,
             "type": "NetworkNodeDatum[]",
@@ -20039,6 +20647,23 @@
             "group": "a11y"
           },
           {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum",
+            "group": "chart-state"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "kind": "object",
+            "group": "chart-state"
+          },
+          {
             "name": "onDatapointClick",
             "optional": true,
             "type": "ChartDatapointClickHandler<NetworkDatapointDatum>",
@@ -20080,6 +20705,11 @@
         "id": "charts-networkchart--small-circular",
         "name": "Small Circular",
         "description": "**G6 — the small ring.** Twelve nodes, every one labelled, chords bundled toward the centre so a dense middle still reads. The ring is the right answer under ~15 nodes: position carries no meaning, so nothing is lost by fixing it, and the eye gets a stable place to look each node up."
+      },
+      {
+        "id": "charts-networkchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives."
       },
       {
         "id": "charts-networkchart--small-force",
@@ -20157,6 +20787,14 @@
         "name": "ParallelCoordinatesChart",
         "extends": ["ChartInteractionProps"],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -20249,6 +20887,23 @@
             "description": "Supplemental description read by AT (e.g. entity count + dimension list).",
             "kind": "string",
             "group": "a11y"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum",
+            "group": "chart-state"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "kind": "object",
+            "group": "chart-state"
           },
           {
             "name": "onDatapointClick",
@@ -20357,6 +21012,11 @@
         "description": "Twelve products across four mixed-unit dimensions — the L20 acceptance recreation. No hero: every hairline draws at its seeded 0.5–0.8 opacity."
       },
       {
+        "id": "charts-parallelcoordinateschart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives."
+      },
+      {
         "id": "charts-parallelcoordinateschart--hero-line",
         "name": "Hero Line",
         "description": "`highlightKey` as a literal entity id promotes ONE line to the 2px hero — drawn last (on top) with a halo label at its final axis point."
@@ -20425,7 +21085,12 @@
     "api": [
       {
         "name": "PieChart",
-        "extends": ["ChartSelectionProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "Pick<FrameSizeGroupProps, \"margin\">",
+          "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
+          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"locale\" | \"currency\" | \"maxFractionDigits\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -20653,6 +21318,13 @@
             "kind": "boolean"
           },
           {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for the slices (RM-186), through `resolvePalette`; an item's own `color` still wins. Unset: the twelve categorical colours, cycled, as before.",
+            "kind": "enum"
+          },
+          {
             "name": "selectionStates",
             "optional": true,
             "type": "ChartSelectionStatesResolver<Record<string, unknown>>",
@@ -20667,6 +21339,63 @@
             "from": "ChartSelectionProps",
             "kind": "boolean",
             "group": "selection"
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot, in pixels: one number for every side, or per side.",
+            "from": "FrameSizeGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready.",
+            "from": "ChartStateGroupProps",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "from": "ChartStateGroupProps",
+            "kind": "object"
+          },
+          {
+            "name": "valueFormat",
+            "optional": true,
+            "type": "ChartValueFormat",
+            "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
+            "from": "ValueFormatGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "BCP 47 locale the numbers are formatted in.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
+          },
+          {
+            "name": "currency",
+            "optional": true,
+            "type": "string",
+            "description": "ISO 4217 currency code for currency values.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
+          },
+          {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits printed after the decimal point.",
+            "from": "ValueFormatGroupProps",
+            "kind": "number"
           }
         ],
         "variants": null,
@@ -20929,6 +21658,11 @@
         "description": "Solid pie with token-driven slice colors (--chart-1..12)"
       },
       {
+        "id": "charts-piechart--loading",
+        "name": "Loading",
+        "description": "Loading skeleton (RM-183) — shown while `status=\"loading\"`, sized like the real chart."
+      },
+      {
         "id": "charts-piechart--donut",
         "name": "Donut",
         "description": "Donut with a center label showing total / hovered slice value"
@@ -20987,6 +21721,11 @@
         "id": "charts-piechart--legend-hover-only",
         "name": "Legend, hover only",
         "description": "Container legend (RM-118): `legend` mounts `ChartLegend` above the plot, one swatch per slice in data order. Hover only (R3) — hovering or focusing a row reuses Pie's own existing single-slice hover state, the same one a pointer hovering a slice already drives; there is no toggle/hide affordance for Pie yet (an `interactive: \"toggle\"` request downgrades to `\"hover\"`). At `narrow` the legend keeps its position but stacks one item per line."
+      },
+      {
+        "id": "charts-piechart--palette",
+        "name": "Palette",
+        "description": "`palette=\"sequential\"` (RM-186): the slices take the sequential ramp, spread across its seven steps, instead of the twelve-colour categorical cycle."
       }
     ],
     "block": null,
@@ -21026,7 +21765,10 @@
     "api": [
       {
         "name": "RadarChart",
-        "extends": [],
+        "extends": [
+          "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
+          "Pick<ValueFormatGroupProps, \"valueFormat\" | \"locale\" | \"currency\" | \"maxFractionDigits\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -21067,10 +21809,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "number",
-            "description": "Margin around the chart. Default: 60",
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot. One number for every side, or a per-side object. Default: 60.",
             "defaultValue": "60",
-            "kind": "number"
+            "kind": "union"
           },
           {
             "name": "animate",
@@ -21158,6 +21900,62 @@
             "type": "ContainerLegendProp",
             "description": "Container legend (#610, the RM-118 engine): one swatch per polygon (`data[i].label`, in its own colour), mounted outside the plot. Unset renders nothing (today's behaviour). Hover-only: hovering or focusing an item reuses the SAME hover state a pointer over a polygon writes (`hoveredIndex`/`onHoverChange`), so both dim the other polygons alike. `interactive: \"toggle\"` downgrades to `\"hover\"` — Radar has no hide-a-polygon wiring. `{ values: true }` prints each polygon's total over `metrics`.",
             "kind": "union"
+          },
+          {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for the series (RM-186), through `resolvePalette`; an item's own `color` still wins. Unset: the twelve categorical colours, cycled, as before.",
+            "kind": "enum"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready.",
+            "from": "ChartStateGroupProps",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "from": "ChartStateGroupProps",
+            "kind": "object"
+          },
+          {
+            "name": "valueFormat",
+            "optional": true,
+            "type": "ChartValueFormat",
+            "description": "How values are printed: a preset, or a spec for decimals, sign, prefix and suffix.",
+            "from": "ValueFormatGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "BCP 47 locale the numbers are formatted in.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
+          },
+          {
+            "name": "currency",
+            "optional": true,
+            "type": "string",
+            "description": "ISO 4217 currency code for currency values.",
+            "from": "ValueFormatGroupProps",
+            "kind": "string"
+          },
+          {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits printed after the decimal point.",
+            "from": "ValueFormatGroupProps",
+            "kind": "number"
           }
         ],
         "variants": null,
@@ -21279,6 +22077,11 @@
         "id": "charts-radarchart--default",
         "name": "Default",
         "description": ""
+      },
+      {
+        "id": "charts-radarchart--loading",
+        "name": "Loading",
+        "description": "Loading skeleton (RM-183) — shown while `status=\"loading\"`, sized like the real chart."
       },
       {
         "id": "charts-radarchart--multi-series",
@@ -21517,7 +22320,11 @@
     "api": [
       {
         "name": "RingChart",
-        "extends": ["ChartSelectionProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "Pick<FrameSizeGroupProps, \"margin\">",
+          "Pick<ChartStateGroupProps, \"status\" | \"empty\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -21688,6 +22495,13 @@
             "kind": "union"
           },
           {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for the rings (RM-186), through `resolvePalette`; an item's own `color` still wins. Unset: the twelve categorical colours, cycled, as before.",
+            "kind": "enum"
+          },
+          {
             "name": "selectionStates",
             "optional": true,
             "type": "ChartSelectionStatesResolver<Record<string, unknown>>",
@@ -21702,6 +22516,31 @@
             "from": "ChartSelectionProps",
             "kind": "boolean",
             "group": "selection"
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot, in pixels: one number for every side, or per side.",
+            "from": "FrameSizeGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready.",
+            "from": "ChartStateGroupProps",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "from": "ChartStateGroupProps",
+            "kind": "object"
           }
         ],
         "variants": null,
@@ -21804,6 +22643,11 @@
         "description": ""
       },
       {
+        "id": "charts-ringchart--loading",
+        "name": "Loading",
+        "description": "Loading skeleton (RM-183) — shown while `status=\"loading\"`, sized like the real chart."
+      },
+      {
         "id": "charts-ringchart--fixed-size",
         "name": "Fixed Size",
         "description": "Fixed pixel size — bypasses ParentSize and uses a concrete dimension."
@@ -21881,6 +22725,14 @@
         "name": "SankeyChart",
         "extends": [],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -21977,6 +22829,46 @@
             "type": "SankeyMode",
             "description": "Rendering mode (RM-037). `\"aggregate\"` (default) is today's behavior — one edge per node pair via `d3-sankey`, rendered with `SankeyLink`. `\"threads\"` additionally accepts a `path: string[]` (ordered node names) on each `data.links` record and renders one polyline per record via `SankeyThreadLinks` — node positions come from the SAME aggregate layout, so switching modes never moves a node. Omitting `mode` (or passing `\"aggregate\"`) is byte-identical to pre-RM-037 output.",
             "defaultValue": "\"aggregate\"",
+            "kind": "enum"
+          },
+          {
+            "name": "accessibleLabel",
+            "optional": true,
+            "type": "ChartA11yProps[\"accessibleLabel\"]",
+            "description": "Accessible name for the chart region. Combine with a generated description (RM-184): setting this with no `accessibleDescription` gets an auto summary — `\"Sankey diagram, 5 nodes, 8 links\"` — the counts an `aria-hidden` Sankey body withholds, the same shared seam `LineChart`, `AreaChart`, `BarChart`, `ScatterChart` and `PieChart` already use.",
+            "kind": "string",
+            "group": "a11y"
+          },
+          {
+            "name": "accessibleDescription",
+            "optional": true,
+            "type": "ChartA11yProps[\"accessibleDescription\"]",
+            "description": "Supplemental description read by AT. Overrides the generated summary above.",
+            "kind": "string",
+            "group": "a11y"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum",
+            "group": "chart-state"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "kind": "object",
+            "group": "chart-state"
+          },
+          {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for the nodes (RM-186): five colours through `resolvePalette`, cycled; links and threads follow their source node. A `SankeyNode` `fill` / `getNodeColor` still wins. Unset: `--chart-1` … `--chart-5`, as before.",
             "kind": "enum"
           }
         ],
@@ -22155,6 +23047,16 @@
         "description": ""
       },
       {
+        "id": "charts-sankeychart--with-accessible-label",
+        "name": "With Accessible Label",
+        "description": "`accessibleLabel` with no `accessibleDescription` (RM-184): the figure gets a generated description — node/link counts, the one fact an `aria-hidden` Sankey body withholds — through the same shared seam `LineChart`/`PieChart`/etc. use."
+      },
+      {
+        "id": "charts-sankeychart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives."
+      },
+      {
         "id": "charts-sankeychart--decorated",
         "name": "Decorated",
         "description": "The funnel flow at decoration 10 (#255). Each palette node gains a series-pattern fill, so `SankeyNode` renders its `<pattern>` defs from a `.map()` — the second call site a missing list identity used to warn on. Pinned with `DecorationProvider` so a headless run reaches the branch."
@@ -22173,6 +23075,11 @@
         "id": "charts-sankeychart--threads",
         "name": "Threads",
         "description": ""
+      },
+      {
+        "id": "charts-sankeychart--palette",
+        "name": "Palette",
+        "description": "`palette=\"mono\"` (RM-186): nodes, and the links that take their colours, cycle through five steps of the neutral ladder instead of `--chart-1`..`--chart-5`."
       }
     ],
     "block": null,
@@ -22212,7 +23119,14 @@
     "api": [
       {
         "name": "ScatterChart",
-        "extends": ["ChartSelectionProps", "ChartSelectionGestureProps"],
+        "extends": [
+          "ChartSelectionProps",
+          "ChartSelectionGestureProps",
+          "FrameSizeGroupProps",
+          "Pick<LegendGroupProps, \"legend\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "Pick<TooltipGroupProps, \"tooltip\">"
+        ],
         "props": [
           {
             "name": "data",
@@ -22239,9 +23153,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -22282,7 +23197,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -22291,6 +23207,14 @@
             "description": "Additional class name for the container",
             "defaultValue": "\"\"",
             "kind": "string"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-182). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "children",
@@ -22335,12 +23259,26 @@
             "group": "analytics"
           },
           {
+            "name": "annotations",
+            "optional": true,
+            "type": "readonly ChartAnnotation[]",
+            "description": "Declarative annotations in data units — text notes, ranges and reference lines (RM-111). Always honoured at runtime through the shared annotation layer; RM-188 declares the prop so it is typed and documented.",
+            "kind": "array"
+          },
+          {
             "name": "tooltip",
             "optional": true,
             "type": "boolean",
             "description": "Show a hover/focus tooltip. Default `true`: with no `<ChartTooltip>` child the chart adds a default one; a `<ChartTooltip>` child (for `variant`, `rows`, `content`, …) replaces it. `false` turns the default off.",
             "defaultValue": "true",
             "kind": "boolean"
+          },
+          {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for the series (RM-186): each `Scatter` that sets no `fill` / `stroke` of its own takes the next colour of `resolvePalette(palette, n)`. Unset: series cycle the twelve categorical colours, as before.",
+            "kind": "enum"
           },
           {
             "name": "selectionStates",
@@ -23168,6 +24106,11 @@
         "description": ""
       },
       {
+        "id": "charts-scatterchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-182): a skeleton in the plot box the chart will fill, with one polite status message per chart, at 380, 600 and 900 px."
+      },
+      {
         "id": "charts-scatterchart--legend-hover-only",
         "name": "Legend, hover only",
         "description": ""
@@ -23531,7 +24474,11 @@
         "extends": [
           "ChartSelectionProps",
           "ChartSelectionGestureProps",
-          "ChartCategoryNavigatorProps"
+          "FrameSizeGroupProps",
+          "Pick<LegendGroupProps, \"legend\">",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "ChartCategoryNavigatorProps",
+          "Pick<TooltipGroupProps, \"tooltip\">"
         ],
         "props": [
           {
@@ -23552,9 +24499,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "animationDuration",
@@ -23612,7 +24560,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Wins over `aspectRatio`, which stays an alias.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -24207,6 +25156,18 @@
             "optional": true,
             "type": "CategoryAxisFit",
             "description": "How labels that do not fit their band are rescued (RM-108): - `\"auto\"` (default) — horizontal → two-line `wrap` → 45° tilt → ellipsis → stride → hidden; - `\"wrap\"` — the same cascade without the tilt rung (never rotates); - `\"tilt\"` — the pre-RM-108 cascade (skips `wrap`); - `\"off\"` — pins the pre-fit behaviour: full labels, count-capped stride, no measurement and no reserved axis space. The regression escape hatch."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the categories are (RM-188; the same part `XAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner — the same fixed corner `XAxis` uses. By design it does not step around marks, so on a vertical bar chart it paints over the LAST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -24239,6 +25200,18 @@
             "optional": true,
             "type": "number",
             "description": "The widest the label gutter may grow, in px. The gutter is measured from the labels and capped so a long name cannot eat the plot; the default cap suits one or two words. Raise it for rows whose names ARE the content — \"Send Invoice → Payment Reminder\" — and the chart still keeps its own minimum plot width. Default: 112."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the rows are (RM-188; the same part `YAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner — the same fixed corner `YAxis` uses. By design it does not step around marks, so on a horizontal bar chart it paints over the FIRST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -24453,6 +25426,18 @@
             "optional": true,
             "type": "string",
             "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
+          },
+          {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits after the decimal point in the value column (RM-187)."
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "Locale for the value and percent columns (RM-187); unset, the `LocaleProvider`'s."
           },
           {
             "name": "title",
@@ -24748,7 +25733,7 @@
             "name": "fit",
             "optional": true,
             "type": "\"fixed\" | \"fill\"",
-            "description": "Sizing strategy. `\"fixed\"` (default) draws at exactly `width`×`height` — unchanged no matter what CSS box (`className=\"w-full\"`, a table cell, …) the caller puts it in, exactly as before this prop existed. `\"fill\"` measures the real rendered width of that CSS box (a tiny, cleaned-up `ResizeObserver`, falling back to `width` before the first measurement or where `ResizeObserver` isn't available, e.g. jsdom) and draws the plot at that real pixel width instead — no CSS stretching, so line strokes, the emphasized dot and the last-value label never distort. Opt in per usage (a trend card, a scorecard cell) rather than globally, since most Sparkline call sites size it explicitly and shouldn't pay for a measurement round-trip.",
+            "description": "Sizing strategy. `\"fixed\"` (default) draws at exactly `width`×`height` — unchanged no matter what CSS box (`className=\"w-full\"`, a table cell, …) the caller puts it in, exactly as before this prop existed. `\"fill\"` measures the real rendered width of that CSS box (the charts' shared resize timing: at once, then at most every 100 ms while it changes; falling back to `width` before the first measurement or where `ResizeObserver` isn't available, e.g. jsdom) and draws the plot at that real pixel width instead — no CSS stretching, so line strokes, the emphasized dot and the last-value label never distort. Opt in per usage (a trend card, a scorecard cell) rather than globally, since most Sparkline call sites size it explicitly and shouldn't pay for a measurement round-trip.",
             "defaultValue": "\"fixed\"",
             "kind": "enum"
           },
@@ -25476,6 +26461,14 @@
         "extends": ["ChartInteractionProps"],
         "props": [
           {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
+          {
             "name": "data",
             "optional": false,
             "type": "TreeNode<TData>",
@@ -25633,6 +26626,13 @@
             "kind": "string"
           },
           {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "A fixed plot height (or responsive per-tier value), so the chart sizes itself instead of relying on a wrapping element's CSS height. Unset: the chart takes its container's natural size and scrolls inside it — its long-standing default (see the module docblock).",
+            "kind": "responsive"
+          },
+          {
             "name": "accessibleLabel",
             "optional": true,
             "type": "ChartA11yProps[\"accessibleLabel\"]",
@@ -25647,6 +26647,14 @@
             "description": "Supplemental description read by AT.",
             "kind": "string",
             "group": "a11y"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "onDatapointClick",
@@ -25688,6 +26696,14 @@
         "name": "TreemapChart",
         "extends": ["ChartSelectionProps", "ChartInteractionProps"],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -25834,6 +26850,23 @@
             "type": "ContainerLegendProp",
             "description": "Renders a legend (RM-118). What it shows depends on `palette`: - `\"categorical\"` — one row per top-level GROUP, via `useContainerLegend` (placement + hover only, R3): hovering a row dims every OTHER group's tiles, never hides one. `depth: 2`'s title bands already NAME each group on the tile itself — this adds the colour key, not a second name. `{ values: true }` prints each group's total, in `valueFormat`. - `\"sequential\"` — leaf shade encodes a continuous VALUE, not a discrete category, so this renders `RampLegend` (the shared ramp key every sequential/diverging consumer uses — `ramp-legend.tsx`) instead, with its marker following the hovered leaf's value. - `\"mono\"` (default) — every leaf is the SAME shade; there is nothing to key, so a truthy `legend` renders nothing. Unset renders nothing (R1).",
             "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum",
+            "group": "chart-state"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "kind": "object",
+            "group": "chart-state"
           },
           {
             "name": "selectionStates",
@@ -26067,6 +27100,16 @@
         "description": "Forty nodes in a 400×320 card: the tree keeps its spacing and scrolls inside the card instead of shrinking to fit."
       },
       {
+        "id": "charts-treechart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives."
+      },
+      {
+        "id": "charts-treechart--tooltip-avoids-node",
+        "name": "Tooltip Avoids Node",
+        "description": "Regression lock (RM-184 review, F05): `ChartTooltipBox` receives the hovered node's own hit rect as `avoid`, so the tooltip box never lands back over the node it describes — the same policy every other chart's mark hover keeps. Forty nodes, not two: a tree this small always has room beside the pointer to fit inside the chart, so the box reliably takes the \"inside\" placement pass — the only pass `avoid` can change. A two-node tree left no room, so the box always took the \"escape\" pass instead and the lock passed whether or not `avoid` was wired up at all."
+      },
+      {
         "id": "charts-treechart--top-to-bottom",
         "name": "Top To Bottom",
         "description": "`orientation=\"tb\"` — root on top, growing down; the same before/after label convention rotates onto the vertical growth axis."
@@ -26164,6 +27207,14 @@
         "name": "TreemapChart",
         "extends": ["ChartSelectionProps", "ChartInteractionProps"],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -26310,6 +27361,23 @@
             "type": "ContainerLegendProp",
             "description": "Renders a legend (RM-118). What it shows depends on `palette`: - `\"categorical\"` — one row per top-level GROUP, via `useContainerLegend` (placement + hover only, R3): hovering a row dims every OTHER group's tiles, never hides one. `depth: 2`'s title bands already NAME each group on the tile itself — this adds the colour key, not a second name. `{ values: true }` prints each group's total, in `valueFormat`. - `\"sequential\"` — leaf shade encodes a continuous VALUE, not a discrete category, so this renders `RampLegend` (the shared ramp key every sequential/diverging consumer uses — `ramp-legend.tsx`) instead, with its marker following the hovered leaf's value. - `\"mono\"` (default) — every leaf is the SAME shade; there is nothing to key, so a truthy `legend` renders nothing. Unset renders nothing (R1).",
             "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready (ADR 0042 §9). Default `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum",
+            "group": "chart-state"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "kind": "object",
+            "group": "chart-state"
           },
           {
             "name": "selectionStates",
@@ -26515,6 +27583,11 @@
         "description": ""
       },
       {
+        "id": "charts-treemapchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-184): the skeleton + `ChartLoadingLabel`, until the data arrives."
+      },
+      {
         "id": "charts-treemapchart--mono",
         "name": "Mono",
         "description": "Default palette: one shared neutral shade per leaf — groups read apart only by their title band + paper gap, so the chart stays legible in greyscale."
@@ -26624,6 +27697,9 @@
         "extends": [
           "ChartSelectionProps",
           "ChartInteractionProps",
+          "Pick<FrameSizeGroupProps, \"margin\" | \"plotHeight\">",
+          "Pick<ChartStateGroupProps, \"status\" | \"empty\">",
+          "Pick<TooltipGroupProps, \"tooltip\">",
           "Omit<HTMLAttributes<HTMLDivElement>, \"color\">"
         ],
         "props": [
@@ -26766,6 +27842,47 @@
             "from": "ChartInteractionProps",
             "kind": "number",
             "group": "interaction"
+          },
+          {
+            "name": "plotHeight",
+            "optional": true,
+            "type": "Responsive<ChartPlotHeight>",
+            "description": "Height of the plot: pixels, or `{ aspect }` as width divided by height. Set `{ base, medium, narrow }` to vary it by breakpoint.",
+            "from": "FrameSizeGroupProps",
+            "kind": "responsive"
+          },
+          {
+            "name": "margin",
+            "optional": true,
+            "type": "number | Partial<Margin>",
+            "description": "Space around the plot, in pixels: one number for every side, or per side.",
+            "from": "FrameSizeGroupProps",
+            "kind": "union"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Show the loading skeleton until the data is ready.",
+            "from": "ChartStateGroupProps",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
+          },
+          {
+            "name": "empty",
+            "optional": true,
+            "type": "ChartEmptyState",
+            "description": "Title and message shown when there is nothing to plot.",
+            "from": "ChartStateGroupProps",
+            "kind": "object"
+          },
+          {
+            "name": "tooltip",
+            "optional": true,
+            "type": "boolean",
+            "from": "TooltipGroupProps",
+            "defaultValue": "true",
+            "kind": "boolean"
           }
         ],
         "variants": null,
@@ -26974,6 +28091,18 @@
             "description": "ISO 4217 code for `valueFormat: \"currency\"`. Falls back to `ChartConfigProvider`, then `\"USD\"`."
           },
           {
+            "name": "maxFractionDigits",
+            "optional": true,
+            "type": "number",
+            "description": "Most digits after the decimal point in the value column (RM-187)."
+          },
+          {
+            "name": "locale",
+            "optional": true,
+            "type": "string",
+            "description": "Locale for the value and percent columns (RM-187); unset, the `LocaleProvider`'s."
+          },
+          {
             "name": "title",
             "optional": true,
             "type": "string",
@@ -27045,6 +28174,16 @@
         "description": "Waffle — column-major grid, one dot per unit (lieflat's \"G4 Dot Waffle\")."
       },
       {
+        "id": "charts-unitchart--loading",
+        "name": "Loading",
+        "description": "Loading skeleton (RM-183) — shown while `status=\"loading\"`, sized like the real chart."
+      },
+      {
+        "id": "charts-unitchart--loading-to-ready",
+        "name": "draws once loading finishes",
+        "description": "Regression lock (RM-183 review) — the ResizeObserver that measures the plot never attached while `status=\"loading\"` hid the real chart node, so flipping to \"ready\" left the waffle blank until an unrelated resize fired. This exercises that exact transition end to end in a real browser."
+      },
+      {
         "id": "charts-unitchart--field",
         "name": "Field",
         "description": "Field — golden-angle phyllotaxis cluster per series (lieflat's \"L14 Hundred Field\")."
@@ -27053,6 +28192,21 @@
         "id": "charts-unitchart--rows",
         "name": "Rows",
         "description": "Rows — one tick row per series, ticked every 10 (lieflat's \"L15 Ballot Tally\"). Rows may sum past `total`."
+      },
+      {
+        "id": "charts-unitchart--in-short-chart-frame",
+        "name": "In a short ChartFrame (plotHeight=160)",
+        "description": "A short `ChartFrame plotHeight` (RM-183 review, F12 follow-up): once the legend takes its share of a 160px box, the waffle/field plot must still keep a real minimum height instead of being squeezed to a sliver — `plotMinHeight` in `unit-chart.tsx` reserves rows × a minimum mark row height (waffle) or a flat floor (field) before the legend gets anything. Widened to 600px (RM-183 review round 2, F1 regression): `plotHeight` sizes the PLOT only — the root stays auto height — so the legend must always end AT OR ABOVE the root's own bottom edge, never past it. A 420px-wide box hid the legend at this row count entirely, which is why the original story's assertion never caught the regression."
+      },
+      {
+        "id": "charts-unitchart--own-plot-height",
+        "name": "Own plotHeight prop at 400 / 160 / 60, no ChartFrame",
+        "description": "`UnitChart`'s own `plotHeight` prop (no `ChartFrame` involved) at three heights — a regression lock for G1 (RM-183 review round 2): `ChartPlotBox` merged a caller's own inline `style` onto its already-resolved box style with a plain `{ ...boxStyle, ...style }` spread, and `unit-chart.tsx` built that `style` as `{ height: layout === \"rows\" ? rowsHeight : undefined, ... }` — an explicitly-`undefined`-valued `height` key still shadows `boxStyle`'s own resolved `height` in a spread (present-but-empty is not absent), so EVERY waffle/field plot rendered at the bare 100px content floor no matter what `plotHeight` asked for. Fixed at both ends: `unit-chart.tsx` no longer builds that key, and `ChartPlotBox`/`ChartPlotRoot` now drop an undefined-valued key from a caller's `style` before merging."
+      },
+      {
+        "id": "charts-unitchart--wide-chart-frames",
+        "name": "In a 300px ChartFrame at two widths (M3 check)",
+        "description": "M3 (RM-183 review round 2, contained/optional): a 300px `ChartFrame` at two widths. Before G1's fix, the plot's requested height was silently erased and it grew to its own aspect ratio instead, pushing the legend past the frame's bottom edge; this re-checks that G1's fix (rather than a separate one) already closes it."
       },
       {
         "id": "charts-unitchart--all-layouts",
@@ -27133,8 +28287,22 @@
     "api": [
       {
         "name": "WaterfallChart",
-        "extends": ["ChartInteractionProps<WaterfallStep>"],
+        "extends": [
+          "ChartInteractionProps<WaterfallStep>",
+          "ChartSelectionProps<WaterfallRow>",
+          "FrameSizeGroupProps",
+          "Pick<ChartStateGroupProps, \"status\">",
+          "Pick<ValueFormatGroupProps, \"valueFormat\">"
+        ],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,
@@ -27282,7 +28450,8 @@
             "optional": true,
             "type": "Responsive<ChartPlotHeight>",
             "description": "The plot's own height (ADR 0039): px, or `{ aspect }` (width ÷ height), optionally per breakpoint. Default: 2 : 1, and 1.25 : 1 when narrow.",
-            "kind": "responsive"
+            "kind": "responsive",
+            "group": "frame-size"
           },
           {
             "name": "height",
@@ -27299,9 +28468,10 @@
           {
             "name": "margin",
             "optional": true,
-            "type": "Partial<Margin>",
-            "description": "Chart margins.",
-            "kind": "object"
+            "type": "number | Partial<Margin>",
+            "description": "Chart margins: one number for every side, or per side. Default: 40 on every side.",
+            "kind": "union",
+            "group": "frame-size"
           },
           {
             "name": "className",
@@ -27309,6 +28479,14 @@
             "type": "string",
             "description": "Additional class name for the container.",
             "kind": "string"
+          },
+          {
+            "name": "status",
+            "optional": true,
+            "type": "ChartStatus",
+            "description": "Loading vs ready (RM-182). `\"loading\"` shows a skeleton in the plot box the chart will fill, with one polite status message, until the data is ready. Default: `\"ready\"`.",
+            "defaultValue": "\"ready\"",
+            "kind": "enum"
           },
           {
             "name": "accessibleLabel",
@@ -27342,6 +28520,13 @@
             "group": "analytics"
           },
           {
+            "name": "palette",
+            "optional": true,
+            "type": "ChartPalette",
+            "description": "Colour ramp for the steps (RM-186): increases take the palette's gain colour and decreases its loss colour (`\"diverging\"` is the sign pair, any other palette its first two colours). `positiveFill` / `negativeFill` still win. Unset: `--chart-1` / `--chart-2`, as before.",
+            "kind": "enum"
+          },
+          {
             "name": "onDatapointClick",
             "optional": true,
             "type": "ChartDatapointClickHandler<WaterfallStep>",
@@ -27372,6 +28557,22 @@
             "from": "ChartInteractionProps",
             "kind": "number",
             "group": "interaction"
+          },
+          {
+            "name": "selectionStates",
+            "optional": true,
+            "type": "ChartSelectionStatesResolver<WaterfallRow>",
+            "description": "Maps a mark (category, optional series key, optional raw row) to its selection state. Unset → the chart renders exactly as before.",
+            "from": "ChartSelectionProps"
+          },
+          {
+            "name": "dimExcluded",
+            "optional": true,
+            "type": "boolean",
+            "description": "Dim `excluded` marks and add their non-hue channel (the dashed frame). Default `true`; `false` keeps the `data-selection` attribute (so a host can style it) but paints nothing.",
+            "from": "ChartSelectionProps",
+            "kind": "boolean",
+            "group": "selection"
           }
         ],
         "variants": null,
@@ -27650,6 +28851,18 @@
             "optional": true,
             "type": "CategoryAxisFit",
             "description": "How labels that do not fit their band are rescued (RM-108): - `\"auto\"` (default) — horizontal → two-line `wrap` → 45° tilt → ellipsis → stride → hidden; - `\"wrap\"` — the same cascade without the tilt rung (never rotates); - `\"tilt\"` — the pre-RM-108 cascade (skips `wrap`); - `\"off\"` — pins the pre-fit behaviour: full labels, count-capped stride, no measurement and no reserved axis space. The regression escape hatch."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the categories are (RM-188; the same part `XAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits under the labels, flush with the plot's end edge. `\"inside\"`: hung inside the plot's bottom-end corner — the same fixed corner `XAxis` uses. By design it does not step around marks, so on a vertical bar chart it paints over the LAST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -27682,6 +28895,18 @@
             "optional": true,
             "type": "number",
             "description": "The widest the label gutter may grow, in px. The gutter is measured from the labels and capped so a long name cannot eat the plot; the default cap suits one or two words. Raise it for rows whose names ARE the content — \"Send Invoice → Payment Reminder\" — and the chart still keeps its own minimum plot width. Default: 112."
+          },
+          {
+            "name": "title",
+            "optional": true,
+            "type": "ReactNode",
+            "description": "Axis title — names what the rows are (RM-188; the same part `YAxis` draws)."
+          },
+          {
+            "name": "titlePlacement",
+            "optional": true,
+            "type": "AxisTitlePlacement",
+            "description": "`\"outside\"` (default): the title sits above the top row label, in the label gutter. `\"inside\"`: hung inside the plot's top-start corner — the same fixed corner `YAxis` uses. By design it does not step around marks, so on a horizontal bar chart it paints over the FIRST bar (its halo keeps it legible); use `\"outside\"` when that bar must stay clear."
           }
         ],
         "variants": null,
@@ -27817,6 +29042,11 @@
         "description": "Gross → refunds → COGS → ops → net: connectors hand off at the running total, totals draw from zero, labels are signed."
       },
       {
+        "id": "charts-waterfallchart--loading",
+        "name": "Loading",
+        "description": "`status=\"loading\"` (RM-182): a skeleton in the plot box the chart will fill, with one polite status message per chart, at 380, 600 and 900 px."
+      },
+      {
         "id": "charts-waterfallchart--showcase",
         "name": "Showcase",
         "description": "Everything the parity waves added to `WaterfallChart`, composed on one realistic bridge: monthly steps grouped into an auto-inserted quarterly subtotal (`subtotalBy=\"quarter\"`), decreases sorted first within each quarter (`sort=\"decreasesFirst\"`), every row labelled with its percent change in its own row colour (`labels={{ totals: \"all\", differences: \"percent\", matchColor: true }}`), thicker hand-off connectors (`connectors=\"thick\"`), and a row note, a target line and a floating note (`annotations`). `ChartFrame` adds the title, description, notes, source and export chrome around it. Left out: `zoomToDifferences` and `dataFormat=\"runningTotals\"` — the first tells a different story (a huge, near-flat balance whose swings are tiny beside it, not this bridge's additive quarterly growth) and the second is an input-format convenience with no visual difference from the delta rows used here."
@@ -27880,6 +29110,11 @@
         "id": "charts-waterfallchart--thick-connectors",
         "name": "Thick Connectors",
         "description": "`connectors=\"thick\"` weights the hand-off hairlines for a bolder read."
+      },
+      {
+        "id": "charts-waterfallchart--selection-states",
+        "name": "Selection states",
+        "description": "A host's `selectionStates` paints Refunds selected, COGS associated and Ops excluded: the inner BarChart (not Waterfall itself) resolves and paints the tri-state, so the effect is visible on the step bars without Waterfall knowing anything about the paint rules itself."
       }
     ],
     "block": null,

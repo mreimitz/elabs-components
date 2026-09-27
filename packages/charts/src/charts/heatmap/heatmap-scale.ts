@@ -7,6 +7,8 @@
  * (`heatmap-scale.test.ts`) instead of being inferred from a rendered square.
  */
 
+import { type ChartTranslate, defaultChartTranslate } from "../chart-formatters";
+
 /** One countable step of the legend ramp. */
 export interface HeatmapBucket {
   /** Inclusive lower bound. */
@@ -117,28 +119,26 @@ export interface HeatmapSummaryFacts {
  * SVG body is `aria-hidden` and this is the only thing a screen reader gets
  * before it reaches the datapoint layer.
  *
- * English by construction: `@elabs-ai/components-charts` cannot add keys to the
- * `@elabs-ai/components-ui` message catalogue without a cross-package change, so
- * the localization seam is the `accessibleLabel` prop — pass one and it replaces
- * this entirely.
+ * RM-187: the words come from the ui catalogue's `charts.heatmap.*` keys — the
+ * container passes its chart-scoped `t`; omitted, the shipped English. The
+ * `accessibleLabel` prop still replaces this sentence entirely.
  */
 export function heatmapSummary(
   facts: HeatmapSummaryFacts,
   formatValue: (value: number) => string,
+  t: ChartTranslate = defaultChartTranslate,
 ): string {
   const grid = facts.calendar
-    ? `${facts.columns} weeks × ${facts.rows} weekdays`
-    : `${facts.rows} rows × ${facts.columns} columns`;
+    ? t("charts.heatmap.calendarGrid", { columns: facts.columns, rows: facts.rows })
+    : t("charts.heatmap.grid", { rows: facts.rows, columns: facts.columns });
   const missing = facts.missing ?? 0;
   const gaps =
-    missing > 0 && facts.peak
-      ? ` ${missing} ${missing === 1 ? "cell has" : "cells have"} no data.`
-      : "";
+    missing > 0 && facts.peak ? ` ${t("charts.heatmap.missing", { count: missing })}` : "";
   if (!facts.peak) {
-    return `Heatmap, ${grid}, no values.`;
+    return t("charts.heatmap.summaryNoValues", { grid });
   }
   const where = facts.calendar ? facts.peak.x : `${facts.peak.y} ${facts.peak.x}`;
-  return `Heatmap, ${grid}, peak ${formatValue(facts.peak.value)} at ${where}.${gaps}`;
+  return `${t("charts.heatmap.summary", { grid, value: formatValue(facts.peak.value), where })}${gaps}`;
 }
 
 // ── Continuous mode (`steps: 0`) ─────────────────────────────────────────────

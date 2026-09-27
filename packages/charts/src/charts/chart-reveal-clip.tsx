@@ -3,7 +3,8 @@
 import type { RefObject } from "react";
 import { useEffect, useState } from "react";
 import type { Transition } from "motion/react";
-import { motion, useInView, useReducedMotion } from "motion/react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
+import { motion, useInView } from "motion/react";
 import { type ChartRevealOn, clipRevealTransition } from "./animation";
 
 export type { ChartRevealOn } from "./animation";
@@ -203,8 +204,8 @@ export function useChartRevealGate({
     once: true,
   });
 
-  // `useReducedMotion()` is `boolean | null` (null until the media query has
-  // been read) — only an explicit `true` neutralizes.
+  // The tokens `useReducedMotion()` (RM-189): the person's explicit motion
+  // preference, else the OS setting — `false` until the media query is read.
   const prefersReducedMotion = useReducedMotion() === true;
 
   const [clickEpoch, setClickEpoch] = useState(0);

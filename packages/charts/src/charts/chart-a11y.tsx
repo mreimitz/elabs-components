@@ -120,8 +120,30 @@ export function useChartA11yContainerProps(
 
 // ── Auto summary (RM-110) ────────────────────────────────────────────────────
 
-/** Chart families the auto summary describes. */
+/**
+ * Chart families {@link describeSeries} describes from row/series data. Public —
+ * a caller localising the summary passes a full {@link DescribeSeriesPhrases.kind}
+ * map keyed by exactly these five.
+ */
 export type AutoSummaryKind = "line" | "area" | "bar" | "scatter" | "pie";
+
+/**
+ * Chart families {@link useChartAutoSummary} accepts. `"sankey"` (RM-184) has no
+ * row/series data — the hook branches on it before ever building
+ * {@link DescribeSeriesItem}s, straight from a node/link count (see
+ * {@link ChartAutoSummaryInput.graph}), the one fact an `aria-hidden` Sankey body
+ * withholds — the same "shared seam" the other five kinds use (an accessibleLabel
+ * the caller sets, wanting a generated description), never a sixth, separate
+ * summariser. Kept OUT of the public {@link AutoSummaryKind}: that type doubles as
+ * the key set of {@link DescribeSeriesPhrases.kind}, which `describeSeries` never
+ * receives a `"sankey"` value for, so widening it would let an outside consumer's
+ * exhaustive `kind` map type-check while never being read for Sankey (RM-184 review).
+ */
+type SummaryKind = AutoSummaryKind | "sankey";
+
+/** {@link SummaryKind.sankey}'s fixed label — not part of {@link DEFAULT_DESCRIBE_SERIES_PHRASES}
+ * since that map's `kind` is keyed by the public, five-member {@link AutoSummaryKind}. */
+const SANKEY_SUMMARY_KIND_LABEL = "Sankey diagram";
 
 /** One series the summary names: its data field and display name. */
 export interface DescribeSeriesItem {
@@ -328,6 +350,8 @@ export interface ChartAutoSummaryInput {
   children?: ReactNode;
   /** Row field of the x value / category. Pie: `"label"`. */
   xDataKey?: string;
+  /** `"sankey"` only: node/link counts, in place of row/series data. */
+  graph?: { nodes: number; links: number };
 }
 
 /**
@@ -344,16 +368,25 @@ export const ChartFrameAltTextContext = createContext<string | undefined>(undefi
  * generated summary. An unlabelled chart gets nothing, so its DOM is unchanged.
  */
 export function useChartAutoSummary(
-  kind: AutoSummaryKind,
+  kind: SummaryKind,
   input: ChartAutoSummaryInput,
 ): string | undefined {
   const { locale } = useLocale();
-  const { accessibleLabel, accessibleDescription, data, children, xDataKey } = input;
+  const { accessibleLabel, accessibleDescription, data, children, xDataKey, graph } = input;
   const frameAltText = use(ChartFrameAltTextContext);
   const authored = accessibleDescription || (accessibleLabel ? frameAltText : undefined);
   const wanted = Boolean(accessibleLabel) && !authored;
   const summary = useMemo(() => {
     if (!wanted) return undefined;
+    if (kind === "sankey") {
+      const nodeCount = graph?.nodes ?? 0;
+      const linkCount = graph?.links ?? 0;
+      return (
+        `${SANKEY_SUMMARY_KIND_LABEL}, ` +
+        `${nodeCount} ${nodeCount === 1 ? "node" : "nodes"}, ` +
+        `${linkCount} ${linkCount === 1 ? "link" : "links"}`
+      );
+    }
     const rows = data as readonly Record<string, unknown>[];
     const { series, format } =
       kind === "pie"
@@ -370,6 +403,6 @@ export function useChartAutoSummary(
       formatX: (x) => formatSummaryX(x, locale, allX),
       formatShare: (v) => new Intl.NumberFormat(locale, { style: "percent" }).format(v),
     });
-  }, [wanted, data, kind, children, xDataKey, locale]);
+  }, [wanted, data, kind, children, xDataKey, locale, graph]);
   return authored || summary;
 }

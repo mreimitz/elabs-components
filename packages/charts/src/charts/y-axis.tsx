@@ -28,6 +28,8 @@ import {
   type YAxisOrientation,
 } from "./y-axis-scales";
 import { resolveYAxisTickCount, valueAxisTicks } from "./y-axis-ticks";
+import { Y_AXIS_PART } from "../definitions/parts/y-axis.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 /** Where tick labels sit relative to the plot (RM-108). */
 export type AxisLabelPlacement = "inside" | "outside";
@@ -132,7 +134,10 @@ export function useSideLabel(
   return orientation === "right" ? t("charts.axis.rightScale") : t("charts.axis.leftScale");
 }
 
-export function YAxis(props: YAxisProps) {
+export function YAxis(rawProps: YAxisProps) {
+  // RM-182: the part's definition (Y_AXIS_PART) maps renamed props (no rows until wave 4)
+  // and fills its defaults before anything reads them.
+  const props = useResolvedChartProps(Y_AXIS_PART, rawProps);
   // RM-117: hand the chart's series colours to an enclosing ChartFrame
   // (read by InlineChip). No visual change; a no-op outside a frame.
   useChartFrameSeriesBridge();

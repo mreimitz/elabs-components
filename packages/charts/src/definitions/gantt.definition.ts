@@ -28,6 +28,7 @@ import type { GanttProps } from "../gantt/gantt";
 import { looseFieldFor } from "../charts/props/typed-field";
 import { classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
+import { messagesGroup } from "../charts/props/messages";
 
 type GanttDefinitionProps = Omit<
   GanttProps,
@@ -41,7 +42,7 @@ export const GANTT = /* @__PURE__ */ defineChart<GanttDefinitionProps>()({
   label: "Gantt chart",
   description: "Scheduled tasks against a timeline, with dependencies and progress.",
   specTypes: [],
-  groups: [],
+  groups: [messagesGroup],
   fields: {
     tasks: looseFieldFor<GanttProps["tasks"]>()(
       field.array({

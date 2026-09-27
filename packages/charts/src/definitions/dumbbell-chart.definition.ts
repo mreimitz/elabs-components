@@ -10,6 +10,8 @@
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
+import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
+import { chartStateGroup } from "../charts/props/chart-state";
 import { interactionCommons, selectionCommons } from "../charts/props/commons";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { legendGroup } from "../charts/props/legend";
@@ -18,6 +20,7 @@ import { valueFormatGroup } from "../charts/props/value-format";
 import type { DumbbellChartProps } from "../charts/dumbbell-chart";
 import { annotationsField, aspectRatioField, classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
+import { messagesGroup } from "../charts/props/messages";
 
 /** `dumbbell-chart.tsx`'s own constant — not exported, and that module renders JSX, so the
  * value is copied rather than imported. */
@@ -29,7 +32,13 @@ export const DUMBBELL_CHART = /* @__PURE__ */ defineChart<DumbbellChartProps>()(
   label: "Dumbbell chart",
   description: "A before/after pair per category, as two markers on one track.",
   specTypes: ["dumbbell"],
-  groups: [a11yGroup, selectionCommons.group, interactionCommons.group],
+  groups: [
+    messagesGroup,
+    a11yGroup,
+    selectionCommons.group,
+    interactionCommons.group,
+    frameSizeGroup,
+  ],
   fields: {
     data: field.array({
       of: field.object({ fields: {}, open: true }),
@@ -110,6 +119,8 @@ export const DUMBBELL_CHART = /* @__PURE__ */ defineChart<DumbbellChartProps>()(
     valueFormat: valueFormatGroup.fields.valueFormat,
     aspectRatio: aspectRatioField,
     plotHeight: frameSizeGroup.fields.plotHeight,
+    margin: frameSizeGroup.fields.margin,
+    status: chartStateGroup.fields.status,
     className: classNameField,
     annotations: annotationsField,
     legend: legendGroup.fields.legend,
@@ -132,7 +143,6 @@ export const DUMBBELL_CHART = /* @__PURE__ */ defineChart<DumbbellChartProps>()(
     "referenceLine",
     "valueAxis",
     "rowColor",
-    "margin",
     "analytics",
     ...selectionCommons.codeOnly,
     ...interactionCommons.codeOnly,
@@ -148,6 +158,7 @@ export const DUMBBELL_CHART = /* @__PURE__ */ defineChart<DumbbellChartProps>()(
     sortBy: "none",
     reverse: false,
     copyValueOnActivate: false,
+    status: DEFAULT_CHART_STATUS,
   },
   targets: [
     {

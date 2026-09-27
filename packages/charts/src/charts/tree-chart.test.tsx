@@ -13,8 +13,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { ChartFrame } from "../chart-frame/chart-frame";
 import { ChartConfigProvider } from "./chart-config-context";
+import { CHART_RESIZE_DEBOUNCE_MS } from "./layout-size";
 import { computeTreeLayout, resolveTree, TreeChart, type TreeNode } from "./tree-chart";
+import { TREE_PAN_KEEP } from "./tree-chart-viewport";
 import { estimateTextWidth } from "./use-text-measurer";
 
 interface AnimateCall {
@@ -842,6 +845,35 @@ describe("TreeChart — expand and collapse", () => {
     expect(container.querySelector('[data-slot="tree-chart"]')).not.toHaveAttribute("data-zoom");
   });
 
+  it("zoomable: the pan room is the scroller's client box, read by the shared measurement", () => {
+    // `useLayoutMeasure({ box: "client" })`: in the mount commit, then after a
+    // window resize, trailing by the shared pacing.
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const viewport = { width: 380, height: 360 };
+    const width = vi
+      .spyOn(HTMLElement.prototype, "clientWidth", "get")
+      .mockImplementation(() => viewport.width);
+    const height = vi
+      .spyOn(HTMLElement.prototype, "clientHeight", "get")
+      .mockImplementation(() => viewport.height);
+    try {
+      const { container } = render(<TreeChart accessibleLabel="Org" data={orgChart} zoomable />);
+      const canvas = container.querySelector<HTMLElement>('[data-slot="tree-chart-canvas"]')!;
+      expect(canvas.style.left).toBe(`${380 - TREE_PAN_KEEP}px`);
+      expect(canvas.style.top).toBe(`${360 - TREE_PAN_KEEP}px`);
+      viewport.width = 500;
+      act(() => {
+        window.dispatchEvent(new Event("resize"));
+        vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS);
+      });
+      expect(canvas.style.left).toBe(`${500 - TREE_PAN_KEEP}px`);
+    } finally {
+      width.mockRestore();
+      height.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
   it("shows the tooltip on focus and clears it on Escape", async () => {
     const user = userEvent.setup();
     renderReduced(<TreeChart accessibleLabel="Org" data={orgChart} />);
@@ -1560,5 +1592,88 @@ describe("TreeChart — review regressions", () => {
         warn.mockRestore();
       }
     });
+  });
+});
+
+// RM-184 — `useResolvedChartProps` + `status` (chart-state's loading alias;
+// no `empty` — see `tree-chart.definition.ts`), and a `plotHeight` plot box.
+describe("TreeChart — status and plotHeight (RM-184)", () => {
+  it("shows the loading skeleton and no tree when status is loading", () => {
+    render(<TreeChart data={orgChart} status="loading" />);
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.queryByRole("tree")).toBeNull();
+  });
+
+  // Wave-3 review: the skeleton is absolutely positioned, so with no natural size the region
+  // collapsed to 0 px. Loading reserves the shared default plot box (2:1, 1.25:1 narrow), as
+  // every other family's skeleton does; a caller's `plotHeight` still wins.
+  it("reserves the default plot box while loading, and keeps a caller's plotHeight", () => {
+    const { container, unmount } = render(<TreeChart data={orgChart} status="loading" />);
+    const root = container.querySelector('[data-slot="tree-chart"]') as HTMLElement;
+    expect(root.style.aspectRatio).not.toBe("");
+    unmount();
+
+    const { container: sized } = render(
+      <TreeChart data={orgChart} plotHeight={240} status="loading" />,
+    );
+    const fixed = sized.querySelector('[data-slot="tree-chart"]') as HTMLElement;
+    expect(fixed.style.height).toBe("240px");
+  });
+
+  // Wave-3 re-review: inside a ChartFrame the loading tree must NOT register as a frame plot
+  // consumer — that swapped the frame's bounded 260 px body for the 2:1 box while loading and
+  // back on ready, so the frame changed height at the handoff. The frame keeps its bounded
+  // body in both states and the loading root reserves no box of its own.
+  it("keeps a ChartFrame's bounded body while loading and after ready", () => {
+    const framed = (status: "loading" | "ready") => (
+      <ChartFrame title="Org">
+        <TreeChart data={orgChart} status={status} />
+      </ChartFrame>
+    );
+    const { container, rerender } = render(framed("loading"));
+    const root = container.querySelector('[data-slot="tree-chart"]') as HTMLElement;
+    expect(root.style.aspectRatio).toBe("");
+    expect(root.style.height).toBe("");
+    expect(container.querySelector('[style*="height: 260px"]')).not.toBeNull();
+
+    rerender(framed("ready"));
+    expect(screen.getByRole("tree")).toBeInTheDocument();
+    expect(container.querySelector('[style*="height: 260px"]')).not.toBeNull();
+  });
+
+  it("renders the tree as usual when status is unset (default 'ready')", () => {
+    render(<TreeChart data={orgChart} />);
+    expect(screen.getByRole("tree")).toBeInTheDocument();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("sizes the plot box from plotHeight, unlike the unset default (natural size, no style)", () => {
+    const { container: withHeight } = render(<TreeChart data={orgChart} plotHeight={240} />);
+    const sized = withHeight.querySelector('[data-slot="tree-chart"]') as HTMLElement;
+    expect(sized.style.height).toBe("240px");
+
+    const { container: withoutHeight } = render(<TreeChart data={orgChart} />);
+    const unsized = withoutHeight.querySelector('[data-slot="tree-chart"]') as HTMLElement;
+    expect(unsized.style.height).toBe("");
+  });
+
+  // RM-184 review (minor): the minimap and zoom controls act on the tree's measured
+  // layout, so a keyboard user must not be able to reach them while `status: "loading"`
+  // hides that layout behind the skeleton.
+  it("hides the minimap and zoom controls while status is loading, even with zoomable + minimap", () => {
+    const { container } = render(<TreeChart data={orgChart} minimap status="loading" zoomable />);
+    expect(container.querySelector('[data-slot="tree-chart-viewport"]')).toBeNull();
+    expect(container.querySelector('[data-slot="tree-chart-minimap"]')).toBeNull();
+    expect(screen.queryByRole("button", { name: "Zoom in" })).toBeNull();
+  });
+
+  it("shows the minimap and zoom controls again once status leaves loading", () => {
+    const { container, rerender } = render(
+      <TreeChart data={orgChart} minimap status="loading" zoomable />,
+    );
+    expect(container.querySelector('[data-slot="tree-chart-viewport"]')).toBeNull();
+    rerender(<TreeChart data={orgChart} minimap zoomable />);
+    expect(container.querySelector('[data-slot="tree-chart-viewport"]')).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Zoom in" })).toBeInTheDocument();
   });
 });

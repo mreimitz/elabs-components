@@ -3,7 +3,7 @@
  *
  * Strategy: mirror bar-chart.test.tsx exactly.
  *
- * @visx/responsive's ParentSize uses ResizeObserver + real DOM measurement which
+ * ChartParentSize uses ResizeObserver + real DOM measurement which
  * jsdom lacks. We mock it to supply a fixed 560×288 viewport so ChartInner renders.
  *
  * The `Line` child is intentionally omitted from render tests — it calls
@@ -19,22 +19,37 @@
 import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-// One mutable reduced-motion switch (the `chart-reveal-clip.test.tsx` pattern).
-// Defaults to `false`, so every other test here runs on the animating path.
-const motionState = vi.hoisted(() => ({ reduced: false as boolean | null }));
+// Two mutable reduced-motion switches, as in a real browser (the
+// `chart-reveal-clip.test.tsx` pattern, split). `os` is the DEVICE setting —
+// all that motion/react's `useReducedMotion` reads. `app` is the person's
+// motion setting in the app (`ThemeProvider`), which the tokens package's hook
+// reads first, falling back to the device only on "system". Defaults: device
+// allows motion, app follows it — every other test here runs on the animating
+// path.
+const motionState = vi.hoisted(() => ({
+  os: false,
+  app: "system" as "system" | "reduced" | "full",
+}));
 
 vi.mock("motion/react", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  useReducedMotion: () => motionState.reduced,
+  useReducedMotion: () => motionState.os,
+}));
+// RM-189: the reveal clip, LiveLineChart and the series dim read reduced motion
+// from the tokens package hook (the person's explicit preference before the OS).
+vi.mock("@elabs-ai/components-tokens", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useReducedMotion: () =>
+    motionState.app === "reduced" || (motionState.app === "system" && motionState.os),
 }));
 
-// @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
+// ChartParentSize uses ResizeObserver + real DOM measurement which jsdom lacks.
 // Mock ParentSize to supply a fixed 560×288 viewport so ChartInner renders.
-vi.mock("@visx/responsive", () => {
+vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;
@@ -177,7 +192,8 @@ describe("LineChart revealOn (#175)", () => {
 
     afterEach(() => {
       vi.useRealTimers();
-      motionState.reduced = false;
+      motionState.os = false;
+      motionState.app = "system";
     });
 
     /** Longer than the default 1100ms reveal, so an un-held reveal has settled. */
@@ -224,7 +240,7 @@ describe("LineChart revealOn (#175)", () => {
     });
 
     it('reduced motion never holds — a below-the-fold chart settles without scrolling (revealOn="inView")', () => {
-      motionState.reduced = true;
+      motionState.os = true;
       const { advance, clipWidth, lastPhase } = renderTracked({ revealOn: "inView" });
       expect(clipWidth()).not.toBe("0");
       advance(PAST_REVEAL_MS);
@@ -683,6 +699,112 @@ describe("LineChart — nulls/curve/outline/symbols/focusOnHover (RM-112)", () =
         expect(seriesAGroup?.getAttribute("opacity")).toBe("1");
         expect(seriesBGroup?.getAttribute("opacity")).toBe("1");
       });
+    });
+
+    /**
+     * Focuses series b's keyboard target, waits for series a to dim, blurs it,
+     * waits for a to come back, and returns the opacities series a's line group
+     * and its end label passed through on the way (MutationObserver `oldValue`s
+     * that are neither resting rung). `waitFor` gets 5 s: under full motion each
+     * leg is a real 0.4 s tween.
+     */
+    async function dimAndRestoreSeriesA() {
+      const { container } = render(
+        <LineChart animationDuration={0} data={twoSeriesData} focusOnHover xDataKey="date">
+          <Line
+            animate={false}
+            dataKey="a"
+            fadeEdges={false}
+            name="Alpha"
+            seriesLabel="end"
+            stroke="var(--chart-1)"
+          />
+          <Line
+            animate={false}
+            dataKey="b"
+            fadeEdges={false}
+            name="Beta"
+            seriesLabel="end"
+            stroke="var(--chart-2)"
+          />
+        </LineChart>,
+      );
+      await waitFor(() => {
+        expect(container.querySelectorAll("path.visx-linepath:not([aria-hidden])")).toHaveLength(2);
+      });
+      const line = container.querySelector("path.visx-linepath:not([aria-hidden])")!.closest("g")!;
+      const label = container.querySelector('[data-slot="series-end-labels"] [data-series="a"]');
+      expect(label).not.toBeNull();
+      const seen = new Map<Node, string[]>([
+        [line, []],
+        [label!, []],
+      ]);
+      const observer = new MutationObserver((records) => {
+        for (const record of records) seen.get(record.target)?.push(record.oldValue ?? "");
+      });
+      for (const el of seen.keys()) {
+        observer.observe(el, { attributeFilter: ["opacity"], attributeOldValue: true });
+      }
+
+      const dimmed = String(SELECTION_EXCLUDED_OPACITY);
+      const target = container.querySelectorAll('[data-slot="series-focus-target"]')[1];
+      fireEvent.focus(target as HTMLButtonElement);
+      await waitFor(
+        () => {
+          expect(line.getAttribute("opacity")).toBe(dimmed);
+          expect(label!.getAttribute("opacity")).toBe(dimmed);
+        },
+        { timeout: 5000 },
+      );
+      fireEvent.blur(target as HTMLButtonElement);
+      await waitFor(
+        () => {
+          expect(line.getAttribute("opacity")).toBe("1");
+          expect(label!.getAttribute("opacity")).toBe("1");
+        },
+        { timeout: 5000 },
+      );
+      observer.disconnect();
+
+      const resting = new Set(["", "1", dimmed]);
+      const between = (el: Node) => seen.get(el)!.filter((value) => !resting.has(value));
+      return {
+        changes: [...seen.values()].map((values) => values.length),
+        line: between(line),
+        label: between(label!),
+      };
+    }
+
+    // The dim is a JS (rAF-driven) fade, which the CSS reduced-motion gate never
+    // reaches, so it reads the person's setting itself through the tokens hook:
+    // the app's motion setting first, the device's only on "system".
+    it("dims a series and its end label in one step when the app asks for reduced motion", async () => {
+      // The device allows motion; only the app setting asks for less. A dim that
+      // read motion/react's device-only hook would still fade here.
+      motionState.app = "reduced";
+      try {
+        const result = await dimAndRestoreSeriesA();
+        // Both groups changed both ways (the check is not vacuous)…
+        for (const count of result.changes) expect(count).toBeGreaterThanOrEqual(2);
+        // …and neither passed through a value between the two resting rungs.
+        expect(result.line).toEqual([]);
+        expect(result.label).toEqual([]);
+      } finally {
+        motionState.app = "system";
+      }
+    });
+
+    it('still fades a series and its end label when the app asks for "full" motion on a reduced-motion device', async () => {
+      motionState.os = true;
+      motionState.app = "full";
+      try {
+        const result = await dimAndRestoreSeriesA();
+        expect(result.line.length).toBeGreaterThan(0);
+        expect(result.label.length).toBeGreaterThan(0);
+      } finally {
+        motionState.os = false;
+        motionState.app = "system";
+      }
     });
 
     it("focusOnHover off (default) never sets the excluded opacity from a plain hover", async () => {

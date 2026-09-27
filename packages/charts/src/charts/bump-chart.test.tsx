@@ -1,12 +1,15 @@
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// react-use-measure uses ResizeObserver for layout measurement, which jsdom
-// does not implement. Mock it to return a fixed size so the chart's inner
+// `useLayoutMeasure` reads the layout box, which jsdom does not lay out.
+// Mock it to return a fixed size so the chart's inner
 // render gate (width > 0 && height > 0) is satisfied.
 // Real render + a11y are covered by the Storybook interaction tests.
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: 560, height: 288 }],
+// The real hook hands back one size object until the size changes; so does this.
+const MEASURED_BOX = { width: 560, height: 288 };
+vi.mock("./layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, MEASURED_BOX],
 }));
 
 import {
@@ -345,7 +348,7 @@ describe("BumpChart — datapoint accessible name (#270)", () => {
 // ── #273 — a "strip" cell never renders its fill without its rank ───────────
 
 describe("BumpChart — strip legibility caps (#273)", () => {
-  // `react-use-measure` is mocked (top of file) to a fixed 560x288, so
+  // `useLayoutMeasure` is mocked (top of file) to a fixed 560x288, so
   // `innerWidth`/`innerHeight` here are fixed regardless of any wrapper
   // style — 20 periods is deliberately more than that geometry's derived
   // cap, so the fix's trimming actually has work to do.

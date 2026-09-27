@@ -6,6 +6,13 @@ export const DEFAULT_ANIMATION_EASING = "cubic-bezier(0.85, 0, 0.15, 1)";
 /** Default `animationDuration` (ms) for every chart that animates by duration. */
 export const DEFAULT_ANIMATION_DURATION_MS = 1100;
 
+/**
+ * The reduced-motion entrance of a swept mark (`PieSlice`, `RadarArea`,
+ * `Ring`): no stagger and no sweep, so the mark mounts whole. Reduced motion
+ * is a BRANCH, never merely a shorter duration.
+ */
+export const REDUCED_MOTION_ENTER_TRANSITION: Transition = { duration: 0 };
+
 /** Default enter transition — matches the original line chart reveal. */
 export const DEFAULT_CHART_ENTER_TRANSITION: Transition = {
   type: "tween",

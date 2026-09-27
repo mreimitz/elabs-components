@@ -1,11 +1,13 @@
 "use client";
 
 import { motion, useSpring } from "motion/react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useChart, useChartStable } from "./chart-context";
-import { hmsTimeFmt } from "./chart-formatters";
+import { useChartFormatters } from "./chart-formatters";
 import { DATE_PILL_BOTTOM, datePillFits } from "./tooltip/date-pill";
+import { LIVE_X_AXIS_PART } from "../definitions/parts/live-x-axis.definition";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 const TICKER_HALF_WIDTH = 50;
 const FADE_BUFFER = 20;
@@ -33,9 +35,10 @@ export interface LiveXAxisProps {
   formatTime?: (t: number) => string;
 }
 
-const defaultFormatTime = (t: number) => hmsTimeFmt.format(new Date(t));
-
-export function LiveXAxis(props: LiveXAxisProps) {
+export function LiveXAxis(rawProps: LiveXAxisProps) {
+  // RM-182: the part's definition (LIVE_X_AXIS_PART) maps renamed props (no rows until wave 4)
+  // and fills its defaults before anything reads them.
+  const props = useResolvedChartProps(LIVE_X_AXIS_PART, rawProps);
   const { containerRef } = useChartStable();
   const [mounted, setMounted] = useState(false);
 
@@ -53,10 +56,16 @@ export function LiveXAxis(props: LiveXAxisProps) {
 
 const LiveXAxisInner = memo(function LiveXAxisInner({
   numTicks = 5,
-  formatTime = defaultFormatTime,
+  formatTime: formatTimeProp,
   container,
 }: LiveXAxisProps & { container: HTMLDivElement }) {
   const { xScale, margin, tooltipData } = useChart();
+  // RM-187: the default HH:MM:SS reads the LocaleProvider locale, not the host's.
+  const { hmsTimeFmt } = useChartFormatters();
+  const formatTime = useCallback(
+    (t: number) => (formatTimeProp ? formatTimeProp(t) : hmsTimeFmt.format(new Date(t))),
+    [formatTimeProp, hmsTimeFmt],
+  );
 
   const domain = xScale.domain();
   const startMs = domain[0]?.getTime() ?? 0;

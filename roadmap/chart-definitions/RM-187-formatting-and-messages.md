@@ -1,7 +1,7 @@
 ---
 id: RM-187
 title: "Formatting and messages: `useChartFormatters` as the one path; strings onto the ui `charts.*` keys"
-status: planned
+status: done
 priority: P1
 effort: L (3–4 days)
 wave: 3
@@ -32,6 +32,8 @@ source: docs/review/2026-09-25-charts-unification-review.md F07, F29; ADR 0042 (
 
 - The module-level host-locale formatters are imported in 16 files; DensityScatter has a module-level `new Intl.NumberFormat()` and ChartStatFlow calls `new Intl.NumberFormat(undefined)`. A LocaleProvider-bound `useChartFormatters()` already exists (`chart-formatters.ts:230`) with zero consumers (F07).
 - Rule #250 per-value violations: Dumbbell value-axis ticks, heatmap-legend, distribution-value-axis, Parallel extremes, DensityScatter ticks, and Waterfall's bar labels and tooltip rows (F07).
+- RM-183 review (fix3) deliberately narrowed the radial/part-to-whole families' `valueFormat`-group adoption to only the members that change printed output TODAY, dropping `locale` everywhere (the formatter always reads ambient `useLocale()`, so an accepted `locale` prop would silently do nothing — see each `*-chart.definition.ts` docblock). RM-187 is where that seam should actually open, scoped per family rather than blanket: `PieChart`/`FunnelChart`/`BulletChart` would gain `locale` alongside their existing `valueFormat`/`currency`/`maxFractionDigits`; `RadarChart` would gain `locale` and `maxFractionDigits` (today it exposes only `valueFormat`/`currency` on `useContainerLegend`'s value column, which has no seam for the other two). `RingChart` and `UnitChart` have no printed-value seam at all today — they would need one grown first before `locale`/`currency`/`maxFractionDigits` mean anything, out of scope for a formatting-only pass.
+- RM-183 review round 2 (F3): `PieChart`'s `maxFractionDigits` reaches only the slice-label formatter, not `useContainerLegend`'s value column — `currency` reaches both, but there is no `maxFractionDigits` seam on the legend today. Same shape as the `RadarChart` gap above; wire it in alongside RadarChart's when this lands, rather than as a one-off.
 - User-visible English is hard-coded in tooltip rows (Treemap, Tree, Sankey, Waterfall, Dumbbell, Bump, Distribution), summaries (Network, Heatmap, Tree), empty states and control labels (F29). The ui catalogue already holds about 277 `charts.*` keys; a second English table would drift.
 
 ## Change
@@ -49,3 +51,15 @@ source: docs/review/2026-09-25-charts-unification-review.md F07, F29; ADR 0042 (
 ## Test / gate
 
 `pnpm --filter @elabs-ai/components-charts test`, `pnpm --filter @elabs-ai/components-ui test`, `pnpm check --rule locale-formatting,i18n-strings`, `pnpm check:update` reviewed, Storybook locale stories in Chromium, light and dark.
+
+## Open follow-ups (review fix round 1)
+
+Left open on purpose by the first review fix round; each is a separate, later change.
+
+- The `locale-formatting` rule does not catch a call site that imports one of the host-locale formatters from `chart-formatters.ts` (it matches locale-less `toLocale*String()` calls and `Date#toString()` in JSX, not imports). The maintainer wants no gate growth in this wave, so the rule stays as it is.
+- `describeSeries` (`chart-a11y.tsx`) still defaults `formatShare` to `new Intl.NumberFormat(undefined, …)`, the host locale, when a caller passes none.
+- The Sankey auto-summary is still English text built in code, not a `charts.*` key.
+- `DensityScatterChart`'s "{n} points" and `ChartMarkers`' "+{n} more..." overflow line are still fixed English.
+- `ChartMessages` (the per-chart `messages` type) is not exported from the package barrel; callers type it through the chart's props.
+- `DEFAULT_CHOROPLETH_ZOOM_LABELS` is no longer read by `ChoroplethChart` (its zoom labels come from `charts.*` keys) but stays exported until 6.0.
+- The shared selection, gesture, zoom, navigator, reference-line and series-focus parts still read the provider's `t` directly, so a chart's own `messages` does not reach their words (for example the selection toolbar inside `HeatmapChart`, `DistributionChart` or `DumbbellChart`).

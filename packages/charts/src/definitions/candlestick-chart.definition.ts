@@ -11,19 +11,22 @@ import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { DEFAULT_ANIMATION_DURATION_MS } from "../charts/animation";
 import type { CandlestickChartProps, OHLCDataPoint } from "../charts/candlestick-chart";
+import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
+import { chartStateGroup } from "../charts/props/chart-state";
 import { analyticsCommons, navigatorCommons } from "../charts/props/commons";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { motionGroup } from "../charts/props/motion";
 import { tooltipGroup } from "../charts/props/tooltip";
 import { looseFieldFor } from "../charts/props/typed-field";
 import {
+  annotationsField,
   aspectRatioField,
   classNameField,
-  marginField,
   revealSignatureField,
   xDataKeyField,
   xDomainSlotCountField,
 } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 const price = /* @__PURE__ */ field.number({ required: true });
@@ -34,8 +37,10 @@ export const CANDLESTICK_CHART = /* @__PURE__ */ defineChart<CandlestickChartPro
   label: "Candlestick chart",
   description: "Open, high, low and close per period: an OHLC series over time.",
   specTypes: ["candlestick"],
-  groups: [a11yGroup, navigatorCommons.group, analyticsCommons.group],
+  groups: [a11yGroup, frameSizeGroup, navigatorCommons.group, analyticsCommons.group],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     // Each row's instant is a `Date`, which the field vocabulary cannot describe: the prices
     // are checked, the rest of the row is left to code.
     data: looseFieldFor<OHLCDataPoint[]>()(
@@ -50,13 +55,14 @@ export const CANDLESTICK_CHART = /* @__PURE__ */ defineChart<CandlestickChartPro
       }),
     ),
     xDataKey: xDataKeyField,
-    margin: marginField,
+    // Annotations — RM-188: declared (the shared annotation layer always drew them).
+    annotations: annotationsField,
     animationDuration: motionGroup.fields.animationDuration,
     enterTransition: motionGroup.fields.enterTransition,
     revealSignature: revealSignatureField,
     aspectRatio: aspectRatioField,
-    plotHeight: frameSizeGroup.fields.plotHeight,
     className: classNameField,
+    status: chartStateGroup.fields.status,
     candleGap: field.number({
       unit: "fraction",
       tier: "advanced",
@@ -77,6 +83,7 @@ export const CANDLESTICK_CHART = /* @__PURE__ */ defineChart<CandlestickChartPro
     className: "",
     candleGap: 0.2,
     tooltip: true,
+    status: DEFAULT_CHART_STATUS,
   },
   targets: [
     {

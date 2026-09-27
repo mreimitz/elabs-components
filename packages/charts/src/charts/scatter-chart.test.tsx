@@ -1,15 +1,23 @@
 import { cleanup, fireEvent, render, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// react-use-measure uses ResizeObserver for layout measurement, which jsdom
-// does not implement. Mock it to return a fixed size so the chart's inner
+// `useLayoutMeasure` reads the layout box, which jsdom does not lay out.
+// Mock it to return a fixed size so the chart's inner
 // render gate (width > 0 && height > 0) is satisfied.
 // Real render + a11y are covered by the Storybook interaction tests.
 // `box` is mutable (same technique as `labels.test.tsx`) so the RM-115 ×
 // RM-110 bubble-label-priority suite below can re-render at several widths.
 const box = vi.hoisted(() => ({ width: 560, height: 288 }));
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { ...box }],
+// The real hook hands back one size object until the size changes; so does this.
+const measured = vi.hoisted(() => ({ current: { width: 0, height: 0 } }));
+vi.mock("./layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => {
+    if (measured.current.width !== box.width || measured.current.height !== box.height) {
+      measured.current = { ...box };
+    }
+    return [() => undefined, measured.current];
+  },
 }));
 
 import { resolveExtremeLabelY } from "./scatter";

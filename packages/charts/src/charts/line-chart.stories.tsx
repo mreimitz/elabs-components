@@ -10,12 +10,15 @@ import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { AreaBand } from "./area-band";
 import type { ChartDatapoint } from "./chart-datapoint";
 import { ChartConfigProvider } from "./chart-config-context";
+import { resolvePalette } from "./chart-context";
 import { ChartTooltip } from "./tooltip";
 import { Grid } from "./grid";
 import { ReferenceLine } from "./reference-line";
 import { XAxis } from "./x-axis";
 import { Line } from "./line";
 import { LineChart } from "./line-chart";
+import { LineChartLoading } from "./line-chart-loading";
+import { AreaChartLoading } from "./area-chart-loading";
 import { YAxis } from "./y-axis";
 
 const meta = {
@@ -101,6 +104,28 @@ export const Loading: Story = {
       </LineChart>
     </div>
   ),
+};
+
+// RM-189: the placeholders take the `plotHeight` of the chart they stand in
+// for, so the box does not jump when the data lands.
+export const LoadingPlaceholderPlotHeight: Story = {
+  name: "Loading placeholders, fixed plot height",
+  render: () => (
+    <div className="grid w-full max-w-[560px] gap-6">
+      <div data-testid="line-loading">
+        <LineChartLoading label="Loading data…" plotHeight={240} />
+      </div>
+      <div data-testid="area-loading">
+        <AreaChartLoading label="Loading data…" plotHeight={240} />
+      </div>
+    </div>
+  ),
+  play: async ({ canvas }) => {
+    for (const id of ["line-loading", "area-loading"]) {
+      const root = canvas.getByTestId(id).querySelector<HTMLElement>("[data-chart-breakpoint]");
+      await waitFor(() => expect(root?.getBoundingClientRect().height).toBe(240));
+    }
+  },
 };
 
 // #352: an ordered NON-temporal x dimension (turn number, step index, run
@@ -821,16 +846,20 @@ export const FocusHover: Story = {
         3,
       );
     });
-    const paths = [...canvasElement.querySelectorAll("path.visx-linepath:not([aria-hidden])")];
-    const groupFor = (i: number) => paths[i]?.closest("g");
+    // Re-query on every call: a re-render may swap the path nodes, and a group
+    // found from a stale, detached path would never change opacity again.
+    const groupFor = (i: number) =>
+      canvasElement.querySelectorAll("path.visx-linepath:not([aria-hidden])")[i]?.closest("g");
 
     // issue 545: Tab reaches a keyboard target with NO `legend` set — the
     // chart's own default configuration (`SeriesFocusTargets`, mounted
     // whenever no container legend is actually painting).
-    const focusTargets = canvasElement.querySelectorAll('[data-slot="series-focus-target"]');
-    await waitFor(() => expect(focusTargets.length).toBe(3));
+    // Re-query inside the wait: a `querySelectorAll` list is static, so waiting
+    // on one captured outside would never see a target that mounts later.
+    const focusTargets = () => canvasElement.querySelectorAll('[data-slot="series-focus-target"]');
+    await waitFor(() => expect(focusTargets()).toHaveLength(3));
 
-    const seriesB = focusTargets[1] as HTMLButtonElement;
+    const seriesB = focusTargets()[1] as HTMLButtonElement;
     seriesB.focus();
     await waitFor(() => {
       expect(groupFor(1)?.getAttribute("opacity")).toBe("1");
@@ -1321,5 +1350,38 @@ export const GrowthDesk: Story = {
     await waitFor(() =>
       expect(canvas.getByTestId("period-summary").textContent).toMatch(/weeks selected/),
     );
+  },
+};
+
+/** Every colour a story's marks paint (fill, stroke, gradient stops), as one string. */
+const paintedColors = (root: Element) =>
+  Array.from(root.querySelectorAll("*"))
+    .flatMap((el) => ["fill", "stroke", "stop-color", "style"].map((a) => el.getAttribute(a) ?? ""))
+    .join(" ");
+
+/**
+ * `palette` (RM-186): series with no `stroke` of their own take the palette's
+ * colours in order — here the two ends of the sequential ramp — instead of the
+ * single lead-line colour they share when `palette` is unset.
+ */
+export const Palette: Story = {
+  render: () => (
+    <div className="h-72 w-full max-w-[560px]">
+      <LineChart aspectRatio={undefined} data={chartData} palette="sequential">
+        <Grid horizontal />
+        <Line curve={curveNatural} dataKey="users" />
+        <Line curve={curveNatural} dataKey="sessions" />
+        <XAxis />
+        <ChartTooltip />
+      </LineChart>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => {
+      for (const color of resolvePalette("sequential", 2, { explicit: true })) {
+        expect(paintedColors(canvasElement)).toContain(color);
+      }
+      expect(paintedColors(canvasElement)).not.toContain("var(--chart-line-primary)");
+    });
   },
 };

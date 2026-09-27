@@ -23,8 +23,8 @@
  * gates are exercised at the level of the gesture owner below the loop.
  * Nothing is skipped silently.
  *
- * jsdom has no layout, so the measurement seams (`@visx/responsive`,
- * `react-use-measure`, `getBoundingClientRect`, `ResizeObserver`,
+ * jsdom has no layout, so the measurement seams (`ChartParentSize`,
+ * `useLayoutMeasure`, `getBoundingClientRect`, `ResizeObserver`,
  * `getTotalLength`) are stubbed to a fixed box — the interaction code is not.
  */
 
@@ -35,19 +35,17 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest
 
 const BOX = vi.hoisted(() => ({ width: 640, height: 320 }));
 
-vi.mock("@visx/responsive", () => ({
-  ParentSize: ({
+vi.mock("./chart-parent-size", () => ({
+  ChartParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => React.ReactNode;
   }) => <>{children({ width: BOX.width, height: BOX.height })}</>,
 }));
 
-vi.mock("react-use-measure", () => ({
-  default: () => [
-    () => undefined,
-    { ...BOX, top: 0, left: 0, right: BOX.width, bottom: BOX.height, x: 0, y: 0 },
-  ],
+vi.mock("./layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, BOX],
 }));
 
 import {
@@ -243,7 +241,7 @@ const ACTIVE_SURFACES = [
   '[data-slot="tree-chart-minimap"].pointer-events-auto',
   '[data-slot="tree-chart"].cursor-grab',
   '[data-slot="density-scatter-chart-x-gutter"]',
-  '[data-slot="density-scatter-chart-x-sliders"]',
+  '[data-slot="chart-selection-range-thumbs"]',
   '[data-slot="density-scatter-chart-plot"].cursor-grab',
   '[data-slot="network-chart-body"].cursor-grab',
   '[data-slot="canvas-layer-cursor"]',
@@ -465,7 +463,7 @@ const FAMILIES: Record<ChartFamilyName, Family> = {
     hover: true,
     activeSlots: [
       '[data-slot="density-scatter-chart-x-gutter"]',
-      '[data-slot="density-scatter-chart-x-sliders"]',
+      '[data-slot="chart-selection-range-thumbs"]',
       '[data-slot="density-scatter-chart-plot"].cursor-grab',
     ],
     zoom: "onViewChange",

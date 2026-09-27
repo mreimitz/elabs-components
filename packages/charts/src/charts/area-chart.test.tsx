@@ -1,7 +1,7 @@
 /**
  * AreaChart smoke test.
  *
- * @visx/responsive ParentSize uses ResizeObserver + DOM layout measurement
+ * ChartParentSize uses ResizeObserver + DOM layout measurement
  * which jsdom cannot provide. We mock ParentSize to supply a fixed size so the
  * chart tree can mount.
  *
@@ -16,10 +16,10 @@
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// Mock @visx/responsive so ParentSize renders its child with a fixed size
+// Mock ChartParentSize so it renders its child with a fixed size
 // instead of trying to measure the DOM (which jsdom cannot do).
-vi.mock("@visx/responsive", () => ({
-  ParentSize: ({
+vi.mock("./chart-parent-size", () => ({
+  ChartParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => React.ReactNode;

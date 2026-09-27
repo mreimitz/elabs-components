@@ -18,11 +18,12 @@
 
 import { useMemo, type HTMLAttributes } from "react";
 import { scaleTime } from "@visx/scale";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import { ZOOM_MORPH_CLASS } from "./gantt-bar";
 import { useGantt } from "./gantt-context";
 import { GANTT_UNIT_MS } from "./gantt";
 import type { GanttFormatDate, GanttScale, GanttTimeUnit } from "./gantt";
+import { useChartTranslate } from "../charts/chart-messages";
 
 // ── Header geometry ─────────────────────────────────────────────────────────
 
@@ -272,7 +273,7 @@ export function GanttTimescale({
 }: GanttTimescaleProps) {
   const { meta } = useGantt();
   const { scales, formatDate: fmt } = meta;
-  const { t } = useLocale();
+  const t = useChartTranslate();
 
   const scale = useMemo(
     () =>

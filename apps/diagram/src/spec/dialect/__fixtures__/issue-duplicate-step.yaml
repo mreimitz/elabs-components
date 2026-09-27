@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
+diagram: "0"
+nodes:
+  - id: a
+  - id: b
+flows:
+  - a -> b: { step: 1 }
+  - b -> a: { step: 1 }
+# expect: duplicate-step @ 8:21

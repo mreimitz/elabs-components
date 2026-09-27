@@ -52,6 +52,7 @@ Ship ADR 0042 Appendix A.1 exactly:
 - Both names given → the row's precedence decides (test).
 - `pnpm check --rule charts-deprecated-usage` green: no internal caller, story, doc or template uses an old name.
 - Each renamed prop carries `@deprecated` TSDoc naming the replacement, an autodocs note, and a `### Deprecated` bullet in the changeset (`docs/DEPRECATION.md` in full).
+- `charts-group-drift` stays green: `messages` and `accessibleLabel` are group keys, so BulletChart, Gauge, Sparkline and DensityScatterChart apply the `messages` group, and Sparkline also applies `a11y` — never an own field of either name (RM-190).
 
 ## Test / gate
 

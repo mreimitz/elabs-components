@@ -2,20 +2,23 @@ import { cleanup, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-vi.mock("@visx/responsive", () => {
+vi.mock("../chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;
     }) => React.createElement("div", null, children({ width: 900, height: 400 })),
   };
 });
-// ScatterChart measures with react-use-measure (ResizeObserver, absent in jsdom).
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: 900, height: 400 }],
+// ScatterChart measures with `useLayoutMeasure` (ResizeObserver, absent in jsdom).
+// The real hook hands back one size object until the size changes; so does this.
+const MEASURED_BOX = { width: 900, height: 400 };
+vi.mock("../layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, MEASURED_BOX],
 }));
 
 import { Bar } from "../bar";

@@ -12,7 +12,14 @@
  *
  * `insetStackSegment` (RM-164) is the one step after the scale: it cuts
  * `stackGap` out of a segment's pixel span, shared by `Bar` and `SeriesBar`.
+ *
+ * `BarChart` and `ComposedChart` share the rest of their stacking here too
+ * (RM-182, review F14): the cumulative offsets (`cumulativeStackOffsets`) and
+ * the percent stack's axis rewrite (`applyPercentStackAxes`, the one helper
+ * that touches React elements: it clones the chart's `YAxis` children).
  */
+
+import { Children, cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 
 /** How a stacked `BarChart` lays its segments out. */
 export type BarStackMode = "stacked" | "percent" | "diverging";
@@ -277,6 +284,100 @@ export function cumulativeStackSegments(
     out.push([offset, offset + value]);
   }
   return out;
+}
+
+/**
+ * The offsets of a CUMULATIVE stack, per row index: where each series in `keys`
+ * starts, which is the running total of the numeric values declared before it
+ * (a non-numeric value adds nothing). A missing row gets no entry. One copy for
+ * `BarChart` and `ComposedChart` (RM-182, review F14).
+ */
+export function cumulativeStackOffsets(
+  data: readonly (Record<string, unknown> | null | undefined)[],
+  keys: readonly string[],
+): Map<number, Map<string, number>> {
+  const offsets = new Map<number, Map<string, number>>();
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    if (!row) {
+      continue;
+    }
+    const pointOffsets = new Map<string, number>();
+    let cumulative = 0;
+    for (const key of keys) {
+      pointOffsets.set(key, cumulative);
+      const value = row[key];
+      if (typeof value === "number") {
+        cumulative += value;
+      }
+    }
+    offsets.set(i, pointOffsets);
+  }
+  return offsets;
+}
+
+/** How `applyPercentStackAxes` treats a chart's direct children. */
+export interface PercentStackAxesOptions {
+  /**
+   * Which `YAxis` children draw the percent stack. Unset: every one (`BarChart`);
+   * `ComposedChart` passes only its default axis.
+   */
+  readonly isStackAxis?: (props: Readonly<Record<string, unknown>>) => boolean;
+  /** Also pin the axis domain to `[0, 1]` unless it sets its own (`ComposedChart`). */
+  readonly pinDomain?: boolean;
+  /**
+   * A `ChartTooltip` that set no `unit` or `valueFormat` prints plain numbers
+   * (`ComposedChart`): its rows are the raw values, which the axis' percent
+   * style would misprint.
+   */
+  readonly tooltipNumbers?: boolean;
+}
+
+/**
+ * `stacked="percent"` draws in fraction space, so a direct `YAxis` child that set
+ * no format of its own (`valueFormat`/`formatValue`) prints percent: "0.4" would
+ * be a lie of omission. An explicit format always wins. `options` holds the
+ * two things only `ComposedChart` does on top (RM-121): pin the axis to `[0, 1]`
+ * and keep the tooltip's rows plain numbers.
+ */
+export function applyPercentStackAxes(
+  children: ReactNode,
+  options: PercentStackAxesOptions = {},
+): ReactNode {
+  return Children.map(children, (child) => {
+    if (!isValidElement(child) || typeof child.type !== "function") {
+      return child;
+    }
+    const childType = child.type as { displayName?: string; name?: string };
+    const name = childType.displayName || childType.name;
+    const props = child.props as Readonly<Record<string, unknown>>;
+    if (name === "YAxis") {
+      if (options.isStackAxis && !options.isStackAxis(props)) {
+        return child;
+      }
+      const ownFormat = props.valueFormat !== undefined || props.formatValue !== undefined;
+      if (!options.pinDomain) {
+        return ownFormat
+          ? child
+          : cloneElement(child as ReactElement<{ valueFormat?: string }>, {
+              valueFormat: "percent",
+            });
+      }
+      return cloneElement(child as ReactElement<{ domain?: unknown; valueFormat?: string }>, {
+        domain: props.domain ?? [0, 1],
+        ...(ownFormat ? {} : { valueFormat: "percent" as const }),
+      });
+    }
+    if (options.tooltipNumbers && name === "ChartTooltip") {
+      if (props.unit != null || props.valueFormat != null) {
+        return child;
+      }
+      return cloneElement(child as ReactElement<{ valueFormat?: string }>, {
+        valueFormat: "number",
+      });
+    }
+    return child;
+  });
 }
 
 /**

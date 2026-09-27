@@ -7,16 +7,21 @@
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
+import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
+import { chartStateGroup } from "../charts/props/chart-state";
 import {
   analyticsCommons,
   interactionCommons,
+  selectionCommons,
   selectionGestureCommons,
 } from "../charts/props/commons";
+import { frameSizeGroup } from "../charts/props/frame-size";
 import { paletteGroup } from "../charts/props/palette";
 import { valueFormatGroup } from "../charts/props/value-format";
 import type { DistributionChartProps } from "../charts/distribution/distribution-chart";
 import { classNameField } from "./cartesian-fields";
 import { defineChart } from "./define-chart";
+import { messagesGroup } from "../charts/props/messages";
 
 export const DISTRIBUTION_CHART = /* @__PURE__ */ defineChart<DistributionChartProps>()({
   id: "DistributionChart",
@@ -25,9 +30,12 @@ export const DISTRIBUTION_CHART = /* @__PURE__ */ defineChart<DistributionChartP
   description: "The spread of one numeric column, as a histogram, box, violin or strip.",
   specTypes: ["histogram", "box", "strip"],
   groups: [
+    messagesGroup,
     a11yGroup,
+    frameSizeGroup,
     interactionCommons.group,
     selectionGestureCommons.group,
+    selectionCommons.group,
     analyticsCommons.group,
   ],
   fields: {
@@ -80,18 +88,23 @@ export const DISTRIBUTION_CHART = /* @__PURE__ */ defineChart<DistributionChartP
     valueFormat: valueFormatGroup.fields.valueFormat,
     currency: valueFormatGroup.fields.currency,
     className: classNameField,
+    plotHeight: frameSizeGroup.fields.plotHeight,
+    margin: frameSizeGroup.fields.margin,
+    status: chartStateGroup.fields.status,
   },
   codeOnly: [
     "referenceLines",
     "style",
     ...interactionCommons.codeOnly,
     ...selectionGestureCommons.codeOnly,
+    ...selectionCommons.codeOnly,
     ...analyticsCommons.codeOnly,
   ],
   defaults: {
     orientation: "horizontal",
     showMedian: true,
     showOutliers: true,
+    status: DEFAULT_CHART_STATUS,
   },
   targets: [
     { id: "value", label: "Value", role: "measure", from: { prop: "valueKey" }, min: 1, max: 1 },

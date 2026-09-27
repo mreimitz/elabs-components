@@ -23,18 +23,14 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import {
-  cn,
-  useLocale,
-  useTreeKeyboard,
-  type TreeNode as UiTreeNode,
-} from "@elabs-ai/components-ui";
+import { cn, useTreeKeyboard, type TreeNode as UiTreeNode } from "@elabs-ai/components-ui";
 import type {
   ResolvedTree,
   ResolvedTreeNode,
   TreeLayoutNode,
   TreeLayoutResult,
 } from "./tree-chart-layout";
+import { useChartTranslate } from "./chart-messages";
 
 export interface TreeChartTreeLayerProps {
   layout: TreeLayoutResult<unknown>;
@@ -96,7 +92,7 @@ export function TreeChartTreeLayer({
   onTreeBlur,
   onEscape,
 }: TreeChartTreeLayerProps) {
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const treeRef = useRef<HTMLDivElement | null>(null);
   /** The item that last held focus, until focus genuinely leaves it. */
   const lastFocusedRef = useRef<string | null>(null);

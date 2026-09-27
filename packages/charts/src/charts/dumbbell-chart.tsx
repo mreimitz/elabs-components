@@ -42,7 +42,7 @@ import {
   type MutableRefObject,
 } from "react";
 import { useLayoutMeasure } from "./layout-size";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn } from "@elabs-ai/components-ui";
 import { HaloText, UnitStack, type UnitStackDirection } from "../marks";
 // Annotations — RM-111
 import { type ChartAnnotation } from "./annotations/annotation-types";
@@ -85,7 +85,7 @@ import {
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
-import { useChartValueFormatter } from "./chart-formatters";
+import { useChartValueFormatter, useChartValueSetFormatterFactory } from "./chart-formatters";
 import { ChartTooltipBox, type ChartTooltipRect } from "./tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "./tooltip/tooltip-content";
 import { indexPaletteFills, makeSeriesPattern, seriesPatternId } from "./series-pattern";
@@ -106,8 +106,28 @@ import {
   DEFAULT_CHART_PLOT_HEIGHT,
   resolveResponsive,
   type Responsive,
+  useChartFramePlotHeight,
+  useChartHostPlotHeight,
+  validPlotHeight,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
+import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
+import { DUMBBELL_CHART } from "../definitions/dumbbell-chart.definition";
+import { resolveChartMargin } from "./chart-margin";
+import { ChartLoadingPlot } from "./chart-loading-plot";
+import type { ChartStatus } from "./chart-phase";
+import type { ChartStateGroupProps } from "./props/chart-state";
+import type { FrameSizeGroupProps } from "./props/frame-size";
+import { useResolvedChartProps } from "./use-resolved-chart-props";
+import type { ChartTranslate } from "./chart-formatters";
+import { useChartTranslate } from "./chart-messages";
+import type { ChartMessages } from "./props/messages";
+import { ChartMessagesScope } from "./chart-messages";
+import { ReferenceRule } from "../marks/reference-rule";
+import { CHART_DASH } from "./chart-stroke";
+import { LEGEND_DIM_OPACITY } from "./chart-opacity";
+import { useAnalyticsExtents } from "./analytics/analytics-context";
+import { widenDomainForAnalytics } from "./analytics/resolve-analytics";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -158,7 +178,18 @@ export interface DumbbellValueAxisConfig {
   range?: "round" | "exact" | [number, number];
 }
 
-export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractionProps {
+export interface DumbbellChartProps
+  extends
+    ChartSelectionProps,
+    ChartInteractionProps,
+    FrameSizeGroupProps,
+    Pick<ChartStateGroupProps, "status"> {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** Data array — one row per category. */
   data: Record<string, unknown>[];
   /** Key in `data` for the category label. */
@@ -279,8 +310,8 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
   rowColor?: (row: DumbbellRow, index: number) => string | undefined;
   /** How displayed numbers (the delta label) are formatted. Default `"compact"`. */
   valueFormat?: ChartValueFormat;
-  /** Chart margins. */
-  margin?: Partial<Margin>;
+  /** Chart margins: one number for every side, or per side. */
+  margin?: number | Partial<Margin>;
   /** Aspect ratio as `"width / height"`. Default `"2 / 1"`. */
   aspectRatio?: string;
   /**
@@ -289,6 +320,12 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
    */
   plotHeight?: Responsive<ChartPlotHeight>;
   className?: string;
+  /**
+   * Loading vs ready (RM-185). `"loading"` shows a skeleton in the plot box the
+   * chart will fill, with one polite status message, until the data is ready.
+   * Default: `"ready"`.
+   */
+  status?: ChartStatus;
   /** Accessible name for the chart region (announces to AT on focus). */
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT (e.g. category count + value range). */
@@ -341,12 +378,6 @@ export interface DumbbellChartProps extends ChartSelectionProps, ChartInteractio
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-/** Opacity applied to every OTHER dot key's marks while a legend row is
- *  hovered/focused (RM-118 R3) — matches the ramp every other hover-dim
- *  family in this initiative uses (see e.g. `treemap-chart.tsx`). */
-const LEGEND_DIM_OPACITY = 0.35;
-
-const DEFAULT_MARKERS: DumbbellMarkerStyle = { start: "hollow", end: "filled" };
 // Pre-measurement floors, never below what `deriveDumbbellMargin` grows past
 // for content that actually needs more (#see its own docblock) — sized for a
 // short label ("AB 99"), NOT for the longest label this chart family has ever
@@ -375,11 +406,11 @@ const EXTRA_DOT_RADIUS = 3;
 const DOMAIN_PADDING_RATIO = 0.08;
 const SLOPE_ROW_SOFT_CAP = 8;
 
-/** `variant="arrow"` head colours (RM-116) — the diverging ramp's strong arms;
- *  head DIRECTION is the non-hue channel the greyscale test (`chart-hairline`
+/** `variant="arrow"` head colours (RM-116) — the sign pair (RM-186), the diverging
+ *  ramp's strong arms; head DIRECTION is the non-hue channel the greyscale test (`chart-hairline`
  *  ADR / conventions.md 1.4.1) needs alongside them. */
-const ARROW_POSITIVE_COLOR = "var(--chart-div-pos-2)";
-const ARROW_NEGATIVE_COLOR = "var(--chart-div-neg-2)";
+const ARROW_POSITIVE_COLOR = chartCssVars.signPositive;
+const ARROW_NEGATIVE_COLOR = chartCssVars.signNegative;
 const DEFAULT_ARROW_WIDTH = 8;
 const ARROW_HEAD_LENGTH = 9;
 /** Clear air between an arrow row's delta label and its own head (#547):
@@ -834,10 +865,11 @@ function buildTooltipRows(
   color: string,
   formatNumber: (value: number) => string,
   formatPercent: (value: number) => string,
+  t: ChartTranslate,
 ): TooltipRow[] {
   const rows: TooltipRow[] = [
-    { color, label: "Start", value: row.start },
-    { color, label: "End", value: row.end },
+    { color, label: t("charts.dumbbell.start"), value: row.start },
+    { color, label: t("charts.dumbbell.end"), value: row.end },
     {
       color,
       label: "Δ",
@@ -886,6 +918,7 @@ function DumbbellPlot({
   lineHeightPx,
   legendHoveredDotIndex = null,
 }: PlotProps) {
+  const tChart = useChartTranslate();
   const instanceKeyRef = useRef({});
   const innerWidth = Math.max(width - margin.left - margin.right, 0);
   const innerHeight = Math.max(height - margin.top - margin.bottom, 0);
@@ -919,6 +952,8 @@ function DumbbellPlot({
   const datapointsEnabled = useChartDatapointsEnabled();
   const activateDatapoint = useActivateDatapoint();
   const formatValue = useChartValueFormatter(valueFormat);
+  // #250: the value axis' ticks are ONE set — one notation across them.
+  const formatValueSet = useChartValueSetFormatterFactory(valueFormat);
   const formatNumber = useChartValueFormatter("number");
   const formatPercent = useChartValueFormatter("percent");
   const formatDelta = useChartValueFormatter(delta?.format ?? valueFormat);
@@ -973,10 +1008,20 @@ function DumbbellPlot({
         };
   };
 
-  const domain = useMemo(
-    () => computeDumbbellDomain(rows, valueAxis?.range),
-    [rows, valueAxis?.range],
-  );
+  // RM-188: an `ifOverflow: "extend"` analytic widens the value domain through
+  // the shared extents (the axis the annotation host resolved them on). An
+  // explicit `valueAxis.range` tuple is the caller's decision and stays fixed.
+  const analyticsExtents = useAnalyticsExtents();
+  const domain = useMemo(() => {
+    const base = computeDumbbellDomain(rows, valueAxis?.range);
+    if (Array.isArray(valueAxis?.range)) return base;
+    return widenDomainForAnalytics(
+      base,
+      analyticsExtents,
+      undefined,
+      orientation === "horizontal" ? "x" : "y",
+    );
+  }, [rows, valueAxis?.range, analyticsExtents, orientation]);
 
   // groupBy bands (RM-116): one header band per group, then its row bands —
   // byte-identical to `rows.map(row => ({ kind: "row", row }))` when `groupBy`
@@ -1033,6 +1078,8 @@ function DumbbellPlot({
         : scaleLinear({ domain, range: [0, innerWidth] }),
     [domain, innerHeight, innerWidth, isVertical],
   );
+  const valueTicks = useMemo(() => valueScale.ticks(4), [valueScale]);
+  const formatValueTick = useMemo(() => formatValueSet(valueTicks), [formatValueSet, valueTicks]);
 
   // Annotations — RM-111: rows resolve in DRAWN order, so a row note follows
   // its category through any sort. The slope variant has no category axis.
@@ -1205,9 +1252,10 @@ function DumbbellPlot({
           {annotationLayers.back /* Annotations — RM-111 */}
           {!isSlope && orientation === "horizontal" && referenceLine ? (
             <g data-slot="dumbbell-chart-reference-line">
-              <line
+              {/* RM-188: the one reference painter, in the track's grid ink. */}
+              <ReferenceRule
                 stroke="var(--chart-grid)"
-                strokeDasharray="4 3"
+                strokeDasharray={CHART_DASH.dashed}
                 strokeWidth={TRACK_STROKE_WIDTH}
                 x1={valueScale(referenceLine.value)}
                 x2={valueScale(referenceLine.value)}
@@ -1243,7 +1291,7 @@ function DumbbellPlot({
           ) : null}
           {!isSlope && orientation === "horizontal" && (showValueAxis || valueAxis) ? (
             <g data-slot="dumbbell-chart-value-axis">
-              {valueScale.ticks(4).map((tick) => {
+              {valueTicks.map((tick) => {
                 const x = valueScale(tick);
                 const atTop = valueAxis?.position === "top";
                 return (
@@ -1263,7 +1311,7 @@ function DumbbellPlot({
                       x={x}
                       y={atTop ? -8 : innerHeight + 16}
                     >
-                      {formatValue(tick)}
+                      {formatValueTick(tick)}
                     </HaloText>
                   </g>
                 );
@@ -1743,6 +1791,7 @@ function DumbbellPlot({
               rowColors[hoveredRowPosition % rowColors.length] as string,
               formatNumber,
               formatPercent,
+              tChart,
             )}
             title={hoveredRow.category}
           />
@@ -1766,7 +1815,7 @@ function DumbbellBody({
   maxInteractiveDatapoints,
   ...plotProps
 }: BodyProps) {
-  const { t } = useLocale();
+  const t = useChartTranslate();
   const { valueLabelFormat } = plotProps;
   const formatValue = useChartValueFormatter(plotProps.valueFormat);
   const rowByIndex = useMemo(
@@ -1821,320 +1870,361 @@ function defaultMargin(orientation: DumbbellOrientation, variant: DumbbellVarian
 }
 
 // Unwrapped implementation; the public docblock sits on `DumbbellChart` below.
-const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartProps>(function DumbbellChart(
-  {
-    data,
-    category,
-    startKey,
-    endKey,
-    orientation = "horizontal",
-    variant = "dumbbell",
-    beads,
-    markers = DEFAULT_MARKERS,
-    extraKeys,
-    valueKeys,
-    range = false,
-    keyColors,
-    arrowWidth,
-    groupBy,
-    showDelta = false,
-    deltaLabelFormat,
-    delta,
-    bothEndsLabeled = false,
-    valueLabelFormat,
-    referenceLine,
-    showValueAxis = false,
-    valueAxis,
-    sortBy = "none",
-    reverse = false,
-    palette,
-    rowColor,
-    valueFormat,
-    margin: marginProp,
-    aspectRatio,
-    plotHeight,
-    className,
-    accessibleLabel,
-    accessibleDescription,
-    onDatapointClick,
-    copyValueOnActivate = false,
-    datapointLabel,
-    maxInteractiveDatapoints,
-    legend,
-    startLabel,
-    endLabel,
-  },
-  forwardedRef,
-) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [measureRef, bounds] = useLayoutMeasure({ debounce: 10 });
-  const { measure, lineHeightPx } = useTextMeasurerOf(containerRef);
-  const formatValueForMargin = useChartValueFormatter(valueFormat);
-  const {
-    role,
-    "aria-label": ariaLabel,
-    "aria-describedby": ariaDescribedby,
-    tabIndex,
-    descId,
-  } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
-
-  const setContainerRef = (node: HTMLDivElement | null) => {
-    containerRef.current = node;
-    measureRef(node);
-    if (typeof forwardedRef === "function") {
-      forwardedRef(node);
-    } else if (forwardedRef) {
-      forwardedRef.current = node;
-    }
-  };
-
-  // `variant="dots"` (RM-116): `valueKeys` names every dot, `startKey`/
-  // `endKey` still resolve to its first/last (the domain and the optional
-  // `range` bar's extremes) and any keys between fold into `extraKeys` — no
-  // new `DumbbellRow` shape needed, the "dots" renderer just reads all of
-  // `start`/`extra`/`end` back out in that same order.
-  const effectiveStartKey =
-    variant === "dots" && valueKeys && valueKeys.length > 0 ? (valueKeys[0] as string) : startKey;
-  const effectiveEndKey =
-    variant === "dots" && valueKeys && valueKeys.length > 1
-      ? (valueKeys[valueKeys.length - 1] as string)
-      : endKey;
-  const effectiveExtraKeys =
-    variant === "dots" && valueKeys && valueKeys.length > 2 ? valueKeys.slice(1, -1) : extraKeys;
-
-  const rows = useMemo(() => {
-    const built = buildDumbbellRows(
+const DumbbellChartBase = forwardRef<HTMLDivElement, DumbbellChartResolvedProps>(
+  function DumbbellChart(
+    {
       data,
       category,
-      effectiveStartKey,
-      effectiveEndKey,
-      effectiveExtraKeys,
-    );
-    const sorted = sortDumbbellRows(built, sortBy);
-    return reverse ? [...sorted].reverse() : sorted;
-  }, [data, category, effectiveStartKey, effectiveEndKey, effectiveExtraKeys, sortBy, reverse]);
-
-  // Legend (RM-118): one row per dot KEY, `variant="dots"` only. Colours
-  // mirror `dotKeyColors` in `DumbbellPlot` exactly (same
-  // `resolvePalette("categorical", …, { explicit: true })` call) so the
-  // legend swatch and the dot it keys are always the same colour.
-  //
-  // #610: every other variant (`dumbbell`/`slope`/`arrow`) has no discrete
-  // per-row key to legend — instead it keys the two ENDS by marker shape
-  // (`markers`, default hollow start / filled end), the one thing every row
-  // shares. Both entries share `chartCssVars.foreground`: colour here would
-  // wrongly imply one specific row's category, when the legend is teaching a
-  // shape-to-role mapping that holds across every row regardless of colour.
-  // F09: with `legend={{ values: true }}` each entry prints its column's
-  // total over every row (the category family's series total).
-  const legendValues = legendWantsValues(legend);
-  const legendItems: ChartLegendEntry[] = useMemo(() => {
-    const total = (key: string) => (legendValues ? { value: sumLegendValue(data, key) } : {});
-    if (variant === "dots") {
-      if (!valueKeys || valueKeys.length === 0) {
-        return [];
-      }
-      const colors = resolvePalette("categorical", Math.max(valueKeys.length, 1), {
-        explicit: true,
-      });
-      return valueKeys.map((key, i) => ({
-        key: `${key}-${i}`,
-        label: key,
-        color: keyColors?.[key] ?? (colors[i % colors.length] as string),
-        kind: "color" as const,
-        ...total(key),
-      }));
-    }
-    return [
-      {
-        key: "start",
-        label: startLabel ?? startKey,
-        color: chartCssVars.foreground,
-        kind: "series" as const,
-        ...(markers.start === "hollow" ? { marker: "hollow" as const } : {}),
-        ...total(startKey),
-      },
-      {
-        key: "end",
-        label: endLabel ?? endKey,
-        color: chartCssVars.foreground,
-        kind: "series" as const,
-        ...(markers.end === "hollow" ? { marker: "hollow" as const } : {}),
-        ...total(endKey),
-      },
-    ];
-  }, [
-    variant,
-    valueKeys,
-    keyColors,
-    startKey,
-    endKey,
-    startLabel,
-    endLabel,
-    markers,
-    legendValues,
-    data,
-  ]);
-  const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
-  const handleLegendHoverChange = useCallback((index: number | null) => {
-    setLegendHoveredIndex(index);
-  }, []);
-  const containerLegend = useContainerLegend({
-    legend,
-    items: legendItems,
-    hoveredIndex: legendHoveredIndex,
-    onHoverChange: handleLegendHoverChange,
-    maxInteractive: "hover",
-    valueFormat,
-  });
-
-  const width = bounds.width ?? 0;
-  const height = bounds.height ?? 0;
-
-  // Measured, not assumed (#240) — grows past the constant floor only for
-  // labels that actually need it; an explicit `margin` prop still wins.
-  const margin = {
-    ...deriveDumbbellMargin({
-      rows,
-      variant,
+      startKey,
+      endKey,
       orientation,
-      floor: defaultMargin(orientation, variant),
-      width,
-      measure,
-      formatValue: formatValueForMargin,
+      variant,
+      beads,
+      markers,
+      extraKeys,
+      valueKeys,
+      range,
+      keyColors,
+      arrowWidth,
+      groupBy,
+      showDelta,
+      deltaLabelFormat,
+      delta,
       bothEndsLabeled,
       valueLabelFormat,
-    }),
-    ...marginProp,
-  };
+      referenceLine,
+      showValueAxis,
+      valueAxis,
+      sortBy,
+      reverse,
+      palette,
+      rowColor,
+      valueFormat,
+      margin: marginProp,
+      aspectRatio,
+      plotHeight,
+      className,
+      status,
+      accessibleLabel,
+      accessibleDescription,
+      onDatapointClick,
+      copyValueOnActivate,
+      datapointLabel,
+      maxInteractiveDatapoints,
+      legend,
+      startLabel,
+      endLabel,
+    },
+    forwardedRef,
+  ) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const [measureRef, bounds] = useLayoutMeasure();
+    const { measure, lineHeightPx } = useTextMeasurerOf(containerRef);
+    const formatValueForMargin = useChartValueFormatter(valueFormat);
+    const {
+      role,
+      "aria-label": ariaLabel,
+      "aria-describedby": ariaDescribedby,
+      tabIndex,
+      descId,
+    } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
-  // groupBy header-band height floor (validator round-2, #491): a horizontal
-  // header band needs `groupHeaderBandFloorPx(lineHeightPx)`, not the uniform
-  // per-band share `computeDumbbellBandExtents` gives every OTHER band (see
-  // `groupHeaderSize` in `DumbbellPlot`) — reallocating within the aspect-
-  // ratio height to afford that (round-1's attempt) starves the row bands'
-  // own labels instead. So the EXTRA room comes from the plot's own height:
-  // computed from `width` and the family's default aspect (replicated here,
-  // never read back from `bounds.height` — that would already reflect our
-  // own last override and drift upward every render), never below what
-  // `aspectRatio`/`plotHeight` already resolves to. Vertical `orientation`
-  // (dumbbell only) is unaffected — see `hasHorizontalGroupHeaders` above.
-  let heightOverridePx: number | undefined;
-  if (groupBy && !(orientation === "vertical" && variant === "dumbbell") && width > 0) {
-    const groupHeaderCount = new Set(rows.map((row) => String(row.datum[groupBy] ?? ""))).size;
-    if (groupHeaderCount > 0 && rows.length > 0) {
-      const measuredBreakpoint = breakpointForWidth(width);
-      const resolvedPlotHeight =
-        plotHeight !== undefined
-          ? resolveResponsive(plotHeight, measuredBreakpoint)
-          : aspectRatio === undefined
-            ? resolveResponsive(DEFAULT_CHART_PLOT_HEIGHT, measuredBreakpoint)
-            : undefined;
-      const naturalHeightPx =
-        resolvedPlotHeight === undefined
-          ? height
-          : typeof resolvedPlotHeight === "number"
-            ? resolvedPlotHeight
-            : width / resolvedPlotHeight.aspect;
-      const naturalRowShare = Math.max(
-        (naturalHeightPx - margin.top - margin.bottom) / rows.length,
-        0,
+    const setContainerRef = (node: HTMLDivElement | null) => {
+      containerRef.current = node;
+      measureRef(node);
+      if (typeof forwardedRef === "function") {
+        forwardedRef(node);
+      } else if (forwardedRef) {
+        forwardedRef.current = node;
+      }
+    };
+
+    // `variant="dots"` (RM-116): `valueKeys` names every dot, `startKey`/
+    // `endKey` still resolve to its first/last (the domain and the optional
+    // `range` bar's extremes) and any keys between fold into `extraKeys` — no
+    // new `DumbbellRow` shape needed, the "dots" renderer just reads all of
+    // `start`/`extra`/`end` back out in that same order.
+    const effectiveStartKey =
+      variant === "dots" && valueKeys && valueKeys.length > 0 ? (valueKeys[0] as string) : startKey;
+    const effectiveEndKey =
+      variant === "dots" && valueKeys && valueKeys.length > 1
+        ? (valueKeys[valueKeys.length - 1] as string)
+        : endKey;
+    const effectiveExtraKeys =
+      variant === "dots" && valueKeys && valueKeys.length > 2 ? valueKeys.slice(1, -1) : extraKeys;
+
+    const rows = useMemo(() => {
+      const built = buildDumbbellRows(
+        data,
+        category,
+        effectiveStartKey,
+        effectiveEndKey,
+        effectiveExtraKeys,
       );
-      const requiredInnerAxisSize =
-        groupHeaderCount * groupHeaderBandFloorPx(lineHeightPx) + rows.length * naturalRowShare;
-      const requiredHeightPx = margin.top + margin.bottom + requiredInnerAxisSize;
-      if (requiredHeightPx > naturalHeightPx) {
-        heightOverridePx = requiredHeightPx;
+      const sorted = sortDumbbellRows(built, sortBy);
+      return reverse ? [...sorted].reverse() : sorted;
+    }, [data, category, effectiveStartKey, effectiveEndKey, effectiveExtraKeys, sortBy, reverse]);
+
+    // Legend (RM-118): one row per dot KEY, `variant="dots"` only. Colours
+    // mirror `dotKeyColors` in `DumbbellPlot` exactly (same
+    // `resolvePalette("categorical", …, { explicit: true })` call) so the
+    // legend swatch and the dot it keys are always the same colour.
+    //
+    // #610: every other variant (`dumbbell`/`slope`/`arrow`) has no discrete
+    // per-row key to legend — instead it keys the two ENDS by marker shape
+    // (`markers`, default hollow start / filled end), the one thing every row
+    // shares. Both entries share `chartCssVars.foreground`: colour here would
+    // wrongly imply one specific row's category, when the legend is teaching a
+    // shape-to-role mapping that holds across every row regardless of colour.
+    // F09: with `legend={{ values: true }}` each entry prints its column's
+    // total over every row (the category family's series total).
+    const legendValues = legendWantsValues(legend);
+    const legendItems: ChartLegendEntry[] = useMemo(() => {
+      const total = (key: string) => (legendValues ? { value: sumLegendValue(data, key) } : {});
+      if (variant === "dots") {
+        if (!valueKeys || valueKeys.length === 0) {
+          return [];
+        }
+        const colors = resolvePalette("categorical", Math.max(valueKeys.length, 1), {
+          explicit: true,
+        });
+        return valueKeys.map((key, i) => ({
+          key: `${key}-${i}`,
+          label: key,
+          color: keyColors?.[key] ?? (colors[i % colors.length] as string),
+          kind: "color" as const,
+          ...total(key),
+        }));
+      }
+      return [
+        {
+          key: "start",
+          label: startLabel ?? startKey,
+          color: chartCssVars.foreground,
+          kind: "series" as const,
+          ...(markers.start === "hollow" ? { marker: "hollow" as const } : {}),
+          ...total(startKey),
+        },
+        {
+          key: "end",
+          label: endLabel ?? endKey,
+          color: chartCssVars.foreground,
+          kind: "series" as const,
+          ...(markers.end === "hollow" ? { marker: "hollow" as const } : {}),
+          ...total(endKey),
+        },
+      ];
+    }, [
+      variant,
+      valueKeys,
+      keyColors,
+      startKey,
+      endKey,
+      startLabel,
+      endLabel,
+      markers,
+      legendValues,
+      data,
+    ]);
+    const [legendHoveredIndex, setLegendHoveredIndex] = useState<number | null>(null);
+    const handleLegendHoverChange = useCallback((index: number | null) => {
+      setLegendHoveredIndex(index);
+    }, []);
+    const containerLegend = useContainerLegend({
+      legend,
+      items: legendItems,
+      hoveredIndex: legendHoveredIndex,
+      onHoverChange: handleLegendHoverChange,
+      maxInteractive: "hover",
+      valueFormat,
+    });
+
+    const width = bounds.width ?? 0;
+    const height = bounds.height ?? 0;
+
+    // Measured, not assumed (#240) — grows past the constant floor only for
+    // labels that actually need it; an explicit `margin` prop still wins.
+    const margin = resolveChartMargin(
+      marginProp,
+      deriveDumbbellMargin({
+        rows,
+        variant,
+        orientation,
+        floor: defaultMargin(orientation, variant),
+        width,
+        measure,
+        formatValue: formatValueForMargin,
+        bothEndsLabeled,
+        valueLabelFormat,
+      }),
+    );
+
+    // groupBy header-band height floor (validator round-2, #491): a horizontal
+    // header band needs `groupHeaderBandFloorPx(lineHeightPx)`, not the uniform
+    // per-band share `computeDumbbellBandExtents` gives every OTHER band (see
+    // `groupHeaderSize` in `DumbbellPlot`) — reallocating within the aspect-
+    // ratio height to afford that (round-1's attempt) starves the row bands'
+    // own labels instead. So the EXTRA room comes from the plot's own height:
+    // computed from `width` and the family's default aspect (replicated here,
+    // never read back from `bounds.height` — that would already reflect our
+    // own last override and drift upward every render), never below what
+    // `aspectRatio`/`plotHeight` already resolves to. Vertical `orientation`
+    // (dumbbell only) is unaffected — see `hasHorizontalGroupHeaders` above.
+    //
+    // RM-189: the natural height walks the same rungs as the plot box
+    // (`resolvePlotBoxStyle`, ADR 0039 §3) — a host's forced plot height, then
+    // the chart's own `plotHeight`, its `aspectRatio`, the enclosing frame's
+    // plot height, the family default — so a host or frame `plotHeight` is the
+    // height the bands share, not the family default. `"fill"` and a ratio
+    // read the measured box, as `aspectRatio` always did.
+    const hostPlotHeight = useChartHostPlotHeight();
+    // The host's value over the frame's; the host rung is read first below.
+    const framePlotHeight = useChartFramePlotHeight();
+    let heightOverridePx: number | undefined;
+    if (groupBy && !(orientation === "vertical" && variant === "dumbbell") && width > 0) {
+      const groupHeaderCount = new Set(rows.map((row) => String(row.datum[groupBy] ?? ""))).size;
+      if (groupHeaderCount > 0 && rows.length > 0) {
+        const measuredBreakpoint = breakpointForWidth(width);
+        const ownRatio = aspectRatio?.trim();
+        const deferredRatio = ownRatio === "" || ownRatio === "auto";
+        const resolvedPlotHeight =
+          hostPlotHeight !== undefined
+            ? hostPlotHeight === "fill"
+              ? undefined
+              : validPlotHeight(hostPlotHeight)
+            : plotHeight !== undefined
+              ? resolveResponsive(plotHeight, measuredBreakpoint)
+              : aspectRatio !== undefined && !deferredRatio
+                ? undefined
+                : framePlotHeight !== undefined
+                  ? framePlotHeight === "fill"
+                    ? undefined
+                    : resolveResponsive(framePlotHeight, measuredBreakpoint)
+                  : deferredRatio
+                    ? undefined
+                    : resolveResponsive(DEFAULT_CHART_PLOT_HEIGHT, measuredBreakpoint);
+        const naturalHeightPx =
+          resolvedPlotHeight === undefined
+            ? height
+            : typeof resolvedPlotHeight === "number"
+              ? resolvedPlotHeight
+              : width / resolvedPlotHeight.aspect;
+        const naturalRowShare = Math.max(
+          (naturalHeightPx - margin.top - margin.bottom) / rows.length,
+          0,
+        );
+        const requiredInnerAxisSize =
+          groupHeaderCount * groupHeaderBandFloorPx(lineHeightPx) + rows.length * naturalRowShare;
+        const requiredHeightPx = margin.top + margin.bottom + requiredInnerAxisSize;
+        if (requiredHeightPx > naturalHeightPx) {
+          heightOverridePx = requiredHeightPx;
+        }
       }
     }
-  }
 
-  return containerLegend.wrap(
-    <ChartPlotRoot
-      plotBox={{ aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT }}
-      aria-describedby={ariaDescribedby}
-      aria-label={ariaLabel}
-      className={cn("relative w-full", className)}
-      data-slot="dumbbell-chart"
-      ref={setContainerRef}
-      role={role}
-      style={
-        heightOverridePx !== undefined
-          ? { touchAction: CHART_TOUCH_ACTION, height: heightOverridePx }
-          : { touchAction: CHART_TOUCH_ACTION }
-      }
-      tabIndex={tabIndex}
-    >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      {beads && beads.unit > 0 ? (
-        <div className="pointer-events-none absolute end-2 top-2 z-10 text-meta text-muted-foreground">
-          {beads.label ?? `1 dot = ${beads.unit}`}
-        </div>
-      ) : null}
-      {/* RM-116's original corner badge — only while the new `legend` prop
+    const plotBox = { aspectRatio, plotHeight, defaultPlotHeight: DEFAULT_CHART_PLOT_HEIGHT };
+
+    // RM-185: while loading, the same plot box holds a skeleton; the legend
+    // (read from the children) keeps its place, so nothing moves when the
+    // data lands.
+    if (status === "loading") {
+      return containerLegend.wrap(
+        <ChartLoadingPlot
+          className={cn("relative w-full", className)}
+          plotBox={plotBox}
+          ref={setContainerRef}
+          style={{ touchAction: CHART_TOUCH_ACTION }}
+        />,
+      );
+    }
+
+    return containerLegend.wrap(
+      <ChartPlotRoot
+        plotBox={plotBox}
+        aria-describedby={ariaDescribedby}
+        aria-label={ariaLabel}
+        className={cn("relative w-full", className)}
+        data-slot="dumbbell-chart"
+        ref={setContainerRef}
+        role={role}
+        style={
+          heightOverridePx !== undefined
+            ? { touchAction: CHART_TOUCH_ACTION, height: heightOverridePx }
+            : { touchAction: CHART_TOUCH_ACTION }
+        }
+        tabIndex={tabIndex}
+      >
+        <ChartA11yLabel descId={descId} description={accessibleDescription} />
+        {beads && beads.unit > 0 ? (
+          <div className="pointer-events-none absolute end-2 top-2 z-10 text-meta text-muted-foreground">
+            {beads.label ?? `1 dot = ${beads.unit}`}
+          </div>
+        ) : null}
+        {/* RM-116's original corner badge — only while the new `legend` prop
           (RM-118) is unset, so a caller who opts in never sees the key twice. */}
-      {variant === "dots" && valueKeys && valueKeys.length > 0 && legend === undefined ? (
-        <div
-          className="pointer-events-none absolute end-2 top-2 z-10 flex flex-wrap items-center gap-x-3 gap-y-1 text-meta text-muted-foreground"
-          data-slot="dumbbell-chart-dot-legend"
-        >
-          {(() => {
-            const legendColors = resolvePalette("categorical", valueKeys.length, {
-              explicit: true,
-            });
-            return valueKeys.map((key, keyIndex) => (
-              <span className="flex items-center gap-1" key={key}>
-                <span
-                  aria-hidden="true"
-                  className="inline-block size-2 rounded-full"
-                  style={{ backgroundColor: legendColors[keyIndex % valueKeys.length] }}
-                />
-                {key}
-              </span>
-            ));
-          })()}
-        </div>
-      ) : null}
-      {width > 0 && height > 0 ? (
-        <DumbbellBody
-          arrowWidth={arrowWidth}
-          beads={beads}
-          containerRef={containerRef}
-          copyValueOnActivate={copyValueOnActivate}
-          datapointLabel={datapointLabel}
-          delta={delta}
-          extraKeys={extraKeys}
-          groupBy={groupBy}
-          height={height}
-          legendHoveredDotIndex={legendHoveredIndex}
-          lineHeightPx={lineHeightPx}
-          margin={margin}
-          markers={markers}
-          maxInteractiveDatapoints={maxInteractiveDatapoints}
-          measure={measure}
-          onDatapointClick={onDatapointClick}
-          orientation={orientation}
-          palette={palette}
-          keyColors={keyColors}
-          range={range}
-          rowColor={rowColor}
-          rows={rows}
-          showDelta={showDelta}
-          deltaLabelFormat={deltaLabelFormat}
-          bothEndsLabeled={bothEndsLabeled}
-          valueLabelFormat={valueLabelFormat}
-          referenceLine={referenceLine}
-          showValueAxis={showValueAxis}
-          valueAxis={valueAxis}
-          valueFormat={valueFormat}
-          valueKeys={valueKeys}
-          variant={variant}
-          width={width}
-        />
-      ) : null}
-    </ChartPlotRoot>,
-  );
-});
+        {variant === "dots" && valueKeys && valueKeys.length > 0 && legend === undefined ? (
+          <div
+            className="pointer-events-none absolute end-2 top-2 z-10 flex flex-wrap items-center gap-x-3 gap-y-1 text-meta text-muted-foreground"
+            data-slot="dumbbell-chart-dot-legend"
+          >
+            {(() => {
+              const legendColors = resolvePalette("categorical", valueKeys.length, {
+                explicit: true,
+              });
+              return valueKeys.map((key, keyIndex) => (
+                <span className="flex items-center gap-1" key={key}>
+                  <span
+                    aria-hidden="true"
+                    className="inline-block size-2 rounded-full"
+                    style={{ backgroundColor: legendColors[keyIndex % valueKeys.length] }}
+                  />
+                  {key}
+                </span>
+              ));
+            })()}
+          </div>
+        ) : null}
+        {width > 0 && height > 0 ? (
+          <DumbbellBody
+            arrowWidth={arrowWidth}
+            beads={beads}
+            containerRef={containerRef}
+            copyValueOnActivate={copyValueOnActivate}
+            datapointLabel={datapointLabel}
+            delta={delta}
+            extraKeys={extraKeys}
+            groupBy={groupBy}
+            height={height}
+            legendHoveredDotIndex={legendHoveredIndex}
+            lineHeightPx={lineHeightPx}
+            margin={margin}
+            markers={markers}
+            maxInteractiveDatapoints={maxInteractiveDatapoints}
+            measure={measure}
+            onDatapointClick={onDatapointClick}
+            orientation={orientation}
+            palette={palette}
+            keyColors={keyColors}
+            range={range}
+            rowColor={rowColor}
+            rows={rows}
+            showDelta={showDelta}
+            deltaLabelFormat={deltaLabelFormat}
+            bothEndsLabeled={bothEndsLabeled}
+            valueLabelFormat={valueLabelFormat}
+            referenceLine={referenceLine}
+            showValueAxis={showValueAxis}
+            valueAxis={valueAxis}
+            valueFormat={valueFormat}
+            valueKeys={valueKeys}
+            variant={variant}
+            width={width}
+          />
+        ) : null}
+      </ChartPlotRoot>,
+    );
+  },
+);
 
 DumbbellChartBase.displayName = "DumbbellChartBase";
 
@@ -2142,7 +2232,9 @@ DumbbellChartBase.displayName = "DumbbellChartBase";
 // above (folded in alongside RM-116's own props during wave-1 integration —
 // `useAnnotatedChart` needs it on the same props object `DumbbellChartBase`
 // itself accepts).
-const DumbbellChartAnnotated = forwardRef<HTMLDivElement, DumbbellChartProps>(
+type DumbbellChartResolvedProps = ResolvedProps<DumbbellChartProps, typeof DUMBBELL_CHART>;
+
+const DumbbellChartAnnotated = forwardRef<HTMLDivElement, DumbbellChartResolvedProps>(
   function DumbbellChartAnnotated(props, ref) {
     // Analytics — RM-138: computed lines/bands on the value axis; the two
     // ends are the series (`of` defaults to `startKey`, `"all"` pools both).
@@ -2161,14 +2253,11 @@ const DumbbellChartAnnotated = forwardRef<HTMLDivElement, DumbbellChartProps>(
 
 // Selection input (RM-073): mounted outermost so marks AND the datapoint
 // layer's accessible names read it; with `selectionStates` unset it adds no DOM.
-/**
- * @dataShape two time points per category — a before and after, or a range with two ends
- * @dataShape two measures per category with a direction — the move from one to the
- *   other is the fact, drawn as an arrow (variant="arrow")
- * @avoidWhen more than 2 points per category — use small-multiple lines
- */
-export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(
-  function DumbbellChart(props, ref) {
+// Unwrapped implementation; the public docblock sits on `DumbbellChart` below (RM-187).
+const DumbbellChartUnscoped = forwardRef<HTMLDivElement, DumbbellChartProps>(
+  function DumbbellChart(rawProps, ref) {
+    // RM-185: every default comes from the definition (`DUMBBELL_CHART`), aliases first.
+    const props = useResolvedChartProps(DUMBBELL_CHART, rawProps);
     return (
       <ChartSelectionProvider
         dimExcluded={props.dimExcluded}
@@ -2179,6 +2268,25 @@ export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(
     );
   },
 );
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
+/**
+ * @dataShape two time points per category — a before and after, or a range with two ends
+ * @dataShape two measures per category with a direction — the move from one to the
+ *   other is the fact, drawn as an arrow (variant="arrow")
+ * @avoidWhen more than 2 points per category — use small-multiple lines
+ */
+export const DumbbellChart = forwardRef<HTMLDivElement, DumbbellChartProps>(function DumbbellChart(
+  { messages, ...props },
+  ref,
+) {
+  return (
+    <ChartMessagesScope messages={messages}>
+      <DumbbellChartUnscoped {...props} ref={ref} />
+    </ChartMessagesScope>
+  );
+});
 DumbbellChart.displayName = "DumbbellChart";
 
 export default DumbbellChart;

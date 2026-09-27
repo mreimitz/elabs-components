@@ -241,7 +241,8 @@ describe("HeatmapChart", () => {
     it("draws a dashed rail (never a hue) around every row rowHighlight matches", () => {
       expect(chart).toContain("function HeatmapRowHighlight");
       expect(chart).toContain('stroke="var(--chart-foreground)"');
-      expect(chart).toContain('strokeDasharray="2 3"');
+      // RM-188: the rhythm is named in the one dash map (CHART_DASH.guide === "2 3").
+      expect(chart).toContain("strokeDasharray={CHART_DASH.guide}");
       // Composed into the plot, gated on the prop being set at all.
       expect(chart).toContain("rowHighlight ? (");
     });
@@ -251,7 +252,10 @@ describe("HeatmapChart", () => {
     });
 
     it("defaults showValueHalo to true (byte-identical for every other consumer)", () => {
-      expect(chart).toContain("showValueHalo = true");
+      // RM-185: the default now lives on the definition, resolved through
+      // `useResolvedChartProps` (pinned by `DEFAULTS_GOLDEN.HeatmapChart` in
+      // `definitions.test.ts`, not a source-string grep here — that pin
+      // duplicated the golden fixture and was brittle to reformatting).
       expect(cell).toContain("haloWidth={showValueHalo ? undefined : 0}");
     });
 

@@ -5,7 +5,7 @@
  * <path> elements and internal effects call path.getTotalLength() which jsdom
  * does not implement (path-stroke-utils.ts:56). Rather than fighting the SVG
  * geometry gap here, we:
- *   1. Mock @visx/responsive so ParentSize supplies a fixed size to ChartInner.
+ *   1. Mock `ChartParentSize` so it supplies a fixed size to ChartInner.
  *   2. Mock the time-series shell (the heavy SVG engine) to a plain <svg> stub
  *      so the ComposedChart outer container div renders cleanly in jsdom.
  *
@@ -16,11 +16,11 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render } from "@testing-library/react";
 
 // vi.mock is hoisted above all imports by Vitest's transform.
-vi.mock("@visx/responsive", () => {
+vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require("react");
   return {
-    ParentSize: ({
+    ChartParentSize: ({
       children,
     }: {
       children: (size: { width: number; height: number }) => React.ReactNode;

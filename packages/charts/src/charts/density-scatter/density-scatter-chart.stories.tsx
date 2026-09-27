@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { type ReactElement, useMemo, useState } from "react";
-import { expect, userEvent, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { ChartFrame } from "../../chart-frame";
 import type { ChartSelectionIntent } from "../selection/types";
 import {
@@ -132,6 +132,36 @@ export const TwoHundredThousandPoints: Story = {
   },
 };
 
+/** `status="loading"` (RM-185): a skeleton fills the same plot box the ready
+ * chart would use, at every width, so nothing moves once the data lands. */
+export const Loading: Story = {
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="w-full" key={width} style={{ maxWidth: width }}>
+          <DensityScatterChart
+            accessibleLabel="Lateral deviation along the track"
+            data={TRAFFIC_20K}
+            status="loading"
+          />
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const statuses = canvas.getAllByRole("status");
+    await expect(statuses).toHaveLength(3);
+    for (const status of statuses) {
+      await expect(status).toHaveAttribute("aria-live", "polite");
+      await expect(status).toHaveTextContent("Loading chart…");
+      const skeleton = status.querySelector('[data-slot="skeleton"]');
+      await expect(skeleton).toHaveAttribute("aria-hidden", "true");
+    }
+    await expect(canvasElement.querySelector("canvas")).toBeNull();
+  },
+};
+
 /** One million points — the budget story. The picture is the same; only the readout changes. */
 export const OneMillionPoints: Story = {
   args: { data: TRAFFIC_200K, zones: LATERAL_ZONES },
@@ -196,8 +226,12 @@ export const KeyboardRangeSelection: Story = {
     // The chart's own count region — the selection session mounts a second
     // `role="status"` (silent in immediate mode), so `getByRole` is ambiguous.
     const status = () => canvasElement.querySelector('[data-slot="density-scatter-chart-status"]');
-    const from = canvas.getByRole("slider", { name: "x range from" });
-    const to = canvas.getByRole("slider", { name: "x range to" });
+    const from = canvas.getByRole("slider", {
+      name: "Range start, Along-track distance (m) — drag here to select an x range",
+    });
+    const to = canvas.getByRole("slider", {
+      name: "Range end, Along-track distance (m) — drag here to select an x range",
+    });
     await expect(canvas.getAllByRole("slider")).toHaveLength(4);
     from.focus();
     await userEvent.keyboard("{ArrowRight}{ArrowRight}{ArrowRight}");
@@ -209,9 +243,73 @@ export const KeyboardRangeSelection: Story = {
     await waitFor(() => expect(status()).toHaveTextContent(/of .* points selected/));
     to.focus();
     await userEvent.keyboard("{Shift>}{ArrowLeft}{/Shift}");
-    // Escape on a thumb clears that axis' range.
+    // Also set a y range (RM-185 review fix3): an x thumb's own Escape must
+    // clear only x — before this fix it bubbled to the chart root's own
+    // Esc-clears-everything handler and wiped this y range too.
+    const yFrom = canvas.getByRole("slider", { name: "Range start, Cross-track (m)" });
+    yFrom.focus();
+    await userEvent.keyboard("{ArrowRight}{ArrowRight}");
+    await waitFor(() =>
+      expect(canvas.getByTestId("density-readout")).toHaveTextContent("last intent: range cross"),
+    );
+    to.focus();
     await userEvent.keyboard("{Escape}");
-    await waitFor(() => expect(status()).toHaveTextContent(""));
+    // The x constraint is gone, but the y one — and the narrowed count it
+    // implies — survives.
+    await waitFor(() => expect(status()).toHaveTextContent(/of .* points selected/));
+  },
+};
+
+/**
+ * Review fix4: the four range thumbs (x-start/x-end/y-start/y-end) must stay
+ * inside their own chart root and clear of each other at every width — the
+ * review before this one only checked ~900px, where the bug (x-start/y-start
+ * overlapping 10×10px at the bottom-left corner; x-end/y-end reaching past
+ * the root's own edges) was invisible.
+ */
+export const ThumbHitBoundsAcrossWidths: Story = {
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div
+          className="w-full"
+          data-testid={`width-${width}`}
+          key={width}
+          style={{ maxWidth: width }}
+        >
+          <Readout points={500} />
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    for (const width of [380, 600, 900]) {
+      const root = canvasElement.querySelector(`[data-testid="width-${width}"]`) as HTMLElement;
+      const chartRoot = root.querySelector('[data-slot="density-scatter-chart"]') as HTMLElement;
+      const sliders = within(root).getAllByRole("slider");
+      await expect(sliders).toHaveLength(4);
+      const chartRect = chartRoot.getBoundingClientRect();
+      const rects = sliders.map((slider) => slider.getBoundingClientRect());
+      // Every thumb's hit target stays inside its own chart root — a target
+      // clipped past the edge loses its focus ring under overflow-hidden.
+      for (const rect of rects) {
+        await expect(rect.left).toBeGreaterThanOrEqual(chartRect.left - 1);
+        await expect(rect.top).toBeGreaterThanOrEqual(chartRect.top - 1);
+        await expect(rect.right).toBeLessThanOrEqual(chartRect.right + 1);
+        await expect(rect.bottom).toBeLessThanOrEqual(chartRect.bottom + 1);
+      }
+      // No two thumbs' hit targets overlap — x-start/y-start at the
+      // bottom-left corner is the pair that used to collide.
+      for (let i = 0; i < rects.length; i += 1) {
+        for (let j = i + 1; j < rects.length; j += 1) {
+          const a = rects[i];
+          const b = rects[j];
+          const overlaps =
+            a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+          await expect(overlaps).toBe(false);
+        }
+      }
+    }
   },
 };
 

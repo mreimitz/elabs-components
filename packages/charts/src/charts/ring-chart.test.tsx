@@ -1,9 +1,9 @@
 /**
  * RingChart smoke test.
  *
- * RingChart relies on @visx/responsive (ParentSize — ResizeObserver),
+ * RingChart relies on ChartParentSize (ResizeObserver),
  * motion/react (animated SVG paths), and @visx/shape arc generators. jsdom
- * lacks ResizeObserver and SVG layout, so we mock @visx/responsive to supply
+ * lacks ResizeObserver and SVG layout, so we mock ChartParentSize to supply
  * a fixed 280×280 and mock motion/react to render plain DOM elements.
  *
  * Real render fidelity + a11y are covered by the co-located Storybook story
@@ -15,8 +15,8 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Must hoist mocks before any imports that transitively use the mocked module.
-vi.mock("@visx/responsive", () => ({
-  ParentSize: ({
+vi.mock("./chart-parent-size", () => ({
+  ChartParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => React.ReactNode;
@@ -61,19 +61,30 @@ vi.mock("motion/react", () => ({
 // The stub also records each call's transition: that is what a ring's enter
 // animation actually runs on (RM-168).
 const mountProgressTransitions = vi.hoisted(() => [] as unknown[]);
+const mountProgressCalls = vi.hoisted(
+  () => [] as { transition: unknown; delay: number; replayKey: string }[],
+);
 vi.mock("./use-enter-complete", () => ({
   useEnterComplete: () => true,
 }));
 vi.mock("./use-mount-progress", () => ({
-  useMountProgress: (enterTransition: unknown) => {
+  useMountProgress: (enterTransition: unknown, delay: number, replayKey: string) => {
     mountProgressTransitions.push(enterTransition);
+    mountProgressCalls.push({ transition: enterTransition, delay, replayKey });
     return { get: () => 1 };
   },
 }));
 
+// The one reduced-motion source (RM-189): the tokens hook, switched per test.
+const motionState = vi.hoisted(() => ({ reduced: false }));
+vi.mock("@elabs-ai/components-tokens", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useReducedMotion: () => motionState.reduced,
+}));
+
 import React from "react";
 import type { Transition } from "motion/react";
-import { DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
+import { DEFAULT_CHART_ENTER_TRANSITION, REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
 import { computeRingTickSegments, Ring } from "./ring";
 import { RingCenter } from "./ring-center";
 import { RingChart, type RingChartProps } from "./ring-chart";
@@ -245,6 +256,47 @@ describe("RingChart animationDuration", () => {
   });
 });
 
+// ── Reduced motion is a branch (RM-189) ────────────────────────────────────
+
+describe("RingChart under reduced motion (RM-189)", () => {
+  afterEach(() => {
+    motionState.reduced = false;
+  });
+
+  /** Renders three animated rings and returns every enter they ran. */
+  function enterCallsFor(): typeof mountProgressCalls {
+    mountProgressCalls.length = 0;
+    render(
+      <RingChart animationDuration={400} data={sampleData} size={280}>
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    expect(mountProgressCalls.length).toBeGreaterThanOrEqual(sampleData.length * 2);
+    return [...mountProgressCalls];
+  }
+
+  it("mounts every ring whole: no expand, no sweep, no stagger", () => {
+    motionState.reduced = true;
+    for (const call of enterCallsFor()) {
+      expect(call.transition).toBe(REDUCED_MOTION_ENTER_TRANSITION);
+      expect(call.delay).toBe(0);
+      // The replay key carries the switch, so a live change lands the rings at once.
+      expect(call.replayKey).toMatch(/-still$/);
+    }
+  });
+
+  it("keeps the staggered entrance when motion is allowed", () => {
+    const calls = enterCallsFor();
+    for (const call of calls) {
+      expect(call.transition).not.toBe(REDUCED_MOTION_ENTER_TRANSITION);
+      expect(call.replayKey).not.toMatch(/-still$/);
+    }
+    expect(calls.some((call) => call.delay > 0)).toBe(true);
+  });
+});
+
 // ── Tick ring at high decoration (#RM-030) ──────────────────────────────────
 
 describe("computeRingTickSegments (pure — tick-count rounding)", () => {
@@ -404,5 +456,87 @@ describe("RingChart tick-ring rendering at high decoration (#RM-030)", () => {
       </RingChart>,
     );
     expect(getByText("Channels")).toBeInTheDocument();
+  });
+});
+
+// RM-183 review: confirms RingChart re-draws once `status` flips from
+// "loading" to "ready" — Ring measures through `ParentSize` (mocked above to
+// answer synchronously on every render), not a mount-only `ResizeObserver`
+// effect, so no fix was needed here.
+describe("RingChart re-renders after status flips from loading to ready", () => {
+  // Excludes the loading spinner's own `<path>`s (`StatePanel`'s `DefaultSpinner`
+  // renders an `animate-spin` svg with a circle + path, not the shared `Spinner`)
+  // — only Ring's own arc/background paths count as "marks drawn" here.
+  function ringPaths(container: HTMLElement) {
+    return Array.from(container.querySelectorAll("svg path")).filter(
+      (path) => !path.closest("svg.animate-spin"),
+    );
+  }
+
+  it("draws one ring per series once status goes from loading to ready", () => {
+    const { container, rerender } = render(
+      <RingChart data={sampleData} size={280} status="loading">
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    expect(ringPaths(container)).toHaveLength(0);
+
+    rerender(
+      <RingChart data={sampleData} size={280} status="ready">
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    expect(ringPaths(container).length).toBeGreaterThan(0);
+  });
+});
+
+// RM-183 review: thin-tests minor — `margin` (frame-size group) had no
+// behavior test for RingChart. `resolveChartMargin` + `marginPaddingStyle`
+// turn it into root `padding`.
+describe("RingChart margin (frame-size group)", () => {
+  it("renders no padding when margin is unset", () => {
+    const { container } = render(
+      <RingChart data={sampleData} size={280}>
+        <Ring index={0} />
+      </RingChart>,
+    );
+    expect((container.firstChild as HTMLElement).style.padding).toBe("");
+  });
+
+  it("renders a uniform padding for a number margin", () => {
+    const { container } = render(
+      <RingChart data={sampleData} size={280} margin={24}>
+        <Ring index={0} />
+      </RingChart>,
+    );
+    expect((container.firstChild as HTMLElement).style.padding).toBe("24px");
+  });
+
+  it("renders a per-side padding for a partial Margin object", () => {
+    const { container } = render(
+      <RingChart data={sampleData} size={280} margin={{ top: 8, right: 16 }}>
+        <Ring index={0} />
+      </RingChart>,
+    );
+    expect((container.firstChild as HTMLElement).style.padding).toBe("8px 16px 0px 0px");
+  });
+
+  // RM-183 review (major, 2026-09-26): a fixed `size` + `margin` must shrink
+  // the SVG itself, matching PieChart — padding on the root alone leaves the
+  // SVG at the full `size`, overflowing the smaller box (27 of 47 RingChart
+  // call sites in the repo pass `size`).
+  it("shrinks the SVG by margin on a fixed size, matching PieChart", () => {
+    const { container } = render(
+      <RingChart data={sampleData} size={280} margin={40}>
+        <Ring index={0} />
+      </RingChart>,
+    );
+    const svg = container.querySelector("svg");
+    expect(svg?.getAttribute("width")).toBe("200");
+    expect(svg?.getAttribute("height")).toBe("200");
   });
 });

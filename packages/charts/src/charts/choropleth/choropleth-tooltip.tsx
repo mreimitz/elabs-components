@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { intFmt } from "../chart-formatters";
+import { useChartFormatters } from "../chart-formatters";
 import { ChartTooltipBox, type ChartTooltipRect } from "../tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "../tooltip/tooltip-content";
 import {
@@ -10,6 +10,7 @@ import {
   useChoroplethStable,
   useChoroplethZoom,
 } from "./choropleth-context";
+import { useChartTranslate } from "../chart-messages";
 
 /** One absolute `M`/`L` point of a d3-geo path string (a Point's relative arcs are skipped). */
 const PATH_POINT = /[ML](-?[\d.]+(?:e[-+]?\d+)?),(-?[\d.]+(?:e[-+]?\d+)?)/g;
@@ -54,12 +55,16 @@ export interface ChoroplethTooltipProps {
 
 export function ChoroplethTooltip({
   content,
-  formatValue = intFmt,
+  formatValue: formatValueProp,
   getFeatureName,
   getFeatureValue,
-  valueLabel = "Value",
+  valueLabel: valueLabelProp,
   className = "",
 }: ChoroplethTooltipProps) {
+  const { intFmt } = useChartFormatters();
+  const t = useChartTranslate();
+  const formatValue = formatValueProp ?? intFmt;
+  const valueLabel = valueLabelProp ?? t("charts.tooltip.value");
   const { containerRef, width, height, features, featurePaths, pathGenerator } =
     useChoroplethStable();
   const { tooltipData } = useChoroplethInteraction();

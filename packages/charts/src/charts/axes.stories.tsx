@@ -4,6 +4,7 @@ import { AutoChart } from "../auto-chart/auto-chart";
 import { Bar } from "./bar";
 import { BarChart } from "./bar-chart";
 import { BarXAxis } from "./bar-x-axis";
+import { BarYAxis } from "./bar-y-axis";
 import { ChartConfigProvider } from "./chart-config-context";
 import { ComposedChart } from "./composed-chart";
 import { Grid } from "./grid";
@@ -317,5 +318,73 @@ export const AutoChartAxes: Story = {
     expect(
       canvasElement.querySelector('[data-slot="x-axis"]')?.getAttribute("data-orientation"),
     ).toBe("top");
+  },
+};
+
+const quarters = [
+  { quarter: "Q1", revenue: 42 },
+  { quarter: "Q2", revenue: 58 },
+  { quarter: "Q3", revenue: 35 },
+  { quarter: "Q4", revenue: 71 },
+];
+
+const barTitleCases = [
+  { orientation: "vertical", placement: "outside", side: "bottom" },
+  { orientation: "vertical", placement: "inside", side: "bottom" },
+  { orientation: "horizontal", placement: "outside", side: "left" },
+  { orientation: "horizontal", placement: "inside", side: "left" },
+] as const;
+
+/**
+ * Bar category-axis titles: `BarXAxis title` names the columns of a vertical
+ * chart, `BarYAxis title` the rows of a horizontal one — each `outside`
+ * (default, in the margin) or `inside` (in the plot corner the matching
+ * `XAxis`/`YAxis` uses; it does not step around bars, so it paints over the
+ * last column or the first row, legible on its halo).
+ */
+export const BarAxisTitles: Story = {
+  decorators: [keepMdDensityAtNarrow],
+  render: () => (
+    <div className="flex w-full flex-col gap-6">
+      {barTitleCases.map(({ orientation, placement }) => (
+        <div
+          className="h-56 w-full"
+          data-testid={`${orientation}-${placement}`}
+          key={`${orientation}-${placement}`}
+        >
+          <BarChart data={quarters} orientation={orientation} xDataKey="quarter">
+            <Grid vertical={orientation === "horizontal"} />
+            <Bar dataKey="revenue" fill="var(--chart-1)" />
+            {orientation === "vertical" ? (
+              <BarXAxis title="Quarter" titlePlacement={placement} />
+            ) : (
+              <BarYAxis title="Quarter" titlePlacement={placement} />
+            )}
+          </BarChart>
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    for (const { orientation, placement, side } of barTitleCases) {
+      const host = canvasElement.querySelector<HTMLElement>(
+        `[data-testid="${orientation}-${placement}"]`,
+      )!;
+      const title = await waitFor(() => {
+        const el = host.querySelector(
+          `[data-slot="axis-title"][data-side="${side}"][data-placement="${placement}"]`,
+        );
+        expect(el).not.toBeNull();
+        return el!;
+      });
+      await expect(title).toHaveTextContent("Quarter");
+      if (placement === "inside") {
+        // The painted title is ink; its `sr-only` copy is what AT reads.
+        await expect(title).toHaveAttribute("aria-hidden", "true");
+        const copy = title.nextElementSibling;
+        await expect(copy).toHaveClass("sr-only");
+        await expect(copy).toHaveTextContent("Quarter");
+      }
+    }
   },
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@elabs-ai/components-ui";
-import { intFmt } from "../chart-formatters";
+import { useChartFormatters } from "../chart-formatters";
 import { useLegendItem } from "./legend-context";
 
 export interface LegendValueProps {
@@ -21,10 +21,12 @@ export function LegendValue({
   className = "text-sm tabular-nums",
   showPercentage = false,
   percentageClassName = "text-xs tabular-nums",
-  formatValue = intFmt,
+  formatValue: formatValueProp,
   formatPercentage = (p) => `${p.toFixed(0)}%`,
 }: LegendValueProps) {
   const { item, percentage } = useLegendItem();
+  const { intFmt } = useChartFormatters();
+  const formatValue = formatValueProp ?? intFmt;
 
   return (
     <span className={cn("flex items-center gap-2 text-legend-muted-foreground", className)}>

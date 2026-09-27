@@ -11,6 +11,15 @@
  * documented, schema-worthy surface, so the definition's props type omits it (keeping only
  * `className`) rather than declaring a codeOnly entry for each key. No behaviour change.
  *
+ * RM-183 (F12): `margin`/`plotHeight`/`status`/`currency`/`maxFractionDigits` are new. None
+ * has a kind default — `margin`/`plotHeight`/`currency`/`maxFractionDigits` have no group
+ * default either (`props/frame-size.ts`, `props/value-format.ts`); `status` keeps the
+ * `chart-state` group's own `"ready"` default. `contract.hasStatus` stays unset: it only gates
+ * `dataKind: "array"` families, and Bullet's `dataKind` is `"none"`.
+ *
+ * RM-187: the group's `locale` member is listed — the formatter behind `valueFormat`
+ * takes the chart's own `locale` over the `LocaleProvider`'s.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -18,10 +27,13 @@ import type { HTMLAttributes } from "react";
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
+import { chartStateGroup } from "../charts/props/chart-state";
+import { frameSizeGroup } from "../charts/props/frame-size";
 import { valueFormatGroup } from "../charts/props/value-format";
 import type { BulletChartProps } from "../charts/bullet-chart";
 import { partialFieldFor } from "../charts/props/typed-field";
 import { classNameField } from "./cartesian-fields";
+import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
 
 type BulletChartDefinitionProps = Omit<BulletChartProps, keyof HTMLAttributes<HTMLDivElement>> &
@@ -33,8 +45,12 @@ export const BULLET_CHART = /* @__PURE__ */ defineChart<BulletChartDefinitionPro
   label: "Bullet chart",
   description: "A single value against a target and qualitative ranges, word-sized.",
   specTypes: [],
-  groups: [a11yGroup],
+  // `currency`, `maxFractionDigits` and `locale` (RM-187) extend `valueFormat` as own
+  // fields referencing the group's field objects.
+  groups: [a11yGroup, frameSizeGroup],
   fields: {
+    // Palette — RM-186: no default; unset keeps the family's own colours.
+    palette: paletteGroup.fields.palette,
     value: field.number({ required: true, tier: "essential", description: "The actual value." }),
     target: field.number({ tier: "essential", description: "The target, drawn as a tick." }),
     comparative: field.number({
@@ -81,6 +97,12 @@ export const BULLET_CHART = /* @__PURE__ */ defineChart<BulletChartDefinitionPro
       description: "Whether ascending band values read better for this measure.",
     }),
     className: classNameField,
+    margin: frameSizeGroup.fields.margin,
+    plotHeight: frameSizeGroup.fields.plotHeight,
+    status: chartStateGroup.fields.status,
+    currency: valueFormatGroup.fields.currency,
+    maxFractionDigits: valueFormatGroup.fields.maxFractionDigits,
+    locale: valueFormatGroup.fields.locale,
   },
   codeOnly: [],
   defaults: {

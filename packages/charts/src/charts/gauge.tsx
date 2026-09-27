@@ -1,7 +1,9 @@
 "use client";
 
-import { ParentSize } from "@visx/responsive";
-import { motion, type Transition, useReducedMotion } from "motion/react";
+import { ChartParentSize } from "./chart-parent-size";
+import { motion, type Transition } from "motion/react";
+import { REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
+import { useStillEntrance } from "./use-still-entrance";
 import {
   Children,
   Fragment,
@@ -17,6 +19,7 @@ import { type ChartStatFlowFormat, defaultChartStatFlowFormat } from "./chart-st
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { HaloText } from "../marks/halo-text";
 import { PieCenterShell } from "./pie-center-shell";
+import { useChartTranslate } from "./chart-messages";
 
 // Radial gap (px) reserved between the dial's outer edge and a milestone's
 // halo-text number, matching `RingTickRing`'s `leaderReserve` idiom
@@ -300,7 +303,7 @@ function GaugeInner({
   activeGradient,
   inactiveGradient,
   centerValue,
-  defaultLabel = "Total",
+  defaultLabel: defaultLabelProp,
   prefix,
   suffix,
   formatOptions = defaultChartStatFlowFormat,
@@ -317,7 +320,17 @@ function GaugeInner({
   target,
   thresholds,
 }: GaugeInnerProps) {
-  const prefersReducedMotion = useReducedMotion();
+  const tChart = useChartTranslate();
+  const defaultLabel = defaultLabelProp ?? tChart("charts.gauge.defaultLabel");
+  // Reduced motion (RM-189: the person's own motion setting, else the OS) is a
+  // BRANCH: every notch mounts at rest, with no stagger. Motion skips an
+  // animation only when both its duration and its delay are 0, so the delays
+  // below drop to 0 as well. Latched (`useStillEntrance`): a switch to reduced
+  // after mount remounts the notches at rest, and the switch back never
+  // replays them.
+  const stillEntrance = useStillEntrance();
+  const notchKeySuffix = stillEntrance ? "-still" : "";
+  const notchInitial = stillEntrance ? false : { opacity: 0, scale: 0 };
   const themeActiveGradientId = `gauge-theme-active-${useId().replace(/:/g, "")}`;
   // NOTE: not wrapped in `useStableValue` (`use-stable-value.ts`) — its output
   // is actual `ReactElement[]`, not JSON-serializable plain config, so a
@@ -325,8 +338,8 @@ function GaugeInner({
   // `children`-identity-keyed.
   const defsChildren = useMemo(() => collectDefsElements(children), [children]);
 
-  const notchTransition: Transition = prefersReducedMotion
-    ? { duration: 0 }
+  const notchTransition: Transition = stillEntrance
+    ? REDUCED_MOTION_ENTER_TRANSITION
     : (enterTransition ?? DEFAULT_NOTCH_ENTER_TRANSITION);
 
   const stagger = Math.max(0.25, Math.min(2.5, enterStaggerScale));
@@ -623,14 +636,14 @@ function GaugeInner({
             d={createNotchPath(notch.points, notchCornerRadius, notchLength)}
             fill={resolveBgFill(notch.index)}
             fillOpacity={resolvedInactiveFillOpacity}
-            initial={{ opacity: 0, scale: 0 }}
-            key={`bg-${notch.index}`}
+            initial={notchInitial}
+            key={`bg-${notch.index}${notchKeySuffix}`}
             style={{
               transformOrigin: `${centerX}px ${centerY}px`,
             }}
             transition={{
               ...notchTransition,
-              delay: notch.index * 0.015 * stagger,
+              delay: stillEntrance ? 0 : notch.index * 0.015 * stagger,
             }}
           />
         ))}
@@ -643,14 +656,15 @@ function GaugeInner({
               d={createNotchPath(notch.points, notchCornerRadius, notchLength)}
               fill={resolveActiveFill(notch)}
               fillOpacity={resolvedActiveFillOpacity}
-              initial={{ opacity: 0, scale: 0 }}
-              key={`active-${notch.index}`}
+              initial={notchInitial}
+              key={`active-${notch.index}${notchKeySuffix}`}
               style={{
                 transformOrigin: `${centerX}px ${centerY}px`,
               }}
               transition={{
                 ...notchTransition,
-                delay: (0.3 + notch.index * 0.02) * stagger,
+                // RM-189: the scale spaces the notches; the lead-in is not a stagger.
+                delay: stillEntrance ? 0 : 0.3 + notch.index * 0.02 * stagger,
               }}
             />
           ))}
@@ -856,7 +870,7 @@ export function Gauge({
     >
       <ChartA11yLabel descId={descId} description={resolvedDescription} />
       <div className="mx-auto aspect-[21/16] w-full max-w-[560px]">
-        <ParentSize debounceTime={10}>
+        <ChartParentSize>
           {({ width, height }) =>
             width > 0 && height > 0 ? (
               <GaugeInner
@@ -869,7 +883,7 @@ export function Gauge({
               />
             ) : null
           }
-        </ParentSize>
+        </ChartParentSize>
       </div>
     </div>
   );

@@ -20,8 +20,8 @@
  * 3. **The shared default.** `defaultDatapointLabel` is exercised directly
  *    across every combination of present/absent series, category and value.
  *
- * jsdom lacks layout, so the measurement seams (`@visx/responsive`,
- * `react-use-measure`, `getBoundingClientRect`, `ResizeObserver`,
+ * jsdom lacks layout, so the measurement seams (`ChartParentSize`,
+ * `useLayoutMeasure`, `getBoundingClientRect`, `ResizeObserver`,
  * `getTotalLength`) are stubbed to a fixed box — nothing about the interaction
  * layer or the naming is mocked.
  */
@@ -36,19 +36,17 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 const BOX = vi.hoisted(() => ({ width: 640, height: 320 }));
 
-vi.mock("@visx/responsive", () => ({
-  ParentSize: ({
+vi.mock("./chart-parent-size", () => ({
+  ChartParentSize: ({
     children,
   }: {
     children: (size: { width: number; height: number }) => React.ReactNode;
   }) => <>{children({ width: BOX.width, height: BOX.height })}</>,
 }));
 
-vi.mock("react-use-measure", () => ({
-  default: () => [
-    () => undefined,
-    { ...BOX, top: 0, left: 0, right: BOX.width, bottom: BOX.height, x: 0, y: 0 },
-  ],
+vi.mock("./layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, BOX],
 }));
 
 import { Area } from "./area";

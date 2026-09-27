@@ -38,11 +38,16 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, Skeleton, StatePanel } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { useChartInteractionPolicy } from "../chart-config-context";
 import type { ChartPalette } from "../chart-context";
 import type { ChartDatapoint, ChartInteractionProps } from "../chart-datapoint";
+import { ChartLoadingLabel } from "../chart-loading-label";
+import { DEFAULT_CHART_STATUS, type ChartStatus } from "../chart-phase";
+import type { ChartEmptyState } from "../props/chart-state";
+import { useResolvedChartProps } from "../use-resolved-chart-props";
+import { NETWORK_CHART } from "../../definitions/network-chart.definition";
 import {
   ChartDatapointLayer,
   ChartDatapointProvider,
@@ -74,7 +79,7 @@ import type {
   NetworkPoint,
 } from "./network-types";
 import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "../chart-breakpoint";
-import { layoutSize } from "../layout-size";
+import { useLayoutMeasure } from "../layout-size";
 
 export type {
   NetworkLayout,
@@ -83,6 +88,9 @@ export type {
   NetworkNodeDatum,
   NetworkNodeLayout,
 } from "./network-types";
+import { useChartTranslate } from "../chart-messages";
+import type { ChartMessages } from "../props/messages";
+import { ChartMessagesScope } from "../chart-messages";
 
 /** The datum a `NetworkChart` datapoint carries into `onDatapointClick`. */
 export interface NetworkDatapointDatum extends NetworkNodeDatum {
@@ -93,6 +101,12 @@ export interface NetworkDatapointDatum extends NetworkNodeDatum {
 }
 
 export interface NetworkChartProps extends ChartInteractionProps<NetworkDatapointDatum> {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** The graph's nodes. `id` is the identity `links` reference. */
   nodes: NetworkNodeDatum[];
   /** The graph's edges. An endpoint naming an unknown node is dropped (dev warning). */
@@ -157,6 +171,10 @@ export interface NetworkChartProps extends ChartInteractionProps<NetworkDatapoin
   accessibleLabel?: ChartA11yProps["accessibleLabel"];
   /** Supplemental description read by AT. */
   accessibleDescription?: ChartA11yProps["accessibleDescription"];
+  /** Show the loading skeleton until the data is ready (ADR 0042 §9). Default `"ready"`. */
+  status?: ChartStatus;
+  /** Title and message shown when there is nothing to plot. */
+  empty?: ChartEmptyState;
 }
 
 interface TooltipState {
@@ -213,6 +231,8 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
     plotHeight,
     accessibleLabel,
     accessibleDescription,
+    status = DEFAULT_CHART_STATUS,
+    empty,
     onDatapointClick: _onDatapointClick,
     copyValueOnActivate: _copyValueOnActivate,
     datapointLabel: _datapointLabel,
@@ -220,17 +240,20 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
   }: NetworkChartProps,
   forwardedRef,
 ) {
+  const tChart = useChartTranslate();
   const internalRef = useRef<HTMLDivElement | null>(null);
+  const [measureRef, measuredBox] = useLayoutMeasure();
   const ref = useCallback(
     (node: HTMLDivElement | null) => {
       internalRef.current = node;
+      measureRef(node);
       if (typeof forwardedRef === "function") {
         forwardedRef(node);
       } else if (forwardedRef) {
         (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
       }
     },
-    [forwardedRef],
+    [forwardedRef, measureRef],
   );
 
   // ── Dev diagnostics ───────────────────────────────────────────────────────
@@ -258,18 +281,17 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
   }, [draggable, layout, links, maxNodes, nodes]);
 
   // ── Measurement ───────────────────────────────────────────────────────────
+  // The one chart measurement path (RM-189): `useLayoutMeasure` on the node the
+  // ref callback hands it. The last non-zero box is kept, as before — a root that
+  // collapses to 0 (a hidden tab) holds its layout instead of redrawing at 0.
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const measure = useCallback(() => {
-    if (!internalRef.current) return;
-    const { width, height } = layoutSize(internalRef.current);
-    if (width > 0 && height > 0) setSize({ w: width, h: height });
-  }, []);
-  useEffect(() => {
-    measure();
-    const observer = new ResizeObserver(measure);
-    if (internalRef.current) observer.observe(internalRef.current);
-    return () => observer.disconnect();
-  }, [measure]);
+  if (
+    measuredBox.width > 0 &&
+    measuredBox.height > 0 &&
+    (measuredBox.width !== size.w || measuredBox.height !== size.h)
+  ) {
+    setSize({ w: measuredBox.width, h: measuredBox.height });
+  }
 
   // `arc`'s label gutter (#277): the px width of a label, in the label's actual
   // font, so the layout can reserve real room for it instead of a node-radius
@@ -434,8 +456,9 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
 
   // ── Chrome ────────────────────────────────────────────────────────────────
   const summary = useMemo(
-    () => networkSummary(resolved.nodes.length, resolved.links.length, resolved.groups.length),
-    [resolved.groups.length, resolved.links.length, resolved.nodes.length],
+    () =>
+      networkSummary(resolved.nodes.length, resolved.links.length, resolved.groups.length, tChart),
+    [resolved.groups.length, resolved.links.length, resolved.nodes.length, tChart],
   );
   const {
     role,
@@ -477,6 +500,16 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
           : [{ color: tooltip.node.color, label: "Group", value: tooltip.node.group }]),
       ]
     : [];
+  // Empty is a STATE of the chart region (ADR 0042 §4 chart-state): read from
+  // the raw `nodes` prop, so it is true before the first measured frame too.
+  // `status: "loading"` wins over an empty result.
+  const isEmpty = status !== "loading" && nodes.length === 0;
+  // Read as locals, never inline in the JSX below: a literal default inside a
+  // `title={…}`/`aria-label={…}` expression trips the `microcopy` gate (ADR
+  // 0017), which cannot see a fallback already resolved up here.
+  const emptyTitle = empty?.title ?? tChart("charts.chart.emptyTitle");
+  const emptyMessage = empty?.message ?? tChart("charts.chart.emptyMessage");
+
   // The hovered node's disc where it is painted (a dragged node carries its offset).
   const tooltipOffset = tooltip && dragId === tooltip.node.id ? dragOffset : ZERO_OFFSET;
   const tooltipAvoid = tooltip
@@ -503,49 +536,98 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      {size.w > 0 && size.h > 0 && (
-        <NetworkChartProvider {...contextValue}>
-          <svg
-            aria-hidden="true"
-            className={cn("absolute inset-0 h-full w-full", dragEnabled && "cursor-grab")}
-            data-slot="network-chart-body"
-            height={size.h}
-            onPointerDown={handlePointerDown}
-            onPointerLeave={handlePointerLeave}
-            onPointerMove={handlePointerMove}
-            onPointerUp={endDrag}
-            role="presentation"
-            viewBox={`0 0 ${size.w} ${size.h}`}
-            width={size.w}
-          >
-            <NetworkLinks />
-            <NetworkNodes />
-          </svg>
-
-          {tooltip && (
-            <ChartTooltipBox
-              avoid={tooltipAvoid}
-              containerHeight={size.h}
-              containerRef={internalRef}
-              containerWidth={size.w}
-              visible
-              x={tooltip.x}
-              y={tooltip.y}
+      {status === "loading" ? (
+        <>
+          <Skeleton className="absolute inset-0 size-full" />
+          <ChartLoadingLabel text={tChart("charts.chart.loading")} />
+        </>
+      ) : isEmpty ? (
+        <div aria-live="polite" className="size-full" data-slot="network-chart-empty" role="status">
+          <StatePanel
+            actions={empty?.action}
+            className="size-full gap-1 overflow-hidden py-2"
+            description={emptyMessage}
+            kind="empty"
+            title={emptyTitle}
+          />
+        </div>
+      ) : (
+        size.w > 0 &&
+        size.h > 0 && (
+          <NetworkChartProvider {...contextValue}>
+            <svg
+              aria-hidden="true"
+              className={cn("absolute inset-0 h-full w-full", dragEnabled && "cursor-grab")}
+              data-slot="network-chart-body"
+              height={size.h}
+              onPointerDown={handlePointerDown}
+              onPointerLeave={handlePointerLeave}
+              onPointerMove={handlePointerMove}
+              onPointerUp={endDrag}
+              role="presentation"
+              viewBox={`0 0 ${size.w} ${size.h}`}
+              width={size.w}
             >
-              <ChartTooltipContent
-                rows={tooltipRows}
-                title={tooltip.node.label ?? tooltip.node.id}
-              />
-            </ChartTooltipBox>
-          )}
+              <NetworkLinks />
+              <NetworkNodes />
+            </svg>
 
-          <ChartDatapointLayer />
-        </NetworkChartProvider>
+            {tooltip && (
+              <ChartTooltipBox
+                avoid={tooltipAvoid}
+                containerHeight={size.h}
+                containerRef={internalRef}
+                containerWidth={size.w}
+                visible
+                x={tooltip.x}
+                y={tooltip.y}
+              >
+                <ChartTooltipContent
+                  rows={tooltipRows}
+                  title={tooltip.node.label ?? tooltip.node.id}
+                />
+              </ChartTooltipBox>
+            )}
+
+            <ChartDatapointLayer />
+          </NetworkChartProvider>
+        )
       )}
     </ChartPlotRoot>
   );
 });
 
+// The unwrapped body, still carrying its own destructuring defaults. Exported ONLY for
+// `definitions.test.ts`'s "defaults reality" suite (wave-3 review) — never re-exported from
+// the package barrel; consumers render `NetworkChart`.
+export { NetworkChartBody };
+
+// Unwrapped implementation; the public docblock sits on `NetworkChart` below (RM-187).
+const NetworkChartUnscoped = forwardRef<HTMLDivElement, NetworkChartProps>(
+  function NetworkChart(props, ref) {
+    const resolved = useResolvedChartProps(NETWORK_CHART, props);
+    const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
+      resolved;
+    if (!onDatapointClick && !copyValueOnActivate) {
+      return <NetworkChartBody {...resolved} ref={ref} />;
+    }
+    return (
+      <ChartDatapointProvider
+        copyValueOnActivate={copyValueOnActivate}
+        datapointLabel={
+          (datapointLabel ?? defaultNetworkDatapointLabel) as unknown as ChartDatapointProviderLabel
+        }
+        maxInteractiveDatapoints={maxInteractiveDatapoints}
+        onDatapointClick={onDatapointClick as unknown as ChartDatapointProviderHandler}
+      >
+        <NetworkChartBody {...resolved} ref={ref} />
+      </ChartDatapointProvider>
+    );
+  },
+);
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
 /**
  * `NetworkChart` — a node-link graph in three layouts (RM-036).
  *
@@ -562,27 +644,16 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
  * @dataShape arbitrary node and edge relationships with no hierarchy
  * @avoidWhen the relationship really is a hierarchy — use a tree chart or a treemap
  */
-export const NetworkChart = forwardRef<HTMLDivElement, NetworkChartProps>(
-  function NetworkChart(props, ref) {
-    const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
-      props;
-    if (!onDatapointClick && !copyValueOnActivate) {
-      return <NetworkChartBody {...props} ref={ref} />;
-    }
-    return (
-      <ChartDatapointProvider
-        copyValueOnActivate={copyValueOnActivate}
-        datapointLabel={
-          (datapointLabel ?? defaultNetworkDatapointLabel) as unknown as ChartDatapointProviderLabel
-        }
-        maxInteractiveDatapoints={maxInteractiveDatapoints}
-        onDatapointClick={onDatapointClick as unknown as ChartDatapointProviderHandler}
-      >
-        <NetworkChartBody {...props} ref={ref} />
-      </ChartDatapointProvider>
-    );
-  },
-);
+export const NetworkChart = forwardRef<HTMLDivElement, NetworkChartProps>(function NetworkChart(
+  { messages, ...props },
+  ref,
+) {
+  return (
+    <ChartMessagesScope messages={messages}>
+      <NetworkChartUnscoped {...props} ref={ref} />
+    </ChartMessagesScope>
+  );
+});
 
 /**
  * The provider's props are typed against the DEFAULT datum

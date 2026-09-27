@@ -1,5 +1,13 @@
 import { reactConfig } from "@elabs-ai/components-eslint-config/react";
 
+// The shared preset's `no-restricted-imports` options (the icon policy). A later
+// config block REPLACES a rule's options rather than merging them, so the block
+// below extends these instead of dropping them.
+const sharedRestrictedImports = reactConfig
+  .map((config) => config.rules?.["no-restricted-imports"])
+  .findLast(Boolean) ?? ["error", {}];
+const [, sharedRestrictedImportsOptions = {}] = sharedRestrictedImports;
+
 /**
  * Charts-local severity ratchet (#185).
  *
@@ -34,6 +42,31 @@ export default [
     rules: {
       "react-hooks/exhaustive-deps": "error",
       "@typescript-eslint/no-explicit-any": "error",
+    },
+  },
+  {
+    // One reduced-motion source (RM-189): every chart reads the tokens hook, where
+    // the person's own motion setting wins over the OS. Motion's hook reads only the
+    // OS, so a chart that imported it would ignore that setting. Tests are exempt:
+    // they mock whichever module they need.
+    files: ["**/*.{ts,tsx}"],
+    ignores: ["**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          ...sharedRestrictedImportsOptions,
+          paths: [
+            ...(sharedRestrictedImportsOptions.paths ?? []),
+            {
+              name: "motion/react",
+              importNames: ["useReducedMotion"],
+              message:
+                'Use `useReducedMotion` from "@elabs-ai/components-tokens" (the one reduced-motion source, where the person\'s own motion setting wins over the OS), or `useStillEntrance` for a mount-only entrance.',
+            },
+          ],
+        },
+      ],
     },
   },
 ];

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { ChartFrame } from "../chart-frame/chart-frame";
 import type { ChartDatapoint } from "./chart-datapoint";
+import type { SelectionState } from "./chart-selection";
 import { WaterfallChart, type WaterfallDatum, type WaterfallStep } from "./waterfall-chart";
 
 const meta = {
@@ -43,6 +44,43 @@ export const Default: Story = {
       <WaterfallChart accessibleLabel="Gross to net revenue bridge" data={grossToNet} />
     </div>
   ),
+};
+
+/**
+ * `status="loading"` (RM-182): a skeleton in the plot box the chart will fill,
+ * with one polite status message per chart, at 380, 600 and 900 px.
+ */
+export const Loading: Story = {
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="w-full" key={width} style={{ maxWidth: width }}>
+          <WaterfallChart
+            accessibleLabel="Gross to net revenue bridge"
+            data={grossToNet}
+            status="loading"
+          />
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const statuses = canvas.getAllByRole("status");
+    await expect(statuses).toHaveLength(3);
+    for (const status of statuses) {
+      await expect(status).toHaveAttribute("aria-live", "polite");
+      await expect(status).toHaveTextContent("Loading chart…");
+      const skeleton = status.querySelector('[data-slot="skeleton"]');
+      await expect(skeleton).toHaveAttribute("aria-hidden", "true");
+      // The skeleton fills the reserved plot box, so nothing moves when the data lands.
+      await waitFor(() => expect(status.getBoundingClientRect().height).toBeGreaterThan(0));
+      await expect(skeleton?.getBoundingClientRect().height).toBe(
+        status.getBoundingClientRect().height,
+      );
+    }
+    await expect(canvasElement.querySelector("svg")).toBeNull();
+  },
 };
 
 // A two-quarter ARR bridge: monthly steps carry a `quarter` field for
@@ -403,4 +441,47 @@ export const ThickConnectors: Story = {
       />
     </div>
   ),
+};
+
+// Selection paint-back (RM-185): forwarded to the inner BarChart, which already
+// paints the tri-state (F22) — see `dumbbell-chart.stories.tsx`'s "Selection states"
+// for the same contract on a different family.
+const SELECTION_BY_LABEL: Record<string, SelectionState> = {
+  Refunds: "selected",
+  COGS: "associated",
+  Ops: "excluded",
+};
+const selectionByLabel = (category: string | number | Date): SelectionState =>
+  SELECTION_BY_LABEL[String(category)] ?? "associated";
+
+/**
+ * A host's `selectionStates` paints Refunds selected, COGS associated and Ops
+ * excluded: the inner BarChart (not Waterfall itself) resolves and paints the
+ * tri-state, so the effect is visible on the step bars without Waterfall
+ * knowing anything about the paint rules itself.
+ */
+export const SelectionStates: Story = {
+  name: "Selection states",
+  render: () => (
+    <div className="flex w-[900px] max-w-full flex-col gap-6">
+      {[380, 600, 900].map((width) => (
+        <div className="h-72 w-full" key={width} style={{ maxWidth: width }}>
+          <WaterfallChart
+            accessibleLabel="Gross to net revenue bridge with a selection applied"
+            data={grossToNet}
+            selectionStates={selectionByLabel}
+          />
+        </div>
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    // grossToNet has 5 rows: Refunds selected, COGS + Gross + Net associated
+    // (the default fallback), Ops excluded — × 3 widths.
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll('[data-selection="selected"]').length).toBe(3),
+    );
+    expect(canvasElement.querySelectorAll('[data-selection="associated"]').length).toBe(9);
+    expect(canvasElement.querySelectorAll('[data-selection="excluded"]').length).toBe(3);
+  },
 };
