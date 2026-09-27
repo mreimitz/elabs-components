@@ -6,7 +6,7 @@
  * shows the File actions in its options menu (`DocumentMenuItems`).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronDown, Download, FolderOpen, Link, Redo2, Undo2 } from "lucide-react";
+import { Download, FileText, FolderOpen, Link, Redo2, Undo2 } from "lucide-react";
 import {
   Button,
   ConfirmDialog,
@@ -18,6 +18,7 @@ import {
   IconButton,
   toast,
 } from "@elabs-ai/components-ui";
+import { WithTooltip } from "../shell/with-tooltip";
 import { compileText } from "../state/compile-text";
 import { diagramActions, diagramStore, fileActions } from "../state/diagram-store";
 import { historyActions, useHistoryCounts } from "../state/history";
@@ -213,12 +214,13 @@ export function DocumentControls({ compact }: DocumentControlsProps) {
       />
       {compact ? null : (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button ref={menuTrigger} variant="ghost" size="sm">
-              {DOCUMENT_LABELS.file}
-              <ChevronDown aria-hidden="true" />
-            </Button>
-          </DropdownMenuTrigger>
+          <WithTooltip label={DOCUMENT_LABELS.file}>
+            <DropdownMenuTrigger asChild>
+              <Button ref={menuTrigger} variant="ghost" size="icon-sm">
+                <FileText aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+          </WithTooltip>
           <DropdownMenuContent align="start">
             <FileItems />
           </DropdownMenuContent>

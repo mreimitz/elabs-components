@@ -45,8 +45,11 @@ shows on the borderless `icon` look too (`08-keyboard-focus-icon-node-light.png`
 
 - **What:** four ports per node means 280 dots on the 70-node gallery. In a static
   architecture diagram the ports are noise until someone draws an edge.
-- **Where:** `apps/diagram/src/nodes/service-node.tsx:29-31` (`ArchPorts`). Not worked
-  around; the dots are drawn.
+- **Where:** `apps/diagram/src/nodes/service-node.tsx` (`ArchPorts`), `actor-node.tsx`,
+  `zone-node.tsx`. Worked around 2026-09-27 (maintainer ruling) in
+  `apps/diagram/src/nodes/port-visibility.ts`: a port no edge names is `opacity-0` until
+  its node is hovered or focused, or a connection being drawn may end on it (React
+  Flow's `connectionindicator` class). A connected port always shows.
 - **Proposed API:** `FlowPort showOn?: "always" | "hover" | "connect"` (default
   `always`). `hover` shows the dot while the node is hovered, focused or selected;
   `connect` shows it only while a connection drag is in progress. The dot keeps its
