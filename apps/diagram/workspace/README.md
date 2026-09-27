@@ -15,9 +15,9 @@ backend. Everything here is plain YAML, versioned by Git like the rest of the re
 
 ## The two rules
 
-1. **`components/` is the only root `use:` resolves from.** `use: components/<path>` in a
-   diagram points at `components/<path>.yaml`; nothing outside `components/` can be
-   referenced.
+1. **A reference resolves from the workspace root.** `ref: ws/<folder>/…/<file name>` on a
+   node points at `<folder>/…/<file name>.yaml` from here — any diagram in the workspace
+   can be named; `components/` is just the one folder that cannot be moved or trashed.
 2. **`_trash/` is where deleted files go, and it is git-ignored.** Deleting a diagram or a
    folder moves it to `_trash/<timestamp>-<name>`; nothing is ever removed from disk by the
    app. Empty `_trash/` yourself when you are sure.

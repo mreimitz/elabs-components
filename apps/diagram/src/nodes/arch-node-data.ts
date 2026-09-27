@@ -45,6 +45,10 @@ export const ARCH_NODE_TYPE = {
 
 export type ArchNodeType = (typeof ARCH_NODE_TYPE)[ArchNodeKind];
 
+// DG-26 — a collapsed diagram reference (interim renderer ServiceNode; DG-27 draws it).
+export const ARCH_COMPOSITE_TYPE = "arch/composite";
+// end DG-26
+
 export type ArchNode = Node<ArchNodeData, ArchNodeType>;
 
 /** The kinds that draw a mark, a title and ports (every kind but `note`). */

@@ -1,18 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { cn } from "@elabs-ai/components-ui";
-import {
-  chartCenterContainerClassName,
-  chartCenterLabelClassName,
-  chartCenterValueClassName,
-} from "./chart-center-typography";
-import {
-  ChartStatFlow,
-  type ChartStatFlowFormat,
-  defaultChartStatFlowFormat,
-} from "./chart-stat-flow";
+import { chartCenterLabelClassName, chartCenterValueClassName } from "./chart-center-typography";
+import { type ChartStatFlowFormat, defaultChartStatFlowFormat } from "./chart-stat-flow";
 import { usePieHover, usePieStable } from "./pie-context";
+import { ChartCenterEngine } from "./pie-ring-center-engine";
 
 export interface PieCenterProps {
   /** Label shown below the value. Default: "Total" when not hovering */
@@ -46,7 +38,10 @@ export interface PieCenterProps {
  * inside foreignObject renders at incorrect positions.
  *
  * The parent PieChart uses CSS Grid stacking to overlay this HTML content
- * on top of the SVG slices.
+ * on top of the SVG slices. Renders nothing on a solid pie: give the chart
+ * an `innerRadius` to make room. The value uses the chart's `locale`, or
+ * the `LocaleProvider`'s when unset. `children` replaces the value and
+ * label only while a slice is hovered.
  */
 export function PieCenter({
   defaultLabel = "Total",
@@ -61,59 +56,33 @@ export function PieCenter({
   const { data, totalValue, innerRadius, geometryScrubbing, locale } = usePieStable();
   const { hoveredIndex } = usePieHover();
 
-  const effectiveHoveredIndex = geometryScrubbing ? null : hoveredIndex;
-  const hoveredData = effectiveHoveredIndex === null ? null : data[effectiveHoveredIndex];
-  const displayValue = hoveredData ? hoveredData.value : totalValue;
-  const displayLabel = hoveredData ? hoveredData.label : defaultLabel;
-
-  // Calculate center area size based on inner radius
-  // Leave some padding so text doesn't touch the inner edge
-  const centerSize = innerRadius * 2 - 16;
-
-  // Don't render if there's no inner radius (solid pie, not donut)
+  // Don't render if there's no inner radius (solid pie, not donut).
   if (innerRadius <= 0) {
     return null;
   }
 
-  // If custom render function is provided, use it
-  if (children && hoveredData) {
-    return (
-      <div
-        className={cn(chartCenterContainerClassName, "flex items-center justify-center", className)}
-        style={{ width: centerSize, height: centerSize }}
-      >
-        {children({
-          value: displayValue,
-          label: displayLabel,
-          isHovered: effectiveHoveredIndex !== null,
-          data: hoveredData,
-        })}
-      </div>
-    );
-  }
+  const effectiveHoveredIndex = geometryScrubbing ? null : hoveredIndex;
+  const hoveredData = effectiveHoveredIndex === null ? null : (data[effectiveHoveredIndex] ?? null);
+  // Leave some padding so text doesn't touch the inner edge.
+  const centerSize = innerRadius * 2 - 16;
 
-  // Default center content with NumberFlow animations
-  // Now renders as pure HTML, avoiding Safari's foreignObject bugs
   return (
-    <div
-      className={cn(
-        chartCenterContainerClassName,
-        "flex flex-col items-center justify-center text-center",
-        className,
-      )}
-      style={{ width: centerSize, height: centerSize }}
+    <ChartCenterEngine
+      centerSize={centerSize}
+      className={className}
+      defaultLabel={defaultLabel}
+      formatOptions={formatOptions}
+      hoveredData={hoveredData}
+      isHovered={effectiveHoveredIndex !== null}
+      labelClassName={labelClassName}
+      locale={locale}
+      prefix={prefix}
+      suffix={suffix}
+      totalValue={totalValue}
+      valueClassName={valueClassName}
     >
-      <ChartStatFlow
-        formatOptions={formatOptions}
-        label={displayLabel}
-        labelClassName={labelClassName}
-        locale={locale}
-        prefix={prefix}
-        suffix={suffix}
-        value={displayValue}
-        valueClassName={valueClassName}
-      />
-    </div>
+      {children}
+    </ChartCenterEngine>
   );
 }
 

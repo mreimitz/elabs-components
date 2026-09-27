@@ -9,8 +9,9 @@
  * and what comes back. `handler` returns a JSON value (sent as text) or an MCP result with
  * its own `content` (an image); it throws to fail — the handler turns that into `isError`.
  *
- * Later items add a group here (DG-24 `catalog.mjs`, DG-26 `compose_use_component`, DG-31
- * `story_set_steps`) — the registry is the one place that lists them.
+ * Later items add a group here (DG-24 `catalog.mjs`, DG-26 reference-first `ref:` support in
+ * `compose.mjs`/`workspace.mjs`, DG-31 `story_set_steps`) — the registry is the one place
+ * that lists them.
  */
 import { catalogTools } from "./catalog.mjs"; // DG-24
 import { composeTools } from "./compose.mjs";

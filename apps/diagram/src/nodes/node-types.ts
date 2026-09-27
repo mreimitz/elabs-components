@@ -1,6 +1,6 @@
 import type { NodeTypes } from "@xyflow/react";
 // DG-05 — service / actor / datastore / queue / external / note imports
-import { ARCH_NODE_TYPE } from "./arch-node-data";
+import { ARCH_COMPOSITE_TYPE, ARCH_NODE_TYPE } from "./arch-node-data"; // DG-26 adds ARCH_COMPOSITE_TYPE
 import { ActorNode } from "./actor-node";
 import { DatastoreNode } from "./datastore-node";
 import { ExternalNode } from "./external-node";
@@ -30,4 +30,7 @@ export const archNodeTypes = {
   // DG-06 — zone boundaries (replaces the interim `group: FlowGroupNode` entry)
   [ZONE_NODE_TYPE]: ZoneNode,
   // end DG-06
+  // DG-26 — collapsed diagram references (interim; DG-27 replaces ServiceNode with its composite node)
+  [ARCH_COMPOSITE_TYPE]: ServiceNode,
+  // end DG-26
 } satisfies NodeTypes;

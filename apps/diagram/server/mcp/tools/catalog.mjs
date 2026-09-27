@@ -51,7 +51,7 @@ export const catalogTools = [
     name: "catalog_get",
     description:
       'One entry by name ("aws/lambda", or a part such as "qlik/data-gateway-direct"): ' +
-      "its metadata and a ready-to-paste node in dialect v0 (`yaml`).",
+      "its metadata and a ready-to-paste node in dialect v1 (`yaml`).",
     inputSchema: {
       type: "object",
       properties: { name: { type: "string", description: '"vendor/slug", e.g. "aws/lambda".' } },
