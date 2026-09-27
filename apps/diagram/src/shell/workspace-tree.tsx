@@ -71,9 +71,9 @@ import { createStore } from "../state/create-store";
 import { toHash, useRoute } from "../routes/use-hash";
 import type { WorkspaceFile, WorkspaceTree as WorkspaceTreeData } from "../workspace/client";
 import {
+  indexStore,
   matchEntry,
   queryWords,
-  useSearchIndex,
   type EntryMatch,
   type MatchField,
   type MatchRange,
@@ -138,19 +138,20 @@ const TREE_LABELS = {
   // Sidebar search (maintainer 2026-09-28): filtering the tree by name and content.
   noMatches: (query: string) => `No diagrams match “${query}”.`,
   matchCount: (n: number) => (n === 1 ? "1 diagram found" : `${n} diagrams found`),
+  searching: "Searching…",
+  /** A matched field's second-line prefix ("Box: Snowflake", "File: lakehouse-aws.yaml"). */
+  matchField: {
+    title: "Title",
+    fileName: "File",
+    folder: "Folder",
+    id: "ID",
+    ref: "Ref",
+    boxTitle: "Box",
+    subtitle: "Box",
+    icon: "Icon",
+    description: "Description",
+  } satisfies Record<MatchField, string>,
 } as const;
-
-/** A matched field's second-line prefix ("Box: Snowflake", "File: lakehouse-aws.yaml"). */
-const MATCH_FIELD_LABELS: Record<MatchField, string> = {
-  title: "Title",
-  fileName: "File",
-  folder: "Folder",
-  id: "Id",
-  boxTitle: "Box",
-  subtitle: "Box",
-  icon: "Icon",
-  description: "Description",
-};
 
 /** `dataTransfer` type of a dragged tree file. */
 const TREE_DRAG_TYPE = "application/x-atlas-workspace-path";
@@ -264,13 +265,49 @@ function HighlightedText({ text, ranges }: { text: string; ranges: readonly Matc
   return <>{parts}</>;
 }
 
+/** Chars of context kept before the first match when windowing a matched field (F5/s1): short
+ * enough that a late match still lands near the window's own start. */
+const SNIPPET_LEAD = 10;
+
+/**
+ * `text`, windowed to start just before its first match when that would otherwise sit past
+ * where `truncate`'s end-ellipsis can reach — `truncate` only trims the END, so a long prefix
+ * (a nested folder path, a late word in a description) hid the match entirely (F5/s1). Ranges
+ * come back re-based to the windowed text.
+ */
+function windowText(
+  text: string,
+  ranges: readonly MatchRange[],
+): { text: string; ranges: MatchRange[] } {
+  const first = ranges[0];
+  if (!first || first.start <= SNIPPET_LEAD) return { text, ranges: [...ranges] };
+  const from = first.start - SNIPPET_LEAD;
+  const shift = from - 1; // "…" takes index 0 of the windowed text.
+  return {
+    text: `…${text.slice(from)}`,
+    ranges: ranges.map((range) => ({ start: range.start - shift, end: range.end - shift })),
+  };
+}
+
+/** A matched field's text: windowed around its first match, highlighted, with the full,
+ * un-windowed text in `title=` for a hover reveal (F5/s1/n3). */
+function MatchText({ text, ranges }: { text: string; ranges: readonly MatchRange[] }) {
+  if (ranges.length === 0) return <>{text}</>;
+  const windowed = windowText(text, ranges);
+  return (
+    <span title={text}>
+      <HighlightedText text={windowed.text} ranges={windowed.ranges} />
+    </span>
+  );
+}
+
 /** A matching file's second line: what matched, when it is not the title itself. */
 function MatchLine({ reason }: { reason: EntryMatch["reason"] }) {
   if (!reason) return null;
   return (
     <span className="truncate text-meta text-sidebar-muted-foreground">
-      {MATCH_FIELD_LABELS[reason.field]}:{" "}
-      <HighlightedText text={reason.text} ranges={reason.ranges} />
+      {TREE_LABELS.matchField[reason.field]}:{" "}
+      <MatchText text={reason.text} ranges={reason.ranges} />
     </span>
   );
 }
@@ -482,6 +519,10 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
     const active = entry.path === shown;
     const match = matches.get(entry.path);
     const reason = match?.reason;
+    // n3: the title itself is highlighted (and windowed) too when it is where the query
+    // matched — otherwise a long title's own truncation can hide the only visible reason a
+    // row showed up. Only while filtering: an empty query never touches the plain title.
+    const titleRanges = filtering ? match?.titleRanges : undefined;
     return (
       <SidebarMenuSubItem>
         <div className="group/tree-row relative">
@@ -505,7 +546,13 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
             >
               <FileText aria-hidden="true" />
               <span className="flex min-w-0 flex-col">
-                <span className="truncate">{entry.title}</span>
+                <span className="truncate">
+                  {titleRanges && titleRanges.length > 0 ? (
+                    <MatchText text={entry.title} ranges={titleRanges} />
+                  ) : (
+                    entry.title
+                  )}
+                </span>
                 <MatchLine reason={reason} />
               </span>
             </a>
@@ -832,7 +879,13 @@ export function WorkspaceTree() {
   const query = useSearchQuery();
   const words = useMemo(() => queryWords(query), [query]);
   const filtering = words.length > 0;
-  const { entries: indexEntries } = useSearchIndex();
+  // `indexStore` is a plain vanilla store (F7: `search-index.ts` stays React-free); `ready` is
+  // `false` until the first build lands, and `search-store.ts` only starts one on the first
+  // real query, so an early query never falsely reads as "no matches" (F6).
+  const { entries: indexEntries, ready: indexReady } = useSyncExternalStore(
+    indexStore.subscribe,
+    indexStore.get,
+  );
   const matches = useMemo(() => {
     const result = new Map<string, EntryMatch>();
     if (!filtering) return result;
@@ -847,26 +900,25 @@ export function WorkspaceTree() {
     [filtering, entries, matches],
   );
 
-  // Clearing the query restores the expand state it had before filtering started — filtering
-  // itself never touches `collapsed` (every folder just renders forced open, see `TreeItem`).
-  const wasFiltering = useRef(filtering);
-  const savedCollapsed = useRef<ReadonlySet<string> | null>(null);
-  useEffect(() => {
-    if (filtering && !wasFiltering.current) {
-      savedCollapsed.current = collapsed;
-    } else if (!filtering && wasFiltering.current && savedCollapsed.current) {
-      setCollapsed(savedCollapsed.current);
-      savedCollapsed.current = null;
-    }
-    wasFiltering.current = filtering;
-    // Reacts only to the filtering on/off edge, not to every `collapsed` change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtering]);
+  // While filtering every folder renders forced open regardless of `collapsed` (`TreeItem`), so
+  // a click on a folder's own chevron would otherwise mutate `collapsed` invisibly; ignoring it
+  // keeps `collapsed` exactly as the person left it, and clearing the query needs no restore
+  // step of its own (F3/s4/N1 — no `useEffect`-to-sync of the pre-search expand state).
+  const onToggle = (path: string, open: boolean) => {
+    if (filtering) return;
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (open) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  };
 
-  // A polite, debounced count — announced once typing settles, not on every keystroke.
+  // A polite, debounced count — announced once typing (and the first index build) settles, not
+  // on every keystroke, and never while the index has nothing to report yet (F6).
   const [announced, setAnnounced] = useState("");
   useEffect(() => {
-    if (!filtering) {
+    if (!filtering || !indexReady) {
       setAnnounced("");
       return;
     }
@@ -876,15 +928,7 @@ export function WorkspaceTree() {
       );
     }, 300);
     return () => clearTimeout(id);
-  }, [filtering, matches.size, query]);
-
-  const onToggle = (path: string, open: boolean) =>
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      if (open) next.delete(path);
-      else next.add(path);
-      return next;
-    });
+  }, [filtering, indexReady, matches.size, query]);
 
   const onOpenFile = (event: MouseEvent<HTMLAnchorElement>, path: string) => {
     // A modified click (new browser tab, …) is the browser's.
@@ -911,6 +955,13 @@ export function WorkspaceTree() {
             <div role="status" aria-live="polite">
               <span className="sr-only">{TREE_LABELS.loading}</span>
               <SidebarMenuSkeleton aria-hidden="true" />
+              <SidebarMenuSkeleton aria-hidden="true" />
+            </div>
+          </SidebarMenuSubItem>
+        ) : filtering && !indexReady ? (
+          <SidebarMenuSubItem>
+            <div role="status" aria-live="polite">
+              <span className="sr-only">{TREE_LABELS.searching}</span>
               <SidebarMenuSkeleton aria-hidden="true" />
             </div>
           </SidebarMenuSubItem>

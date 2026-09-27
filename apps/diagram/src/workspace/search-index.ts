@@ -10,13 +10,13 @@
  * zones/nodes shape, or a v1 file with `ref:`/`component:`) — a box is anything, anywhere in
  * the document, carrying an `id`, `title`, `subtitle`, `description`, `icon`, `ref` or
  * `component` string, found by walking every object generically rather than assuming a
- * particular schema. React-free except the small hook at the bottom.
+ * particular schema. React-free: `workspace-tree.tsx` reads `indexStore` with
+ * `useSyncExternalStore` and starts it with `activateSearchIndex` (`search-store.ts`).
  */
-import { useEffect, useSyncExternalStore } from "react";
 import { parseDocument } from "yaml";
 import { createStore } from "../state/create-store";
 import { readFile, type WorkspaceFile, type WorkspaceTree } from "./client";
-import { useWorkspace } from "./workspace-store";
+import { workspaceStore } from "./workspace-store";
 
 // ── One file's index entry ───────────────────────────────────────────────────────────────
 
@@ -162,7 +162,7 @@ export async function buildIndex(tree: WorkspaceTree, read: ReadText): Promise<I
 
 /** Case- and diacritic-folded. */
 export function normalizeText(value: string): string {
-  return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 }
 
 /** The query, folded and split on whitespace — every word must match somewhere (AND). */
@@ -175,6 +175,7 @@ export type MatchField =
   | "fileName"
   | "folder"
   | "id"
+  | "ref"
   | "boxTitle"
   | "subtitle"
   | "icon"
@@ -185,7 +186,8 @@ export type MatchField =
  * contains .9, id exact .8, id contains .7, node title .6, icon .5, description .3),
  * reused. `fileName` and `folder` sit at the title tier — the maintainer's answer is "found
  * by its title OR file name". `subtitle` has no weight in the original table: .4, a rung
- * between a box's own title and its description.
+ * between a box's own title and its description. `ref` (a v1 node's `ref:`/`component:`
+ * target — DG-26) sits at the id tier: it is the same kind of machine name.
  */
 const NAME_TIER = { exact: 1, prefix: 0.95, contains: 0.9 };
 const ID_TIER = { exact: 0.8, contains: 0.7 };
@@ -209,6 +211,9 @@ export interface FieldMatch {
 export interface EntryMatch {
   /** The row's own title already satisfies the query: no second line needed. */
   titleMatch: boolean;
+  /** Where the query's words sit in the row's own title, when any do (even a partial cover,
+   * shown alongside `reason`) — `TreeItem` highlights the title with these. */
+  titleRanges?: MatchRange[];
   /** The best other field to show as "what matched", when `titleMatch` is false. */
   reason?: FieldMatch;
 }
@@ -248,9 +253,15 @@ function mergeRanges(ranges: MatchRange[]): MatchRange[] {
   return merged;
 }
 
-interface FieldHit {
+interface Candidate {
   field: MatchField;
   text: string;
+  /** Which of `entry.boxes` this came from — lets `matchEntry` prefer a box's own title over
+   * its id when both match (n1). */
+  boxIndex?: number;
+}
+
+interface FieldHit extends Candidate {
   weight: number;
   words: Set<number>;
   ranges: MatchRange[];
@@ -269,6 +280,7 @@ function weightOf(field: MatchField, normalized: string, word: string): number {
             ? NAME_TIER.contains
             : 0;
     case "id":
+    case "ref":
       return normalized === word ? ID_TIER.exact : normalized.includes(word) ? ID_TIER.contains : 0;
     case "boxTitle":
       return normalized.includes(word) ? BOX_TITLE_WEIGHT : 0;
@@ -281,11 +293,8 @@ function weightOf(field: MatchField, normalized: string, word: string): number {
   }
 }
 
-function scoreField(
-  field: MatchField,
-  text: string,
-  words: readonly string[],
-): FieldHit | undefined {
+function scoreField(candidate: Candidate, words: readonly string[]): FieldHit | undefined {
+  const { field, text, boxIndex } = candidate;
   const normalized = normalizeText(text);
   let weight = 0;
   const words_ = new Set<number>();
@@ -298,29 +307,43 @@ function scoreField(
     ranges.push(...findRanges(text, word));
   });
   if (words_.size === 0) return undefined;
-  return { field, text, weight, words: words_, ranges: mergeRanges(ranges) };
+  return { field, text, boxIndex, weight, words: words_, ranges: mergeRanges(ranges) };
 }
 
 /** Every other searchable string on `entry`: its file name, its ancestor folders' names, and
- * each box's id/ref/component, title, subtitle, icon and description. */
-function candidatesOf(
-  entry: IndexEntry,
-  ancestorFolders: readonly string[],
-): { field: MatchField; text: string }[] {
-  const list: { field: MatchField; text: string }[] = [
+ * each box's id, ref/component, title, subtitle, icon and description — each tagged with the
+ * box it came from (`boxIndex`), so a box's id and its own title are never confused for two
+ * different boxes' matches. */
+function candidatesOf(entry: IndexEntry, ancestorFolders: readonly string[]): Candidate[] {
+  const list: Candidate[] = [
     { field: "fileName", text: entry.stem },
     ...ancestorFolders.map((name) => ({ field: "folder" as const, text: name })),
   ];
   if (entry.description) list.push({ field: "description", text: entry.description });
-  for (const box of entry.boxes) {
-    const id = box.id ?? box.ref ?? box.component;
-    if (id) list.push({ field: "id", text: id });
-    if (box.title) list.push({ field: "boxTitle", text: box.title });
-    if (box.subtitle) list.push({ field: "subtitle", text: box.subtitle });
-    if (box.icon) list.push({ field: "icon", text: box.icon });
-    if (box.description) list.push({ field: "description", text: box.description });
-  }
+  entry.boxes.forEach((box, boxIndex) => {
+    // id, ref and component are separate candidates (not `id ?? ref ?? component`): a v1
+    // reference node (DG-26) always carries an id ALONGSIDE its `ref:`, and the maintainer's
+    // "found by its icon" promise must keep working once catalog refs replace `icon:` — so the
+    // ref itself has to stay searchable even though the same box also has an id (m1).
+    if (box.id) list.push({ field: "id", text: box.id, boxIndex });
+    if (box.ref) list.push({ field: "ref", text: box.ref, boxIndex });
+    if (box.component) list.push({ field: "ref", text: box.component, boxIndex });
+    if (box.title) list.push({ field: "boxTitle", text: box.title, boxIndex });
+    if (box.subtitle) list.push({ field: "subtitle", text: box.subtitle, boxIndex });
+    if (box.icon) list.push({ field: "icon", text: box.icon, boxIndex });
+    if (box.description) list.push({ field: "description", text: box.description, boxIndex });
+  });
   return list;
+}
+
+/** How many of `hit`'s words are NOT already covered by the row's own title — the words that
+ * actually explain why a row with no title match showed up (s5). */
+function uncoveredByTitle(hit: FieldHit, titleWords: ReadonlySet<number>): number {
+  let count = 0;
+  hit.words.forEach((word) => {
+    if (!titleWords.has(word)) count += 1;
+  });
+  return count;
 }
 
 /**
@@ -328,8 +351,10 @@ function candidatesOf(
  * its own parent up to the workspace root — a folder whose name alone covers every word makes
  * every file under it match, the same as a title or file-name match would.) `null`: no match,
  * some word matches nowhere. Otherwise: `titleMatch` (no second line needed) or `reason`, the
- * single best other field to show ("Box: Snowflake"), picked by how many words it covers, then
- * by its weight.
+ * single best other field to show ("Box: Snowflake"), picked by how many words it covers that
+ * the title itself does NOT already show, then by how many words it covers, then by weight —
+ * so a two-word query is explained by the word the title does not already reveal (s5), and a
+ * box's own title is shown over its id when both match it (n1).
  */
 export function matchEntry(
   entry: IndexEntry,
@@ -337,26 +362,46 @@ export function matchEntry(
   words: readonly string[],
 ): EntryMatch | null {
   if (words.length === 0) return { titleMatch: false };
-  const titleHit = scoreField("title", entry.title, words);
+  const titleHit = scoreField({ field: "title", text: entry.title }, words);
   const covered = new Set<number>(titleHit?.words ?? []);
   const hits: FieldHit[] = [];
   for (const candidate of candidatesOf(entry, ancestorFolders)) {
-    const hit = scoreField(candidate.field, candidate.text, words);
+    const hit = scoreField(candidate, words);
     if (!hit) continue;
     hits.push(hit);
     hit.words.forEach((word) => covered.add(word));
   }
   if (covered.size < words.length) return null;
-  if (titleHit && titleHit.words.size === words.length) return { titleMatch: true };
-  if (hits.length === 0) return { titleMatch: false };
-  hits.sort((a, b) => b.words.size - a.words.size || b.weight - a.weight);
-  const best = hits[0]!;
-  return { titleMatch: false, reason: { field: best.field, text: best.text, ranges: best.ranges } };
+  const titleRanges = titleHit?.ranges;
+  if (titleHit && titleHit.words.size === words.length) return { titleMatch: true, titleRanges };
+  if (hits.length === 0) return { titleMatch: false, titleRanges };
+  const titleWords = titleHit?.words ?? new Set<number>();
+  hits.sort(
+    (a, b) =>
+      uncoveredByTitle(b, titleWords) - uncoveredByTitle(a, titleWords) ||
+      b.words.size - a.words.size ||
+      b.weight - a.weight,
+  );
+  let best = hits[0]!;
+  if (best.field === "id" || best.field === "ref") {
+    const nicer = hits.find(
+      (hit) =>
+        hit.boxIndex === best.boxIndex &&
+        (hit.field === "boxTitle" || hit.field === "subtitle") &&
+        hit.words.size >= best.words.size,
+    );
+    if (nicer) best = nicer;
+  }
+  return {
+    titleMatch: false,
+    titleRanges,
+    reason: { field: best.field, text: best.text, ranges: best.ranges },
+  };
 }
 
 // ── The index for the live workspace tree ────────────────────────────────────────────────
 
-const indexStore = createStore<{ entries: readonly IndexEntry[]; ready: boolean }>({
+export const indexStore = createStore<{ entries: readonly IndexEntry[]; ready: boolean }>({
   entries: [],
   ready: false,
 });
@@ -370,15 +415,29 @@ export async function refreshSearchIndex(tree: WorkspaceTree): Promise<void> {
   if (building === tree) indexStore.set({ entries, ready: true });
 }
 
+let active = false;
+let lastTree: WorkspaceTree | null = null;
+
+function refreshIfNeeded(): void {
+  const tree = workspaceStore.get().tree;
+  if (!active || !tree || tree === lastTree) return;
+  lastTree = tree;
+  void refreshSearchIndex(tree);
+}
+
+// Live reload replaces the workspace store's `tree` on every disk event (`live-reload.ts`); a
+// module-level subscription (not a component effect keyed on the tree) keeps the index fresh
+// for as long as `activateSearchIndex` has been called at least once.
+workspaceStore.subscribe(refreshIfNeeded);
+
 /**
- * The index for the workspace tree in `workspace-store`, rebuilt whenever the tree changes
- * (live reload refreshes the tree on every file event — `live-reload.ts`). `ready` is `false`
- * until the first build lands.
+ * Start indexing (idempotent, one-shot): `search-store.ts` calls this the moment a query first
+ * becomes non-empty or the "/" shortcut fires, so a session that never searches never reads a
+ * single workspace file. `indexStore` is a plain vanilla store; the shell reads it with
+ * `useSyncExternalStore` (`workspace-tree.tsx`) — this module stays React-free.
  */
-export function useSearchIndex(): { entries: readonly IndexEntry[]; ready: boolean } {
-  const tree = useWorkspace((s) => s.tree);
-  useEffect(() => {
-    if (tree) void refreshSearchIndex(tree);
-  }, [tree]);
-  return useSyncExternalStore(indexStore.subscribe, indexStore.get);
+export function activateSearchIndex(): void {
+  if (active) return;
+  active = true;
+  refreshIfNeeded();
 }

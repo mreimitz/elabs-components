@@ -7,7 +7,7 @@
  * (maintainer feedback 2026-09-27): it opens from the account menu in the sidebar footer and
  * from the palette.
  */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronRight, FolderTree, House, Shapes } from "lucide-react";
 import {
   Collapsible,
@@ -66,11 +66,12 @@ export function RailNav() {
   const [treeOpen, setTreeOpen] = useState(true);
 
   // A search in progress needs the Workspace tree on screen to filter (Radix unmounts a
-  // closed CollapsibleContent) — open it the moment a query starts; never close it back.
+  // closed CollapsibleContent) — derived, not synced: a query forces it open without touching
+  // `treeOpen` itself, so clearing the query falls straight back to whatever the person had it
+  // at, collapsed included (F3/s4; no `useEffect`-to-sync of store state).
   const query = useSearchQuery();
-  useEffect(() => {
-    if (query !== "") setTreeOpen(true);
-  }, [query]);
+  const filtering = query !== "";
+  const open = treeOpen || filtering;
 
   return (
     <SidebarGroup>
@@ -83,7 +84,7 @@ export function RailNav() {
             icon={<House aria-hidden="true" />}
           />
           <WorkspaceSearch />
-          <Collapsible asChild open={treeOpen} onOpenChange={setTreeOpen}>
+          <Collapsible asChild open={open} onOpenChange={setTreeOpen}>
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton
