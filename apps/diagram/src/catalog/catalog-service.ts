@@ -7,70 +7,22 @@
  * the MCP fill loop and corrected by hand in the YAML.
  *
  * Without the dev server (`vite preview`, a static build) there is no `/api/catalog`: the
- * service falls back to the bundled icon index — every icon, no metadata (`live: false`).
+ * service falls back to the bundled catalog (DG-26 1b.3: every icon plus the catalog files as
+ * built, `live: false`).
  */
 import { useSyncExternalStore } from "react";
-import type { ArchNodeType } from "../spec/dialect";
 import { nearestName } from "../spec/dialect/nearest-name";
 import { onServerEvent } from "../workspace/live-reload";
-import index from "../../public/icons/index.json";
+import { BUNDLED_CATALOG, setCatalogEntries } from "./catalog-bundle"; // DG-26
+import type { CatalogEntry } from "./catalog-entry"; // DG-26
+
+export type { CatalogEntry, CatalogPart } from "./catalog-entry"; // DG-26
 
 export const CATALOG_URL = "/api/catalog";
 /** The named server event (`server/workspace-plugin.mjs` `watchCatalog`). */
 export const CATALOG_EVENT = "catalog";
 /** Generic glyphs: in the catalog as icons, never filled or edited. */
 export const LUCIDE_VENDOR = "lucide";
-
-export interface CatalogPart {
-  subtitle?: string;
-  badges?: string[];
-}
-
-export interface CatalogEntry {
-  /** "aws/lambda" (an icon) or "qlik/data-gateway-direct" (a part). */
-  name: string;
-  vendor: string;
-  slug: string;
-  /** Display name: the catalog's `name`, else the index label. */
-  label: string;
-  description?: string;
-  docs?: string;
-  /** The YAML `type:` a node of this entry defaults to (the dialect's own union). */
-  kind?: ArchNodeType;
-  tags: string[];
-  aliases: string[];
-  /** Set on a part: a preset node drawn with `icon`. */
-  part?: CatalogPart;
-  /** The icon name the entry draws with: `name` itself, or a part's `icon:`. */
-  icon: string;
-  /** false until the maintainer checks it (in the YAML); the MCP fill never overwrites true. */
-  curated: boolean;
-  /** The server could not reach `docs` when it was written. */
-  docsUnverified?: boolean;
-  /** From index.json (icons only). */
-  iconPath?: string;
-}
-
-interface IndexEntry {
-  path: string;
-  label: string;
-  pack: string;
-}
-
-/** The fallback: the bundled icon index, no metadata. */
-function indexEntries(): CatalogEntry[] {
-  return Object.entries(index as Record<string, IndexEntry>).map(([name, e]) => ({
-    name,
-    vendor: e.pack,
-    slug: name.slice(e.pack.length + 1),
-    label: e.label,
-    tags: [],
-    aliases: [],
-    icon: name,
-    curated: false,
-    iconPath: e.path,
-  }));
-}
 
 interface CatalogState {
   entries: ReadonlyMap<string, CatalogEntry>;
@@ -106,10 +58,15 @@ async function load(): Promise<void> {
       loaded: true,
       live: true,
     });
+    setCatalogEntries(body.entries); // DG-26 — keeps catalog references live (1b.4)
   } catch {
     // A failed reload keeps the merged catalog it has; only the first load falls back.
     if (!state.live) {
-      set({ entries: new Map(indexEntries().map((e) => [e.name, e])), loaded: true });
+      set({
+        entries: new Map(BUNDLED_CATALOG.entries.map((e) => [e.name, e])),
+        problems: BUNDLED_CATALOG.problems,
+        loaded: true,
+      });
     }
   }
 }
