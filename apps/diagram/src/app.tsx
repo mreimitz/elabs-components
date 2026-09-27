@@ -202,6 +202,9 @@ function SplitWorkspace() {
   // Set once the panel has opened in this edit session: a collapse before that is the
   // panel's first layout (it starts at 0), not the person dragging it shut.
   const opened = useRef(false);
+  // The width when a drag began: a drag to the edge is Done, and the next Edit opens at this
+  // width, not at the minimum the drag passed on its way shut.
+  const dragStartWidth = useRef<number | null>(null);
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -237,6 +240,7 @@ function SplitWorkspace() {
         onCollapse={() => {
           if (!opened.current) return;
           opened.current = false;
+          if (dragStartWidth.current !== null) modeActions.setEditorWidth(dragStartWidth.current);
           modeActions.setMode("view");
         }}
         onResize={(size) => {
@@ -249,7 +253,10 @@ function SplitWorkspace() {
         <ResizableHandle
           withHandle
           aria-label={APP_LABELS.resize}
-          onDragging={setDragging}
+          onDragging={(isDragging) => {
+            dragStartWidth.current = isDragging ? modeStore.get().editorWidth : null;
+            setDragging(isDragging);
+          }}
           // P4: library gap — the handle's Enter key (react-resizable-panels 2.1.9, under ui
           // `ResizableHandle`) collapses/expands the editor through a bare state setter that
           // skips `onCollapse`/`onExpand`, so the mode would stay out of step. Take Enter
