@@ -370,12 +370,13 @@ P4 is one track with the flow review’s, not a second one. The table puts every
 
 ## 6. Open points
 
-1. **Maintainer decision.** P4 opens only on the maintainer’s word (DG-19 acceptance). The rows are a proposal; merges, renames and the wave split are his to change.
+1. **Maintainer decision.** P4 opens only on the maintainer’s word (DG-19 acceptance). The rows are a proposal; merges, renames and the wave split are the maintainer’s to change.
 2. **Product calls held from DG-13:** whether `theme:` in a document applies to the canvas (H-112), and whether a sidebar tooltip shows for truncated labels (H-25).
 3. **Plan §4’s sample** names “Qlik Data Gateway – Direct Access” (plan line 107), where DG-13’s judgement call 1 found the story needs Data Movement. The plan is not edited here; the example file is correct.
 4. **Browsers.** DG-17 §7: export was checked in Chromium only. The export acceptance (§3.6) should add Firefox and Safari.
 5. **H-58** (the 8 px TB residual) may already be gone; it needs a re-measure on the library fit, not a fix.
 6. **H-54** is an upstream typing issue in `@xyflow/system`; brand-ui has nothing to change unless flow wraps `fitBounds`.
+7. **Edge labels are not fit obstacles.** The app’s panel-aware fit (`chrome/fit-padding.ts`, pass 2) keeps leaf nodes and zone header bands clear of panels, not edge labels. At 1920×1080 with the inspector and the legend both open, the “SAML SSO (console)” label on the ClickHouse example runs under the legend (wave-3 step-player fix lane, 2026-09-27). H-56’s `avoid: "panels"` should count edge-label boxes as obstacles; until then the app accepts it.
 
 ## Appendix A: `// P4: library gap` comments → rows
 
