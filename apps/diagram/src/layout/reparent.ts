@@ -77,8 +77,9 @@ const sizeOf = (node: Node) => ({
 // on that header. Pushing the neighbour would move it on the canvas but not in the text (or
 // write more than the one dropped node). So the drop is bounded instead: when the zone, grown
 // round the node, would cover a node or zone it did not already cover, the node goes to the
-// nearest spot (from where it was dropped) where it overlaps none of the zone's children and
-// the grown zone — and every zone around it — covers nothing new. Still one `position:`.
+// nearest spot (from where it was dropped) where the grown zone — and every zone around it —
+// covers nothing new, clear of the zone's own children where there is room. Still one
+// `position:` plus `parent:`.
 
 /** Clearance kept between a grown zone and its neighbours, and between siblings, in flow px. */
 const CLEARANCE = ZONE_PADDING;
@@ -108,9 +109,10 @@ function boxesOf(nodes: readonly Node[]): Map<string, Box> {
 }
 
 /**
- * What the zones around `zone` (it and its ancestors) cover once fitted: "zone|other" for
- * each node or zone a fitted box meets that is not in its own family (itself, an ancestor, a
- * descendant).
+ * What the zones around `zone` (it and its ancestors) cover once fitted, for each node or zone
+ * outside a zone's own family (itself, an ancestor, a descendant): "near zone|other" when the
+ * fitted box comes within `CLEARANCE` of it, "over zone|other" when it overlaps it. Two keys,
+ * so a zone that already sat close to a neighbour may still not grow INTO it.
  */
 function coverage(nodes: readonly Node[], zone: string): Set<string> {
   const fitted = fitZones([...nodes]);
@@ -127,7 +129,9 @@ function coverage(nodes: readonly Node[], zone: string): Set<string> {
     if (!box) continue;
     for (const [other, otherBox] of boxes) {
       const family = other === z || chainOf(other).includes(z) || chainOf(z).includes(other);
-      if (!family && overlaps(box, otherBox, CLEARANCE)) out.add(`${z}|${other}`);
+      if (family) continue;
+      if (overlaps(box, otherBox, CLEARANCE)) out.add(`near ${z}|${other}`);
+      if (overlaps(box, otherBox, 0)) out.add(`over ${z}|${other}`);
     }
   }
   return out;
@@ -161,9 +165,11 @@ function opened(nodes: readonly Node[], zone: string): Node[] {
 
 /**
  * Where `id` goes in `zone` (relative to it): `wanted` when the zone, grown round it, covers
- * nothing new; otherwise the nearest spot, on an 8 px grid inside the zone or up to one node
- * size beyond its right and bottom edges, where the node is clear of the zone's children and
- * nothing new is covered. No such spot (a boxed-in zone): `wanted`, as before.
+ * nothing new. Otherwise the nearest spot to `wanted` on an 8 px grid — below the header and
+ * right of the padding (so the zone itself never moves), out to the drop or one column/row past
+ * the children — taking the first kind that exists: clear of the zone's children with nothing
+ * new within `CLEARANCE`; clear of the children and over nothing new; over nothing new. None
+ * (nothing fits anywhere): `wanted`, as before.
  */
 export function boundedDrop(
   nodes: readonly Node[],
@@ -177,8 +183,17 @@ export function boundedDrop(
   const before = coverage(base, zone);
   const place = (at: Point) =>
     base.map((other) => (other.id === id ? { ...other, parentId: zone, position: at } : other));
-  const coversNew = (at: Point) => [...coverage(place(at), zone)].some((hit) => !before.has(hit));
-  if (!coversNew(wanted)) return wanted;
+  const hits = new Map<Point, string[]>();
+  const fresh = (at: Point) => {
+    let out = hits.get(at);
+    if (!out) {
+      out = [...coverage(place(at), zone)].filter((hit) => !before.has(hit));
+      hits.set(at, out);
+    }
+    return out;
+  };
+  const growsInto = (at: Point) => fresh(at).some((hit) => hit.startsWith("over "));
+  if (fresh(wanted).length === 0) return wanted;
 
   const { width, height } = sizeOf(node);
   const kids = base
@@ -208,7 +223,16 @@ export function boundedDrop(
   );
   const clear = (at: Point) =>
     !kids.some((kid) => overlaps({ ...at, width, height }, kid, CLEARANCE));
-  return spots.find((at) => clear(at) && !coversNew(at)) ?? wanted;
+  return (
+    // Clear of its siblings, nothing new within reach of the grown zones…
+    spots.find((at) => clear(at) && fresh(at).length === 0) ??
+    // …or closer than the clearance, but over nothing…
+    spots.find((at) => clear(at) && !growsInto(at)) ??
+    // …or, in a zone boxed in on every side, over one of its new siblings rather than the
+    // zone over a neighbour (it can be moved in the zone; the neighbour's header stays whole).
+    spots.find((at) => !growsInto(at)) ??
+    wanted
+  );
 }
 
 /**
