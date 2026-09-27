@@ -29,6 +29,24 @@
  * generated list (a mode switch the shape needs — `variant="calendar"`, `offset=
  * "wiggle"` — or a clarifying aside). It is never a prop the generated half omits by
  * mistake: every real prop the row wants to show lives in `keyPropsFor`'s output.
+ *
+ * Fix round 1 (review): the Shape / Avoid-when cells are now ALSO generated —
+ * `dataShapeFor`/`avoidWhenFor` read the same `@dataShape`/`@avoidWhen` prose
+ * `chart_for` uses, so a hand sentence can no longer say "≤ 5 wedges" while the
+ * component's own docblock says "about 6 slices". A container with more than one
+ * `@dataShape` tag (`BarChart`: bar vs diverging-bar; `HeatmapChart`: matrix vs
+ * calendar) picks its row's tag by `shapeIndex` (declaration order; verified by
+ * hand against the snapshot) — `avoidWhen` has only one tag per container, so
+ * both of that container's rows show the same text. Every row in both catalogs
+ * below has a real `@dataShape`/`@avoidWhen` source; no row needed a hand
+ * override, so no override field exists.
+ *
+ * A `{ field }` target — a key INSIDE each data row, not a container prop — used
+ * to be dropped from `keyPropsFor`'s output entirely; it now prints as
+ * `<dataProp>[].<field>` (`data[].label`, `data[].value`, …), the item's own
+ * shape, generated instead of a hand-typed type name that could rename out from
+ * under this doc. `dataProp` is `contract.dataProp` (defaults to `"data"`) — every
+ * `{ field }` target in the package today binds against the default-named prop.
  */
 import { loadDefinitionsSnapshot } from "./core.mjs";
 
@@ -44,12 +62,18 @@ function requiredProps(def) {
     .map(([name]) => name);
 }
 
-/** One target's prop label — a container prop, a child part's, or `null` for a data-row field. */
-function targetLabel(target) {
+/**
+ * One target's prop label — a container prop, a child part's (`<Part prop>`), or a
+ * data-row field path (`data[].label`) for a `{ field }` target.
+ * @param {string} dataProp  the container's array prop name (`contract.dataProp`, "data"
+ *   when the definition doesn't say)
+ */
+function targetLabel(target, dataProp) {
   const from = target?.from ?? {};
   if (from.part && from.prop) return `<${from.part} ${from.prop}>`;
   if (from.prop) return from.prop;
-  return null; // { field }: a key inside each data row, not a prop of the container
+  if (from.field) return `${dataProp}[].${from.field}`;
+  return null;
 }
 
 /**
@@ -63,9 +87,10 @@ function targetLabel(target) {
 export function keyPropsFor(snapshot, id) {
   const def = snapshot[CHARTS_PKG]?.[id];
   if (!def) return null;
+  const dataProp = def.contract?.dataProp ?? "data";
   const labels = [...requiredProps(def)];
   for (const target of def.targets ?? []) {
-    const label = targetLabel(target);
+    const label = targetLabel(target, dataProp);
     if (label && !labels.includes(label)) labels.push(label);
   }
   return labels.map((label) => `\`${label}\``).join(", ");
@@ -78,6 +103,35 @@ function keyPropsCell(snapshot, id, extra) {
   return extra ? `${generated} — ${extra}` : generated;
 }
 
+/** Sentence-cases the first letter — `@dataShape`/`@avoidWhen` JSDoc prose is lowercase. */
+function capitalize(s) {
+  return s.length ? s[0].toUpperCase() + s.slice(1) : s;
+}
+
+/**
+ * The Shape column text for one table row — the container's own `@dataShape` prose,
+ * sentence-cased. `index` picks which tag when a container declares more than one
+ * (declaration order; see the module docblock). Throws when the container has no tag at
+ * that index — a stale catalog row, not something to print silently wrong.
+ */
+function dataShapeFor(snapshot, id, index = 0) {
+  const shapes = snapshot[CHARTS_PKG]?.[id]?.prose?.dataShapes;
+  if (!shapes?.[index])
+    throw new Error(`chart-selection-docs: no @dataShape[${index}] for "${id}"`);
+  return capitalize(shapes[index]);
+}
+
+/**
+ * The Avoid-when column text — the container's own `@avoidWhen` prose, sentence-cased.
+ * One tag per container: a container with two table rows (`BarChart`, `HeatmapChart`)
+ * shows the SAME text in both, since there is only one `@avoidWhen` tag to read.
+ */
+function avoidWhenFor(snapshot, id) {
+  const text = snapshot[CHARTS_PKG]?.[id]?.prose?.avoidWhen;
+  if (!text) throw new Error(`chart-selection-docs: no @avoidWhen for "${id}"`);
+  return capitalize(text);
+}
+
 /**
  * The "Inferred (via `AutoChart` / `ChartType`)" table, one row per `ChartType` —
  * two containers (`HeatmapChart`, `BarChart`) serve two rows each, so the table has
@@ -85,134 +139,104 @@ function keyPropsCell(snapshot, id, extra) {
  */
 const INFERRED_ROWS = [
   {
-    shape: "One or more measures over time, continuous",
     chartType: "`line`",
     id: "LineChart",
     alternatives: "`area` (below), `scatter` if sparse",
-    avoidWhen: "> ~8 series (illegible); use `stream`/`ComposedChart` instead",
   },
   {
-    shape: "A breakdown of a TOTAL over time (≥ 2 series that add up)",
     chartType: "`area` / `stream`",
     id: "AreaChart",
     extra: '`offset="wiggle"` for `stream`, `stacked` otherwise',
     alternatives: "`line` (trend only), `bar` (few points)",
-    avoidWhen: "One series, or series that don't add up — use `line`; < ~4 points — use `bar`",
   },
   {
-    shape: "Categorical comparison, one or more measures",
     chartType: "`bar`",
     id: "BarChart",
     extra: "`orientation`, `stacked`",
     alternatives: "`diverging-bar` (signed), `unit` (parts)",
-    avoidWhen: "A time axis with many points — use `line`/`area`",
   },
   {
-    shape: "Parts of a whole, ≤ 5 wedges after `groupSmall`",
     chartType: "`pie`",
     id: "PieChart",
     extra: "`donut` via `innerRadius`, `groupSmall`, `half`",
     alternatives: "`unit` waffle (more legible at scale), `bar`",
-    avoidWhen: "More than 5 wedges and no `groupSmall` — inference falls through to `bar`",
   },
   {
-    shape: "Two continuous measures, correlation / distribution",
     chartType: "`scatter`",
     id: "ScatterChart",
     alternatives: "`bump` (if one axis is rank over time)",
-    avoidWhen: "One axis is categorical — use `bar`/`dumbbell`",
   },
   {
-    shape: "Multiple measures per entity, compared as a shape",
     chartType: "`radar`",
     id: "RadarChart",
     alternatives: "small-multiple `bar`",
-    avoidWhen: "> ~8 spokes (radar can't scale) or absolute magnitude matters more than shape",
   },
   {
-    shape: "A sequential process with drop-off between stages",
     chartType: "`funnel`",
     id: "FunnelChart",
     extra: "`orientation`",
     alternatives: "`bar` (stage totals, no flow read)",
-    avoidWhen: "Stages aren't sequential / no drop-off story",
   },
   {
-    shape: "OHLC financial series over time",
     chartType: "`candlestick`",
     id: "CandlestickChart",
     alternatives: "`line` (close only)",
-    avoidWhen: "Data isn't OHLC-shaped",
   },
   {
-    shape: "Two categorical axes (e.g. **weekday × hour**), one value per cell",
     chartType: "`heatmap`",
     id: "HeatmapChart",
     extra: '`variant="matrix"`, `mode="cell"\\|"dot"`',
     alternatives: "`unit` rows (per-category tally)",
-    avoidWhen: "> ~10 columns of continuous data, or exact values matter more than pattern",
   },
   {
-    shape: "One measure per calendar day over ≥ a few months",
     chartType: "`calendar`",
     id: "HeatmapChart",
+    // The 2nd `@dataShape` tag (declaration order) — the calendar-variant use case.
+    shapeIndex: 1,
     extra: '`variant="calendar"` (`mode` defaults to `"dot"`)',
     alternatives: "`heatmap` matrix (if not date-shaped)",
-    avoidWhen: "< ~2 months of days (too sparse to read as a calendar)",
   },
   {
-    shape: "A running total with signed steps to/from it",
     chartType: "`waterfall`",
     id: "WaterfallChart",
     extra: '`kind: "step"\\|"total"`',
     alternatives: "`diverging-bar` (no running total)",
-    avoidWhen: "No meaningful running total — use `diverging-bar`",
   },
   {
-    shape: "Before/after or range per category",
     chartType: "`dumbbell`",
     id: "DumbbellChart",
     alternatives: "`bar` (single value), `waterfall`",
-    avoidWhen: "More than 2 points per category — use small-multiple `line`",
   },
   {
-    shape: "Parts of a whole as discrete UNIT counts (not a percentage)",
     chartType: "`unit`",
     id: "UnitChart",
     extra: '`layout="waffle"`, marks = `Math.round` units of 100',
     alternatives: "`pie`, `bar`",
-    avoidWhen: "Exact per-unit counts don't matter — `pie`/`bar` read faster",
   },
   {
-    shape: "A nested hierarchy sized by a measure",
     chartType: "`treemap`",
     id: "TreemapChart",
     extra: "a HIERARCHY (`TreemapNode`), not flat rows",
     alternatives: "`NetworkChart` (relations, not size)",
-    avoidWhen: "The hierarchy has < 2 levels — flat `bar` is clearer",
   },
   {
-    shape: "Distribution of one measure, optionally grouped",
     chartType: "`histogram` / `box` / `strip`",
     id: "DistributionChart",
     alternatives: "each other (see `kind`)",
-    avoidWhen: "A single summary number would do — use a `MetricCard`",
   },
   {
-    shape: "Rank of entities over ordered periods",
     chartType: "`bump`",
     id: "BumpChart",
     extra: "or `rankKey`",
     alternatives: "`line` (if magnitude, not rank, is the point)",
-    avoidWhen: "Only 2 periods — use `dumbbell`",
   },
   {
-    shape: "A single signed measure around a meaningful zero",
     chartType: "`diverging-bar`",
     id: "BarChart",
+    // The 2nd `@dataShape` tag (declaration order) — the diverging-bar use case.
+    shapeIndex: 1,
     extra: "`Bar labels zeroLine`",
     alternatives: "`waterfall` (if it accumulates)",
-    avoidWhen: "The zero baseline isn't meaningful — use `bar`",
   },
 ];
 
@@ -222,62 +246,45 @@ const INFERRED_ROWS = [
  */
 const MANUAL_ROWS = [
   {
-    shape: "Donut-only ring focused on ONE proportion (not a full pie breakdown)",
     id: "RingChart",
-    avoidWhen: "Multiple categories matter — use `pie`/`unit`",
   },
   {
-    shape: "Mixed marks on one shared axis (bars + a line target, etc.)",
     id: "ComposedChart",
-    avoidWhen: "A single mark type would do — use the plain container",
   },
   {
-    shape: "A metric updating in real time, streaming in",
     id: "LiveLineChart",
     extra: "appended over time, retains a rolling window",
-    avoidWhen: "The series is static/historical — use `LineChart`",
   },
   {
-    shape: "A measure by geographic region",
     id: "ChoroplethChart",
     extra: "a GeoJSON `FeatureCollection`",
-    avoidWhen: "No real geography — use `bar`",
   },
   {
-    shape: "A single value against a target/threshold band",
     id: "Gauge",
     extra: "`thresholds` for the bands",
-    avoidWhen: "Trend over time matters more than the instant — use `line`",
   },
   {
-    shape: "A flow between named nodes (source → target, weighted)",
     id: "SankeyChart",
     extra: "shaped `{ nodes, links }`, weighted links between named nodes",
-    avoidWhen: "The nodes have no real flow between them — use `NetworkChart`",
   },
   {
-    shape: "Many numeric dimensions compared across entities at once",
     id: "ParallelCoordinatesChart",
-    avoidWhen: "> ~2 entities need per-entity detail — use small-multiple `radar`",
   },
   {
-    shape:
-      "A hierarchy read as a branching tree (org chart, KPI driver tree), not sized rectangles",
     id: "TreeChart",
     extra:
       "branches open/close by default (`defaultExpandedDepth`, `expandedIds`, " +
       "`collapsible={false}` for static); `orientation`; `renderNode` cards",
-    avoidWhen: "Size, not structure, is the point — use `treemap`",
   },
   {
-    shape: "Arbitrary node/edge relationships, no hierarchy",
     id: "NetworkChart",
-    avoidWhen: "The relationship IS a hierarchy — use `TreeChart`/`treemap`",
   },
   {
-    shape: "Tasks/phases across a timeline",
     id: "Gantt",
-    avoidWhen: "Not really scheduled work — use `dumbbell` (a single before/after)",
+    // Not a required prop or a target (no field to generate this from) — a real,
+    // verified field name (`defaultViewMode`), not the stale `viewMode` the old hand
+    // table named (RM-196 renamed it; `dependencies` never existed — F03).
+    extra: "`defaultViewMode`",
   },
 ];
 
@@ -291,11 +298,11 @@ function renderTable(headers, rows) {
 export function renderInferredTable(root) {
   const snapshot = loadDefinitionsSnapshot(root);
   const rows = INFERRED_ROWS.map((r) => [
-    r.shape,
+    dataShapeFor(snapshot, r.id, r.shapeIndex ?? 0),
     r.chartType,
     `\`${r.id}\` (${keyPropsCell(snapshot, r.id, r.extra)})`,
     r.alternatives,
-    r.avoidWhen,
+    avoidWhenFor(snapshot, r.id),
   ]);
   return renderTable(
     ["Shape", "`ChartType`", "Container → key props", "Alternatives", "Avoid when"],
@@ -307,10 +314,10 @@ export function renderInferredTable(root) {
 export function renderManualSelectTable(root) {
   const snapshot = loadDefinitionsSnapshot(root);
   const rows = MANUAL_ROWS.map((r) => [
-    r.shape,
+    dataShapeFor(snapshot, r.id, r.shapeIndex ?? 0),
     `\`${r.id}\``,
     keyPropsCell(snapshot, r.id, r.extra),
-    r.avoidWhen,
+    avoidWhenFor(snapshot, r.id),
   ]);
   return renderTable(["Shape", "Container", "Key props", "Avoid when"], rows);
 }
@@ -319,6 +326,21 @@ export function renderManualSelectTable(root) {
 export function chartContainerCount(root) {
   const snapshot = loadDefinitionsSnapshot(root);
   return Object.values(snapshot[CHARTS_PKG] ?? {}).filter((def) => def.kind === "chart").length;
+}
+
+/** Surface-kind definitions (`Gauge`, `Sparkline`, `ChartCard`, `MetricGrid`) — chart-adjacent,
+ *  not picked by data shape, so they stay out of the two data-shape tables. */
+export function chartSurfaceCount(root) {
+  const snapshot = loadDefinitionsSnapshot(root);
+  return Object.values(snapshot[CHARTS_PKG] ?? {}).filter((def) => def.kind === "surface").length;
+}
+
+/** Distinct container ids appearing in either data-shape table (F09 review: this table
+ *  coverage count, "25", is a different scope than the registry's total chart count, "26" —
+ *  two containers with `@dataShape` tags, `BulletChart` and `DensityScatterChart`, don't have
+ *  a table row yet; RM Outcome tracks adding them). */
+export function tableCoverageCount() {
+  return new Set([...INFERRED_ROWS, ...MANUAL_ROWS].map((r) => r.id)).size;
 }
 
 /**
@@ -333,6 +355,46 @@ export function renderChartCountRow(root) {
   const count = chartContainerCount(root);
   return (
     `**Chart count:** \`@elabs-ai/components-charts\` ships ${count} chart types today ` +
-    "— see the Charts section below."
+    "— see [chart-selection.md](chart-selection.md) for the full data-shape breakdown."
+  );
+}
+
+/**
+ * `chart-selection.md`'s own opening count sentence (review F09: "ships 25 chart
+ * containers" was hand-typed prose, not generated, so it could — and did — disagree with
+ * `components.md`'s registry-derived count). Two DIFFERENT scopes, both named explicitly
+ * so neither reads as a correction of the other: the REGISTRY total (every `kind: "chart"`
+ * definition, `chartContainerCount`) plus its `kind: "surface"` chart-adjacent siblings, and
+ * separately the TABLE coverage below (`tableCoverageCount` — fewer, because two registry
+ * containers don't have a row yet).
+ */
+export function renderChartCountSummary(root) {
+  const chartCount = chartContainerCount(root);
+  const surfaceCount = chartSurfaceCount(root);
+  const tableCount = tableCoverageCount();
+  return (
+    `\`@elabs-ai/components-charts\` ships ${chartCount} chart containers (registry count) ` +
+    `plus ${surfaceCount} chart-adjacent surfaces (\`Gauge\`, \`Sparkline\`, \`ChartCard\`, ` +
+    `\`MetricGrid\`) picked directly, not by data shape. ${tableCount} of the ${chartCount} ` +
+    "chart containers have a row in the two tables below; the rest are a tracked follow-up " +
+    "(see this file's own reference notes)."
+  );
+}
+
+/**
+ * The "Data-shape table" section intro (review F09) — the `AutoChart`-inferred / manual-select
+ * split, sized from the SAME two row catalogs the tables below render from, so it can't drift
+ * from them the way independent hand-typed "Fifteen" / "ten" prose could.
+ */
+export function renderTableSplitSummary() {
+  const inferredCount = new Set(INFERRED_ROWS.map((r) => r.id)).size;
+  const manualCount = MANUAL_ROWS.length;
+  return (
+    `${inferredCount} of the containers below are reachable through \`AutoChart\`'s shape ` +
+    "inference — give `AutoChart` a `ChartSpec` and it picks one of these `ChartType` values " +
+    `for you, in a fixed priority order. The other ${manualCount} (marked **manual-select** ` +
+    "below) read shapes a flat `{ x, series[] }` spec cannot express without ambiguity — a " +
+    "node/link pair, a per-row dimension list, a nested hierarchy — so `AutoChart` never " +
+    "guesses at them; you reach for the container directly."
   );
 }

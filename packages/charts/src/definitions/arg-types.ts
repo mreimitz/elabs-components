@@ -16,6 +16,12 @@
  * typing accepts this shape wherever a real `Meta<typeof Component>["argTypes"]` value is
  * expected, the same way the hand-written `argTypes` blocks already in this package's stories
  * (e.g. `gauge.stories.tsx`'s deprecated-prop note) do.
+ *
+ * Fix round 1 (review, F03): `controlFor` omits `control` entirely (never sets it to `false`)
+ * for `enum`/`union`/`responsive` fields, so Storybook's own type-based inference stands —
+ * a fixed mapping either picked the wrong widget (`union`/`responsive` lost an inferred
+ * object control to a blanket `false`) or overrode a better one (`enum` forced `select` over
+ * an inferred `radio` for a small literal union). See `controlFor`'s own docblock.
  */
 import { toSnapshot, type AnyComponentDefinition } from "@elabs-ai/components-ui/definition";
 
@@ -90,9 +96,20 @@ function defaultSummaryFor(f: SnapshotField): string | undefined {
   return JSON.stringify(f.default);
 }
 
-/** The interactive `control`, by field kind — `false` for a shape a generic control can't edit
- *  usefully (`responsive`, `union`) or a deprecated field (still documented, never editable). */
-function controlFor(f: SnapshotField): ArgTypeEntry["control"] {
+/**
+ * The interactive `control`, by field kind. `undefined` (the key is omitted from the entry
+ * entirely, never set to `false`) for `enum`/`union`/`responsive` — review F03: a fixed
+ * mapping either picked the wrong widget outright (`union`/`responsive`, e.g. `plotHeight`,
+ * `margin`, `valueFormat`, `labels`, lost their inferred object control to a blanket
+ * `false`) or overrode a better one Storybook's own type-based docgen already infers from
+ * the component's real TS prop type (`enum`, e.g. `orientation`/`connectors`/`dataFormat`/
+ * `sort` — radio for a small literal union, select for a larger one — turned into a flat
+ * `select` here). Omitting the key lets that inference stand; `options` is still populated
+ * below for an `enum` field so the control (whichever Storybook infers) has values to offer.
+ * `false` stays explicit only for a deprecated field (`entryFor`) and for any other kind this
+ * package has no described shape for.
+ */
+function controlFor(f: SnapshotField): ArgTypeEntry["control"] | undefined {
   switch (f.kind) {
     case "string":
       return "text";
@@ -103,11 +120,13 @@ function controlFor(f: SnapshotField): ArgTypeEntry["control"] {
     case "number":
     case "integer":
       return { type: "number", min: f.min, max: f.max, step: f.kind === "integer" ? 1 : undefined };
-    case "enum":
-      return { type: "select" };
     case "object":
     case "array":
       return "object";
+    case "enum":
+    case "union":
+    case "responsive":
+      return undefined;
     default:
       return false;
   }
@@ -126,9 +145,12 @@ function entryFor(f: SnapshotField): ArgTypeEntry {
       table: { category: "Deprecated" },
     };
   }
+  // A `control` of `undefined` is omitted, not set — an explicit `control: undefined` key
+  // would still win the merge against Storybook's own inferred argType (F03).
+  const control = controlFor(f);
   return {
     description: f.required ? `Required. ${f.description ?? ""}`.trim() : f.description,
-    control: controlFor(f),
+    ...(control !== undefined ? { control } : {}),
     options: f.kind === "enum" ? f.values : undefined,
     table: {
       category: categoryFor(f.group),

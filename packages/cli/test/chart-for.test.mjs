@@ -189,6 +189,25 @@ test("the committed manifest answers the chart-selection acceptance example", ()
   assert.match(got[1].matchedShape, /layout="rows"/);
 });
 
+test("HeatmapChart's candidate targets deep-equal the manifest's own targets, and binds: prints prop names (F04)", () => {
+  const manifest = JSON.parse(readFileSync(join(repoRoot, "brand-ui.manifest.json"), "utf8"));
+  const heatmap = manifest.packages["@elabs-ai/components-charts"].intent.HeatmapChart;
+  const got = matchChartFor(manifest, "weekday by hour ticket volume");
+  const candidate = got.find((c) => c.name === "HeatmapChart");
+  assert.ok(candidate, "HeatmapChart did not rank for its own acceptance query");
+  // Not mere presence — the candidate's targets are the SAME objects/values the manifest
+  // declares, not ids-only or a re-derived shape a mutation could quietly drift from.
+  assert.deepEqual(candidate.targets, heatmap.targets);
+
+  const text = renderChartForText("weekday by hour ticket volume", got);
+  // Pinned exact so a mutation that prints a target's `id` instead of its `label` (or drops
+  // the prop name) fails: `xDataKey`/`yDataKey`/`valueKey` are RM-196's renamed props.
+  assert.match(
+    text,
+    /binds: Column → xDataKey \(dimension\), Row → yDataKey \(dimension\), Value → valueKey \(measure\)/,
+  );
+});
+
 test("every chart container in the shipped manifest declares a data shape", () => {
   const manifest = JSON.parse(readFileSync(join(repoRoot, "brand-ui.manifest.json"), "utf8"));
   const charts = manifest.packages["@elabs-ai/components-charts"];

@@ -301,6 +301,23 @@ export function deviceHints(query) {
   );
 }
 
+/**
+ * One target's prop text for the `binds:` line — a container prop, a child part's
+ * (`Part.prop`), or a data-row field path (`data[].label`) for a `{ field }` target
+ * (review F07). Every `{ field }` target in the package today binds against the
+ * default-named `data` array prop; this module reads no `contract.dataProp` because it
+ * takes no imports at all (see the module docblock) — a future family with a
+ * differently-named array prop and `{ field }` targets would need that threaded through
+ * the manifest first.
+ */
+function targetPropText(target) {
+  const from = target?.from ?? {};
+  if (from.part && from.prop) return `${from.part}.${from.prop}`;
+  if (from.prop) return from.prop;
+  if (from.field) return `data[].${from.field}`;
+  return null;
+}
+
 /** Render {@link matchChartFor}'s output as the compact text both the CLI and the MCP tool print. */
 export function renderChartForText(query, candidates) {
   if (!candidates.length) {
@@ -316,7 +333,14 @@ export function renderChartForText(query, candidates) {
     lines.push(`  ${i + 1}. ${c.name}  (${c.pkg}, score ${c.score})`);
     lines.push(`     shape: ${c.matchedShape}`);
     if (c.targets?.length)
-      lines.push(`     binds: ${c.targets.map((t) => `${t.label} (${t.role})`).join(", ")}`);
+      lines.push(
+        `     binds: ${c.targets
+          .map((t) => {
+            const prop = targetPropText(t);
+            return prop ? `${t.label} → ${prop} (${t.role})` : `${t.label} (${t.role})`;
+          })
+          .join(", ")}`,
+      );
     if (c.avoidWhen) lines.push(`     avoid when: ${c.avoidWhen}`);
   });
   const hints = deviceHints(query);

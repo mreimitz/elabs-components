@@ -40,6 +40,8 @@ import {
   renderInferredTable,
   renderManualSelectTable,
   renderChartCountRow,
+  renderChartCountSummary,
+  renderTableSplitSummary,
 } from "./chart-selection-docs.mjs";
 
 /**
@@ -152,23 +154,29 @@ export function genTargets(root, manifest) {
     },
   ];
 
-  // The chart-selection / component-count regions (RM-199, ADR 0042 §10) read the
-  // committed definitions snapshot directly (chart-selection-docs.mjs), not the
-  // manifest passed in above — so they only apply where that snapshot exists. A
-  // hermetic test root (gen.test.mjs's minimal fixture) has no charts package and
-  // no snapshot; skipping these two targets there is correct, not a shortcut — the
-  // real repo always has the snapshot by the time `pnpm gen` runs (gen-definitions
-  // is an earlier step), so this never skips anything in production.
+  // The chart-selection / component-count regions read the committed definitions
+  // snapshot directly (chart-selection-docs.mjs), not the manifest passed in above
+  // — so they only apply where that snapshot exists. A hermetic test root
+  // (gen.test.mjs's minimal fixture) has no charts package and no snapshot;
+  // skipping these two targets there is correct, not a shortcut — the real repo
+  // always has the snapshot by the time `pnpm gen` runs (gen-definitions is an
+  // earlier step). Logged (review F10) rather than silent, so a real repo missing
+  // the snapshot for some other reason — a fresh clone before the first
+  // `gen-definitions` run — sees why two fewer targets ran, not nothing.
   if (existsSync(join(root, DEFINITIONS_SNAPSHOT_PATH))) {
     targets.push(
       {
         // The chart-selection reference's two data-shape tables: the "Container →
-        // key props" / "Key props" cell is generated from each chart's own
-        // definition, so it can't again claim a prop the container doesn't have
-        // (2026-09-25 review F03). The Shape/ChartType/Alternatives/Avoid-when
-        // prose stays hand-authored inside chart-selection-docs.mjs's row catalogs.
+        // key props" / "Key props" cell, the Shape and Avoid-when text, and the
+        // opening count summaries are all generated from each chart's own
+        // definition, so none of them can claim a prop, a shape sentence or a
+        // count the definitions disagree with. Alternatives has no snapshot
+        // source (definitions carry no "which container instead" data) and stays
+        // hand-authored in chart-selection-docs.mjs's row catalogs.
         file: join(root, "skills/brand-ui/reference/chart-selection.md"),
         regions: [
+          { name: "count-summary", render: () => renderChartCountSummary(root) },
+          { name: "split-summary", render: () => renderTableSplitSummary() },
           { name: "inferred-table", render: () => renderInferredTable(root) },
           { name: "manual-table", render: () => renderManualSelectTable(root) },
         ],
@@ -180,6 +188,11 @@ export function genTargets(root, manifest) {
         file: join(root, "skills/brand-ui/reference/components.md"),
         regions: [{ name: "chart-count", render: () => renderChartCountRow(root) }],
       },
+    );
+  } else {
+    console.warn(
+      `gen: skipping the chart-selection.md/components.md chart regions — no ` +
+        `${DEFINITIONS_SNAPSHOT_PATH} at this root (run gen-definitions first).`,
     );
   }
 

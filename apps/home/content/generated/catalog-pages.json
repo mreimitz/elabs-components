@@ -17386,7 +17386,7 @@
       "targets": [
         {
           "from": {
-            "prop": "x"
+            "prop": "xDataKey"
           },
           "id": "x",
           "label": "Column",
@@ -17396,7 +17396,7 @@
         },
         {
           "from": {
-            "prop": "y"
+            "prop": "yDataKey"
           },
           "id": "y",
           "label": "Row",
