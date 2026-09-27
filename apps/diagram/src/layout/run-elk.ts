@@ -115,8 +115,23 @@ function portPoint(side: HandleSide, width: number, height: number) {
  * ones. Node coordinates stay parent-relative (`shapeCoords` untouched) — `layoutFlowElk`
  * reads them that way. A `lifted` end (re-targeted to a separate zone) gets no port: ELK
  * routes it to that zone's border, and the edge joins the rest (`route.via`).
+ *
+ * Wave-3 review m4: `turned` holds the zones ELK lays out inside a `DOWN` run of their parent
+ * (`INCLUDE_CHILDREN`, not a separate zone). elkjs 0.12 applies such a compound node's
+ * `elk.nodeSize.minimum` in the run's rotated frame — the header width came back as the
+ * zone's HEIGHT and the width fell to the children's (TB lakehouse: Snowflake 160 × 372,
+ * Databricks 160 × 274 for a 272/274 px header). DG-06's auto-fit then widened each zone to
+ * its header in place, over its neighbour. Those zones get the minimum as `(height, width)`,
+ * which ELK turns back into the intended box (checked in isolation; DG-11-layout.md).
+ * P4: library gap — `layoutFlowElk` has no group minimum size; a `groups[].minSize` must
+ * do this swap for a `DOWN`/`UP` graph.
  */
-function attachRouting(graph: FlowElkGraph, routing: ElkRouting, lifted: Lifted) {
+function attachRouting(
+  graph: FlowElkGraph,
+  routing: ElkRouting,
+  lifted: Lifted,
+  turned: ReadonlySet<string>,
+) {
   const root = graph as ElkRoutedNode;
   root.layoutOptions = { ...root.layoutOptions, "org.eclipse.elk.json.edgeCoords": "ROOT" };
   const byId = new Map<string, ElkRoutedNode>();
@@ -134,7 +149,9 @@ function attachRouting(graph: FlowElkGraph, routing: ElkRouting, lifted: Lifted)
     zone.layoutOptions = {
       ...zone.layoutOptions,
       "elk.nodeSize.constraints": "[MINIMUM_SIZE]",
-      "elk.nodeSize.minimum": `(${width}, ${ZONE_MIN_HEIGHT})`,
+      "elk.nodeSize.minimum": turned.has(id)
+        ? `(${ZONE_MIN_HEIGHT}, ${width})`
+        : `(${width}, ${ZONE_MIN_HEIGHT})`,
     };
   }
 
@@ -326,8 +343,14 @@ export function decorateElkGraph(
     }
     zone.layoutOptions = options;
   }
+  // Zones sized inside their parent's `DOWN` run (see `attachRouting`).
+  const turned = new Set(
+    containers
+      .filter((zone) => !separate.has(zone.id) && effective(zone.id) === "TB")
+      .map((zone) => zone.id),
+  );
   if (separate.size === 0) {
-    if (routing) attachRouting(graph, routing, lifted);
+    if (routing) attachRouting(graph, routing, lifted, turned);
     return graph;
   }
 
@@ -357,7 +380,7 @@ export function decorateElkGraph(
     if (from !== to) edges.push({ ...edge, sources: [from], targets: [to] });
   }
   const decorated = { ...graph, edges };
-  if (routing) attachRouting(decorated, routing, lifted);
+  if (routing) attachRouting(decorated, routing, lifted, turned);
   return decorated;
 }
 
