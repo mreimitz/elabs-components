@@ -59,7 +59,11 @@ for (const r of roots) {
 }
 const rels = [...new Set(files.map((f) => relative(workspace, f)))].sort();
 
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
 let changedCount = 0;
+let totalRefs = 0;
+let totalDropped = 0;
 let failed = false;
 for (const rel of rels) {
   const full = join(workspace, rel);
@@ -72,21 +76,21 @@ for (const rel of rels) {
     continue;
   }
   if (refFirst) {
-    const fileChoices = choices[rel];
-    if (!fileChoices) {
-      console.log(`${rel}: no choices, unchanged`);
+    const result = refFirstText(text, catalog, choices[rel] ?? {});
+    if (result.reason) {
+      console.log(`${rel}: ${result.reason}`);
+      failed = true;
       continue;
     }
-    const result = refFirstText(text, fileChoices, catalog);
     if (!result.changed) {
       console.log(`${rel}: unchanged`);
       continue;
     }
-    for (const c of result.changes) {
-      console.log(
-        `${rel}: ${c.id} → ref: ${c.ref}${c.dropped.length > 0 ? ` (dropped ${c.dropped.join(", ")})` : ""}`,
-      );
-    }
+    const refs = result.changes.length;
+    const dropped = result.changes.reduce((n, c) => n + c.dropped.length, 0);
+    console.log(`${rel}: ${plural(refs, "reference")}, ${plural(dropped, "key")} dropped`);
+    totalRefs += refs;
+    totalDropped += dropped;
     changedCount += 1;
     if (!dryRun) writeFileSync(full, result.text);
     continue;
@@ -106,9 +110,12 @@ for (const rel of rels) {
   if (!dryRun) writeFileSync(full, result.text);
 }
 
+const suffix = dryRun ? " (dry run)" : "";
 console.log(
-  dryRun
-    ? `${changedCount} of ${rels.length} files would change`
-    : `${changedCount} of ${rels.length} files ${refFirst ? "migrated" : "upgraded"}`,
+  refFirst
+    ? `${plural(totalRefs, "reference")} and ${plural(totalDropped, "dropped key")} in ${changedCount} of ${rels.length} files${suffix}`
+    : dryRun
+      ? `${changedCount} of ${rels.length} files would change`
+      : `${changedCount} of ${rels.length} files upgraded`,
 );
 process.exit(failed ? 1 : 0);

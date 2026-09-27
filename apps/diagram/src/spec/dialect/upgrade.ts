@@ -6,9 +6,8 @@
  */
 import { parseArchYaml } from "./parse";
 import { normalizeArch } from "./normalize"; // DG-26 (1b.8)
-import { catalogNameOf } from "./ids"; // DG-26 (1b.8)
-import { suppliedBy, type CatalogLookup } from "./catalog-refs"; // DG-26 (1b.8)
-import { renameEntryKey, setEntryKeys, type WriteValue } from "./write-back";
+import { suppliedBy, type CatalogLookup, type Supplied } from "./catalog-refs"; // DG-26 (1b.8)
+import { renameEntryKey, setEntryKeys, valueAt, type WriteValue } from "./write-back";
 import { DIALECT_VERSION, READ_VERSIONS, type DialectVersion } from "./types";
 
 export type UpgradeReason =
@@ -59,17 +58,22 @@ export function upgradeText(text: string): UpgradeResult {
 
 // ── DG-26 (1b.8) — the reference-first migration ────────────────────────────────────────
 // A one-time, per-file rewrite (scripts/upgrade-workspace.mjs --ref-first --choices), never
-// run on open. `choices` names the ref for the nodes an author (or the maintainer's ruling)
-// picked; a node not named is left exactly as it is written — a stand-in with no catalog
-// item, a custom node with no equivalent, a zone.
+// run on open (Ruling 1). Per node, in document order: skip a node that already has `ref`;
+// `name = choices[id] ?? <the written icon>`, skip when undefined, "custom", or not a known
+// catalog name (a glyph is never one, Ruling 7); when the written icon equals the entry's own
+// icon or name, rename `icon:` to `ref:` in place (keeps the line, position and any trailing
+// comment); otherwise add `ref:` after `id:` and keep `icon:` as a deliberate override; then
+// drop title/subtitle/type/badges/description/docs whose written value equals what the entry
+// now supplies, unless the key's own line or the line above carries a comment. Comments, blank
+// lines, every other node and the file's layout stay byte-identical.
 
-/** node id → the ref to write (`catalog/aws/glue`, `ws/components/qlik-cloud-tenant`). */
+/** node id → the catalog name to use (`"aws/glue"`), or `"custom"` to leave the node as it is. */
 export type RefChoices = Readonly<Record<string, string>>;
 
 export interface RefFirstChange {
   id: string;
   ref: string;
-  /** title/subtitle/type/badges removed because the reference now supplies the same value. */
+  /** title/subtitle/type/badges/description/docs removed because the reference now supplies the same value. */
   dropped: readonly string[];
 }
 
@@ -77,21 +81,41 @@ export interface RefFirstResult {
   text: string;
   changed: boolean;
   changes: readonly RefFirstChange[];
+  reason?: "no-exact-edit";
 }
 
 const sameList = (a: readonly string[] | undefined, b: readonly string[] | undefined) =>
   a !== undefined && b !== undefined && a.length === b.length && a.every((v, i) => v === b[i]);
 
+const SUPPLIED_DROP_KEYS = ["title", "subtitle", "type", "badges", "description", "docs"] as const;
+
+function rawEntryOf(raw: unknown, path: string): Record<string, unknown> | undefined {
+  const value = valueAt(raw, path);
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+/** A trailing `#` on the key's own line, or a comment-only line directly above it. */
+function commentGuards(text: string, keyStart: number, valueEnd: number): boolean {
+  const lineEnd = text.indexOf("\n", valueEnd);
+  if (text.slice(valueEnd, lineEnd === -1 ? text.length : lineEnd).includes("#")) return true;
+  const thisLineStart = text.lastIndexOf("\n", keyStart - 1) + 1;
+  if (thisLineStart === 0) return false;
+  const aboveEnd = thisLineStart - 1;
+  const aboveStart = text.lastIndexOf("\n", aboveEnd - 1) + 1;
+  return /^\s*#/.test(text.slice(aboveStart, aboveEnd));
+}
+
 /**
- * Rewrite `icon:` as `ref:` for each id `choices` names to a CATALOG reference (a diagram
- * reference is Part 2's to fill and is left as `icon:` until then); drop title, subtitle,
- * type and badges only where the written value equals what the catalog entry now supplies.
- * Comments, blank lines, every other node and the file's layout stay byte-identical.
+ * Rewrite `icon:` as `ref:` for each node the rules above resolve to a catalog reference (a
+ * diagram reference is written by hand; this never touches `ws/…`), then drop the keys the
+ * reference now supplies identically. Pure; never run on open (Ruling 1).
  */
 export function refFirstText(
   text: string,
-  choices: RefChoices,
   catalog: CatalogLookup,
+  choices: RefChoices = {},
 ): RefFirstResult {
   const { raw, sourceMap } = parseArchYaml(text);
   if (raw === undefined) return { text, changed: false, changes: [] };
@@ -99,33 +123,51 @@ export function refFirstText(
   if (!ast) return { text, changed: false, changes: [] };
   const changes: RefFirstChange[] = [];
   let out = text;
+  // Node ids/paths only (to enumerate what to touch); every read of a value below re-parses
+  // `out`, since each edit shifts every later offset.
   for (const node of ast.nodes) {
-    const ref = choices[node.id];
-    if (ref === undefined || node.icon === undefined || node.ref !== undefined) continue;
-    const name = catalogNameOf(ref);
-    const entry = name !== undefined ? catalog.get(name) : undefined;
-    if (!entry) continue; // not a catalog reference (yet): leave icon: as it is written
-    const renamed = renameEntryKey(out, node.path, "icon", "ref", ref);
-    if (renamed === null) continue;
+    if (node.ref !== undefined) continue;
+    const { raw: rawNow } = parseArchYaml(out);
+    if (rawNow === undefined)
+      return { text: out, changed: changes.length > 0, changes, reason: "no-exact-edit" };
+    const entryRaw = rawEntryOf(rawNow, node.path);
+    if (!entryRaw) continue;
+    const choice = choices[node.id];
+    if (choice === "custom") continue;
+    const writtenIcon = typeof entryRaw.icon === "string" ? entryRaw.icon : undefined;
+    const name = choice ?? writtenIcon;
+    if (name === undefined) continue;
+    const entry = catalog.get(name);
+    if (!entry) continue;
+    const ref = `catalog/${entry.name}`;
+    const renamed =
+      writtenIcon === entry.icon || writtenIcon === entry.name
+        ? renameEntryKey(out, node.path, "icon", "ref", ref)
+        : setEntryKeys(out, node.path, { ref }, { after: "id" });
+    if (renamed === null)
+      return { text: out, changed: changes.length > 0, changes, reason: "no-exact-edit" };
     out = renamed;
-    const supplied = suppliedBy(entry, catalog);
+    const supplied: Supplied = suppliedBy(entry, catalog);
+    const { raw: rawAfterRef, sourceMap: mapAfterRef } = parseArchYaml(out);
+    if (rawAfterRef === undefined) {
+      return { text: out, changed: changes.length > 0, changes, reason: "no-exact-edit" };
+    }
+    const entryAfterRef = rawEntryOf(rawAfterRef, node.path);
     const patch: Record<string, WriteValue | undefined> = {};
     const dropped: string[] = [];
-    if (node.title !== undefined && node.title === supplied.title) {
-      patch.title = undefined;
-      dropped.push("title");
-    }
-    if (node.subtitle !== undefined && node.subtitle === supplied.subtitle) {
-      patch.subtitle = undefined;
-      dropped.push("subtitle");
-    }
-    if (node.type !== undefined && node.type === supplied.type) {
-      patch.type = undefined;
-      dropped.push("type");
-    }
-    if (node.badges !== undefined && sameList(node.badges, supplied.badges)) {
-      patch.badges = undefined;
-      dropped.push("badges");
+    for (const key of SUPPLIED_DROP_KEYS) {
+      if (!entryAfterRef || !(key in entryAfterRef)) continue;
+      const writtenValue = entryAfterRef[key];
+      const suppliedValue = supplied[key as keyof Supplied];
+      const equal = Array.isArray(writtenValue)
+        ? sameList(writtenValue as string[], suppliedValue as readonly string[] | undefined)
+        : writtenValue === suppliedValue;
+      if (!equal) continue;
+      const keyRange = mapAfterRef.keys.get(node.path ? `${node.path}.${key}` : key);
+      const valueRange = mapAfterRef.values.get(node.path ? `${node.path}.${key}` : key);
+      if (keyRange && valueRange && commentGuards(out, keyRange[0], valueRange[1])) continue;
+      patch[key] = undefined;
+      dropped.push(key);
     }
     if (dropped.length > 0) {
       const patched = setEntryKeys(out, node.path, patch);
