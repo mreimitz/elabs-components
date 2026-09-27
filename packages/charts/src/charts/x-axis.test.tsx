@@ -7,8 +7,10 @@
  * `getTotalLength()`, unsupported in jsdom); `XAxis` needs no series child.
  */
 
+import type { ReactElement } from "react";
 import { cleanup, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 
 // RM-108: the width is mutable so the width-derived tick target can be driven.
 const parentSize = vi.hoisted(() => ({ width: 560, height: 288 }));
@@ -455,6 +457,127 @@ describe("XAxis / YAxis — width- and height-derived tick targets (RM-108)", ()
       </LineChart>,
     );
     expect(pinned.querySelector('[data-slot="y-axis"]')?.getAttribute("data-tick-count")).toBe("3");
+  });
+});
+
+describe("XAxis — `numTicks` → `tickCount`, `orientation` → `position` (RM-192)", () => {
+  const many = Array.from({ length: 24 }, (_, i) => ({
+    date: new Date(2023, i, 1),
+    value: 10 + i,
+  }));
+
+  afterEach(() => {
+    resetWarnOnce();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  const warnSpy = () => vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  const axisNode = (root: HTMLElement) => root.querySelector('[data-slot="x-axis"]');
+  const tickCountOf = (axis: ReactElement): number => {
+    const { container } = render(<LineChart data={many}>{axis}</LineChart>);
+    return Number(axisNode(container)?.getAttribute("data-tick-count"));
+  };
+
+  it("`tickCount` renders the same axis DOM as `numTicks`", () => {
+    warnSpy();
+    const { container: renamed } = render(
+      <LineChart data={many}>
+        <XAxis tickCount={5} />
+      </LineChart>,
+    );
+    const { container: old } = render(
+      <LineChart data={many}>
+        <XAxis numTicks={5} />
+      </LineChart>,
+    );
+    expect(axisNode(old)?.outerHTML).toBe(axisNode(renamed)?.outerHTML);
+  });
+
+  it("`position` renders the same axis DOM as `orientation`", () => {
+    warnSpy();
+    const { container: renamed } = render(
+      <LineChart data={many}>
+        <XAxis position="top" />
+      </LineChart>,
+    );
+    const { container: old } = render(
+      <LineChart data={many}>
+        <XAxis orientation="top" />
+      </LineChart>,
+    );
+    expect(axisNode(old)?.outerHTML).toBe(axisNode(renamed)?.outerHTML);
+  });
+
+  it("warns once per name in development, however often it renders", () => {
+    const warn = warnSpy();
+    const { rerender } = render(
+      <LineChart data={many}>
+        <XAxis numTicks={5} />
+      </LineChart>,
+    );
+    rerender(
+      <LineChart data={many}>
+        <XAxis numTicks={6} />
+      </LineChart>,
+    );
+    render(
+      <LineChart data={many}>
+        <XAxis orientation="top" />
+      </LineChart>,
+    );
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenCalledWith(
+      '[XAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount".',
+    );
+    expect(warn).toHaveBeenCalledWith(
+      '[XAxis] "orientation" is deprecated and will be removed in 6.0.0. Use "position".',
+    );
+  });
+
+  it("never warns in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = warnSpy();
+    render(
+      <LineChart data={many}>
+        <XAxis numTicks={5} orientation="top" />
+      </LineChart>,
+    );
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("the ./test double stays silent under its default", () => {
+    const warn = warnSpy();
+    render(<XAxisPart numTicks={5} orientation="top" />);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("both given, old-wins: `numTicks` beats `tickCount`, and warns which one was dropped", () => {
+    const warn = warnSpy();
+    expect(tickCountOf(<XAxis numTicks={5} tickCount={8} />)).toBe(5);
+    expect(warn).toHaveBeenCalledWith(
+      '[XAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount". ' +
+        '"tickCount" was ignored because "numTicks" is set.',
+    );
+  });
+
+  it("a non-finite `numTicks` never wins over an explicit `tickCount`", () => {
+    warnSpy();
+    expect(tickCountOf(<XAxis numTicks={NaN} tickCount={5} />)).toBe(5);
+  });
+
+  it("both given, new-wins: `position` beats `orientation`, and warns which one was dropped", () => {
+    const warn = warnSpy();
+    const { container } = render(
+      <LineChart data={many}>
+        <XAxis orientation="bottom" position="top" />
+      </LineChart>,
+    );
+    expect(axisNode(container)?.getAttribute("data-orientation")).toBe("top");
+    expect(warn).toHaveBeenCalledWith(
+      '[XAxis] "orientation" is deprecated and will be removed in 6.0.0. Use "position". ' +
+        '"orientation" was ignored because "position" is set.',
+    );
   });
 });
 

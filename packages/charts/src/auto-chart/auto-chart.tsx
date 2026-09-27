@@ -421,7 +421,8 @@ function resolveAxisSpecProps(
       ticks: xTicks && xTicks.length > 0 ? xTicks : undefined,
       title: x.title,
       titlePlacement: x.titlePlacement,
-      orientation: x.position === "top" ? "top" : x.position === "bottom" ? "bottom" : undefined,
+      // RM-192 (ADR 0042 A.2, row 10): XAxis now names this `position`.
+      position: x.position === "top" ? "top" : x.position === "bottom" ? "bottom" : undefined,
     },
     y: {
       domain: y.domain,
@@ -429,7 +430,8 @@ function resolveAxisSpecProps(
       ticks: numericTicks(y.ticks),
       title: y.title,
       titlePlacement: y.titlePlacement,
-      orientation: y.position === "right" ? "right" : y.position === "left" ? "left" : undefined,
+      // RM-192 (ADR 0042 A.2, row 11): YAxis now names this `position`.
+      position: y.position === "right" ? "right" : y.position === "left" ? "left" : undefined,
     },
     gridMode: (isHorizontal ? x.gridMode : y.gridMode) ?? undefined,
   };
@@ -555,13 +557,13 @@ function renderDualAxisChart(
           />
         ))}
       <XAxis dateFormat={spec.dateFormat} {...axisProps.x} />
-      <YAxis formatValue={yFormat} matchSeriesColor {...axisProps.y} orientation="left" />
+      <YAxis formatValue={yFormat} matchSeriesColor {...axisProps.y} position="left" />
       {dual.some((s) => s.axis === "right") ? (
         <YAxis
           formatValue={yFormat}
           matchSeriesColor
           {...rightAxisProps}
-          orientation="right"
+          position="right"
           yAxisId="right"
         />
       ) : null}

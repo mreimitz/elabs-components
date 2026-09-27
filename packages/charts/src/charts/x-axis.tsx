@@ -14,7 +14,12 @@ import { dateFormatForSpan, finerDateFormatPreset, type DateFormatPreset } from 
 import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
 import { datePillFits } from "./tooltip/date-pill";
 import { useChartValueSetFormatter } from "./chart-formatters";
-import { type AxisTickCount, resolveAxisTickTarget, tickTargetForWidth } from "./tick-targets";
+import {
+  type AxisTickCount,
+  resolveAxisTickTarget,
+  tickTargetForWidth,
+  withoutNonFiniteNumTicks,
+} from "./tick-targets";
 import { NumericXRulerContext } from "./x-scale-mode";
 import { type AxisDomain, buildValueScale, type ValueScaleType } from "./y-axis-scales";
 import { valueAxisTicks } from "./y-axis-ticks";
@@ -131,8 +136,8 @@ export type XAxisOrientation = "top" | "bottom";
 
 export interface XAxisProps {
   /**
-   * Explicit tick count (including first and last) — the long-standing
-   * override; wins over `tickCount`. Default: unset (→ `tickCount`).
+   * @deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before
+   * (ADR 0042 A.2, row 6). Read until 6.0.0, with one development warning.
    */
   numTicks?: number;
   /**
@@ -162,6 +167,11 @@ export interface XAxisProps {
    */
   scale?: ValueScaleType;
   /** Which edge the labels sit on (RM-108). Default: `"bottom"`. */
+  position?: XAxisOrientation;
+  /**
+   * @deprecated Use `position` — the same values (ADR 0042 A.2, row 10). Read until 6.0.0,
+   * with one development warning; when both are set, `position` wins.
+   */
   orientation?: XAxisOrientation;
   /** Axis title (RM-108). */
   title?: ReactNode;
@@ -1111,9 +1121,10 @@ function dateTicks(ticks: XAxisProps["ticks"]): Date[] | undefined {
 }
 
 export function XAxis(rawProps: XAxisProps) {
-  // RM-182: the part's definition (X_AXIS_PART) maps renamed props (no rows until wave 4)
-  // and fills its defaults before anything reads them.
-  const props = useResolvedChartProps(X_AXIS_PART, rawProps);
+  // RM-192 (ADR 0042 A.2, rows 6, 10): the part's own alias hook — `numTicks`→`tickCount`
+  // (old-wins) and `orientation`→`position` (new-wins). `withoutNonFiniteNumTicks` keeps a
+  // non-finite `numTicks` from looking "set" to the generic old-wins merge (`tick-targets.ts`).
+  const props = useResolvedChartProps(X_AXIS_PART, withoutNonFiniteNumTicks(rawProps));
   // RM-117: hand the chart's series colours to an enclosing ChartFrame
   // (read by InlineChip). No visual change; a no-op outside a frame.
   useChartFrameSeriesBridge();
@@ -1158,7 +1169,7 @@ const XAxisInner = memo(function XAxisInner({
   numTicks: numTicksProp,
   tickCount,
   ticks,
-  orientation = "bottom",
+  position = "bottom",
   title,
   titlePlacement = "outside",
   maxTickTarget,
@@ -1518,7 +1529,9 @@ const XAxisInner = memo(function XAxisInner({
       ) : null}
       <div
         className="pointer-events-none absolute inset-0"
-        data-orientation={orientation}
+        // RM-192: `data-orientation` is a DOM attribute, not a prop, and keeps its name
+        // (`axis-title.tsx` reads it) — its value now reflects the renamed `position` prop.
+        data-orientation={position}
         data-slot="x-axis"
         data-tick-count={labelsToShow.length}
       >
@@ -1534,7 +1547,7 @@ const XAxisInner = memo(function XAxisInner({
             // across ticks (React "duplicate key" warning). The label disambiguates.
             key={`${item.label}-${item.date.getTime()}-${item.x}`}
             label={item.label}
-            orientation={orientation}
+            orientation={position}
             tickerHalfWidth={tickerHalfWidth}
             x={item.x}
           />
@@ -1545,7 +1558,7 @@ const XAxisInner = memo(function XAxisInner({
           innerWidth={innerWidth}
           margin={margin}
           placement={titlePlacement}
-          side={orientation}
+          side={position}
           width={width}
         >
           {title}

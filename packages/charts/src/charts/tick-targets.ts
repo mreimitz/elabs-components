@@ -97,6 +97,12 @@ export function tickTargetForHeight(innerHeight: number): number {
  * One precedence for every axis: an explicit `numTicks` (the long-standing
  * override) wins, then a numeric `tickCount`, then `"auto"` → `autoTarget`.
  * A non-finite explicit value is ignored rather than trusted.
+ *
+ * RM-192 (ADR 0042 A.2, rows 6–9): `numTicks` is now a deprecated `old-wins` alias of
+ * `tickCount` on XAxis, YAxis, BarValueAxis and LiveXAxis. This function is still the one
+ * place that precedence lives — {@link withoutNonFiniteNumTicks} only keeps a non-finite
+ * `numTicks` from looking "set" to the generic alias merge upstream of it, so the two stay in
+ * lockstep and `numTicks={NaN} tickCount={5}` still resolves to 5, exactly as it always has.
  */
 export function resolveAxisTickTarget({
   numTicks,
@@ -114,4 +120,20 @@ export function resolveAxisTickTarget({
     return tickCount;
   }
   return autoTarget;
+}
+
+/**
+ * RM-192 (ADR 0042 A.2, rows 6–9): the part's own alias hook, called on raw props before
+ * `useResolvedChartProps`. The generic `old-wins` alias merge only checks whether `numTicks`
+ * is _defined_, but `resolveAxisTickTarget` has always required it to be _finite_ before
+ * letting it win — so a non-finite `numTicks` (`NaN`) must never reach the generic merge, or
+ * it would silently stomp an explicit `tickCount` instead of leaving it alone. Every other
+ * `numTicks` value (finite, or simply unset) passes through untouched.
+ */
+export function withoutNonFiniteNumTicks<P extends { numTicks?: number }>(rawProps: P): P {
+  if (rawProps.numTicks != null && !Number.isFinite(rawProps.numTicks)) {
+    const { numTicks: _droppedNonFiniteNumTicks, ...rest } = rawProps;
+    return rest as P;
+  }
+  return rawProps;
 }

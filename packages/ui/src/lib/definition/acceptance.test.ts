@@ -390,6 +390,24 @@ describe("applyAliases", () => {
     expect(applyAliases(rows, { numTicks: 4, tickCount: 9 })).toEqual({ tickCount: 4 });
   });
 
+  it("tells onAlias when the new value was ignored because the old one is set (old-wins)", () => {
+    const onAlias = vi.fn();
+    applyAliases(rows, { numTicks: 4, tickCount: 9 }, onAlias);
+    expect(onAlias).toHaveBeenCalledWith(
+      expect.objectContaining({ from: "numTicks", to: "tickCount" }),
+      { oldIgnored: false, newIgnored: true },
+    );
+  });
+
+  it("old-wins never reports newIgnored when the new name was not given", () => {
+    const onAlias = vi.fn();
+    applyAliases(rows, { numTicks: 4 }, onAlias);
+    expect(onAlias).toHaveBeenCalledWith(
+      expect.objectContaining({ from: "numTicks", to: "tickCount" }),
+      { oldIgnored: false, newIgnored: false },
+    );
+  });
+
   it("reads the shorthand as identity, new-wins", () => {
     expect(normalizeAliases({ color: "fill" })).toEqual([
       {
@@ -473,10 +491,10 @@ describe("applyAliases", () => {
         onAlias,
       );
       expect(onAlias.mock.calls.map(([row, use]) => [row.from, use])).toEqual([
-        ["emptyTitle", { oldIgnored: true }],
-        ["emptyMessage", { oldIgnored: false }],
-        ["stackPadding", { oldIgnored: true }],
-        ["emptyTitle", { oldIgnored: false }],
+        ["emptyTitle", { oldIgnored: true, newIgnored: false }],
+        ["emptyMessage", { oldIgnored: false, newIgnored: false }],
+        ["stackPadding", { oldIgnored: true, newIgnored: false }],
+        ["emptyTitle", { oldIgnored: false, newIgnored: true }],
       ]);
     });
   });

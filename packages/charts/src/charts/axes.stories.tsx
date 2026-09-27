@@ -37,6 +37,22 @@ const meta = {
       },
     },
   },
+  argTypes: {
+    numTicks: {
+      description:
+        "Deprecated (removed in 6.0.0): use `tickCount` — the same value. Until then `numTicks` still " +
+        "works and logs one development warning; when both are set, `numTicks` wins (XAxis and BarValueAxis too).",
+      table: { category: "Deprecated" },
+      control: false,
+    },
+    orientation: {
+      description:
+        "Deprecated (removed in 6.0.0): use `position` — the same value. Until then `orientation` still " +
+        "works and logs one development warning; when both are set, `position` wins (XAxis too).",
+      table: { category: "Deprecated" },
+      control: false,
+    },
+  },
 } satisfies Meta<typeof YAxis>;
 
 export default meta;
@@ -105,7 +121,7 @@ export const WidthDerivedTicks: Story = {
   },
 };
 
-/** `numTicks` pins the count at every width (the `sm` density would still cap it at 4). */
+/** `tickCount` pins the count at every width (the `sm` density would still cap it at 4). */
 export const PinnedTickCount: Story = {
   decorators: [keepMdDensityAtNarrow],
   render: () => (
@@ -113,7 +129,7 @@ export const PinnedTickCount: Story = {
       <LineChart data={riders}>
         <Grid />
         <Line dataKey="riders" stroke="var(--chart-1)" />
-        <XAxis numTicks={5} />
+        <XAxis tickCount={5} />
         <YAxis />
       </LineChart>
     </div>
@@ -209,7 +225,7 @@ export const InsideLabelsTopAxis: Story = {
       <LineChart data={riders}>
         <Grid />
         <Line dataKey="riders" stroke="var(--chart-1)" />
-        <XAxis orientation="top" title="Month" />
+        <XAxis position="top" title="Month" />
         <YAxis domain={[0, 2500]} labelPlacement="inside" title="Riders" titlePlacement="inside" />
       </LineChart>
     </div>

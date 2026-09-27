@@ -5,6 +5,11 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useChart, useChartStable } from "./chart-context";
 import { useChartFormatters } from "./chart-formatters";
+import {
+  type AxisTickCount,
+  resolveAxisTickTarget,
+  withoutNonFiniteNumTicks,
+} from "./tick-targets";
 import { DATE_PILL_BOTTOM, datePillFits } from "./tooltip/date-pill";
 import { LIVE_X_AXIS_PART } from "../definitions/parts/live-x-axis.definition";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
@@ -29,16 +34,24 @@ function labelFadeOpacity(labelX: number, crosshairX: number | null, isHovering:
 }
 
 export interface LiveXAxisProps {
-  /** Number of time labels. Default: 5 */
+  /**
+   * Tick target (RM-192, ADR 0042 A.2, row 9). `"auto"` (default) is this axis' own default: 5.
+   */
+  tickCount?: AxisTickCount;
+  /**
+   * @deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before.
+   * Read until 6.0.0, with one development warning.
+   */
   numTicks?: number;
   /** Time formatter. Default: HH:MM:SS */
   formatTime?: (t: number) => string;
 }
 
 export function LiveXAxis(rawProps: LiveXAxisProps) {
-  // RM-182: the part's definition (LIVE_X_AXIS_PART) maps renamed props (no rows until wave 4)
-  // and fills its defaults before anything reads them.
-  const props = useResolvedChartProps(LIVE_X_AXIS_PART, rawProps);
+  // RM-192 (ADR 0042 A.2, row 9): the part's own alias hook — `numTicks`→`tickCount`
+  // (old-wins). `withoutNonFiniteNumTicks` keeps a non-finite `numTicks` from looking "set" to
+  // the generic old-wins merge (`tick-targets.ts`).
+  const props = useResolvedChartProps(LIVE_X_AXIS_PART, withoutNonFiniteNumTicks(rawProps));
   const { containerRef } = useChartStable();
   const [mounted, setMounted] = useState(false);
 
@@ -55,11 +68,13 @@ export function LiveXAxis(rawProps: LiveXAxisProps) {
 }
 
 const LiveXAxisInner = memo(function LiveXAxisInner({
-  numTicks = 5,
+  numTicks: numTicksProp,
+  tickCount,
   formatTime: formatTimeProp,
   container,
 }: LiveXAxisProps & { container: HTMLDivElement }) {
   const { xScale, margin, tooltipData } = useChart();
+  const numTicks = resolveAxisTickTarget({ numTicks: numTicksProp, tickCount, autoTarget: 5 });
   // RM-187: the default HH:MM:SS reads the LocaleProvider locale, not the host's.
   const { hmsTimeFmt } = useChartFormatters();
   const formatTime = useCallback(

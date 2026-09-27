@@ -17,8 +17,10 @@
  * (`y-domain-utils.ts`).
  */
 
+import type { ReactElement } from "react";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 
 // ChartParentSize uses ResizeObserver + real DOM measurement which jsdom lacks.
 vi.mock("./chart-parent-size", () => {
@@ -38,6 +40,7 @@ vi.mock("./chart-parent-size", () => {
   };
 });
 
+import { YAxis as YAxisPart } from "../test/primitives";
 import { LineChart } from "./line-chart";
 import { YAxis } from "./y-axis";
 
@@ -70,5 +73,126 @@ describe("YAxis — tick tween coordination (#609)", () => {
       // centering translateY(-50%) — both live in the one `transform`.
       expect(styleAttr.match(/translateY\(/g)?.length).toBe(2);
     }
+  });
+});
+
+const many = Array.from({ length: 24 }, (_, i) => ({
+  date: new Date(2023, i, 1),
+  value: 10 + i,
+}));
+
+describe("YAxis — `numTicks` → `tickCount`, `orientation` → `position` (RM-192)", () => {
+  afterEach(() => {
+    resetWarnOnce();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  const warnSpy = () => vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  const axisNode = (root: HTMLElement) => root.querySelector('[data-slot="y-axis"]');
+  const tickCountOf = (axis: ReactElement): number => {
+    const { container } = render(<LineChart data={many}>{axis}</LineChart>);
+    return Number(axisNode(container)?.getAttribute("data-tick-count"));
+  };
+
+  it("`tickCount` renders the same axis DOM as `numTicks`", () => {
+    warnSpy();
+    const { container: renamed } = render(
+      <LineChart data={many}>
+        <YAxis tickCount={3} />
+      </LineChart>,
+    );
+    const { container: old } = render(
+      <LineChart data={many}>
+        <YAxis numTicks={3} />
+      </LineChart>,
+    );
+    expect(axisNode(old)?.outerHTML).toBe(axisNode(renamed)?.outerHTML);
+  });
+
+  it("`position` renders the same axis DOM as `orientation`", () => {
+    warnSpy();
+    const { container: renamed } = render(
+      <LineChart data={many}>
+        <YAxis position="right" />
+      </LineChart>,
+    );
+    const { container: old } = render(
+      <LineChart data={many}>
+        <YAxis orientation="right" />
+      </LineChart>,
+    );
+    expect(axisNode(old)?.outerHTML).toBe(axisNode(renamed)?.outerHTML);
+  });
+
+  it("warns once per name in development, however often it renders", () => {
+    const warn = warnSpy();
+    const { rerender } = render(
+      <LineChart data={many}>
+        <YAxis numTicks={3} />
+      </LineChart>,
+    );
+    rerender(
+      <LineChart data={many}>
+        <YAxis numTicks={4} />
+      </LineChart>,
+    );
+    render(
+      <LineChart data={many}>
+        <YAxis orientation="right" />
+      </LineChart>,
+    );
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenCalledWith(
+      '[YAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount".',
+    );
+    expect(warn).toHaveBeenCalledWith(
+      '[YAxis] "orientation" is deprecated and will be removed in 6.0.0. Use "position".',
+    );
+  });
+
+  it("never warns in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = warnSpy();
+    render(
+      <LineChart data={many}>
+        <YAxis numTicks={3} orientation="right" />
+      </LineChart>,
+    );
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("the ./test double stays silent under its default", () => {
+    const warn = warnSpy();
+    render(<YAxisPart numTicks={3} orientation="right" />);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("both given, old-wins: `numTicks` beats `tickCount`, and warns which one was dropped", () => {
+    const warn = warnSpy();
+    expect(tickCountOf(<YAxis numTicks={3} tickCount={8} />)).toBe(3);
+    expect(warn).toHaveBeenCalledWith(
+      '[YAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount". ' +
+        '"tickCount" was ignored because "numTicks" is set.',
+    );
+  });
+
+  it("a non-finite `numTicks` never wins over an explicit `tickCount`", () => {
+    warnSpy();
+    expect(tickCountOf(<YAxis numTicks={NaN} tickCount={3} />)).toBe(3);
+  });
+
+  it("both given, new-wins: `position` beats `orientation`, and warns which one was dropped", () => {
+    const warn = warnSpy();
+    const { container } = render(
+      <LineChart data={many}>
+        <YAxis orientation="left" position="right" />
+      </LineChart>,
+    );
+    expect(axisNode(container)).toBeTruthy();
+    expect(warn).toHaveBeenCalledWith(
+      '[YAxis] "orientation" is deprecated and will be removed in 6.0.0. Use "position". ' +
+        '"orientation" was ignored because "position" is set.',
+    );
   });
 });

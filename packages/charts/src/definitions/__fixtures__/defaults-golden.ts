@@ -346,14 +346,14 @@ export const DEFAULTS_GOLDEN: Record<
   },
   // ── Parts (RM-182) ───────────────────────────────────────────────────────
   XAxis: {
-    orientation: "bottom",
+    position: "bottom",
     titlePlacement: "outside",
     tickerHalfWidth: 50,
     tickMode: "domain",
     periodTicks: false,
   },
   YAxis: {
-    orientation: "left",
+    position: "left",
     titlePlacement: "outside",
     labelPlacement: "outside",
     unitOn: "last",
@@ -362,9 +362,9 @@ export const DEFAULTS_GOLDEN: Record<
   BarValueAxis: {
     position: "bottom",
   },
-  LiveXAxis: {
-    numTicks: 5,
-  },
+  // RM-192: `numTicks` is gone (deprecated alias only); `tickCount`'s own field default
+  // ("auto") is not repeated here — it was never in `defaults` either.
+  LiveXAxis: {},
   Grid: {
     mode: "lines",
     horizontal: true,

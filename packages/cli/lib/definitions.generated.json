@@ -1919,16 +1919,19 @@
       "version": 1
     },
     "BarValueAxis": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "numTicks",
+          "precedence": "old-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "tickCount",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [],
       "description": "The value axis of a horizontal bar chart, above or below the bars.",
       "fields": {
-        "numTicks": {
-          "description": "Tick count hint.",
-          "group": null,
-          "kind": "number",
-          "tier": "advanced"
-        },
         "position": {
           "default": "bottom",
           "description": "Edge the axis is drawn on.",
@@ -1936,6 +1939,22 @@
           "kind": "enum",
           "tier": "essential",
           "values": ["top", "bottom"]
+        },
+        "tickCount": {
+          "default": "auto",
+          "description": "How many ticks the axis aims for, or auto to fit the plot size.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number"
+            },
+            {
+              "kind": "enum",
+              "values": ["auto"]
+            }
+          ],
+          "tier": "advanced"
         },
         "title": {
           "description": "Title of the axis.",
@@ -8093,15 +8112,33 @@
       "version": 1
     },
     "LiveXAxis": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "numTicks",
+          "precedence": "old-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "tickCount",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": ["formatTime"],
       "description": "The time axis of a live line chart, scrolling with the window.",
       "fields": {
-        "numTicks": {
-          "default": 5,
-          "description": "Number of time ticks across the window.",
+        "tickCount": {
+          "default": "auto",
+          "description": "How many ticks the axis aims for, or auto to fit the plot size.",
           "group": null,
-          "kind": "number",
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number"
+            },
+            {
+              "kind": "enum",
+              "values": ["auto"]
+            }
+          ],
           "tier": "advanced"
         }
       },
@@ -12191,7 +12228,24 @@
       "version": 1
     },
     "XAxis": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "numTicks",
+          "precedence": "old-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "tickCount",
+          "transform": "identity"
+        },
+        {
+          "from": "orientation",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "position",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": ["tickFormat", "tickValues", "title"],
       "description": "The category or time axis along the bottom or top of a cartesian chart.",
       "fields": {
@@ -12222,20 +12276,6 @@
           },
           "tier": "advanced"
         },
-        "numTicks": {
-          "description": "Exact tick count; wins over tickCount.",
-          "group": null,
-          "kind": "number",
-          "tier": "advanced"
-        },
-        "orientation": {
-          "default": "bottom",
-          "description": "Edge the tick labels sit on.",
-          "group": null,
-          "kind": "enum",
-          "tier": "essential",
-          "values": ["top", "bottom"]
-        },
         "periodTicks": {
           "default": false,
           "description": "A hairline tick per calendar period below the plot.",
@@ -12243,6 +12283,14 @@
           "kind": "enum",
           "tier": "advanced",
           "values": ["day", "week", "month", false]
+        },
+        "position": {
+          "default": "bottom",
+          "description": "Edge the tick labels sit on.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["top", "bottom"]
         },
         "scale": {
           "description": "Numeric x only: how values map to pixels.",
@@ -12311,7 +12359,24 @@
       "version": 1
     },
     "YAxis": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "numTicks",
+          "precedence": "old-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "tickCount",
+          "transform": "identity"
+        },
+        {
+          "from": "orientation",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "position",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": ["formatValue", "title"],
       "description": "The value axis beside a cartesian chart's plot, on the left or the right.",
       "fields": {
@@ -12356,13 +12421,7 @@
           "kind": "boolean",
           "tier": "advanced"
         },
-        "numTicks": {
-          "description": "Tick count hint; wins over tickCount.",
-          "group": null,
-          "kind": "number",
-          "tier": "advanced"
-        },
-        "orientation": {
+        "position": {
           "default": "left",
           "description": "Side of the plot the tick labels sit on.",
           "group": null,

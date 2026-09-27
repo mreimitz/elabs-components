@@ -32,14 +32,16 @@ import {
 import { warnChartOnce } from "./chart-breakpoint";
 
 /**
- * The development warning for a caller still using an old prop name. When the caller gave
- * the new name too (`use.oldIgnored`), it also says the old value was dropped (ADR 0042 §8).
+ * The development warning for a caller still using an old prop name. When the caller gave the
+ * new name too, it also says which value was dropped: `use.oldIgnored` (a `new-wins` row) says
+ * the old one was; `use.newIgnored` (an `old-wins` row — RM-192's `numTicks` rows are the
+ * first) says the new one was (ADR 0042 §8).
  */
 function aliasWarning(id: string, row: NormalizedAliasRow, use?: AliasUse): string {
   const warning = `[${id}] "${row.from}" is deprecated and will be removed in ${row.removeIn}. Use "${row.to}".`;
-  return use?.oldIgnored
-    ? `${warning} "${row.from}" was ignored because "${row.to}" is set.`
-    : warning;
+  if (use?.oldIgnored) return `${warning} "${row.from}" was ignored because "${row.to}" is set.`;
+  if (use?.newIgnored) return `${warning} "${row.to}" was ignored because "${row.from}" is set.`;
+  return warning;
 }
 
 /** `rawProps` with each old name mapped to its new one, warning once per old name in development. */

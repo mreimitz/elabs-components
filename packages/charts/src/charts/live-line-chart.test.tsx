@@ -9,8 +9,10 @@
 // `typeof LiveLineChart` is "object". We verify the export shape via
 // `$$typeof` instead of the naive "function" check.
 
+import type { ReactElement } from "react";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
 
 vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -53,6 +55,7 @@ if (typeof window !== "undefined" && !("IntersectionObserver" in window)) {
 }
 
 import { ThemeProvider } from "@elabs-ai/components-tokens";
+import { LiveXAxis as LiveXAxisPart } from "../test/primitives";
 import { LiveLine } from "./live-line";
 import { LiveLineChart, type LiveLineChartProps, type LiveLinePoint } from "./live-line-chart";
 import { LiveXAxis } from "./live-x-axis";
@@ -169,5 +172,73 @@ describe("LiveXAxis / LiveYAxis — density-role className (#394)", () => {
     expect(label).not.toBeNull();
     expect(label).toHaveClass("text-meta");
     expect(label).not.toHaveClass("text-xs");
+  });
+});
+
+describe("LiveXAxis — `numTicks` → `tickCount` (RM-192)", () => {
+  afterEach(() => {
+    resetWarnOnce();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  const warnSpy = () => vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  const labelCountOf = (axis: ReactElement) =>
+    render(
+      <LiveLineChart data={sampleData} value={59}>
+        <LiveLine dataKey="value" />
+        {axis}
+      </LiveLineChart>,
+    ).container.querySelectorAll(".text-chart-label").length;
+
+  it("`tickCount` renders the same tick count as `numTicks`", () => {
+    warnSpy();
+    expect(labelCountOf(<LiveXAxis tickCount={3} />)).toBe(
+      labelCountOf(<LiveXAxis numTicks={3} />),
+    );
+  });
+
+  it("warns once in development, however often it renders", () => {
+    const warn = warnSpy();
+    const { rerender } = render(
+      <LiveLineChart data={sampleData} value={59}>
+        <LiveLine dataKey="value" />
+        <LiveXAxis numTicks={3} />
+      </LiveLineChart>,
+    );
+    rerender(
+      <LiveLineChart data={sampleData} value={59}>
+        <LiveLine dataKey="value" />
+        <LiveXAxis numTicks={4} />
+      </LiveLineChart>,
+    );
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(
+      '[LiveXAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount".',
+    );
+  });
+
+  it("never warns in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = warnSpy();
+    labelCountOf(<LiveXAxis numTicks={3} />);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("the ./test double stays silent under its default", () => {
+    const warn = warnSpy();
+    render(<LiveXAxisPart numTicks={3} />);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("both given: `numTicks` (old) wins over `tickCount`, and a non-finite `numTicks` never wins", () => {
+    const warn = warnSpy();
+    expect(labelCountOf(<LiveXAxis numTicks={3} tickCount={8} />)).toBe(
+      labelCountOf(<LiveXAxis numTicks={Number.NaN} tickCount={3} />),
+    );
+    expect(warn).toHaveBeenCalledWith(
+      '[LiveXAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount". ' +
+        '"tickCount" was ignored because "numTicks" is set.',
+    );
   });
 });
