@@ -23,7 +23,7 @@
  * - Direction: no definition module imports the registry or the component bindings.
  * - `useResolvedChartProps`: aliases first, then defaults; memoised; one warning per old name.
  *
- * jsdom has no layout, so the measurement seams (`@visx/responsive`, `react-use-measure`,
+ * jsdom has no layout, so the measurement seams (`ChartParentSize`, `useLayoutMeasure`,
  * `getBoundingClientRect`, `ResizeObserver`, `getTotalLength`) are stubbed to a fixed box, as
  * in the interaction policy test.
  */
@@ -60,11 +60,9 @@ vi.mock("../charts/chart-parent-size", async () => {
   };
 });
 
-vi.mock("react-use-measure", () => ({
-  default: () => [
-    () => undefined,
-    { ...BOX, top: 0, left: 0, right: BOX.width, bottom: BOX.height, x: 0, y: 0 },
-  ],
+vi.mock("../charts/layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, BOX],
 }));
 
 import { BulletChartBase } from "../charts/bullet-chart";

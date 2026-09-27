@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
+// ChartParentSize uses ResizeObserver + real DOM measurement which jsdom lacks.
 // Mock ParentSize to supply a fixed 560×288 viewport so ChartInner renders.
 // Real render/interaction/a11y is covered by the Storybook build (Charts/BarChart story).
 vi.mock("./chart-parent-size", () => {

@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { CHART_RESIZE_DEBOUNCE_MS } from "../charts/layout-size";
 import { Sparkline } from "./sparkline";
 
 describe("Sparkline", () => {
@@ -102,6 +103,26 @@ describe("Sparkline", () => {
         disconnect() {}
       }
       globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+      // The observer only says WHEN to measure: the width is the svg's own
+      // content box, read from its computed style (the one chart measurement
+      // path), which jsdom does not lay out — stand in a 300px-wide box.
+      const rects = vi
+        .spyOn(Element.prototype, "getClientRects")
+        .mockImplementation(() => [new DOMRect(0, 0, 300, 20)] as unknown as DOMRectList);
+      const realGetComputedStyle = window.getComputedStyle.bind(window);
+      const computed = vi.spyOn(window, "getComputedStyle").mockImplementation((el, pseudo) => {
+        const style = realGetComputedStyle(el, pseudo);
+        if (!(el instanceof SVGSVGElement)) return style;
+        return new Proxy(style, {
+          get(target, prop) {
+            if (prop === "width") return "300px";
+            if (prop === "height") return "20px";
+            if (prop === "boxSizing") return "content-box";
+            const value = Reflect.get(target, prop, target);
+            return typeof value === "function" ? value.bind(target) : value;
+          },
+        });
+      });
       try {
         const { container } = render(
           <Sparkline values={[1, 2, 3]} fit="fill" width={80} height={20} />,
@@ -113,7 +134,68 @@ describe("Sparkline", () => {
         expect(svg).toHaveAttribute("viewBox", "0 0 300 20");
         expect(svg).not.toHaveAttribute("preserveAspectRatio");
       } finally {
+        rects.mockRestore();
+        computed.mockRestore();
         globalThis.ResizeObserver = original;
+      }
+    });
+
+    it('keeps its last measured width while hidden, not the `width` fallback (fit="fill")', () => {
+      vi.useFakeTimers();
+      const original = globalThis.ResizeObserver;
+      const callbacks: ResizeObserverCallback[] = [];
+      class MockResizeObserver {
+        constructor(callback: ResizeObserverCallback) {
+          callbacks.push(callback);
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      }
+      globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+      const observe = () =>
+        act(() => {
+          for (const callback of callbacks) callback([], {} as ResizeObserver);
+        });
+      // Shown, the svg has one box, 300px wide; hidden, it has none.
+      let shown = true;
+      const rects = vi
+        .spyOn(Element.prototype, "getClientRects")
+        .mockImplementation(
+          () => (shown ? [new DOMRect(0, 0, 300, 20)] : []) as unknown as DOMRectList,
+        );
+      const realGetComputedStyle = window.getComputedStyle.bind(window);
+      const computed = vi.spyOn(window, "getComputedStyle").mockImplementation((el, pseudo) => {
+        const style = realGetComputedStyle(el, pseudo);
+        if (!(el instanceof SVGSVGElement)) return style;
+        return new Proxy(style, {
+          get(target, prop) {
+            if (prop === "width") return "300px";
+            if (prop === "height") return "20px";
+            if (prop === "boxSizing") return "content-box";
+            const value = Reflect.get(target, prop, target);
+            return typeof value === "function" ? value.bind(target) : value;
+          },
+        });
+      });
+      try {
+        const { container } = render(
+          <Sparkline values={[1, 2, 3]} fit="fill" width={80} height={20} />,
+        );
+        const svg = container.querySelector("svg")!;
+        observe(); // measured: 300
+        expect(svg).toHaveAttribute("viewBox", "0 0 300 20");
+        act(() => vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS)); // the burst ends
+        shown = false;
+        observe(); // measured: 0
+        act(() => vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS));
+        expect(svg).toHaveAttribute("width", "300");
+        expect(svg).toHaveAttribute("viewBox", "0 0 300 20");
+      } finally {
+        rects.mockRestore();
+        computed.mockRestore();
+        globalThis.ResizeObserver = original;
+        vi.useRealTimers();
       }
     });
   });

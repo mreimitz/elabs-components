@@ -1,14 +1,17 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// react-use-measure uses ResizeObserver for layout measurement, which jsdom
-// does not implement. Mock it to return a fixed size so the chart's inner
+// `useLayoutMeasure` reads the layout box, which jsdom does not lay out.
+// Mock it to return a fixed size so the chart's inner
 // render gate (mainSize > 0) is satisfied and geometry is deterministic.
 // Real render + a11y are covered by the Storybook interaction tests.
 const MEASURED_WIDTH = 300;
 const MEASURED_HEIGHT = 120;
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: MEASURED_WIDTH, height: MEASURED_HEIGHT }],
+// The real hook hands back one size object until the size changes; so does this.
+const MEASURED_BOX = { width: MEASURED_WIDTH, height: MEASURED_HEIGHT };
+vi.mock("./layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, MEASURED_BOX],
 }));
 
 import { scaleLinear } from "@visx/scale";

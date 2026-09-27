@@ -16,7 +16,7 @@
  * `ParentSize` did; a node measured on attach has it in the mount commit.
  */
 import { act, cleanup, render } from "@testing-library/react";
-import { Activity } from "react";
+import { Activity, StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ChartParentSize } from "./chart-parent-size";
 import { FunnelChart } from "./funnel-chart";
@@ -72,6 +72,10 @@ beforeEach(() => {
   vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(() => box.height);
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
     () => new DOMRect(0, 0, box.width, box.height),
+  );
+  // Every element is rendered: it lists one box.
+  vi.spyOn(Element.prototype, "getClientRects").mockImplementation(
+    () => [new DOMRect(0, 0, box.width, box.height)] as unknown as DOMRectList,
   );
   vi.spyOn(window, "getComputedStyle").mockImplementation((el, pseudo) => {
     const style = realGetComputedStyle(el, pseudo);
@@ -233,6 +237,32 @@ describe("ChartParentSize hands its children the layout box (RM-189)", () => {
     expect(svg().getAttribute("height")).toBe("300");
   });
 
+  it("a window resize that leaves the box as it was draws nothing", () => {
+    vi.useFakeTimers();
+    const { seen } = renderWrapper();
+    tick();
+    const settled = seen.length;
+    act(() => {
+      window.dispatchEvent(new Event("resize"));
+      window.dispatchEvent(new Event("orientationchange"));
+    });
+    act(() => vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS * 2));
+    expect(seen.length).toBe(settled);
+  });
+
+  it("mounting reads no style at all — no walk up the ancestors", () => {
+    const styles = vi.mocked(window.getComputedStyle);
+    styles.mockClear();
+    render(
+      <div style={{ overflow: "auto" }}>
+        <div style={{ overflow: "scroll" }}>
+          <ChartParentSize>{() => null}</ChartParentSize>
+        </div>
+      </div>,
+    );
+    expect(styles).not.toHaveBeenCalled();
+  });
+
   it("a window resize alone lands the new box one period later", () => {
     vi.useFakeTimers();
     const { svg } = renderWrapper();
@@ -346,6 +376,146 @@ describe("useLayoutMeasure, measuring on attach (the families that measure their
       .mockImplementation(() => box.width);
     renderProbe();
     expect(reads).toHaveBeenCalledTimes(1);
+  });
+
+  it("a node the caller stops measuring is let go; handed back, it is measured afresh", () => {
+    const seen: { width: number; height: number }[] = [];
+    function Probe({ on }: { on: boolean }) {
+      const [ref, size] = useLayoutMeasure();
+      seen.push(size);
+      return <div ref={on ? ref : undefined} />;
+    }
+    const view = render(<Probe on />);
+    expect(seen.at(-1)).toEqual({ width: 600, height: 300 });
+    view.rerender(<Probe on={false} />);
+    // Nothing observes the node any more.
+    expect([...ManualResizeObserver.live].every((o) => o.targets.size === 0)).toBe(true);
+    box.width = 450; // resized while let go
+    box.height = 220;
+    view.rerender(<Probe on />);
+    expect(seen.at(-1)).toEqual({ width: 450, height: 220 });
+    resizeTo(380, 200); // and observed again
+    expect(seen.at(-1)).toEqual({ width: 380, height: 200 });
+  });
+
+  it("StrictMode, two charts: one shared window listener pair, and nothing left after unmount", () => {
+    const listeners = new Map<string, Set<unknown>>([
+      ["resize", new Set()],
+      ["orientationchange", new Set()],
+    ]);
+    const add = window.addEventListener.bind(window);
+    const remove = window.removeEventListener.bind(window);
+    vi.spyOn(window, "addEventListener").mockImplementation((type, listener, options) => {
+      listeners.get(type)?.add(listener);
+      add(type, listener, options);
+    });
+    vi.spyOn(window, "removeEventListener").mockImplementation((type, listener, options) => {
+      listeners.get(type)?.delete(listener);
+      remove(type, listener, options);
+    });
+    function Probe() {
+      const [ref] = useLayoutMeasure();
+      return <div ref={ref} />;
+    }
+    const view = render(
+      <StrictMode>
+        <Probe />
+        <Probe />
+      </StrictMode>,
+    );
+    expect(listeners.get("resize")!.size).toBe(1);
+    expect(listeners.get("orientationchange")!.size).toBe(1);
+    expect([...ManualResizeObserver.live].filter((o) => o.targets.size > 0)).toHaveLength(2);
+    view.unmount();
+    expect(listeners.get("resize")!.size).toBe(0);
+    expect(listeners.get("orientationchange")!.size).toBe(0);
+    expect(ManualResizeObserver.live.size).toBe(0);
+  });
+});
+
+describe("useLayoutMeasure's box (Tree, Gantt and Sparkline)", () => {
+  function renderBoxProbe(options: Parameters<typeof useLayoutMeasure>[0], style?: object) {
+    const seen: { width: number; height: number }[] = [];
+    function Probe() {
+      const [ref, size] = useLayoutMeasure(options);
+      seen.push(size);
+      return <div ref={ref} style={style} />;
+    }
+    render(<Probe />);
+    return seen;
+  }
+
+  it('"content-box" is the box inside the padding and border', () => {
+    const seen = renderBoxProbe(
+      { box: "content-box" },
+      { padding: "10px", borderWidth: "1px", borderStyle: "solid" },
+    );
+    expect(seen.at(-1)).toEqual({ width: 600 - 22, height: 300 - 22 });
+  });
+
+  it('"content-box" on an <svg>, which has no offsets, reads its computed box', () => {
+    const seen: { width: number; height: number }[] = [];
+    function Probe() {
+      const [ref, size] = useLayoutMeasure({ box: "content-box", measureOnAttach: false });
+      seen.push(size);
+      return <svg ref={ref} />;
+    }
+    const realStyle = vi.mocked(window.getComputedStyle).getMockImplementation()!;
+    vi.mocked(window.getComputedStyle).mockImplementation((el, pseudo) => {
+      const style = realStyle(el, pseudo);
+      if (!(el instanceof SVGSVGElement)) return style;
+      return new Proxy(style, {
+        get(target, prop) {
+          if (prop === "width") return "288px";
+          if (prop === "height") return "20px";
+          if (prop === "boxSizing") return "content-box";
+          const value = Reflect.get(target, prop, target);
+          return typeof value === "function" ? value.bind(target) : value;
+        },
+      });
+    });
+    render(<Probe />);
+    expect(seen.at(-1)).toEqual({ width: 0, height: 0 }); // not read on attach
+    tick();
+    expect(seen.at(-1)).toEqual({ width: 288, height: 20 });
+  });
+
+  // A node that is not rendered keeps its specified size as its computed one
+  // (`<svg style="width:100%">` inside a hidden parent answers "100%"), so
+  // parsing that would size it at 100 or 300. It has no client rects: no box.
+  it.each(["100%", "300px"])('"content-box" on a node with no box is 0 × 0 (computed %s)', (w) => {
+    const seen: { width: number; height: number }[] = [];
+    function Probe() {
+      const [ref, size] = useLayoutMeasure({ box: "content-box" });
+      seen.push(size);
+      return <svg ref={ref} />;
+    }
+    vi.spyOn(Element.prototype, "getClientRects").mockImplementation(
+      () => [] as unknown as DOMRectList,
+    );
+    const realStyle = vi.mocked(window.getComputedStyle).getMockImplementation()!;
+    vi.mocked(window.getComputedStyle).mockImplementation((el, pseudo) => {
+      const style = realStyle(el, pseudo);
+      if (!(el instanceof SVGSVGElement)) return style;
+      return new Proxy(style, {
+        get(target, prop) {
+          if (prop === "width" || prop === "height") return w;
+          if (prop === "boxSizing") return "content-box";
+          const value = Reflect.get(target, prop, target);
+          return typeof value === "function" ? value.bind(target) : value;
+        },
+      });
+    });
+    render(<Probe />);
+    tick();
+    expect(seen.at(-1)).toEqual({ width: 0, height: 0 });
+  });
+
+  it('"client" is clientWidth × clientHeight: the padding box less a scrollbar', () => {
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(() => 585);
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockImplementation(() => 285);
+    const seen = renderBoxProbe({ box: "client" });
+    expect(seen.at(-1)).toEqual({ width: 585, height: 285 });
   });
 });
 

@@ -1,12 +1,12 @@
 /**
  * auto-chart.test.tsx — Vitest + Testing Library smoke tests for AutoChart.
  *
- * Charts use ResizeObserver (via @visx/responsive's ParentSize and FunnelChart's
- * own observer) and react-use-measure, none of which are implemented in jsdom.
+ * Charts measure their box with a ResizeObserver (`ChartParentSize` and
+ * `useLayoutMeasure`), and jsdom lays nothing out.
  *
  * Mocking strategy (mirrors bar-chart.test.tsx and scatter-chart.test.tsx):
- * - Mock @visx/responsive to return a fixed 560×288 via a fake ParentSize.
- * - Mock react-use-measure to return fixed bounds.
+ * - Mock `ChartParentSize` to hand its children a fixed 560×288.
+ * - Mock `useLayoutMeasure` to return the same fixed box.
  * - Stub window.ResizeObserver (for FunnelChart's direct usage).
  *
  * Real render/interaction/a11y is covered by the Storybook stories.
@@ -14,7 +14,7 @@
 import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-// ── @visx/responsive → fixed 560×288 ─────────────────────────────────────────
+// ── ChartParentSize → fixed 560×288 ──────────────────────────────────────────
 vi.mock("../charts/chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require("react");
@@ -32,9 +32,12 @@ vi.mock("../charts/chart-parent-size", () => {
   };
 });
 
-// ── react-use-measure → fixed 560×288 ────────────────────────────────────────
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: 560, height: 288 }],
+// ── useLayoutMeasure → fixed 560×288 ─────────────────────────────────────────
+// The real hook hands back one size object until the size changes; so does this.
+const MEASURED_BOX = { width: 560, height: 288 };
+vi.mock("../charts/layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, MEASURED_BOX],
 }));
 
 // ── ResizeObserver stub (FunnelChart uses it directly) ────────────────────────

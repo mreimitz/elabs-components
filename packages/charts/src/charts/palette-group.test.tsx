@@ -31,11 +31,9 @@ vi.mock("./chart-parent-size", async () => {
   };
 });
 
-vi.mock("react-use-measure", () => ({
-  default: () => [
-    () => undefined,
-    { ...BOX, top: 0, left: 0, right: BOX.width, bottom: BOX.height, x: 0, y: 0 },
-  ],
+vi.mock("./layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, BOX],
 }));
 
 import { Candlestick } from "./candlestick";

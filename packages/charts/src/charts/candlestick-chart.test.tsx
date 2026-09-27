@@ -1,4 +1,4 @@
-// @visx/responsive's ParentSize uses ResizeObserver + real DOM measurement which
+// ChartParentSize uses ResizeObserver + real DOM measurement which
 // jsdom cannot satisfy. We mock it to supply a fixed 560×288 size so ChartInner
 // renders (same strategy as @elabs-ai/components-flow tests mock @xyflow/react).
 // Real render, interaction and a11y are covered by the Storybook story tests.

@@ -5,7 +5,7 @@
  * A dedicated file (not appended to `area-chart.test.tsx`) because that file
  * mocks `./area` and `./time-series-chart-shell` down to no-ops for its own
  * smoke tests — this file mounts the real `Area`/`AreaChart`/shell instead,
- * the same "polyfill `getTotalLength`, mock only `@visx/responsive`" pattern
+ * the same "polyfill `getTotalLength`, mock only `ChartParentSize`" pattern
  * `line-chart.test.tsx`'s RM-112 block and `chart-selection.test.tsx` use to
  * mount real path-measuring marks.
  *
@@ -16,7 +16,7 @@
 import { fireEvent, render, waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-// @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
+// ChartParentSize uses ResizeObserver + real DOM measurement which jsdom lacks.
 // Mock ParentSize to supply a fixed 560×288 viewport so ChartInner renders.
 vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ

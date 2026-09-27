@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// @visx/responsive uses ResizeObserver + real DOM measurement to derive width/height,
+// ChartParentSize uses ResizeObserver + real DOM measurement to derive width/height,
 // which jsdom cannot provide. Mock ParentSize to supply a fixed viewport so the
 // sankey layout engine receives concrete dimensions and the chart mounts.
 // Real rendering, interaction and a11y are covered by the Storybook build tests.

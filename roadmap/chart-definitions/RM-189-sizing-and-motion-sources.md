@@ -51,11 +51,11 @@ source: docs/review/2026-09-25-charts-unification-review.md F11, F12, F18; ADR 0
 
 ## Follow-ups (left open by RM-189)
 
-- Tree, Sparkline and Gantt still run their own `ResizeObserver`s. Tree reads the scroller's `clientWidth` (no scrollbar), Gantt the content box, Sparkline an `<svg>`; moving them onto `useLayoutMeasure` needs a content-box option on the hook first.
+- Tree, Sparkline and Gantt still run their own `ResizeObserver`s. Tree reads the scroller's `clientWidth` (no scrollbar), Gantt the content box, Sparkline an `<svg>`; moving them onto `useLayoutMeasure` needs a content-box option on the hook first. — done 2026-09-27 (charts/followups-measure)
 - ChartFrame, ChartCard, ChartMultiples, `ChartPlotRoot` (chart-breakpoint), the navigator and the tooltip keep their own observers.
 - Other reduced-motion reads still come from `motion/react`: funnel, gauge, treemap, pie-slice, draw-path, shimmering-text, use-grid-shimmer, use-animated-y-domains, use-canvas-draw, gantt and gantt-bar; use-density-view calls `matchMedia` directly.
-- `@visx/responsive` is still declared in the charts package.json but no longer imported; remove it in a dependency-cleanup item.
-  - Wave-3 review correction: it is still a runtime `dependencies` entry, and only tests import it (`line-chart-tiny.test.tsx` and `bar-chart-tiny.test.tsx` spread `vi.importActual("@visx/responsive")` into their `./chart-parent-size` mock; several other tests only mention it in comments). Drop those imports first, then move or remove the dependency.
+- `@visx/responsive` is still declared in the charts package.json but no longer imported; remove it in a dependency-cleanup item. — done 2026-09-27 (charts/followups-measure)
+  - Wave-3 review correction: it is still a runtime `dependencies` entry, and only tests import it (`line-chart-tiny.test.tsx` and `bar-chart-tiny.test.tsx` spread `vi.importActual("@visx/responsive")` into their `./chart-parent-size` mock; several other tests only mention it in comments). Drop those imports first, then move or remove the dependency. — done 2026-09-27 (charts/followups-measure)
 - Line, Area, Composed and Bar announce nothing while loading unless the caller sets `loadingLabel` (pre-existing, not a wave-3 change); every other family announces `charts.chart.loading`. Give them the same default announcement without changing the visible label.
 - `radar-area.tsx` and `ring.tsx` read no reduced-motion signal of their own. This predates wave 3: at `e1fa89f1` neither file read one either.
 - `CandlestickChart` tells a gain from a loss by colour alone at ordinary decoration (its series patterns appear only at high decoration); hollow/filled bodies or a glyph would add the second channel WCAG 1.4.1 asks for.

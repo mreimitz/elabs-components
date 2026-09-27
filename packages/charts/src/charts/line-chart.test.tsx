@@ -3,7 +3,7 @@
  *
  * Strategy: mirror bar-chart.test.tsx exactly.
  *
- * @visx/responsive's ParentSize uses ResizeObserver + real DOM measurement which
+ * ChartParentSize uses ResizeObserver + real DOM measurement which
  * jsdom lacks. We mock it to supply a fixed 560×288 viewport so ChartInner renders.
  *
  * The `Line` child is intentionally omitted from render tests — it calls
@@ -34,7 +34,7 @@ vi.mock("@elabs-ai/components-tokens", async (importOriginal) => ({
   useReducedMotion: () => motionState.reduced === true,
 }));
 
-// @visx/responsive uses ResizeObserver + real DOM measurement which jsdom lacks.
+// ChartParentSize uses ResizeObserver + real DOM measurement which jsdom lacks.
 // Mock ParentSize to supply a fixed 560×288 viewport so ChartInner renders.
 vi.mock("./chart-parent-size", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports -- vi.mock factory is hoisted; lazy require avoids TDZ

@@ -2,9 +2,9 @@
  * infer-chart-type.test.ts — the RM-038 decision-tree fixture table.
  *
  * One table, one row per SHAPE, driving `explainChartType`. It is deliberately
- * separate from `auto-chart.test.tsx`, which mocks `@visx/responsive` and
- * `react-use-measure` for its render tests; the inference is pure and needs
- * none of that.
+ * separate from `auto-chart.test.tsx`, which mocks the chart measurement
+ * (`ChartParentSize`, `useLayoutMeasure`) for its render tests; the inference
+ * is pure and needs none of that.
  *
  * ── What makes this table a real lock ──────────────────────────────────────
  *

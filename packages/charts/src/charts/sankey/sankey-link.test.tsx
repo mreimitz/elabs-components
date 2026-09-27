@@ -1,7 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// @visx/responsive derives width/height from ResizeObserver + real layout, which jsdom
+// ChartParentSize derives width/height from ResizeObserver + real layout, which jsdom
 // cannot provide. Supply a fixed viewport so the sankey layout engine gets concrete
 // dimensions and the links actually render.
 vi.mock("../chart-parent-size", () => {

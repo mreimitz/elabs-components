@@ -813,6 +813,52 @@ describe("Gantt v2 — zoom (P2)", () => {
   });
 });
 
+describe("Gantt — the timeline pane's width", () => {
+  it("comes through the shared measurement, read when the root attaches", () => {
+    // An observer that never reports: the width can only come from the read
+    // on attach, so the mount commit already has it (no 600 px first frame).
+    const original = globalThis.ResizeObserver;
+    class SilentResizeObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+    globalThis.ResizeObserver = SilentResizeObserver as unknown as typeof ResizeObserver;
+    // jsdom lays nothing out: the root is rendered, with a 1400px content box.
+    const rects = vi
+      .spyOn(Element.prototype, "getClientRects")
+      .mockImplementation(() => [new DOMRect(0, 0, 1400, 300)] as unknown as DOMRectList);
+    const realGetComputedStyle = window.getComputedStyle.bind(window);
+    const computed = vi.spyOn(window, "getComputedStyle").mockImplementation((el, pseudo) => {
+      const style = realGetComputedStyle(el, pseudo);
+      if (el.getAttribute("data-slot") !== "gantt") return style;
+      return new Proxy(style, {
+        get(target, prop) {
+          if (prop === "width") return "1400px";
+          if (prop === "height") return "300px";
+          if (prop === "boxSizing") return "content-box";
+          const value = Reflect.get(target, prop, target);
+          return typeof value === "function" ? value.bind(target) : value;
+        },
+      });
+    });
+    try {
+      // 20 days at 1 px/day is far narrower than the pane, so the canvas
+      // fills the pane: 1400 − the 200px label column.
+      render(
+        <Gantt tasks={baseTasks} labelColumnWidth={200} pixelsPerDay={1} style={{ height: 300 }} />,
+      );
+      expect(parseFloat((screen.getByLabelText(/^timeline$/i) as HTMLElement).style.width)).toBe(
+        1200,
+      );
+    } finally {
+      rects.mockRestore();
+      computed.mockRestore();
+      globalThis.ResizeObserver = original;
+    }
+  });
+});
+
 describe("Gantt — switching the scale switches the density", () => {
   const timelineWidth = () =>
     parseFloat((screen.getByLabelText(/^timeline$/i) as HTMLElement).style.width);

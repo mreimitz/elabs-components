@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T21:02:45.969Z",
+  "generatedAt": "2026-09-27T08:00:35.071Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -32462,7 +32462,7 @@
               "name": "fit",
               "optional": true,
               "type": "\"fixed\" | \"fill\"",
-              "description": "Sizing strategy. `\"fixed\"` (default) draws at exactly `width`×`height` — unchanged no matter what CSS box (`className=\"w-full\"`, a table cell, …) the caller puts it in, exactly as before this prop existed. `\"fill\"` measures the real rendered width of that CSS box (a tiny, cleaned-up `ResizeObserver`, falling back to `width` before the first measurement or where `ResizeObserver` isn't available, e.g. jsdom) and draws the plot at that real pixel width instead — no CSS stretching, so line strokes, the emphasized dot and the last-value label never distort. Opt in per usage (a trend card, a scorecard cell) rather than globally, since most Sparkline call sites size it explicitly and shouldn't pay for a measurement round-trip.",
+              "description": "Sizing strategy. `\"fixed\"` (default) draws at exactly `width`×`height` — unchanged no matter what CSS box (`className=\"w-full\"`, a table cell, …) the caller puts it in, exactly as before this prop existed. `\"fill\"` measures the real rendered width of that CSS box (the charts' shared resize timing: at once, then at most every 100 ms while it changes; falling back to `width` before the first measurement or where `ResizeObserver` isn't available, e.g. jsdom) and draws the plot at that real pixel width instead — no CSS stretching, so line strokes, the emphasized dot and the last-value label never distort. Opt in per usage (a trend card, a scorecard cell) rather than globally, since most Sparkline call sites size it explicitly and shouldn't pay for a measurement round-trip.",
               "defaultValue": "\"fixed\"",
               "kind": "enum"
             },

@@ -7,8 +7,11 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("react-use-measure", () => ({
-  default: () => [() => undefined, { width: 560, height: 288 }],
+// The real hook hands back one size object until the size changes; so does this.
+const MEASURED_BOX = { width: 560, height: 288 };
+vi.mock("../layout-size", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useLayoutMeasure: () => [() => undefined, MEASURED_BOX],
 }));
 
 vi.mock("../chart-parent-size", () => {

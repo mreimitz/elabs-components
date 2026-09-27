@@ -173,8 +173,8 @@ export const RankStrip: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
-    // `react-use-measure` debounces its ResizeObserver callback, so the SVG
-    // body mounts a tick after first paint — wait for it before querying.
+    // The SVG body mounts once the chart has measured its box, which can be
+    // a tick after first paint — wait for it before querying.
     await waitFor(() => {
       expect(canvasElement.querySelector('[data-slot="bump-chart-category-label"]')).not.toBeNull();
     });

@@ -514,7 +514,7 @@ const ScatterChartBase = forwardRef<HTMLDivElement, ScatterChartBaseProps>(funct
   const setContainerRef = (node: HTMLDivElement | null) => {
     // Keep the internal ref (anchors tooltips) in sync.
     containerRef.current = node;
-    // Drive react-use-measure.
+    // Measure it (`useLayoutMeasure`).
     measureRef(node);
     // Honour the forwarded ref from callers.
     if (typeof forwardedRef === "function") {

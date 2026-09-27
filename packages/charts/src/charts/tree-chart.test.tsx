@@ -15,7 +15,9 @@ import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@elabs-ai/components-tokens";
 import { ChartFrame } from "../chart-frame/chart-frame";
 import { ChartConfigProvider } from "./chart-config-context";
+import { CHART_RESIZE_DEBOUNCE_MS } from "./layout-size";
 import { computeTreeLayout, resolveTree, TreeChart, type TreeNode } from "./tree-chart";
+import { TREE_PAN_KEEP } from "./tree-chart-viewport";
 import { estimateTextWidth } from "./use-text-measurer";
 
 interface AnimateCall {
@@ -841,6 +843,35 @@ describe("TreeChart — expand and collapse", () => {
     expect(container.querySelector('[data-slot="tree-chart-frame"]')).toBeNull();
     expect(container.querySelector('[data-slot="tree-chart-viewport"]')).toBeNull();
     expect(container.querySelector('[data-slot="tree-chart"]')).not.toHaveAttribute("data-zoom");
+  });
+
+  it("zoomable: the pan room is the scroller's client box, read by the shared measurement", () => {
+    // `useLayoutMeasure({ box: "client" })`: in the mount commit, then after a
+    // window resize, trailing by the shared pacing.
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const viewport = { width: 380, height: 360 };
+    const width = vi
+      .spyOn(HTMLElement.prototype, "clientWidth", "get")
+      .mockImplementation(() => viewport.width);
+    const height = vi
+      .spyOn(HTMLElement.prototype, "clientHeight", "get")
+      .mockImplementation(() => viewport.height);
+    try {
+      const { container } = render(<TreeChart accessibleLabel="Org" data={orgChart} zoomable />);
+      const canvas = container.querySelector<HTMLElement>('[data-slot="tree-chart-canvas"]')!;
+      expect(canvas.style.left).toBe(`${380 - TREE_PAN_KEEP}px`);
+      expect(canvas.style.top).toBe(`${360 - TREE_PAN_KEEP}px`);
+      viewport.width = 500;
+      act(() => {
+        window.dispatchEvent(new Event("resize"));
+        vi.advanceTimersByTime(CHART_RESIZE_DEBOUNCE_MS);
+      });
+      expect(canvas.style.left).toBe(`${500 - TREE_PAN_KEEP}px`);
+    } finally {
+      width.mockRestore();
+      height.mockRestore();
+      vi.useRealTimers();
+    }
   });
 
   it("shows the tooltip on focus and clears it on Escape", async () => {
