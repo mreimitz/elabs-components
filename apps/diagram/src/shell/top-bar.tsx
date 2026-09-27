@@ -242,9 +242,11 @@ function DiagramOptionsMenu({
       </DropdownMenuTrigger>
       {/* Wave 3 makes the menu taller than a short window: it scrolls within the room Radix
           measures. P4: library gap — ui's DropdownMenuContent clips (`overflow-hidden`, no
-          max height); docs/findings/DG-14-inspector-write-back.md. */}
+          max height); docs/findings/DG-14-inspector-write-back.md. `collisionPadding` keeps
+          it 8 px off the window's edges (wave-3 review m3). */}
       <DropdownMenuContent
         align="end"
+        collisionPadding={8}
         className="max-h-(--radix-dropdown-menu-content-available-height) overflow-y-auto"
       >
         <DocumentMenuItems />
