@@ -289,5 +289,7 @@ jobs:
             apps/home/e2e/playwright-report/
             apps/home/.next/.lighthouseci/
             apps/home/.next/bundle-budget.json
+          # `.lighthouseci/` is a dot-folder, which upload-artifact v4 skips by default.
+          include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 14
