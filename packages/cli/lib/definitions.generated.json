@@ -952,7 +952,10 @@
       "label": "Area chart",
       "module": "packages/charts/src/charts/area-chart.tsx",
       "prose": {
-        "avoidWhen": "fewer than about 4 points — a bar chart reads the same data faster",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
+        "avoidWhens": [
+          "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster"
+        ],
         "dataShapes": [
           "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\""
         ]
@@ -1934,6 +1937,10 @@
       "module": "packages/charts/src/charts/bar-chart.tsx",
       "prose": {
         "avoidWhen": "a time axis with many points — use a line or area chart",
+        "avoidWhens": [
+          "a time axis with many points — use a line or area chart",
+          "the zero baseline is not meaningful — plain bars read the same comparison"
+        ],
         "dataShapes": [
           "categorical comparison of one or more measures across a small set of named categories",
           "a single signed measure around a meaningful zero, as diverging bars with a zero line"
@@ -2356,6 +2363,9 @@
       "module": "packages/charts/src/charts/bullet-chart.tsx",
       "prose": {
         "avoidWhen": "more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`",
+        "avoidWhens": [
+          "more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`"
+        ],
         "dataShapes": ["a single value against a target and 2–3 qualitative bands"]
       },
       "specTypes": [],
@@ -2653,6 +2663,7 @@
       "module": "packages/charts/src/charts/bump-chart.tsx",
       "prose": {
         "avoidWhen": "only 2 periods — use a dumbbell chart",
+        "avoidWhens": ["only 2 periods — use a dumbbell chart"],
         "dataShapes": ["rank of several entities over ordered periods"]
       },
       "specTypes": ["bump"],
@@ -3074,6 +3085,7 @@
       "module": "packages/charts/src/charts/candlestick-chart.tsx",
       "prose": {
         "avoidWhen": "the data is not OHLC-shaped — a line of closing values is enough",
+        "avoidWhens": ["the data is not OHLC-shaped — a line of closing values is enough"],
         "dataShapes": ["open, high, low and close per period — an OHLC financial series over time"]
       },
       "specTypes": ["candlestick"],
@@ -3454,6 +3466,7 @@
       "module": "packages/charts/src/charts/choropleth/choropleth-chart.tsx",
       "prose": {
         "avoidWhen": "there is no real geography — use a bar chart",
+        "avoidWhens": ["there is no real geography — use a bar chart"],
         "dataShapes": ["a measure by geographic region"]
       },
       "specTypes": ["choropleth"],
@@ -4026,6 +4039,7 @@
       "module": "packages/charts/src/charts/composed-chart.tsx",
       "prose": {
         "avoidWhen": "a single mark type would do — reach for that container directly",
+        "avoidWhens": ["a single mark type would do — reach for that container directly"],
         "dataShapes": ["mixed marks on one shared axis — bars with a line target, for example"]
       },
       "specTypes": ["dual-axis"],
@@ -4468,6 +4482,9 @@
       "module": "packages/charts/src/charts/density-scatter/density-scatter-chart.tsx",
       "prose": {
         "avoidWhen": "under ~20k rows — use ScatterChart, which keeps labels, shapes and per-point marks",
+        "avoidWhens": [
+          "under ~20k rows — use ScatterChart, which keeps labels, shapes and per-point marks"
+        ],
         "dataShapes": [
           "hundreds of thousands of rows of two continuous measures — where the points pile up, and which zone each falls in"
         ]
@@ -4845,6 +4862,7 @@
       "module": "packages/charts/src/charts/distribution/distribution-chart.tsx",
       "prose": {
         "avoidWhen": "a single summary number would do — use a metric card",
+        "avoidWhens": ["a single summary number would do — use a metric card"],
         "dataShapes": [
           "the spread of one measure, optionally grouped — a histogram, box plot or strip plot"
         ],
@@ -5308,6 +5326,7 @@
       "module": "packages/charts/src/charts/dumbbell-chart.tsx",
       "prose": {
         "avoidWhen": "more than 2 points per category — use small-multiple lines",
+        "avoidWhens": ["more than 2 points per category — use small-multiple lines"],
         "dataShapes": [
           "two time points per category — a before and after, or a range with two ends",
           "two measures per category with a direction — the move from one to the other is the fact, drawn as an arrow (variant=\"arrow\")"
@@ -5768,6 +5787,7 @@
       "module": "packages/charts/src/charts/funnel-chart.tsx",
       "prose": {
         "avoidWhen": "the stages are not sequential, or there is no drop-off story to tell",
+        "avoidWhens": ["the stages are not sequential, or there is no drop-off story to tell"],
         "dataShapes": ["a sequential process with drop-off between stages"],
         "summary": "Token-driven funnel chart. When `onDatapointClick` is set the body is wrapped in a `ChartDatapointProvider` so the stages can register keyboard targets — the provider has to sit ABOVE the component that registers (#349)."
       },
@@ -6020,6 +6040,9 @@
       "module": "packages/charts/src/gantt/gantt.tsx",
       "prose": {
         "avoidWhen": "it is not really scheduled work — a dumbbell chart shows a single before and after",
+        "avoidWhens": [
+          "it is not really scheduled work — a dumbbell chart shows a single before and after"
+        ],
         "dataShapes": ["tasks or phases across a timeline, with dependencies between them"],
         "summary": "Gantt — interactive, accessible Gantt/timeline chart.\n\n```tsx\n<Gantt tasks={tasks} defaultViewMode=\"week\">\n  <Gantt.Toolbar />\n  <Gantt.Body domainStart={start} domainEnd={end} canvasWidth={800} />\n</Gantt>\n```"
       },
@@ -6283,6 +6306,7 @@
       "module": "packages/charts/src/charts/gauge.tsx",
       "prose": {
         "avoidWhen": "the trend over time matters more than the instant — use a line chart",
+        "avoidWhens": ["the trend over time matters more than the instant — use a line chart"],
         "dataShapes": ["a single value against a target or threshold bands"]
       },
       "targets": [],
@@ -7152,6 +7176,10 @@
       "normalize": true,
       "prose": {
         "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+        "avoidWhens": [
+          "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+          "fewer than about two months of days — too sparse to read as a calendar grid"
+        ],
         "dataShapes": [
           "two categorical axes (weekday by hour, for example) with one numeric value per cell — ticket volume, event counts; many small cells favour mode=\"dot\" over the default cell fill",
           "one measure per calendar day over several months, as variant=\"calendar\""
@@ -8115,6 +8143,9 @@
       "module": "packages/charts/src/charts/line-chart.tsx",
       "prose": {
         "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart",
+        "avoidWhens": [
+          "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart"
+        ],
         "dataShapes": [
           "one or more measures over continuous time, where the trend itself is the point"
         ]
@@ -8344,6 +8375,7 @@
       "module": "packages/charts/src/charts/live-line-chart.tsx",
       "prose": {
         "avoidWhen": "the series is static or historical — use a line chart",
+        "avoidWhens": ["the series is static or historical — use a line chart"],
         "dataShapes": ["a metric updating in real time, appended over a rolling window"]
       },
       "specTypes": [],
@@ -8755,6 +8787,7 @@
       "module": "packages/charts/src/charts/network/network-chart.tsx",
       "prose": {
         "avoidWhen": "the relationship really is a hierarchy — use a tree chart or a treemap",
+        "avoidWhens": ["the relationship really is a hierarchy — use a tree chart or a treemap"],
         "dataShapes": ["arbitrary node and edge relationships with no hierarchy"],
         "summary": "`NetworkChart` — a node-link graph in three layouts (RM-036).\n\nToken-driven, theme-safe, deterministic and keyboard-operable. See the module header for the three decisions that shape it: the force layout is SOLVED, not animated; the keyboard path lives outside the `aria-hidden` SVG; adjacency emphasis is a CSS class driven by one piece of state.\n\nThe container follows the package's `role=\"figure\"` a11y convention (`chart-a11y.tsx`) rather than a bare `role=\"img\"`, so a reader can still reach the datapoint targets inside it; the summary string RM-036 asks for (`\"Network, 60 nodes, 140 links, 5 groups\"`) is the default accessible name."
       },
@@ -8965,6 +8998,9 @@
       "module": "packages/charts/src/charts/parallel-coordinates/parallel-coordinates-chart.tsx",
       "prose": {
         "avoidWhen": "more than about 2 entities need per-entity detail — use small-multiple radar",
+        "avoidWhens": [
+          "more than about 2 entities need per-entity detail — use small-multiple radar"
+        ],
         "dataShapes": ["many numeric dimensions compared across entities at once"]
       },
       "specTypes": [],
@@ -9398,7 +9434,10 @@
       "label": "Pie chart",
       "module": "packages/charts/src/charts/pie-chart.tsx",
       "prose": {
-        "avoidWhen": "more than about 6 slices — use a bar or unit chart",
+        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
+        "avoidWhens": [
+          "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart"
+        ],
         "dataShapes": ["parts of a whole across a few categories, read as proportions of the total"]
       },
       "specTypes": ["pie"],
@@ -9777,6 +9816,9 @@
       "module": "packages/charts/src/charts/radar-chart.tsx",
       "prose": {
         "avoidWhen": "more than about 8 spokes, or absolute magnitude matters more than the shape",
+        "avoidWhens": [
+          "more than about 8 spokes, or absolute magnitude matters more than the shape"
+        ],
         "dataShapes": [
           "several measures per entity, compared as an overall shape rather than value by value"
         ]
@@ -10174,6 +10216,7 @@
       "module": "packages/charts/src/charts/ring-chart.tsx",
       "prose": {
         "avoidWhen": "several categories matter — use a pie or unit chart",
+        "avoidWhens": ["several categories matter — use a pie or unit chart"],
         "dataShapes": ["one proportion against its maximum, read as a single ring"]
       },
       "specTypes": [],
@@ -10415,6 +10458,7 @@
       "module": "packages/charts/src/charts/sankey/sankey-chart.tsx",
       "prose": {
         "avoidWhen": "the nodes have no real flow between them — use a network chart",
+        "avoidWhens": ["the nodes have no real flow between them — use a network chart"],
         "dataShapes": ["a weighted flow between named nodes, source to target"]
       },
       "specTypes": [],
@@ -11088,6 +11132,7 @@
       "module": "packages/charts/src/charts/scatter-chart.tsx",
       "prose": {
         "avoidWhen": "one axis is categorical — use a bar or dumbbell chart",
+        "avoidWhens": ["one axis is categorical — use a bar or dumbbell chart"],
         "dataShapes": [
           "two continuous measures per row — correlation, or the shape of a distribution"
         ]
@@ -11535,6 +11580,7 @@
       "module": "packages/charts/src/charts/tree-chart.tsx",
       "prose": {
         "avoidWhen": "size, not structure, is the point — use a treemap",
+        "avoidWhens": ["size, not structure, is the point — use a treemap"],
         "dataShapes": [
           "a hierarchy read as a branching tree rather than as sized rectangles",
           "a metric decomposed into driver metrics — a KPI or driver tree"
@@ -11876,6 +11922,7 @@
       "module": "packages/charts/src/charts/treemap/treemap-chart.tsx",
       "prose": {
         "avoidWhen": "the hierarchy has fewer than 2 levels — a flat bar chart is clearer",
+        "avoidWhens": ["the hierarchy has fewer than 2 levels — a flat bar chart is clearer"],
         "dataShapes": ["a nested hierarchy sized by one measure"],
         "summary": "`TreemapChart` — a two-level squarified treemap (RM-025). Area encodes value straight from the `d3-hierarchy` layout (no sqrt); the default `palette: \"mono\"` gives every leaf one shade, so groups are separated by their title band + paper gap alone, never by colour.\n\nToken-driven, theme-safe, keyboard-operable: leaves register as `ChartDatapointLayer` targets when `onDatapointClick`/`copyValueOnActivate` is set (the shared cross-family interaction contract, #349); the optional `drilldown` zoom is a SEPARATE, real-`<button>` affordance on each group's title band, so a static chart never gains a click handler beyond `onDatapointClick`."
       },
@@ -12117,6 +12164,7 @@
       "module": "packages/charts/src/charts/unit-chart.tsx",
       "prose": {
         "avoidWhen": "exact per-unit counts do not matter — a pie or bar chart reads faster",
+        "avoidWhens": ["exact per-unit counts do not matter — a pie or bar chart reads faster"],
         "dataShapes": [
           "parts of a whole as discrete unit counts rather than a percentage, as layout=\"waffle\"",
           "one tally row per category, ticks summing to a total — ticket volume by weekday, for example, as layout=\"rows\""
@@ -12596,6 +12644,7 @@
       "module": "packages/charts/src/charts/waterfall-chart.tsx",
       "prose": {
         "avoidWhen": "there is no meaningful running total — use diverging bars instead",
+        "avoidWhens": ["there is no meaningful running total — use diverging bars instead"],
         "dataShapes": ["a running total with signed steps into and out of it"]
       },
       "specTypes": ["waterfall"],

@@ -5,10 +5,13 @@
 `brand-ui chart-for` and the `chart_for` MCP tool now print a `binds:` line under each
 candidate — the prop each data role binds to, not just the role, e.g.
 `binds: Column → xDataKey (dimension), Row → yDataKey (dimension), Value → valueKey
-(measure)` for `HeatmapChart`. The ranking itself still works the way it always has, parsing
-each container's `@dataShape`/`@avoidWhen` JSDoc docblocks straight from source at the CLI's
-base; only this new `binds:` line (and the two doc-table cells below) additionally read the
-committed definitions snapshot, so no new file ships and the ranking itself gets no slower.
+(measure)` for `HeatmapChart`. The ranking itself still works the way it always has: a
+container with a `ComponentDefinition` gets its `@dataShape`/`@avoidWhen` prose from the
+committed definitions snapshot (`core.mjs`'s `collectChartDataShapes`, read at `pnpm gen`
+time — never re-parsed at CLI runtime), and only a component with no definition yet falls
+back to parsing its own docblock directly. This new `binds:` line (and the two doc-table
+cells below) read that same snapshot, so no new file ships and the ranking itself gets no
+slower.
 
 The `skills/brand-ui/reference/chart-selection.md` and `components.md` reference docs are
 now partly generated: the "Container → key props" / "Key props", Shape, and Avoid-when cells

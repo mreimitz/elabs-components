@@ -228,17 +228,21 @@ export function matchChartFor(manifest, query, { limit = 5 } = {}) {
       // didn't ask about — and that shape is what gets quoted back as the
       // reason, so the reader sees exactly why it ranked where it did.
       let best = null;
-      for (const shape of shapes) {
+      shapes.forEach((shape, index) => {
         const { score, density } = overlapScore(queryTokens, shape);
-        if (score > 0 && (!best || score > best.score)) best = { shape, score, density };
-      }
+        if (score > 0 && (!best || score > best.score)) best = { shape, score, density, index };
+      });
       if (best) {
+        // avoidWhens is index-paired with dataShapes; a container with fewer
+        // avoid-whens than shapes falls back to its last declared one, never to a
+        // sibling shape's criterion by accident.
+        const avoidWhens = Array.isArray(meta.avoidWhens) ? meta.avoidWhens : null;
         candidates.push({
           name,
           pkg: pkgName,
           score: best.score,
           matchedShape: best.shape,
-          avoidWhen: meta.avoidWhen ?? null,
+          avoidWhen: avoidWhens?.[best.index] ?? avoidWhens?.at(-1) ?? meta.avoidWhen ?? null,
           targets: Array.isArray(meta.targets) && meta.targets.length ? meta.targets : null,
           density: best.density,
         });
@@ -303,8 +307,8 @@ export function deviceHints(query) {
 
 /**
  * One target's prop text for the `binds:` line — a container prop, a child part's
- * (`Part.prop`), or a data-row field path (`data[].label`) for a `{ field }` target
- * (review F07). Every `{ field }` target in the package today binds against the
+ * (`Part.prop`), or a data-row field path (`data[].label`) for a `{ field }` target.
+ * Every `{ field }` target in the package today binds against the
  * default-named `data` array prop; this module reads no `contract.dataProp` because it
  * takes no imports at all (see the module docblock) — a future family with a
  * differently-named array prop and `{ field }` targets would need that threaded through

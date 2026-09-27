@@ -183,8 +183,8 @@ export function genTargets(root, manifest) {
       },
       {
         // The component-selection table's "KPIs / charts" row: the chart-type
-        // count is generated from the definitions registry (F03: it had drifted
-        // to 13).
+        // count is generated from the definitions registry so a hand-kept count
+        // can't drift from it.
         file: join(root, "skills/brand-ui/reference/components.md"),
         regions: [{ name: "chart-count", render: () => renderChartCountRow(root) }],
       },

@@ -8,7 +8,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 11.5,
         "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
-        "avoidWhen": "fewer than about 4 points — a bar chart reads the same data faster",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
         "hasTargets": false
       },
       {
@@ -24,7 +24,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 3.75,
         "matchedShape": "one measure per calendar day over several months, as variant=\"calendar\"",
-        "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+        "avoidWhen": "fewer than about two months of days — too sparse to read as a calendar grid",
         "hasTargets": false
       },
       {
@@ -86,7 +86,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 3.75,
         "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
-        "avoidWhen": "more than about 6 slices — use a bar or unit chart",
+        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
         "hasTargets": false
       }
     ]
@@ -124,7 +124,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 2,
         "matchedShape": "a single signed measure around a meaningful zero, as diverging bars with a zero line",
-        "avoidWhen": "a time axis with many points — use a line or area chart",
+        "avoidWhen": "the zero baseline is not meaningful — plain bars read the same comparison",
         "hasTargets": false
       },
       {
@@ -154,7 +154,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 2.75,
         "matchedShape": "one measure per calendar day over several months, as variant=\"calendar\"",
-        "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+        "avoidWhen": "fewer than about two months of days — too sparse to read as a calendar grid",
         "hasTargets": false
       },
       {
@@ -224,7 +224,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 3,
         "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
-        "avoidWhen": "fewer than about 4 points — a bar chart reads the same data faster",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
         "hasTargets": false
       }
     ]
@@ -270,7 +270,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 3,
         "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
-        "avoidWhen": "fewer than about 4 points — a bar chart reads the same data faster",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
         "hasTargets": false
       }
     ]
@@ -316,7 +316,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 1.75,
         "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
-        "avoidWhen": "more than about 6 slices — use a bar or unit chart",
+        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
         "hasTargets": false
       }
     ]
@@ -338,7 +338,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 2,
         "matchedShape": "a single signed measure around a meaningful zero, as diverging bars with a zero line",
-        "avoidWhen": "a time axis with many points — use a line or area chart",
+        "avoidWhen": "the zero baseline is not meaningful — plain bars read the same comparison",
         "hasTargets": false
       },
       {
@@ -408,7 +408,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 2,
         "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
-        "avoidWhen": "fewer than about 4 points — a bar chart reads the same data faster",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
         "hasTargets": false
       }
     ]
@@ -576,7 +576,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 1,
         "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
-        "avoidWhen": "fewer than about 4 points — a bar chart reads the same data faster",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
         "hasTargets": false
       }
     ]
@@ -614,7 +614,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 2,
         "matchedShape": "a single signed measure around a meaningful zero, as diverging bars with a zero line",
-        "avoidWhen": "a time axis with many points — use a line or area chart",
+        "avoidWhen": "the zero baseline is not meaningful — plain bars read the same comparison",
         "hasTargets": false
       },
       {
@@ -668,7 +668,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 3.5,
         "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
-        "avoidWhen": "fewer than about 4 points — a bar chart reads the same data faster",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
         "hasTargets": false
       }
     ]
@@ -690,7 +690,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 5.5,
         "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
-        "avoidWhen": "fewer than about 4 points — a bar chart reads the same data faster",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
         "hasTargets": false
       },
       {
@@ -714,7 +714,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 3.75,
         "matchedShape": "one measure per calendar day over several months, as variant=\"calendar\"",
-        "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+        "avoidWhen": "fewer than about two months of days — too sparse to read as a calendar grid",
         "hasTargets": false
       }
     ]
@@ -744,7 +744,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 3.5,
         "matchedShape": "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\"",
-        "avoidWhen": "fewer than about 4 points — a bar chart reads the same data faster",
+        "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
         "hasTargets": false
       },
       {
@@ -752,7 +752,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 2.75,
         "matchedShape": "one measure per calendar day over several months, as variant=\"calendar\"",
-        "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+        "avoidWhen": "fewer than about two months of days — too sparse to read as a calendar grid",
         "hasTargets": false
       },
       {
@@ -858,7 +858,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 9,
         "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
-        "avoidWhen": "more than about 6 slices — use a bar or unit chart",
+        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
         "hasTargets": false
       },
       {
@@ -912,7 +912,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 4,
         "matchedShape": "one measure per calendar day over several months, as variant=\"calendar\"",
-        "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+        "avoidWhen": "fewer than about two months of days — too sparse to read as a calendar grid",
         "hasTargets": false
       },
       {
@@ -958,7 +958,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 3,
         "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
-        "avoidWhen": "more than about 6 slices — use a bar or unit chart",
+        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
         "hasTargets": false
       },
       {
@@ -1120,7 +1120,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 2,
         "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
-        "avoidWhen": "more than about 6 slices — use a bar or unit chart",
+        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
         "hasTargets": false
       }
     ]
@@ -1158,7 +1158,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 2,
         "matchedShape": "one measure per calendar day over several months, as variant=\"calendar\"",
-        "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+        "avoidWhen": "fewer than about two months of days — too sparse to read as a calendar grid",
         "hasTargets": false
       },
       {
@@ -1188,7 +1188,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 4.75,
         "matchedShape": "parts of a whole across a few categories, read as proportions of the total",
-        "avoidWhen": "more than about 6 slices — use a bar or unit chart",
+        "avoidWhen": "more than 5 slices (AutoChart's own inference cap, `PIE_MAX_SLICES`) — use a bar or unit chart",
         "hasTargets": false
       },
       {
@@ -1212,7 +1212,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 2,
         "matchedShape": "one measure per calendar day over several months, as variant=\"calendar\"",
-        "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+        "avoidWhen": "fewer than about two months of days — too sparse to read as a calendar grid",
         "hasTargets": false
       }
     ]
@@ -1234,7 +1234,7 @@
         "pkg": "@elabs-ai/components-charts",
         "score": 2,
         "matchedShape": "a single signed measure around a meaningful zero, as diverging bars with a zero line",
-        "avoidWhen": "a time axis with many points — use a line or area chart",
+        "avoidWhen": "the zero baseline is not meaningful — plain bars read the same comparison",
         "hasTargets": false
       },
       {

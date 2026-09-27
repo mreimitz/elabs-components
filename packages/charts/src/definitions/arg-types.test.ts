@@ -1,20 +1,21 @@
 /**
- * `argTypesFromDefinition` (review round 1, F03): the 8 WaterfallChart props the fixed
- * `enum`/`union`/`responsive` → `control` mapping regressed. `union`/`responsive`
- * (`labels`, `margin`, `plotHeight`, `valueFormat`) previously fell to a blanket
- * `control: false`, discarding the object control Storybook's own type-based inference gives
- * them; `enum` (`orientation`, `connectors`, `dataFormat`, `sort`) previously forced
- * `control: { type: "select" }`, overriding Storybook's own radio inference for a small
- * literal union. The fix (`arg-types.ts`'s `controlFor`) omits `control` for all three kinds
- * so that inference stands — this suite pins the omission (not the inferred type itself,
- * which is Storybook's call at render time, exercised for real by the waterfall story test).
+ * `argTypesFromDefinition` — the 8 WaterfallChart props a fixed `enum`/`union`/`responsive`
+ * → `control` mapping would get wrong. `union`/`responsive` (`labels`, `margin`,
+ * `plotHeight`, `valueFormat`) would fall to a blanket `control: false`, discarding the
+ * object control Storybook's own type-based inference gives them; `enum` (`orientation`,
+ * `connectors`, `dataFormat`, `sort`) would force `control: { type: "select" }`, overriding
+ * Storybook's own radio inference for a small literal union. `arg-types.ts`'s `controlFor`
+ * omits `control` for all three kinds instead, so that inference stands — this suite pins
+ * the omission (not the inferred type itself, which is Storybook's call at render time,
+ * exercised for real by the waterfall story test) — except `palette`, which gets an explicit
+ * select regardless of kind (see `controlFor`'s docblock).
  */
 import { describe, expect, it } from "vitest";
 
 import { WATERFALL_CHART } from "./waterfall-chart.definition";
 import { argTypesFromDefinition } from "./arg-types";
 
-describe("argTypesFromDefinition — WaterfallChart control regression (F03)", () => {
+describe("argTypesFromDefinition — WaterfallChart control mapping", () => {
   const argTypes = argTypesFromDefinition(WATERFALL_CHART);
 
   it.each(["labels", "margin", "plotHeight", "valueFormat"])(
@@ -40,7 +41,7 @@ describe("argTypesFromDefinition — WaterfallChart control regression (F03)", (
     expect(argTypes.sort?.options).toEqual(["data", "increasesFirst", "decreasesFirst"]);
   });
 
-  it("keeps an explicit control for kinds outside the F03 set (number/boolean/color)", () => {
+  it("keeps an explicit control for kinds outside the enum/union/responsive set (number/boolean/color)", () => {
     expect(argTypes.unit?.control).toEqual({
       type: "number",
       min: undefined,
@@ -53,5 +54,16 @@ describe("argTypesFromDefinition — WaterfallChart control regression (F03)", (
 
   it("keeps control: false for a deprecated field (height)", () => {
     expect(argTypes.height?.control).toBe(false);
+  });
+
+  it("gives palette an explicit select control, unlike every other enum prop", () => {
+    expect(argTypes.palette?.control).toEqual({ type: "select" });
+    expect(argTypes.palette?.options).toEqual([
+      "categorical",
+      "sequential",
+      "diverging",
+      "mono",
+      "accent",
+    ]);
   });
 });

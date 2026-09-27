@@ -7,7 +7,7 @@
  * shape — isn't something the snapshot knows), but the "Container → key props" /
  * "Key props" cell is now GENERATED from each chart's own definition
  * (`definitions.generated.json`, ADR 0042 §7), so it can never again claim a prop the
- * container doesn't have. That was the bug (2026-09-25 review F03): Ring's `value`/
+ * container doesn't have. Fixed here: Ring's `value`/
  * `max` (it takes `data`), Choropleth's `valueKey` (its `data` is a `FeatureCollection`
  * with none), Gauge's `min`/`max` (it has none), Parallel missing `entity`, Network's
  * `edges` (it is `links`), Gantt's `dependencies` (it has none) — six rows, each wrong
@@ -30,16 +30,18 @@
  * "wiggle"` — or a clarifying aside). It is never a prop the generated half omits by
  * mistake: every real prop the row wants to show lives in `keyPropsFor`'s output.
  *
- * Fix round 1 (review): the Shape / Avoid-when cells are now ALSO generated —
- * `dataShapeFor`/`avoidWhenFor` read the same `@dataShape`/`@avoidWhen` prose
- * `chart_for` uses, so a hand sentence can no longer say "≤ 5 wedges" while the
- * component's own docblock says "about 6 slices". A container with more than one
- * `@dataShape` tag (`BarChart`: bar vs diverging-bar; `HeatmapChart`: matrix vs
- * calendar) picks its row's tag by `shapeIndex` (declaration order; verified by
- * hand against the snapshot) — `avoidWhen` has only one tag per container, so
- * both of that container's rows show the same text. Every row in both catalogs
- * below has a real `@dataShape`/`@avoidWhen` source; no row needed a hand
- * override, so no override field exists.
+ * The Shape / Avoid-when cells are ALSO generated — `dataShapeFor`/`avoidWhenFor` read
+ * the same `@dataShape`/`@avoidWhen` prose `chart_for` uses, so a hand sentence can no
+ * longer say "≤ 5 wedges" while the component's own docblock says "about 6 slices". A
+ * container with more than one `@dataShape` tag (`BarChart`: bar vs diverging-bar;
+ * `HeatmapChart`: matrix vs calendar) picks its row's Shape AND Avoid-when text by the
+ * SAME `shapeIndex` (declaration order; verified by hand against the snapshot) — a
+ * container's `@avoidWhen` tags are paired with its `@dataShape` tags one-for-one, so
+ * the calendar/diverging-bar row states ITS OWN criterion instead of repeating its
+ * sibling row's. A container with fewer `@avoidWhen` tags than `@dataShape` ones falls
+ * back to its last declared `@avoidWhen`. Every row in both catalogs below has a real
+ * `@dataShape`/`@avoidWhen` source; no row needed a hand override, so no override
+ * field exists.
  *
  * A `{ field }` target — a key INSIDE each data row, not a container prop — used
  * to be dropped from `keyPropsFor`'s output entirely; it now prints as
@@ -114,7 +116,7 @@ function capitalize(s) {
  * (declaration order; see the module docblock). Throws when the container has no tag at
  * that index — a stale catalog row, not something to print silently wrong.
  */
-function dataShapeFor(snapshot, id, index = 0) {
+export function dataShapeFor(snapshot, id, index = 0) {
   const shapes = snapshot[CHARTS_PKG]?.[id]?.prose?.dataShapes;
   if (!shapes?.[index])
     throw new Error(`chart-selection-docs: no @dataShape[${index}] for "${id}"`);
@@ -123,11 +125,15 @@ function dataShapeFor(snapshot, id, index = 0) {
 
 /**
  * The Avoid-when column text — the container's own `@avoidWhen` prose, sentence-cased.
- * One tag per container: a container with two table rows (`BarChart`, `HeatmapChart`)
- * shows the SAME text in both, since there is only one `@avoidWhen` tag to read.
+ * `index` picks which tag (declaration order), the SAME index `dataShapeFor` used for the
+ * row's Shape cell, so a container with two `@dataShape`/`@avoidWhen` pairs (`BarChart`,
+ * `HeatmapChart`) shows each row its OWN criterion. A container with fewer `@avoidWhen`
+ * tags than `@dataShape` ones falls back to its last declared `@avoidWhen` rather than
+ * throwing — a missing PAIR is a smaller gap than a missing tag entirely.
  */
-function avoidWhenFor(snapshot, id) {
-  const text = snapshot[CHARTS_PKG]?.[id]?.prose?.avoidWhen;
+export function avoidWhenFor(snapshot, id, index = 0) {
+  const tags = snapshot[CHARTS_PKG]?.[id]?.prose?.avoidWhens;
+  const text = tags?.[index] ?? tags?.at(-1);
   if (!text) throw new Error(`chart-selection-docs: no @avoidWhen for "${id}"`);
   return capitalize(text);
 }
@@ -185,13 +191,14 @@ const INFERRED_ROWS = [
   {
     chartType: "`heatmap`",
     id: "HeatmapChart",
-    extra: '`variant="matrix"`, `mode="cell"\\|"dot"`',
+    extra: '`variant="matrix"`, `mode="cell"|"dot"`',
     alternatives: "`unit` rows (per-category tally)",
   },
   {
     chartType: "`calendar`",
     id: "HeatmapChart",
-    // The 2nd `@dataShape` tag (declaration order) — the calendar-variant use case.
+    // The 2nd `@dataShape`/`@avoidWhen` pair (declaration order) — the calendar-variant
+    // use case, with its own avoid-when criterion instead of the matrix row's.
     shapeIndex: 1,
     extra: '`variant="calendar"` (`mode` defaults to `"dot"`)',
     alternatives: "`heatmap` matrix (if not date-shaped)",
@@ -199,7 +206,7 @@ const INFERRED_ROWS = [
   {
     chartType: "`waterfall`",
     id: "WaterfallChart",
-    extra: '`kind: "step"\\|"total"`',
+    extra: '`kind: "step"|"total"`',
     alternatives: "`diverging-bar` (no running total)",
   },
   {
@@ -233,7 +240,8 @@ const INFERRED_ROWS = [
   {
     chartType: "`diverging-bar`",
     id: "BarChart",
-    // The 2nd `@dataShape` tag (declaration order) — the diverging-bar use case.
+    // The 2nd `@dataShape`/`@avoidWhen` pair (declaration order) — the diverging-bar use
+    // case, with its own avoid-when criterion instead of the plain-bar row's.
     shapeIndex: 1,
     extra: "`Bar labels zeroLine`",
     alternatives: "`waterfall` (if it accumulates)",
@@ -273,24 +281,30 @@ const MANUAL_ROWS = [
   {
     id: "TreeChart",
     extra:
-      "branches open/close by default (`defaultExpandedDepth`, `expandedIds`, " +
-      "`collapsible={false}` for static); `orientation`; `renderNode` cards",
+      "a HIERARCHY (`TreeNode`), not flat rows; branches open/close by default " +
+      "(`defaultExpandedDepth`, `expandedIds`, `collapsible={false}` for static); " +
+      "`orientation`; `renderNode` cards",
   },
   {
     id: "NetworkChart",
   },
   {
     id: "Gantt",
-    // Not a required prop or a target (no field to generate this from) — a real,
-    // verified field name (`defaultViewMode`), not the stale `viewMode` the old hand
-    // table named (RM-196 renamed it; `dependencies` never existed — F03).
+    // Not a required prop or a target (no field to generate this from). `defaultViewMode`
+    // sets the initial tick granularity uncontrolled — the prop this row means to show;
+    // `viewMode` (a separate, `codeOnly` controlled counterpart) still exists too, it just
+    // isn't the one a reader reaching for a default wants. `dependencies` was never a Gantt
+    // prop — it's a field inside each task, not a top-level one.
     extra: "`defaultViewMode`",
   },
 ];
 
-/** `| a | b | …|` markdown table, header + separator + one line per row. */
-function renderTable(headers, rows) {
-  const line = (cells) => `| ${cells.join(" | ")} |`;
+/** `| a | b | …|` markdown table, header + separator + one line per row. A literal `|` inside
+ *  a cell is escaped here — once, in the renderer — so a catalog row never has to hand-escape
+ *  its own text to avoid silently breaking the table into the wrong number of columns. */
+export function renderTable(headers, rows) {
+  const escapeCell = (cell) => String(cell).replace(/\|/g, "\\|");
+  const line = (cells) => `| ${cells.map(escapeCell).join(" | ")} |`;
   return [line(headers), line(headers.map(() => "---")), ...rows.map(line)].join("\n");
 }
 
@@ -302,7 +316,7 @@ export function renderInferredTable(root) {
     r.chartType,
     `\`${r.id}\` (${keyPropsCell(snapshot, r.id, r.extra)})`,
     r.alternatives,
-    avoidWhenFor(snapshot, r.id),
+    avoidWhenFor(snapshot, r.id, r.shapeIndex ?? 0),
   ]);
   return renderTable(
     ["Shape", "`ChartType`", "Container → key props", "Alternatives", "Avoid when"],
@@ -317,7 +331,7 @@ export function renderManualSelectTable(root) {
     dataShapeFor(snapshot, r.id, r.shapeIndex ?? 0),
     `\`${r.id}\``,
     keyPropsCell(snapshot, r.id, r.extra),
-    avoidWhenFor(snapshot, r.id),
+    avoidWhenFor(snapshot, r.id, r.shapeIndex ?? 0),
   ]);
   return renderTable(["Shape", "Container", "Key props", "Avoid when"], rows);
 }
@@ -335,17 +349,23 @@ export function chartSurfaceCount(root) {
   return Object.values(snapshot[CHARTS_PKG] ?? {}).filter((def) => def.kind === "surface").length;
 }
 
-/** Distinct container ids appearing in either data-shape table (F09 review: this table
- *  coverage count, "25", is a different scope than the registry's total chart count, "26" —
- *  two containers with `@dataShape` tags, `BulletChart` and `DensityScatterChart`, don't have
- *  a table row yet; RM Outcome tracks adding them). */
-export function tableCoverageCount() {
-  return new Set([...INFERRED_ROWS, ...MANUAL_ROWS].map((r) => r.id)).size;
+/** Distinct `kind: "chart"` ids appearing in either data-shape table — a different scope than
+ *  the registry's total chart count (`chartContainerCount`): `Gauge` (`kind: "surface"`) has
+ *  a row too but isn't counted here (see `renderChartCountSummary`), and two containers with
+ *  `@dataShape` tags, `BulletChart` and `DensityScatterChart`, don't have a table row yet
+ *  (RM Outcome tracks adding them). */
+export function tableCoverageCount(root) {
+  const snapshot = loadDefinitionsSnapshot(root);
+  return new Set(
+    [...INFERRED_ROWS, ...MANUAL_ROWS]
+      .filter((r) => snapshot[CHARTS_PKG]?.[r.id]?.kind === "chart")
+      .map((r) => r.id),
+  ).size;
 }
 
 /**
- * The `components.md` chart-count callout (RM-199, F03: the hand-kept count had
- * drifted to 13 against the registry's real count). It sits as its own line right
+ * The `components.md` chart-count callout (RM-199) — generated so a hand-kept count can't
+ * drift from the registry's real one. It sits as its own line right
  * after the "Component selection" table — not inside its "KPIs / charts" row —
  * because the marker comments Prettier's markdown formatter reflows always get
  * blank-line-separated from surrounding content, which would otherwise split one
@@ -360,30 +380,34 @@ export function renderChartCountRow(root) {
 }
 
 /**
- * `chart-selection.md`'s own opening count sentence (review F09: "ships 25 chart
- * containers" was hand-typed prose, not generated, so it could — and did — disagree with
- * `components.md`'s registry-derived count). Two DIFFERENT scopes, both named explicitly
- * so neither reads as a correction of the other: the REGISTRY total (every `kind: "chart"`
- * definition, `chartContainerCount`) plus its `kind: "surface"` chart-adjacent siblings, and
- * separately the TABLE coverage below (`tableCoverageCount` — fewer, because two registry
- * containers don't have a row yet).
+ * `chart-selection.md`'s own opening count sentence — generated so it can't disagree with
+ * `components.md`'s registry-derived count the way hand-typed prose once did. Two DIFFERENT
+ * scopes, both named explicitly so neither reads as a correction of the other: the REGISTRY
+ * total (every `kind: "chart"` definition, `chartContainerCount`) plus its `kind: "surface"`
+ * chart-adjacent siblings, and separately the TABLE coverage below (`tableCoverageCount` —
+ * fewer, because two registry containers don't have a row yet). `Gauge` is the one surface
+ * that DOES get a table row and IS ranked by `chart_for` like a chart — it just isn't counted
+ * in `tableCoverageCount`'s `kind: "chart"` total, so it's called out on its own rather than
+ * folded into either "picked directly" or the chart-container count.
  */
 export function renderChartCountSummary(root) {
   const chartCount = chartContainerCount(root);
   const surfaceCount = chartSurfaceCount(root);
-  const tableCount = tableCoverageCount();
+  const tableCount = tableCoverageCount(root);
   return (
     `\`@elabs-ai/components-charts\` ships ${chartCount} chart containers (registry count) ` +
     `plus ${surfaceCount} chart-adjacent surfaces (\`Gauge\`, \`Sparkline\`, \`ChartCard\`, ` +
-    `\`MetricGrid\`) picked directly, not by data shape. ${tableCount} of the ${chartCount} ` +
-    "chart containers have a row in the two tables below; the rest are a tracked follow-up " +
-    "(see this file's own reference notes)."
+    "`MetricGrid`). `Gauge` still gets a row in the manual-select table below and `chart_for` " +
+    "ranks it by shape, like a chart; `Sparkline`, `ChartCard` and `MetricGrid` have no " +
+    `data-shape row and are picked directly, not by data shape. ${tableCount} of the ` +
+    `${chartCount} chart containers have a row in the two tables below; the rest are a ` +
+    "tracked follow-up (see this file's own reference notes)."
   );
 }
 
 /**
- * The "Data-shape table" section intro (review F09) — the `AutoChart`-inferred / manual-select
- * split, sized from the SAME two row catalogs the tables below render from, so it can't drift
+ * The "Data-shape table" section intro — the `AutoChart`-inferred / manual-select split,
+ * sized from the SAME two row catalogs the tables below render from, so it can't drift
  * from them the way independent hand-typed "Fifteen" / "ten" prose could.
  */
 export function renderTableSplitSummary() {

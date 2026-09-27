@@ -13,7 +13,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { loadDefinitionsSnapshot } from "../lib/core.mjs";
-import { keyPropsFor, CHARTS_PKG } from "../lib/chart-selection-docs.mjs";
+import {
+  keyPropsFor,
+  dataShapeFor,
+  avoidWhenFor,
+  renderTable,
+  CHARTS_PKG,
+} from "../lib/chart-selection-docs.mjs";
 
 const repoRoot = new URL("../../..", import.meta.url).pathname;
 const snapshot = loadDefinitionsSnapshot(repoRoot);
@@ -68,4 +74,39 @@ test("every id this suite pins still has a real entry in the committed snapshot"
   ]) {
     assert.ok(snapshot[CHARTS_PKG]?.[id], `${id} is missing from the committed snapshot`);
   }
+});
+
+test("HeatmapChart's calendar row (shapeIndex: 1) reads its OWN Shape and Avoid-when text, not the matrix row's", () => {
+  const matrixShape = dataShapeFor(snapshot, "HeatmapChart", 0);
+  const calendarShape = dataShapeFor(snapshot, "HeatmapChart", 1);
+  assert.notEqual(calendarShape, matrixShape);
+  assert.match(calendarShape, /calendar day/);
+
+  const matrixAvoid = avoidWhenFor(snapshot, "HeatmapChart", 0);
+  const calendarAvoid = avoidWhenFor(snapshot, "HeatmapChart", 1);
+  assert.notEqual(calendarAvoid, matrixAvoid);
+  assert.match(calendarAvoid, /calendar/);
+});
+
+test("BarChart's diverging-bar row (shapeIndex: 1) reads its OWN Shape and Avoid-when text, not the plain-bar row's", () => {
+  const barShape = dataShapeFor(snapshot, "BarChart", 0);
+  const divergingShape = dataShapeFor(snapshot, "BarChart", 1);
+  assert.notEqual(divergingShape, barShape);
+  assert.match(divergingShape, /signed measure/);
+
+  const barAvoid = avoidWhenFor(snapshot, "BarChart", 0);
+  const divergingAvoid = avoidWhenFor(snapshot, "BarChart", 1);
+  assert.notEqual(divergingAvoid, barAvoid);
+  assert.match(divergingAvoid, /zero baseline/);
+});
+
+test("renderTable escapes a literal | inside a cell instead of letting it split the row", () => {
+  const table = renderTable(["Extra"], [['`mode="cell"|"dot"`']]);
+  const lines = table.split("\n");
+  assert.equal(lines.length, 3, "header + separator + one row");
+  // The escaped pipe must not read as a column boundary: exactly 2 unescaped `|`
+  // delimit the one-column row (the leading and trailing table bars).
+  const unescapedBars = (lines[2].match(/(?<!\\)\|/g) ?? []).length;
+  assert.equal(unescapedBars, 2, `row should have exactly 2 unescaped "|": ${lines[2]}`);
+  assert.match(lines[2], /mode="cell"\\\|"dot"/);
 });
