@@ -131,8 +131,7 @@ change `workspace-store.ts`, because it is outside this item's touches.
 **Proposed fix (DG-21):** `open` returns early, or asks, when `saveNow()` gives `failed` or
 `changed-on-disk`.
 
-**Fixed in DG-22 (authorised), in the commit "opening another diagram never drops edits that
-failed to save".** `open` now reads nothing
+**Fixed in DG-22 (authorised), commit `14619be9`.** `open` now reads nothing
 when the save gives `failed` or `changed-on-disk`, or the workspace is still in `conflict`.
 It throws `UnsavedEditsError`, whose `path` is the document that keeps its edits. In
 `app.tsx`, `syncDocRoute` then goes back to that document (a replace), closes the tab of the
@@ -167,3 +166,32 @@ reader over the mode store. It can go once DG-17's menu reads `useDocMode()`.
 - **Autosave now runs while presenting.** `ShellServices` (autosave and live reload) used to
   render inside the shell, which unmounts while presenting. It now renders once from `App`,
   above every route.
+
+### 14. Found in the step 9 browser check, and fixed
+
+- **The inspector followed you to the next document** (`8940901c`). Opening a file from a
+  document in edit mode left the inspector open over the new document's view mode, because
+  `inspectorOpen` is one flag. `syncDocRoute` now matches it to the opened document's mode.
+- **The save time belonged to the previous file** (`8940901c`). A file that had just opened
+  showed "Saved · <time>" from the last write of another file. The time now shows only after
+  the shown file's own save; a file that has just opened shows "Saved".
+- **Dragging the editor shut shrank the next Edit** (`7515caf2`). The drag passes the 25 %
+  minimum on its way to the edge, and that width was kept. The width at drag start is now
+  restored when the drag ends in a collapse.
+- **The top bar's controls overlapped** (`2adb2ebf`). At a 1,100 px window in edit mode the
+  centre controls ran over Undo/Redo and the save state, because the centre group had
+  `min-w-0` and the breadcrumb kept its full width. With the sidebar open the header is
+  256 px narrower than the window, so a window-width switch left the full bar in 844 px. The
+  centre now keeps its width, the breadcrumb truncates, and the bar measures its own width
+  and folds below 1,052 px (1,100 px of window beside the rail).
+
+### 15. Found in the step 9 browser check, not fixed (outside DG-22's touches)
+
+- **A new diagram shows the loading outline for good** (`panes/canvas-pane.tsx`, DG-20 and
+  DG-11). "New diagram" writes a title and no nodes. That text is not blank, so the empty
+  state does not show, and the first layout never reports ready, so `LayoutSkeleton` stays.
+- **"Exit presentation" covers the title** (`interaction/presentation-view.tsx`, DG-18). At
+  1,440 px the button sits over the end of a long title.
+- **Height-bound examples fit about 6 % smaller.** The tab strip takes 56 px of canvas
+  height, so the ClickHouse and Qlik Sense examples fit at a smaller zoom than in DG-20's
+  shots. The layout and the routing are unchanged. Lakehouse is width-bound and unchanged.
