@@ -15,6 +15,7 @@
  */
 
 import { useCallback, useEffect, useRef } from "react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { useControllableState } from "@elabs-ai/components-ui";
 import type { DensityPlotBox, DensityView } from "./types";
 
@@ -56,12 +57,6 @@ function sameView(a: DensityView, b: DensityView): boolean {
   return a.x0 === b.x0 && a.x1 === b.x1 && a.y0 === b.y0 && a.y1 === b.y1;
 }
 
-function prefersReducedMotion(): boolean {
-  return typeof window !== "undefined" && typeof window.matchMedia === "function"
-    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    : false;
-}
-
 export function useDensityView(options: UseDensityViewOptions): UseDensityViewResult {
   const {
     home,
@@ -80,6 +75,12 @@ export function useDensityView(options: UseDensityViewOptions): UseDensityViewRe
   viewRef.current = view;
   const targetRef = useRef<DensityView | null>(null);
   const rafRef = useRef(0);
+  // One reduced-motion source (RM-189): the tokens hook — the person's own
+  // motion setting wins over the OS. Read through a ref so `animateTo` keeps
+  // its identity when the setting changes.
+  const reducedMotion = useReducedMotion();
+  const reducedMotionRef = useRef(reducedMotion);
+  reducedMotionRef.current = reducedMotion;
 
   const commit = useCallback((next: DensityView) => commitView(next), [commitView]);
 
@@ -117,7 +118,7 @@ export function useDensityView(options: UseDensityViewOptions): UseDensityViewRe
 
   const animateTo = useCallback(
     (next: DensityView) => {
-      if (prefersReducedMotion() || typeof requestAnimationFrame !== "function") {
+      if (reducedMotionRef.current || typeof requestAnimationFrame !== "function") {
         targetRef.current = null;
         commit(next);
         return;

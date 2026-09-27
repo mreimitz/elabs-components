@@ -1,6 +1,7 @@
 "use client";
 
-import { animate, useReducedMotion } from "motion/react";
+import { animate } from "motion/react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { useEffect, useRef, useState } from "react";
 import type { ChartPhase } from "./chart-phase";
 import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
@@ -40,7 +41,7 @@ function tweenDomains({
   destination: Record<string, YDomain>;
   durationMs: number;
   enabled: boolean;
-  reducedMotion: boolean | null;
+  reducedMotion: boolean;
   animatedRef: { current: Record<string, YDomain> };
   setAnimatedByAxis: (domains: Record<string, YDomain>) => void;
   onSettled?: () => void;
@@ -135,6 +136,8 @@ export function useAnimatedYDomains({
   tweenOnTargetChange = false,
   hiddenKeysSignature = "",
 }: UseAnimatedYDomainsOptions): Record<string, YDomain> {
+  // One reduced-motion source (RM-189): the tokens hook — the person's own
+  // motion setting wins over the OS.
   const reducedMotion = useReducedMotion();
   const destinationByAxis = resolveAnimatedYDestinationDomains(
     chartPhase,

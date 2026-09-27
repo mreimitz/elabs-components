@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion, type Transition } from "motion/react";
+import { motion, type Transition } from "motion/react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { forwardRef, type SVGProps } from "react";
 
 /** Default draw duration in seconds — long enough to read as a hand, short enough not to wait. */
@@ -54,7 +55,8 @@ export interface DrawPathProps extends Omit<
  *
  * ## Reduced motion is a BRANCH, not a shorter duration
  *
- * Under `useReducedMotion()` this renders a plain `<path>` with no dash
+ * Under reduced motion (the tokens `useReducedMotion()`: the person's own motion
+ * setting, else the OS) this renders a plain `<path>` with no dash
  * attributes at all — the finished drawing, immediately. It deliberately does not
  * render a `motion.path` with `duration: 0`: the dash attributes would still be
  * in the DOM, and a stroke carrying `stroke-dasharray: 1` is one browser

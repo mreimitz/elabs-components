@@ -38,7 +38,7 @@ import {
   ChartHoverLinkIndicator,
   ChartHoverLinkProvider,
 } from "./chart-hover-link";
-import { ChartLoadingLabel } from "./chart-loading-label";
+import { ChartLoadingAnnouncement, ChartLoadingLabel } from "./chart-loading-label";
 import {
   type ChartSelectionProps,
   ChartSelectionProvider,
@@ -711,6 +711,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartPlotProps>(function Li
       {showLoadingLabel ? (
         <ChartLoadingLabel exiting={chartPhase !== "loading"} text={loadingLabel} />
       ) : null}
+      {!showLoadingLabel && chartPhase === "loading" ? <ChartLoadingAnnouncement /> : null}
     </ChartPlotRoot>,
   );
   return containerSelection.wrap(legendWrapped);

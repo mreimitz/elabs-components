@@ -1,7 +1,8 @@
 "use client";
 
 import { localPoint } from "@visx/event";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import {
   type CSSProperties,
   forwardRef,
@@ -542,6 +543,8 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
     return display === CATEGORY_AXIS_ELLIPSIS ? null : display;
   };
 
+  // One reduced-motion source (RM-189): the tokens hook — the person's own
+  // motion setting wins over the OS.
   const prefersReducedMotion = useReducedMotion();
   const transition = prefersReducedMotion
     ? { duration: 0 }

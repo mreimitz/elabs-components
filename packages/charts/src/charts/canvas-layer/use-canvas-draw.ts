@@ -34,8 +34,7 @@
  */
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useReducedMotion } from "motion/react";
-import { resolveTokenColor } from "@elabs-ai/components-tokens";
+import { resolveTokenColor, useReducedMotion } from "@elabs-ai/components-tokens";
 import type { Margin } from "../chart-context";
 
 /**
@@ -174,7 +173,9 @@ export function useCanvasDraw({
 }: UseCanvasDrawOptions): UseCanvasDrawResult {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dpr = useDevicePixelRatio();
-  const prefersReducedMotion = useReducedMotion() === true;
+  // One reduced-motion source (RM-189): the tokens hook — the person's own
+  // motion setting wins over the OS.
+  const prefersReducedMotion = useReducedMotion();
 
   // Latest-callback ref: a consumer passing an inline `draw` must not force a
   // repaint on every parent render — `drawSignature` is the repaint trigger.

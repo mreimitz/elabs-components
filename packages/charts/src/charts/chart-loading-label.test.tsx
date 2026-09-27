@@ -81,12 +81,18 @@ afterEach(cleanup);
 const OVERRIDE = "Diagramm lädt…";
 const messages = { "charts.chart.loading": OVERRIDE };
 
-/**
- * The per-chart `messages` path. ParallelCoordinatesChart is absent: it has no `messages` prop
- * (it never adopted the messages group), so its only override path is the `LocaleProvider` —
- * covered for every family by the second suite below.
- */
+/** The per-chart `messages` path. */
 const CASES: readonly [string, () => ReactElement][] = [
+  [
+    "ParallelCoordinatesChart",
+    () => (
+      <ParallelCoordinatesChart
+        {...(PARALLEL_COORDINATES_CHART_FIXTURE.props as ParallelCoordinatesChartProps)}
+        messages={messages}
+        status="loading"
+      />
+    ),
+  ],
   [
     "TreemapChart",
     () => (

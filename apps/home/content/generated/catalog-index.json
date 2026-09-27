@@ -2361,7 +2361,7 @@
     "summary": "Open–high–low–close price bars over time, one candle per period, with volume and moving averages as optional overlays.",
     "question": "",
     "block": null,
-    "stories": 6,
+    "stories": 7,
     "first": "charts-candlestickchart--default",
     "featured": 0
   },

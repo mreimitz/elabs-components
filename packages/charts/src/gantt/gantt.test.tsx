@@ -45,7 +45,6 @@ vi.mock("motion/react", () => ({
   motion: new Proxy({} as Record<string, ReturnType<typeof makeMotionElement>>, {
     get: (_target, tag: string) => makeMotionElement(tag),
   }),
-  useReducedMotion: () => false,
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
 }));
 

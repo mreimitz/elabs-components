@@ -39,7 +39,8 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { cva } from "class-variance-authority";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { cn, Tooltip, TooltipTrigger, TooltipContent } from "@elabs-ai/components-ui";
 import { useChartInteractionPolicy } from "../charts/chart-config-context";
 import { useGantt } from "./gantt-context";
@@ -362,7 +363,12 @@ export function GanttBar({
   const fmt = meta.formatDate;
   const taskTypes = meta.taskTypes;
   const color = resolveBarColor(task, index, taskTypes);
+  // One reduced-motion source (RM-189): the tokens hook, where the person's own
+  // motion setting wins over the OS. It settles after mount, so the entering
+  // marks are keyed on it: a switch to reduced remounts them at rest instead of
+  // letting an entrance that already started run on.
   const prefersReducedMotion = useReducedMotion();
+  const enterKey = prefersReducedMotion ? "still" : "enter";
   const clipId = useId();
   // Stable, collision-free scope for this row's gap-band patterns (ADR 0011's
   // seriesPatternId scope convention) — mint once with useId(), unlike bar.tsx's
@@ -890,6 +896,7 @@ export function GanttBar({
             aria-hidden="true"
             className="block rotate-45"
             initial={prefersReducedMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
+            key={enterKey}
             animate={{ opacity: 1, scale: 1 }}
             transition={enterTransition}
             style={{
@@ -1084,6 +1091,7 @@ export function GanttBar({
                   ? { clipPath: "inset(0 0% 0 0)" }
                   : { clipPath: "inset(0 100% 0 0)" }
               }
+              key={enterKey}
               animate={{ clipPath: "inset(0 0% 0 0)" }}
               transition={enterTransition}
             >

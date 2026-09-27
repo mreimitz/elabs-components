@@ -10788,7 +10788,7 @@
             "name": "palette",
             "optional": true,
             "type": "ChartPalette",
-            "description": "Colour ramp for the candles (RM-186): rising candles take the palette's gain colour and falling ones its loss colour (`\"diverging\"` is the sign pair, any other palette its first two colours). Unset: `--chart-1` / `--chart-5`, as before.",
+            "description": "Colour ramp for the candles (RM-186): rising candles take the palette's gain colour and falling ones its loss colour (`\"diverging\"` is the sign pair, any other palette its first two colours). Unset: `--chart-1` / `--chart-5`, as before. Whatever the palette, a rising body is drawn hollow and a falling one solid, so the two never differ by colour alone.",
             "kind": "enum"
           },
           {
@@ -10896,19 +10896,19 @@
             "name": "positiveFill",
             "optional": true,
             "type": "string",
-            "description": "Fill for positive (close >= open) candles. Color or url(#gradient). Default: --chart-1"
+            "description": "Colour of rising candles (close >= open): the outline of their HOLLOW body and their wick. Rising bodies are hollow and falling ones solid, so up and down differ by shape as well as colour. Color or url(#gradient). Default: --chart-1"
           },
           {
             "name": "negativeFill",
             "optional": true,
             "type": "string",
-            "description": "Fill for negative candles. Color or url(#gradient). Default: --chart-5"
+            "description": "Fill of falling candles (a solid body) and their wick. Color or url(#gradient). Default: --chart-5"
           },
           {
             "name": "bodyPatternPositive",
             "optional": true,
             "type": "string",
-            "description": "Optional pattern URL for body only (e.g. url(#pattern)). When set, body is drawn solid first, then pattern overlaid and masked to the body rect."
+            "description": "Optional pattern URL for the rising body (e.g. url(#pattern)). Setting it FILLS rising bodies — drawn solid first, then the pattern overlaid and masked to the body rect — instead of drawing them hollow."
           },
           {
             "name": "bodyPatternNegative",
@@ -10943,12 +10943,17 @@
       {
         "id": "charts-candlestickchart--default",
         "name": "Default",
-        "description": "Default — OHLC candles with grid, axes and tooltip. Uses --chart-1 (positive) and --chart-5 (negative) tokens."
+        "description": "Default — OHLC candles with grid, axes and tooltip. Rising candles are hollow (a --chart-1 outline) and falling candles solid (--chart-5), so up and down differ by shape as well as colour."
       },
       {
         "id": "charts-candlestickchart--loading",
         "name": "Loading",
         "description": "`status=\"loading\"` (RM-182): a skeleton in the plot box the chart will fill, with one polite status message per chart, at 380, 600 and 900 px."
+      },
+      {
+        "id": "charts-candlestickchart--rising-and-falling",
+        "name": "Rising (hollow) and falling (solid)",
+        "description": "Rising vs falling — a rising candle (close above open) draws a HOLLOW body: an outline in the rising colour on the plot's own ground. A falling candle draws a SOLID body. The shape is the second channel beside colour (WCAG 1.4.1): in greyscale, an up day still reads apart from a down day. The wicks are unchanged."
       },
       {
         "id": "charts-candlestickchart--no-animation",
@@ -10968,7 +10973,7 @@
       {
         "id": "charts-candlestickchart--palette",
         "name": "Palette",
-        "description": "`palette=\"diverging\"` (RM-186): rising candles take `chartCssVars.signPositive`, falling ones `signNegative` — the two ends of the diverging ramp. The pair shares one lightness, so, like the default pair, it tells gain from loss by colour alone below high decoration; a second channel is a tracked follow-up."
+        "description": "`palette=\"diverging\"` (RM-186): rising candles take `chartCssVars.signPositive`, falling ones `signNegative` — the two ends of the diverging ramp. The pair shares one lightness, so the hollow (rising) and solid (falling) bodies carry the sign where the hue cannot."
       }
     ],
     "block": null,
@@ -20782,6 +20787,14 @@
         "name": "ParallelCoordinatesChart",
         "extends": ["ChartInteractionProps"],
         "props": [
+          {
+            "name": "messages",
+            "optional": true,
+            "type": "ChartMessages",
+            "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+            "kind": "object",
+            "group": "messages"
+          },
           {
             "name": "data",
             "optional": false,

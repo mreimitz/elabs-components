@@ -266,6 +266,8 @@ const TOKEN_OF: Readonly<Record<ChartPalette, RegExp>> = {
  * The colour references each family drew with no `palette`, in document order (`colorsIn`),
  * recorded from the pre-RM-186 code (744f17a2) with this harness
  * (`PALETTE_GROUP_RECORD=1`). RM-186 moves no default, so this never changes with it.
+ * One deliberate change since, by owner decision (2026-09-27): a rising candle's body is
+ * hollow, painted in the plot's ground, so CandlestickChart adds one entry per rising row.
  */
 const DEFAULT_COLORS: Readonly<Record<string, readonly string[]>> = {
   AreaChart: [
@@ -315,6 +317,8 @@ const DEFAULT_COLORS: Readonly<Record<string, readonly string[]>> = {
     "stop[stop-color]=var(--chart-1)",
     "stop[stop-color]=var(--chart-5)",
     "stop[stop-color]=var(--chart-5)",
+    // Every one of the fixture's thirty rows rises, so every body is hollow (2026-09-27).
+    ...Array.from({ length: 30 }, () => "rect[fill]=var(--chart-background)"),
   ],
   ChoroplethChart: [
     "g[style]=var(--t-fast)",

@@ -1,7 +1,8 @@
 "use client";
 
 import type { Transition } from "motion/react";
-import { motion, useReducedMotion, useTransform } from "motion/react";
+import { motion, useTransform } from "motion/react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import {
   type CSSProperties,
   type MutableRefObject,
@@ -706,7 +707,12 @@ function SegmentLabel({
   // the group AT its resting opacity, so the value / percentage / label text is
   // never painted part-way up an opacity ramp (#125 — a fade over HTML text is
   // also what makes axe read a blended, illegible ink mid-entrance).
-  const prefersReducedMotion = useReducedMotion() === true;
+  // One reduced-motion source (RM-189): the tokens hook, where the person's
+  // own motion setting wins over the OS. It settles after mount, so the
+  // group is keyed on it: a switch to reduced remounts the group at rest
+  // instead of letting an entrance that already started run on.
+  const prefersReducedMotion = useReducedMotion();
+  const entranceKey = prefersReducedMotion ? "still" : "enter";
   const entranceInitial = prefersReducedMotion ? false : { opacity: 0 };
   const entranceTransition: Transition = prefersReducedMotion
     ? { duration: 0 }
@@ -737,6 +743,7 @@ function SegmentLabel({
         )}
         data-slot="funnel-chart-label"
         initial={entranceInitial}
+        key={entranceKey}
         transition={entranceTransition}
       >
         {isHorizontal ? (
@@ -787,6 +794,7 @@ function SegmentLabel({
       )}
       data-slot="funnel-chart-label"
       initial={entranceInitial}
+      key={entranceKey}
       style={{
         padding: isHorizontal ? "8% 0" : "0 8%",
       }}

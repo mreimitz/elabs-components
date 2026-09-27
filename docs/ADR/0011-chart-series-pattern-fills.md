@@ -132,3 +132,13 @@ exactly the distinction the hue carried. Each chart has a jsdom test that forces
 Not covered by this amendment: `HeatmapChart`, `Gauge` and `RingChart` (RingChart
 already switches to a tick ring at high decoration) and a check that stops a future
 chart from shipping without a channel — #257's proposed gate is still open.
+
+## Amendment — 2026-09-27: candlestick rising bodies are hollow
+
+`CandlestickChart` now draws a rising body HOLLOW (an outline in the rising colour on the
+plot's ground) and a falling body solid, at every decoration level — the trading-tool
+convention, decided by the maintainer on 2026-09-27. A hollow body has no fill to
+texture, and a pattern inside it would erase the hollow/solid channel, so at high
+decoration only a FALLING palette body takes its series pattern (index 1, as before); the
+`rising = 0` entry in the table above no longer applies. An author's explicit
+`bodyPatternPositive` still fills rising bodies.

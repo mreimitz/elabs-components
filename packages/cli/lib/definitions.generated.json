@@ -8484,6 +8484,14 @@
           "kind": "number",
           "tier": "advanced"
         },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
+          "tier": "advanced"
+        },
         "palette": {
           "description": "Colour ramp the marks draw from.",
           "group": null,
@@ -8532,7 +8540,7 @@
           "values": ["loading", "ready"]
         }
       },
-      "groups": ["a11y", "interaction", "chart-state"],
+      "groups": ["messages", "a11y", "interaction", "chart-state"],
       "id": "ParallelCoordinatesChart",
       "kind": "chart",
       "label": "Parallel coordinates",

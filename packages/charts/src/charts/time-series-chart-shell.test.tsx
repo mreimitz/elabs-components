@@ -42,9 +42,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // test here runs on the normal (real motion.animate()) path; only the
 // mid-reveal describe block below flips it, to sidestep a `motion/react`
 // frame-loop/fake-timers interaction (see that block's comment).
-const motionState = vi.hoisted(() => ({ reduced: false as boolean | null }));
+const motionState = vi.hoisted(() => ({ reduced: false }));
 
-vi.mock("motion/react", async (importOriginal) => ({
+// The one reduced-motion source (RM-189): the tokens hook.
+vi.mock("@elabs-ai/components-tokens", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useReducedMotion: () => motionState.reduced,
 }));

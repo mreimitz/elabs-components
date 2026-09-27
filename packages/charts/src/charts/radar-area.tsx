@@ -3,7 +3,8 @@
 import type { MotionValue } from "motion/react";
 import { motion, useTransform } from "motion/react";
 import { memo, useId, useMemo } from "react";
-import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
+import { DEFAULT_ANIMATION_DURATION_MS, REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
 import { radarCssVars, useRadarHover, useRadarStable } from "./radar-context";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
 import { useEnterComplete } from "./use-enter-complete";
@@ -134,12 +135,18 @@ export const RadarArea = memo(function RadarArea({
   const campaignStagger = 0.15 * staggerScale * durationFactor;
   const animationDelay = campaignBaseDelay + index * campaignStagger;
 
+  // Reduced motion (the tokens hook: the person's own motion setting, else the
+  // OS) is a BRANCH, as in `PieSlice`: no stagger, no sweep, no fade — the
+  // polygon mounts whole. The replay key carries it, so a switch to reduced
+  // after mount lands the sweep at once instead of letting it run on.
+  const reducedMotion = useReducedMotion();
   const mountProgress = useMountProgress(
-    enterTransition,
-    animationDelay,
-    `${motionReplayKey}-${index}`,
+    reducedMotion ? REDUCED_MOTION_ENTER_TRANSITION : enterTransition,
+    reducedMotion ? 0 : animationDelay,
+    `${motionReplayKey}-${index}${reducedMotion ? "-still" : ""}`,
   );
-  const enterComplete = useEnterComplete(mountProgress);
+  const mountComplete = useEnterComplete(mountProgress);
+  const enterComplete = reducedMotion || mountComplete;
 
   const animatedPositions = useTransform(mountProgress, (t) =>
     targetPositions.map((p) => ({ x: p.x * t, y: p.y * t })),
@@ -169,7 +176,9 @@ export const RadarArea = memo(function RadarArea({
           scale: isHovered ? 1.05 : 1,
         }}
         className={className}
-        initial={{ opacity: animate ? 0 : 1 }}
+        initial={{ opacity: animate && !reducedMotion ? 0 : 1 }}
+        // Remount at rest when reduced motion switches on mid-entrance.
+        key={reducedMotion ? "still" : "enter"}
         onMouseEnter={() => setHoveredIndex(index)}
         onMouseLeave={() => setHoveredIndex(null)}
         style={{ transformOrigin: "0px 0px", cursor: "pointer" }}

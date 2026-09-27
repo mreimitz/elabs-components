@@ -2,6 +2,8 @@
 
 import { arc as arcGenerator } from "@visx/shape";
 import { type MotionValue, motion, useTransform } from "motion/react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
+import { REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
 import { memo, useCallback } from "react";
 import { ChartSelectionMark, resolveMarkPaint, useChartSelection } from "./chart-selection";
 import { useActivateDatapoint } from "./chart-datapoint-layer";
@@ -303,20 +305,28 @@ export const Ring = memo(function Ring({
   const activateDatapoint = useActivateDatapoint();
   const selection = useChartSelection();
 
-  const expandDelay = index * 0.08 * enterStaggerScale;
+  // Reduced motion (the tokens hook: the person's own motion setting, else the
+  // OS) is a BRANCH, as in `PieSlice`: no stagger, no expand, no sweep — the
+  // ring mounts whole. The replay keys carry it, so a switch to reduced after
+  // mount lands both progresses at once instead of letting them run on.
+  const reducedMotion = useReducedMotion();
+  const mountTransition = reducedMotion ? REDUCED_MOTION_ENTER_TRANSITION : enterTransition;
+  const stillKey = reducedMotion ? "-still" : "";
+
+  const expandDelay = reducedMotion ? 0 : index * 0.08 * enterStaggerScale;
   const expandProgress = useMountProgress(
-    enterTransition,
+    mountTransition,
     expandDelay,
-    `${animationKey}-expand-${index}`,
+    `${animationKey}-expand-${index}${stillKey}`,
   );
   const expandComplete = useEnterComplete(expandProgress);
 
   // RM-189: the scale spaces the rings; the lead-in is not a stagger.
-  const progressDelay = 0.6 + index * 0.1 * enterStaggerScale;
+  const progressDelay = reducedMotion ? 0 : 0.6 + index * 0.1 * enterStaggerScale;
   const progressMount = useMountProgress(
-    enterTransition,
+    mountTransition,
     progressDelay,
-    `${animationKey}-progress-${index}`,
+    `${animationKey}-progress-${index}${stillKey}`,
   );
   const progressComplete = useEnterComplete(progressMount);
 
@@ -393,7 +403,7 @@ export const Ring = memo(function Ring({
 
   const hoverScale = ringHoverScale(isHovered, isPushedOut);
   const layerOpacity = isFaded ? 0.35 : 1;
-  const enterDone = !animate || (expandComplete && progressComplete);
+  const enterDone = !animate || reducedMotion || (expandComplete && progressComplete);
 
   const groupStyle = {
     cursor: "pointer" as const,

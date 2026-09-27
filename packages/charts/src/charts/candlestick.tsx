@@ -3,7 +3,7 @@
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
 import { memo, useId, useMemo } from "react";
-import { resolveSignPalette, useChart, useChartPalette } from "./chart-context";
+import { chartCssVars, resolveSignPalette, useChart, useChartPalette } from "./chart-context";
 import { useChartLegendHover } from "./chart-legend-hover";
 import { transitionWithDelay } from "./motion-utils";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
@@ -22,16 +22,38 @@ interface CandleSolidInk {
 }
 
 const DEFAULT_SOLID_INK: CandleSolidInk = { positive: SOLID_POSITIVE, negative: SOLID_NEGATIVE };
+/** The candle family's mark stroke: the wick's width. */
 const WICK_WIDTH = 1.5;
+/** A solid (falling) body's outline, in the body's own colour. */
+const SOLID_BODY_STROKE_WIDTH = 1;
+/**
+ * A hollow (rising) body's outline: the wick's weight, so a rising candle
+ * reads as one continuous line figure — the trading-tool convention.
+ */
+const HOLLOW_BODY_STROKE_WIDTH = WICK_WIDTH;
+/**
+ * A hollow body's inside: the plot's own ground (`--chart-background`), as
+ * DumbbellChart's hollow marker. It masks the wick behind the body, so the
+ * wick keeps its geometry and the body still reads empty.
+ */
+const HOLLOW_BODY_FILL = chartCssVars.background;
 
 export interface CandlestickProps {
   /** Whether to animate the candlesticks. Default: true */
   animate?: boolean;
-  /** Fill for positive (close >= open) candles. Color or url(#gradient). Default: --chart-1 */
+  /**
+   * Colour of rising candles (close >= open): the outline of their HOLLOW body
+   * and their wick. Rising bodies are hollow and falling ones solid, so up and
+   * down differ by shape as well as colour. Color or url(#gradient). Default: --chart-1
+   */
   positiveFill?: string;
-  /** Fill for negative candles. Color or url(#gradient). Default: --chart-5 */
+  /** Fill of falling candles (a solid body) and their wick. Color or url(#gradient). Default: --chart-5 */
   negativeFill?: string;
-  /** Optional pattern URL for body only (e.g. url(#pattern)). When set, body is drawn solid first, then pattern overlaid and masked to the body rect. */
+  /**
+   * Optional pattern URL for the rising body (e.g. url(#pattern)). Setting it
+   * FILLS rising bodies — drawn solid first, then the pattern overlaid and
+   * masked to the body rect — instead of drawing them hollow.
+   */
   bodyPatternPositive?: string;
   /** Optional pattern URL for negative candle body. */
   bodyPatternNegative?: string;
@@ -56,6 +78,13 @@ interface CandleGeometry {
   bodySolidFill: string;
   /** Body outline ink — the solid colour even when the body is patterned (ADR 0011). */
   bodyStroke: string;
+  /** Body outline width — heavier on a hollow body, whose outline is the whole mark. */
+  bodyStrokeWidth: number;
+  /**
+   * A rising body drawn HOLLOW (outline only, on the plot's ground): the
+   * non-colour channel that tells a rise from a fall (WCAG 1.4.1).
+   */
+  hollow: boolean;
   wickFill: string;
   bodyPattern?: string;
   insideStrokeWidth: number;
@@ -63,20 +92,23 @@ interface CandleGeometry {
 }
 
 /**
- * High-decoration body pattern for one candle direction (ADR 0011, #257): the
- * `url(#…)` body fill plus the solid ink the wick and outline keep.
+ * High-decoration body pattern (ADR 0011, #257): the `url(#…)` body fill plus
+ * the solid ink the wick and outline keep.
  */
 interface CandleDecorationPattern {
   fill: string;
   ink: string;
 }
 
+/**
+ * The high-decoration patterns. Only a falling (solid) body takes one: a
+ * rising body is hollow at every decoration level, with no fill to texture.
+ */
 interface CandleDecoration {
-  positive: CandleDecorationPattern | null;
   negative: CandleDecorationPattern | null;
 }
 
-const NO_CANDLE_DECORATION: CandleDecoration = { positive: null, negative: null };
+const NO_CANDLE_DECORATION: CandleDecoration = { negative: null };
 
 function getSolidColor(isPositive: boolean, solid: CandleSolidInk): string {
   return isPositive ? solid.positive : solid.negative;
@@ -133,12 +165,38 @@ function computeGeometries(
     const bodyLeft = centerX - candleWidth / 2;
     const wickTop = Math.min(yHigh, yLow);
     const wickHeight = Math.abs(yLow - yHigh) || 1;
+    // An unchanged candle (open === close) joins the rising group, as before:
+    // its hollow body is one unit tall, so its outline closes into a flat bar.
     const isPositive = close >= open;
     const fill = isPositive ? positiveFill : negativeFill;
     const bodyPattern = isPositive ? bodyPatternPositive : bodyPatternNegative;
     const hasPatternOverlay = Boolean(bodyPattern);
     const bodySolidFill = hasPatternOverlay ? getSolidColor(isPositive, solid) : fill;
-    const decorated = isPositive ? decoration.positive : decoration.negative;
+    const decorated = isPositive ? null : decoration.negative;
+
+    // Rising = hollow, falling = solid (owner decision 2026-09-27). An author's
+    // explicit `bodyPatternPositive` asks for a filled rising body and keeps it.
+    if (isPositive && !hasPatternOverlay) {
+      return {
+        time: date.getTime(),
+        centerX,
+        bodyTop,
+        bodyHeight,
+        bodyLeft,
+        candleWidth,
+        wickTop,
+        wickHeight,
+        wickLeft: centerX - WICK_WIDTH / 2,
+        bodySolidFill: HOLLOW_BODY_FILL,
+        bodyStroke: fill,
+        bodyStrokeWidth: HOLLOW_BODY_STROKE_WIDTH,
+        hollow: true,
+        wickFill: fill,
+        bodyPattern: undefined,
+        insideStrokeWidth,
+        isPositive,
+      };
+    }
 
     if (decorated) {
       return {
@@ -153,6 +211,8 @@ function computeGeometries(
         wickLeft: centerX - WICK_WIDTH / 2,
         bodySolidFill: decorated.fill,
         bodyStroke: decorated.ink,
+        bodyStrokeWidth: SOLID_BODY_STROKE_WIDTH,
+        hollow: false,
         wickFill: decorated.ink,
         bodyPattern: undefined,
         insideStrokeWidth,
@@ -172,6 +232,8 @@ function computeGeometries(
       wickLeft: centerX - WICK_WIDTH / 2,
       bodySolidFill,
       bodyStroke: bodySolidFill,
+      bodyStrokeWidth: SOLID_BODY_STROKE_WIDTH,
+      hollow: false,
       wickFill: hasPatternOverlay ? bodySolidFill : fill,
       bodyPattern: hasPatternOverlay ? bodyPattern : undefined,
       insideStrokeWidth,
@@ -210,7 +272,9 @@ const CandlestickBody = memo(function CandlestickBody({ geometry }: { geometry: 
     candleWidth,
     bodySolidFill,
     bodyStroke,
+    bodyStrokeWidth,
     bodyPattern,
+    hollow,
     insideStrokeWidth,
   } = geometry;
 
@@ -218,12 +282,13 @@ const CandlestickBody = memo(function CandlestickBody({ geometry }: { geometry: 
     <>
       <rect fill={wickFill} height={wickHeight} width={WICK_WIDTH} x={wickLeft} y={wickTop} />
       <rect
+        data-candle-body={hollow ? "hollow" : "solid"}
         fill={bodySolidFill}
         height={bodyHeight}
         rx={1}
         ry={1}
         stroke={bodyStroke}
-        strokeWidth={1}
+        strokeWidth={bodyStrokeWidth}
         width={candleWidth}
         x={bodyLeft}
         y={bodyTop}
@@ -315,13 +380,14 @@ function AnimatedCandle({ geometry, delay, enterTransition, revealEpoch }: Anima
       />
       <motion.rect
         animate={{ scaleY: 1 }}
+        data-candle-body={geometry.hollow ? "hollow" : "solid"}
         fill={geometry.bodySolidFill}
         height={geometry.bodyHeight}
         initial={{ scaleY: 0 }}
         rx={1}
         ry={1}
         stroke={geometry.bodyStroke}
-        strokeWidth={1}
+        strokeWidth={geometry.bodyStrokeWidth}
         style={{ transformOrigin: bodyOrigin }}
         transition={t}
         width={geometry.candleWidth}
@@ -379,21 +445,18 @@ export function Candlestick({
     [palette],
   );
 
-  // Decoration pattern (ADR 0011, #257): under high decoration each direction's
-  // palette body gains its own series pattern — rising = series 0, falling =
-  // series 1 — so up/down survives without hue. Wick and outline stay solid.
+  // Decoration pattern (ADR 0011, #257): under high decoration a falling
+  // palette body fills with its series pattern (series 1, as before). A rising
+  // body is hollow at every decoration level — it has no fill to texture, and
+  // a pattern inside it would erase the hollow/solid channel — so it gets
+  // none, unless an author's `bodyPatternPositive` fills it. Wick and outline
+  // stay solid.
   const high = useHighDecoration();
   const patternScope = useId().replace(/:/g, "");
   const decoration = useMemo<CandleDecoration>(() => {
     if (!high) {
       return NO_CANDLE_DECORATION;
     }
-    const positiveInk = candlePatternInk(
-      positiveFill,
-      DEFAULT_POSITIVE,
-      solidInk.positive,
-      bodyPatternPositive,
-    );
     const negativeInk = candlePatternInk(
       negativeFill,
       DEFAULT_NEGATIVE,
@@ -401,33 +464,14 @@ export function Candlestick({
       bodyPatternNegative,
     );
     return {
-      positive: positiveInk
-        ? { fill: `url(#${seriesPatternId(0, patternScope)})`, ink: positiveInk }
-        : null,
       negative: negativeInk
         ? { fill: `url(#${seriesPatternId(1, patternScope)})`, ink: negativeInk }
         : null,
     };
-  }, [
-    high,
-    positiveFill,
-    negativeFill,
-    bodyPatternPositive,
-    bodyPatternNegative,
-    patternScope,
-    solidInk,
-  ]);
-  const patternDefs =
-    decoration.positive || decoration.negative ? (
-      <defs>
-        {decoration.positive
-          ? makeSeriesPattern(0, seriesPatternId(0, patternScope), decoration.positive.ink)
-          : null}
-        {decoration.negative
-          ? makeSeriesPattern(1, seriesPatternId(1, patternScope), decoration.negative.ink)
-          : null}
-      </defs>
-    ) : null;
+  }, [high, negativeFill, bodyPatternNegative, patternScope, solidInk]);
+  const patternDefs = decoration.negative ? (
+    <defs>{makeSeriesPattern(1, seriesPatternId(1, patternScope), decoration.negative.ink)}</defs>
+  ) : null;
 
   const candleWidth = Math.min(bandWidth ?? columnWidth * 0.8, columnWidth);
 

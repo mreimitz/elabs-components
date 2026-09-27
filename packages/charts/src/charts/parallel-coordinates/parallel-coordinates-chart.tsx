@@ -99,7 +99,8 @@ import {
 import { CHART_TOUCH_ACTION } from "../gestures/touch-action";
 import { HOVER_DIM_OPACITY } from "../chart-opacity";
 import { AxisRule } from "../../marks/reference-rule";
-import { useChartTranslate } from "../chart-messages";
+import { ChartMessagesScope, useChartTranslate } from "../chart-messages";
+import type { ChartMessages } from "../props/messages";
 
 // ─── Public types ───────────────────────────────────────────────────────────
 
@@ -119,6 +120,12 @@ export interface ParallelCoordinatesDimension {
 }
 
 export interface ParallelCoordinatesChartProps extends ChartInteractionProps {
+  /**
+   * messages group (RM-187): this chart's own words, keyed by the ui
+   * catalogue's `charts.*` message keys. A key set here wins over the
+   * `LocaleProvider`; every other key reads the catalogue as before.
+   */
+  messages?: ChartMessages;
   /** Data array — one row per entity. */
   data: Record<string, unknown>[];
   /** Key in `data` for the entity label (drawn in the tooltip title and the hero halo label). */
@@ -819,11 +826,7 @@ function ParallelCoordinatesBody({
   );
 }
 
-/**
- * @dataShape many numeric dimensions compared across entities at once
- * @avoidWhen more than about 2 entities need per-entity detail — use small-multiple radar
- */
-export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoordinatesChartProps>(
+const ParallelCoordinatesChartUnscoped = forwardRef<HTMLDivElement, ParallelCoordinatesChartProps>(
   function ParallelCoordinatesChart(props, forwardedRef) {
     const {
       data,
@@ -947,6 +950,22 @@ export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoord
           )
         )}
       </ChartPlotRoot>
+    );
+  },
+);
+
+// RM-187: scopes this chart's `messages` overrides (the `messages` group) to
+// its subtree — see `chart-messages.tsx`. Renders no DOM of its own.
+/**
+ * @dataShape many numeric dimensions compared across entities at once
+ * @avoidWhen more than about 2 entities need per-entity detail — use small-multiple radar
+ */
+export const ParallelCoordinatesChart = forwardRef<HTMLDivElement, ParallelCoordinatesChartProps>(
+  function ParallelCoordinatesChart({ messages, ...props }, ref) {
+    return (
+      <ChartMessagesScope messages={messages}>
+        <ParallelCoordinatesChartUnscoped {...props} ref={ref} />
+      </ChartMessagesScope>
     );
   },
 );

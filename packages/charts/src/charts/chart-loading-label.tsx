@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { ShimmeringText } from "./shimmering-text";
 import { cn } from "@elabs-ai/components-ui";
+import { useChartTranslate } from "./chart-messages";
 import {
   LINE_LOADING_PULSE_EASE,
   LOADING_LABEL_EXIT_S,
@@ -50,6 +51,28 @@ export function ChartLoadingLabel({
         text={text}
       />
     </motion.div>
+  );
+}
+
+/**
+ * The default loading announcement of a family whose visible label is opt-in
+ * (`loadingLabel` on Line, Area, Composed and Bar): one polite status region
+ * reading `charts.chart.loading`, visually hidden, so nothing on screen
+ * changes. Every other family already announces those words through its
+ * visible `ChartLoadingLabel`. A caller's non-blank `loadingLabel` renders the
+ * visible label instead, which is its own status region. Internal.
+ */
+export function ChartLoadingAnnouncement() {
+  const t = useChartTranslate();
+  return (
+    <span
+      aria-live="polite"
+      className="sr-only"
+      data-slot="chart-loading-announcement"
+      role="status"
+    >
+      {t("charts.chart.loading")}
+    </span>
   );
 }
 

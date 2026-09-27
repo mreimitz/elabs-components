@@ -1,7 +1,8 @@
 "use client";
 
 import { ChartParentSize } from "./chart-parent-size";
-import { motion, type Transition, useReducedMotion } from "motion/react";
+import { motion, type Transition } from "motion/react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import {
   Children,
   Fragment,
@@ -320,7 +321,12 @@ function GaugeInner({
 }: GaugeInnerProps) {
   const tChart = useChartTranslate();
   const defaultLabel = defaultLabelProp ?? tChart("charts.gauge.defaultLabel");
+  // One reduced-motion source (RM-189): the tokens hook, where the person's own
+  // motion setting wins over the OS. It settles after mount, so the notches are
+  // keyed on it: a switch to reduced remounts them onto the still transition
+  // instead of letting a spring that already started run on.
   const prefersReducedMotion = useReducedMotion();
+  const notchKeySuffix = prefersReducedMotion ? "-still" : "";
   const themeActiveGradientId = `gauge-theme-active-${useId().replace(/:/g, "")}`;
   // NOTE: not wrapped in `useStableValue` (`use-stable-value.ts`) — its output
   // is actual `ReactElement[]`, not JSON-serializable plain config, so a
@@ -627,7 +633,7 @@ function GaugeInner({
             fill={resolveBgFill(notch.index)}
             fillOpacity={resolvedInactiveFillOpacity}
             initial={{ opacity: 0, scale: 0 }}
-            key={`bg-${notch.index}`}
+            key={`bg-${notch.index}${notchKeySuffix}`}
             style={{
               transformOrigin: `${centerX}px ${centerY}px`,
             }}
@@ -647,7 +653,7 @@ function GaugeInner({
               fill={resolveActiveFill(notch)}
               fillOpacity={resolvedActiveFillOpacity}
               initial={{ opacity: 0, scale: 0 }}
-              key={`active-${notch.index}`}
+              key={`active-${notch.index}${notchKeySuffix}`}
               style={{
                 transformOrigin: `${centerX}px ${centerY}px`,
               }}
