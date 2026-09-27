@@ -13,11 +13,11 @@ import {
   type ReactElement,
   type ReactNode,
   useCallback,
-  useId,
   useMemo,
   useRef,
   useState,
 } from "react";
+import { useSvgId } from "./svg-id";
 import { cn, StatePanel } from "@elabs-ai/components-ui";
 import { useArcChartLoaded } from "./use-arc-chart-loaded";
 import { generateArcPath, isNamedChartChild } from "./pie-ring-engine";
@@ -512,7 +512,7 @@ const PieChartCore = memo(function PieChartCore({
 
   // Decoration pattern fills
   const high = useHighDecorationOf(containerRef);
-  const patternScope = useId().replace(/:/g, "");
+  const patternScope = useSvgId();
 
   // radiusKey (#RM-030) — the max value of the second measure across `data`,
   // used to normalize every slice's radius scale. 0 when radiusKey is unset

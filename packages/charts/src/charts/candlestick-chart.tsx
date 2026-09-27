@@ -14,10 +14,10 @@ import {
   type ReactElement,
   type ReactNode,
   useCallback,
-  useId,
   useMemo,
   useRef,
 } from "react";
+import { useSvgId } from "./svg-id";
 import { cn } from "@elabs-ai/components-ui";
 // Analytics — RM-138 / RM-139
 import type { ChartAnalytic } from "./analytics/types";
@@ -300,7 +300,7 @@ const ChartCore = memo(function ChartCore({
   // box; furniture (axes, grid, tooltip, annotations) stays unclipped, and an
   // unwindowed chart keeps its exact DOM.
   const clipMarks = xDomain !== undefined;
-  const marksClipId = `candlestick-plot-clip-${useId().replace(/:/g, "")}`;
+  const marksClipId = `candlestick-plot-clip-${useSvgId()}`;
   const isMarkComponent = (child: ReactElement): boolean => {
     const displayName = (child.type as { displayName?: string })?.displayName ?? "";
     return displayName === "Candlestick" || displayName === "AnalyticSeriesLayer";

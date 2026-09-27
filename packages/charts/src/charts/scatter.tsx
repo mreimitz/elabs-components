@@ -1,7 +1,8 @@
 "use client";
 
 import { scaleBand } from "@visx/scale";
-import { useId, useMemo } from "react";
+import { useMemo } from "react";
+import { useSvgId } from "./svg-id";
 import { HaloText, PeakRing, seededRnd } from "../marks";
 import { resolvePalette, useChartStable, useYScale } from "./chart-context";
 import { chartRowCategory } from "./chart-hover-link";
@@ -582,7 +583,7 @@ export function Scatter(rawProps: ScatterProps) {
     };
   })();
 
-  const yGradientId = `scatter-y-gradient-${useId().replace(/:/g, "")}`;
+  const yGradientId = `scatter-y-gradient-${useSvgId()}`;
   const gradientFill = yGradientConfig ? `url(#${yGradientId})` : undefined;
 
   const resolvedFill = gradientFill ?? fill;

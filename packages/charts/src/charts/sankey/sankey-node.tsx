@@ -2,7 +2,8 @@
 
 import type { SankeyNode as SankeyNodeType } from "d3-sankey";
 import { motion } from "motion/react";
-import { useCallback, useId, useMemo } from "react";
+import { useCallback, useMemo } from "react";
+import { useSvgId } from "../svg-id";
 import { HaloText } from "../../marks/halo-text";
 import { useChartPalette } from "../chart-context";
 import { useChartFormatters } from "../chart-formatters";
@@ -306,7 +307,7 @@ export function SankeyNode({
 
   // Decoration pattern fill: active only under high decoration AND for palette fills
   const high = useHighDecorationOf(containerRef);
-  const patternRawScope = useId().replace(/:/g, "");
+  const patternRawScope = useSvgId();
 
   // The label font as it actually resolves in this chart's inheritance context
   // (theme/density/webfont) — replaces the old hard-coded `+ 16` value-label

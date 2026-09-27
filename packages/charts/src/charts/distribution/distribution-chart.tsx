@@ -56,7 +56,6 @@ import { ChartParentSize } from "../chart-parent-size";
 import {
   forwardRef,
   useCallback,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -64,6 +63,7 @@ import {
   type MutableRefObject,
   type ReactNode,
 } from "react";
+import { useSvgId } from "../svg-id";
 import { cn } from "@elabs-ai/components-ui";
 import type { ChartAnalytic } from "../analytics/types"; // Analytics — RM-138
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
@@ -643,7 +643,7 @@ function DistributionChartInner({
   // groups stay apart without hue. Strip dots and `unit` rungs are too small /
   // stroked to carry a texture and keep the solid colour.
   const high = useHighDecorationOf(containerRef);
-  const patternScope = useId().replace(/:/g, "");
+  const patternScope = useSvgId();
   const patternGroups = useMemo(() => {
     if (!high || kind === "strip") {
       return [];

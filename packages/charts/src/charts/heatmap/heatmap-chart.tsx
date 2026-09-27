@@ -57,11 +57,11 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
 } from "react";
+import { useSvgId } from "../svg-id";
 import { cn, mergeRefs, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { type ChartRevealOn, getChartStaggerDotMs } from "../animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
@@ -675,7 +675,7 @@ function HeatmapBody({
   useEffect(() => {
     onHoverChange?.(hover);
   }, [hover, onHoverChange]);
-  const hatchId = `heatmap-neg-${useId().replace(/:/g, "")}`;
+  const hatchId = `heatmap-neg-${useSvgId()}`;
   const datapointsEnabled = useChartDatapointsEnabled();
   const activate = useActivateDatapoint();
 

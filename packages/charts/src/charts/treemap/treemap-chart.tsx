@@ -9,11 +9,11 @@ import {
   type MutableRefObject,
   useCallback,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
 } from "react";
+import { useSvgId } from "../svg-id";
 import { cn, Skeleton, StatePanel } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import type { ChartLegendEntry } from "../chart-context";
@@ -396,7 +396,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   // hue (categorical groups, sequential steps) also differ by texture. Only
   // LEAVES are patterned — a group's title band carries its label and stays flat.
   const high = useHighDecorationOf(internalRef);
-  const patternScope = useId().replace(/:/g, "");
+  const patternScope = useSvgId();
   const patternIndices = useMemo(
     () =>
       high ? indexPaletteFills(activeLayout.leaves.map((leaf) => leaf.color)) : NO_PATTERN_INDICES,

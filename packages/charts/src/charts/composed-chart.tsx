@@ -32,8 +32,8 @@ import {
   useMemo,
   useRef,
   useState,
-  useId,
 } from "react";
+import { useSvgId } from "./svg-id";
 import { cn } from "@elabs-ai/components-ui";
 import { Area, type AreaProps } from "./area";
 import { type ChartAnnotation } from "./annotations/annotation-types";
@@ -711,7 +711,7 @@ function ChartInner({
 
   // One clip per chart instance: a fixed id makes every chart on a page
   // clip to the FIRST chart's rect (`url(#…)` resolves document-wide).
-  const clipPathId = `composed-chart-grow-clip-${useId().replace(/:/g, "")}`;
+  const clipPathId = `composed-chart-grow-clip-${useSvgId()}`;
   // #610: `SeriesBar` and `Line`/`Area`'s `SeriesHoverDim` dim through
   // `ChartLegendHoverProvider`, by position in `lines` — map the hovered
   // legend KEY to that index (same seam `ScatterChart` mounts).

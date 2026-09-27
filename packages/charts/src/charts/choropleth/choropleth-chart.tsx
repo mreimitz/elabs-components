@@ -3,6 +3,7 @@
 import { type GeoPermissibleObjects, Mercator } from "@visx/geo";
 import { geoCentroid, type GeoProjection } from "d3-geo";
 import { ChartParentSize } from "../chart-parent-size";
+import { useSvgId } from "../svg-id";
 import type { TransformMatrix } from "@visx/zoom";
 import { Zoom } from "@visx/zoom";
 import type { FeatureCollection, Geometry } from "geojson";
@@ -13,7 +14,6 @@ import React, {
   type ReactNode,
   useCallback,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -924,7 +924,7 @@ function ChoroplethColorKey({
   config: ChoroplethLegendConfig;
   hoverValue: ColorScaleValue;
 }) {
-  const patternScope = useId().replace(/:/g, "");
+  const patternScope = useSvgId();
   const keyRef = useRef<HTMLDivElement>(null);
   const inkFor = useOnMarkInk(keyRef);
   const bounds = useMemo(

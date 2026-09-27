@@ -13,8 +13,8 @@ import {
   useMemo,
   useRef,
   useState,
-  useId,
 } from "react";
+import { useSvgId } from "./svg-id";
 import { cn } from "@elabs-ai/components-ui";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
@@ -368,7 +368,7 @@ function ChartInner({
 
   // One clip per chart instance: a fixed id makes every chart on a page
   // clip to the FIRST chart's rect (`url(#…)` resolves document-wide).
-  const clipPathId = `chart-grow-clip-${useId().replace(/:/g, "")}`;
+  const clipPathId = `chart-grow-clip-${useSvgId()}`;
   const chart = (
     // Mirrors `AreaChart`'s `AreaStackProvider` placement: the provider wraps
     // the WHOLE `TimeSeriesChartInner` tree, not `children`, so a

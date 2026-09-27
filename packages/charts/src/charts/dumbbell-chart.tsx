@@ -32,15 +32,8 @@
  */
 
 import { scaleLinear } from "@visx/scale";
-import {
-  forwardRef,
-  useCallback,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  type MutableRefObject,
-} from "react";
+import { forwardRef, useCallback, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { useSvgId } from "./svg-id";
 import { useLayoutMeasure } from "./layout-size";
 import { cn } from "@elabs-ai/components-ui";
 import { HaloText, UnitStack, type UnitStackDirection } from "../marks";
@@ -987,7 +980,7 @@ function DumbbellPlot({
   // and rows that differ by hue also differ by texture. Hollow markers, the
   // track and the mono extra dots are unchanged.
   const high = useHighDecorationOf(containerRef);
-  const patternScope = useId().replace(/:/g, "");
+  const patternScope = useSvgId();
   const patternIndices = useMemo(
     () =>
       high

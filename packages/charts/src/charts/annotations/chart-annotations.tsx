@@ -10,10 +10,10 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useId,
   useMemo,
   useRef,
 } from "react";
+import { useSvgId } from "../svg-id";
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { HaloText } from "../../marks/halo-text";
 import { Marginalia, noteLineHeight, wrapNote } from "../../marks/marginalia";
@@ -762,7 +762,7 @@ export const ChartAnnotations = forwardRef<SVGGElement, ChartAnnotationsProps>(
     const breakpoint = useChartBreakpoint();
     const stable = useContext(ChartStableContext);
     const lines = stable?.lines ?? NO_LINES;
-    const patternId = `chart-annotations-stripes-${useId().replace(/:/g, "")}`;
+    const patternId = `chart-annotations-stripes-${useSvgId()}`;
     const back = layer !== "front";
     const front = layer !== "back";
     const striped = back && annotations.some((a) => a.kind === "range" && a.pattern === "stripes");

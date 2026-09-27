@@ -1,6 +1,7 @@
 "use client";
 
-import { useId } from "react";
+import {} from "react";
+import { useSvgId } from "./svg-id";
 
 export interface DashTailStrokeProps {
   /** SVG path `d` for the full series (single curved path). */
@@ -33,7 +34,7 @@ export function DashTailStroke({
   dashArray,
   dashStroke,
 }: DashTailStrokeProps) {
-  const clipPathId = useId().replace(/:/g, "");
+  const clipPathId = useSvgId();
 
   if (!pathD || pathLength <= 0 || dashStartLength >= pathLength) {
     return null;

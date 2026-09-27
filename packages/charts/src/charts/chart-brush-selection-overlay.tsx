@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
+import { useSvgId } from "./svg-id";
 import { createPortal } from "react-dom";
 import { useChartStable } from "./chart-context";
 import { PatternLines } from "./visx-pattern";
@@ -81,7 +82,7 @@ export function ChartBrushSelectionOverlay({
 }: ChartBrushSelectionOverlayProps) {
   const { containerRef, margin } = useChartStable();
   const [mounted, setMounted] = useState(false);
-  const patternId = useId().replace(/:/g, "");
+  const patternId = useSvgId();
 
   useEffect(() => {
     setMounted(true);

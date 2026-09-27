@@ -2,7 +2,8 @@
 
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
-import { createContext, useContext, useId, useMemo } from "react";
+import { createContext, useContext, useMemo } from "react";
+import { useSvgId } from "./svg-id";
 import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import {
   type BarStackBounds,
@@ -228,7 +229,7 @@ export function SeriesBar({
 
   // Decoration pattern fill: active only under high decoration AND for palette fills
   const high = useHighDecoration();
-  const patternRawScope = useId().replace(/:/g, "");
+  const patternRawScope = useSvgId();
   const useHatch = fillStyle === "hatch" && isHatchableFill(fill);
   const usePattern = !useHatch && high && isPaletteFill(fill);
   const patternId = useHatch

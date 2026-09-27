@@ -2,7 +2,8 @@
 
 import type { MotionValue } from "motion/react";
 import { motion, useTransform } from "motion/react";
-import { memo, useId, useMemo } from "react";
+import { memo, useMemo } from "react";
+import { useSvgId } from "./svg-id";
 import { useStillEntrance } from "./use-still-entrance";
 import { DEFAULT_ANIMATION_DURATION_MS, REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
 import { radarCssVars, useRadarHover, useRadarStable } from "./radar-context";
@@ -111,7 +112,7 @@ export const RadarArea = memo(function RadarArea({
 
   // Decoration pattern fill: active only under high decoration AND for palette fills
   const high = useHighDecorationOf(containerRef);
-  const patternRawScope = useId().replace(/:/g, "");
+  const patternRawScope = useSvgId();
 
   const durationFactor = enterDurationMs / DEFAULT_ANIMATION_DURATION_MS;
   const areaData = data[index];

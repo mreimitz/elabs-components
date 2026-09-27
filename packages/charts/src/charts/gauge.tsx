@@ -10,9 +10,9 @@ import {
   isValidElement,
   type ReactElement,
   type ReactNode,
-  useId,
   useMemo,
 } from "react";
+import { useSvgId } from "./svg-id";
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { type ChartStatFlowFormat, defaultChartStatFlowFormat } from "./chart-stat-flow";
@@ -344,7 +344,7 @@ function GaugeInner({
   const stillEntrance = useStillEntrance();
   const notchKeySuffix = stillEntrance ? "-still" : "";
   const notchInitial = stillEntrance ? false : { opacity: 0, scale: 0 };
-  const themeActiveGradientId = `gauge-theme-active-${useId().replace(/:/g, "")}`;
+  const themeActiveGradientId = `gauge-theme-active-${useSvgId()}`;
   // NOTE: not wrapped in `useStableValue` (`use-stable-value.ts`) — its output
   // is actual `ReactElement[]`, not JSON-serializable plain config, so a
   // content-signature comparison isn't safe here. `defsChildren` stays

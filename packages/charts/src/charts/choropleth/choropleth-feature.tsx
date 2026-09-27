@@ -2,7 +2,8 @@
 
 import { geoCentroid } from "d3-geo";
 import { motion, useTransform } from "motion/react";
-import { memo, type ReactElement, useCallback, useId, useMemo } from "react";
+import { memo, type ReactElement, useCallback, useMemo } from "react";
+import { useSvgId } from "../svg-id";
 import { HaloText } from "../../marks/halo-text";
 import { indexPaletteFills, makeSeriesPattern, seriesPatternId } from "../series-pattern";
 import { useEnterComplete } from "../use-enter-complete";
@@ -478,14 +479,14 @@ export const ChoroplethFeature = memo(function ChoroplethFeature({
   } = useChoroplethStable();
   const { hoveredFeatureIndex, setHoveredFeatureIndex, focusedFeatureIndex, setTooltipData } =
     useChoroplethInteraction();
-  const noDataHatchId = `choropleth-no-data-hatch-${useId().replace(/:/g, "")}`;
+  const noDataHatchId = `choropleth-no-data-hatch-${useSvgId()}`;
   const noDataHatchFillUrl = `url(#${noDataHatchId})`;
   // Decoration pattern (ADR 0011, #257): under high decoration every distinct
   // palette fill gets its own series pattern, so regions that differ by hue
   // also differ by texture. Author fills (patterns, literals, no-data) stay.
   const high = useHighDecorationOf(containerRef);
   const inkFor = useOnMarkInk(containerRef);
-  const patternScope = useId().replace(/:/g, "");
+  const patternScope = useSvgId();
 
   const featureCentroids = useMemo(() => {
     return features.map((feature) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo, useRef, type ReactNode } from "react";
+import { useSvgId } from "./svg-id";
 import { type ChartDensity, useChartConfig } from "./chart-config-context";
 import { Checkbox, cn, useLocale } from "@elabs-ai/components-ui";
 import { useChartValueSetFormatter } from "./chart-formatters";
@@ -178,7 +179,7 @@ function LegendPatternSwatch({
   color: string;
   size?: number;
 }) {
-  const id = seriesPatternId(seriesIndex, useId().replace(/:/g, ""));
+  const id = seriesPatternId(seriesIndex, useSvgId());
   const dash = seriesDashArray(seriesIndex);
   return (
     <svg aria-hidden="true" width={size} height={size} style={{ flexShrink: 0 }} overflow="visible">
