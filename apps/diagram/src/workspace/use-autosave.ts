@@ -7,13 +7,15 @@
  * puts a quiet "Saved" in the top bar from `workspaceStore` (`save`, `savedAt`).
  *
  * Thumbnail (step 8, plan §9.2): after a successful save with a clean compile, the canvas is
- * rendered through DG-17's exporter, fitted into 480×270, and saved beside the diagram as
- * `<name>.thumb.svg`, at most once every 10 s (a later save waits for the slot).
+ * rendered through DG-17's exporter, fitted into 480×270, rasterised, and saved beside the
+ * diagram as `<name>.thumb.png`, at most once every 10 s (a later save waits for the slot).
+ * A PNG, not the exporter's SVG: the SVG inlines fonts and icons (180–280 KB a file), and
+ * thumbnails are committed with the diagrams (maintainer, 2026-09-27: "make them small").
  */
 import { useEffect } from "react";
 import { toast } from "@elabs-ai/components-ui";
 import { resolveThemeIsDark } from "@elabs-ai/components-tokens";
-import { pictureOfCanvas, type Picture } from "../io/export";
+import { pictureOfCanvas, pngBlob, type Picture, type PictureScale } from "../io/export";
 import { diagramStore } from "../state/diagram-store";
 import { writeThumb } from "./client";
 import { askAboutDiskChange, tellFileGone } from "./live-reload";
@@ -26,6 +28,8 @@ export const THUMB_INTERVAL_MS = 10_000;
 /** Plan §3.2: Home's recents cards. */
 export const THUMB_WIDTH = 480;
 export const THUMB_HEIGHT = 270;
+/** PNG pixels per CSS pixel of the thumbnail. */
+export const THUMB_SCALE: PictureScale = 1;
 
 /** The strings, in one place (`conventions/i18n-strings`). */
 const AUTOSAVE_LABELS = {
@@ -35,17 +39,30 @@ const AUTOSAVE_LABELS = {
 
 /**
  * The picture, scaled to fit `THUMB_WIDTH`×`THUMB_HEIGHT` (its `viewBox` keeps the ratio).
- * The embedded web fonts are dropped: at thumbnail scale text is a few pixels tall, and they
- * were ~38 % of the file (112 of 297 KB on the Qlik Cloud example), which Git keeps (§9.2).
+ * The embedded fonts stay: they cost nothing once rasterised, and the text keeps its face.
  */
-export function thumbnailSvg(picture: Picture): string {
+export function thumbnailPicture(picture: Picture): Picture {
   const end = picture.svg.indexOf(">");
   const open = picture.svg
     .slice(0, end)
     .replace(/\swidth="[^"]*"/, ` width="${THUMB_WIDTH}"`)
     .replace(/\sheight="[^"]*"/, ` height="${THUMB_HEIGHT}"`);
-  const rest = picture.svg.slice(end).replace(/@font-face\s*\{[^}]*\}/g, "");
-  return `${open} preserveAspectRatio="xMidYMid meet"${rest}`;
+  return {
+    svg: `${open} preserveAspectRatio="xMidYMid meet"${picture.svg.slice(end)}`,
+    width: THUMB_WIDTH,
+    height: THUMB_HEIGHT,
+  };
+}
+
+/** The thumbnail as a `data:image/png;base64,…` URL (the body `POST /thumb` takes). */
+export async function thumbnailPng(picture: Picture): Promise<string> {
+  const { blob } = await pngBlob(thumbnailPicture(picture), THUMB_SCALE);
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error("The thumbnail could not be read."));
+    reader.readAsDataURL(blob);
+  });
 }
 
 /**
@@ -68,7 +85,7 @@ export function installAutosave(): () => void {
     if (resolveThemeIsDark()) return;
     lastThumbAt = Date.now();
     try {
-      await writeThumb(path, thumbnailSvg(await pictureOfCanvas(compiled.ast?.title)));
+      await writeThumb(path, await thumbnailPng(await pictureOfCanvas(compiled.ast?.title)));
     } catch {
       // No canvas drawn (a dev route, the phone's Editor tab): the next save tries again.
     }

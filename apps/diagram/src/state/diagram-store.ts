@@ -116,14 +116,21 @@ export const diagramActions = {
   load(text: string, path: string | null) {
     clearTimeout(pending);
     pending = undefined;
+    // A different document never inherits the previous one's drawing: a blank or broken
+    // file shows the canvas's empty or error state, not the last diagram with a
+    // "last valid" badge. Only edits and disk reloads of the same file keep the last valid.
+    const compiled = compileText(text);
     diagramStore.set((state) => ({
       text,
       loadedText: text,
       selectedId: null,
       loadCount: state.loadCount + 1,
       path,
+      compiled,
+      compiledText: text,
+      drawn: compiled,
+      structure: structureKey(compiled),
     }));
-    compileNow();
   },
   /** A top-bar toggle: rewrite one top-level key in the text, then compile now. */
   setTopLevel(key: TopLevelScalarKey, value: string) {

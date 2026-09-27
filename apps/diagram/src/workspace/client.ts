@@ -21,7 +21,7 @@ export interface WorkspaceFile {
   /** Milliseconds since the epoch (`fs.Stats.mtimeMs`). */
   mtime: number;
   size: number;
-  /** A `<name>.thumb.svg` sits beside it (`thumbUrl`). */
+  /** A `<name>.thumb.png` sits beside it (`thumbPathOf`, `fileUrl`). */
   hasThumb: boolean;
 }
 
@@ -112,9 +112,9 @@ export function fileUrl(path: string): string {
   return `${BASE}/file?${query({ path })}`;
 }
 
-/** `examples/a.yaml` → `examples/a.thumb.svg` (`server/workspace-fs.mjs` `thumbPathOf`). */
+/** `examples/a.yaml` → `examples/a.thumb.png` (`server/workspace-fs.mjs` `thumbPathOf`). */
 export function thumbPathOf(path: string): string {
-  return path.replace(/\.ya?ml$/i, ".thumb.svg");
+  return path.replace(/\.ya?ml$/i, ".thumb.png");
 }
 
 /** `GET /file`: the text and the mtime it was read at. */
@@ -196,9 +196,9 @@ export function trashEntry(path: string): Promise<{ path: string; trashedTo: str
   return post("trash", { path });
 }
 
-/** `POST /thumb`: `<name>.thumb.svg` beside the diagram. */
-export function writeThumb(path: string, svg: string): Promise<{ path: string; size: number }> {
-  return post("thumb", { path, svg });
+/** `POST /thumb`: `<name>.thumb.png` beside the diagram; `png` is a base64 data URL. */
+export function writeThumb(path: string, png: string): Promise<{ path: string; size: number }> {
+  return post("thumb", { path, png });
 }
 
 /** `GET /versions`: newest first, at most 30, `[]` outside Git. */

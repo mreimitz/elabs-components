@@ -29,11 +29,13 @@ export const TRASH = "_trash";
 export const COMPONENTS = "components";
 /** A diagram's text; the same cap as the app's share links (`io/share-url.ts`). */
 export const MAX_TEXT_BYTES = 1_000_000;
-/** A thumbnail SVG (fonts are inlined, so it is larger than the diagram). */
-export const MAX_THUMB_BYTES = 8_000_000;
+/** A thumbnail PNG (a small raster: a few dozen KB; the cap only refuses a runaway). */
+export const MAX_THUMB_BYTES = 1_000_000;
 
 const DIAGRAM_FILE = /\.ya?ml$/i;
-const THUMB_SUFFIX = ".thumb.svg";
+const THUMB_SUFFIX = ".thumb.png";
+const PNG_DATA_URL = /^data:image\/png;base64,([A-Za-z0-9+/]+={0,2})$/;
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const SHA = /^[0-9a-f]{7,40}$/i;
 
 /** A refusal with an HTTP status; `extra` is merged into the JSON error body. */
@@ -53,7 +55,7 @@ export class WorkspaceError extends Error {
 const refuse = (message) => new WorkspaceError(400, message);
 const notFound = (rel) => new WorkspaceError(404, `Not found: ${rel}`);
 
-/** `examples/a.yaml` → `examples/a.thumb.svg`. */
+/** `examples/a.yaml` → `examples/a.thumb.png`. */
 export function thumbPathOf(rel) {
   return rel.replace(DIAGRAM_FILE, THUMB_SUFFIX);
 }
@@ -187,14 +189,19 @@ export async function list() {
   return { folders, files };
 }
 
-/** A file's text and mtime (any regular file inside ROOT: diagrams, thumbnails, README). */
+/**
+ * A file's content and mtime (any regular file inside ROOT: diagrams, thumbnails, README).
+ * `text` is the UTF-8 text; a thumbnail is binary, so `bytes` carries the raw content.
+ */
 export async function read(rel) {
   const { abs, rel: clean } = await safe(rel);
   const stat = await statOrNull(abs);
   if (!stat?.isFile()) throw notFound(clean);
+  const bytes = await fs.readFile(abs);
   return {
     path: clean,
-    text: await fs.readFile(abs, "utf8"),
+    text: bytes.toString("utf8"),
+    bytes,
     mtime: stat.mtimeMs,
     size: stat.size,
   };
@@ -317,21 +324,27 @@ export async function trash(rel) {
   return { path: clean, trashedTo: `${TRASH}/${name}` };
 }
 
-/** Save `<name>.thumb.svg` beside an existing diagram. */
-export async function writeThumb(rel, svg) {
+/**
+ * Save `<name>.thumb.png` beside an existing diagram. `png` is a `data:image/png;base64,…`
+ * URL (the request body is JSON). A PNG, not the exporter's SVG: the SVG inlines fonts and
+ * icons (180–280 KB each), and thumbnails are committed with the diagrams (plan §9.2).
+ */
+export async function writeThumb(rel, png) {
   const { abs, rel: clean } = await safe(rel);
   if (!DIAGRAM_FILE.test(clean)) throw refuse("A thumbnail belongs to a .yaml diagram.");
   refuseTrash(clean);
   if (!(await statOrNull(abs))?.isFile()) throw notFound(clean);
-  if (typeof svg !== "string" || !/^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/.test(svg)) {
-    throw refuse("The thumbnail must be an SVG document.");
+  const match = typeof png === "string" ? PNG_DATA_URL.exec(png) : null;
+  const bytes = match ? Buffer.from(match[1], "base64") : null;
+  if (!bytes || !bytes.subarray(0, PNG_SIGNATURE.length).equals(PNG_SIGNATURE)) {
+    throw refuse("The thumbnail must be a PNG data URL.");
   }
-  if (Buffer.byteLength(svg, "utf8") > MAX_THUMB_BYTES) {
+  if (bytes.length > MAX_THUMB_BYTES) {
     throw new WorkspaceError(413, `The thumbnail is larger than ${MAX_THUMB_BYTES} bytes.`);
   }
   const thumb = thumbPathOf(clean);
-  await atomicWrite(path.join(ROOT, ...thumb.split("/")), svg);
-  return { path: thumb, size: Buffer.byteLength(svg, "utf8") };
+  await atomicWrite(path.join(ROOT, ...thumb.split("/")), bytes);
+  return { path: thumb, size: bytes.length };
 }
 
 async function gitLog(abs) {

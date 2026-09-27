@@ -12,7 +12,7 @@
  *   POST /api/workspace/mkdir   { path }         → { path }
  *   POST /api/workspace/move    { from, to, overwrite? } → { from, to }
  *   POST /api/workspace/trash   { path }         → { path, trashedTo }
- *   POST /api/workspace/thumb   { path, svg }    → { path, size }
+ *   POST /api/workspace/thumb   { path, png }    → { path, size }  (png: a base64 data URL)
  *   GET  /api/workspace/versions?path=           → { versions: [{ sha, date, subject }] }
  *   GET  /api/workspace/version?path=&sha=       → the raw text at that commit
  *   GET  /api/workspace/events                   → SSE, `data: { type, path, mtime? }`
@@ -28,18 +28,19 @@ import * as workspace from "./workspace-fs.mjs";
 const DEBOUNCE_MS = 100;
 /** A comment line keeps idle SSE connections open through anything that times them out. */
 const KEEPALIVE_MS = 25_000;
-/** JSON bodies: a thumbnail is the largest. */
-const MAX_JSON_BYTES = workspace.MAX_THUMB_BYTES + 64 * 1024;
+/** JSON bodies: a thumbnail is the largest (base64 is 4/3 of its bytes). */
+const MAX_JSON_BYTES = Math.ceil((workspace.MAX_THUMB_BYTES * 4) / 3) + 64 * 1024;
 
 const CONTENT_TYPES = {
   ".yaml": "text/yaml; charset=utf-8",
   ".yml": "text/yaml; charset=utf-8",
   ".svg": "image/svg+xml; charset=utf-8",
+  ".png": "image/png",
   ".md": "text/markdown; charset=utf-8",
 };
 
 function send(res, status, body, headers = {}) {
-  const json = typeof body !== "string";
+  const json = typeof body !== "string" && !Buffer.isBuffer(body);
   res.writeHead(status, {
     "Content-Type": json ? "application/json; charset=utf-8" : "text/plain; charset=utf-8",
     "Cache-Control": "no-store",
@@ -162,7 +163,8 @@ async function route(req, res, url, events) {
       const file = await workspace.read(at);
       const type =
         CONTENT_TYPES[path.extname(file.path).toLowerCase()] ?? "text/plain; charset=utf-8";
-      return send(res, 200, file.text, {
+      // A thumbnail is binary: send the bytes, never a UTF-8 round trip of them.
+      return send(res, 200, type === "image/png" ? file.bytes : file.text, {
         "Content-Type": type,
         "X-Workspace-Mtime": String(file.mtime),
       });
@@ -192,7 +194,7 @@ async function route(req, res, url, events) {
       return send(res, 200, await workspace.trash((await readJson(req)).path));
     case "POST /thumb": {
       const body = await readJson(req);
-      return send(res, 200, await workspace.writeThumb(body.path, body.svg));
+      return send(res, 200, await workspace.writeThumb(body.path, body.png));
     }
     case "GET /versions":
       return send(res, 200, { versions: await workspace.versions(at) });
