@@ -143,16 +143,18 @@ function usedBorderBox(el: Element): LayoutSize | null {
  * The observer reads the layout size itself and hands on only a changed size.
  * Handing its callbacks to `react-use-measure` instead would store a new
  * rect — position included — on every observation, and re-render the whole
- * chart at an unchanged size: the observer's first callback always reports the
- * box the attach measure below has already drawn. (A window resize still goes
- * through that rect state, so it re-renders once per burst.)
+ * chart at an unchanged size: when the node was measured on attach, the
+ * observer's first callback reports the box already drawn. (A window resize
+ * still goes through that rect state, so it re-renders once per burst.)
  */
 export function useLayoutMeasure(
   options?: Omit<Options, "debounce" | "polyfill"> & {
     /**
      * `false`: a node is not read when it attaches; its first size comes from
      * the observer's first callback, one frame later — what visx `ParentSize`
-     * did before RM-189. Keeps chart renders out of the hydration task.
+     * did before RM-189. Keeps chart renders out of the hydration task. Under
+     * `<StrictMode>` (dev only) the effect double-invoke reads the node in the
+     * mount commit anyway; production defers.
      */
     measureOnAttach?: boolean;
   },
@@ -176,7 +178,7 @@ export function useLayoutMeasure(
     debounce: { scroll: 0, resize: CHART_RESIZE_DEBOUNCE_MS },
     polyfill: Observer,
   });
-  // The first render sees what `react-use-measure` would have answered — never an extra 0 × 0 pass.
+  // The first render sees what `react-use-measure` answers before any observation: 0 × 0.
   const [size, setSize] = useState<LayoutSize>(() => ({
     width: bounds.width,
     height: bounds.height,
@@ -200,9 +202,10 @@ export function useLayoutMeasure(
   // The last node measured on attach: a ref callback React re-runs with the
   // same node (or `null` first) does not measure again.
   const attachedRef = useRef<HTMLElement | SVGElement | null>(null);
-  // Set when the attach measure read a node in the current commit; cleared by
-  // the last layout effect below, so it never outlives that commit.
-  const readOnAttachRef = useRef(false);
+  // Set when a new node attached in the current commit (whether or not it was
+  // read); cleared by the last layout effect below, so it never outlives that
+  // commit.
+  const attachedThisCommitRef = useRef(false);
   const ref = useCallback(
     (el: HTMLElement | SVGElement | null) => {
       elRef.current = el;
@@ -213,7 +216,7 @@ export function useLayoutMeasure(
       // observer's first callback sizes it instead.
       if (el === null || el === attachedRef.current) return;
       attachedRef.current = el;
-      readOnAttachRef.current = true;
+      attachedThisCommitRef.current = true;
       if (!measureOnAttach) return;
       const next = layoutSize(el);
       // Nothing laid out yet (0 × 0): leave it to the observer.
@@ -225,18 +228,19 @@ export function useLayoutMeasure(
   useLayoutEffect(() => {
     // `bounds` changes on a window resize or an orientation change (the
     // observer never reports to `react-use-measure`); all zeros means nothing
-    // came yet. At mount the attach measure above has already read this node
-    // in this commit, so reading it again would only force another layout. A
-    // re-run in a later commit reads it: a subtree shown again (`<Activity>`,
-    // Suspense) keeps its node, so the attach measure does not run, and the box
-    // may have changed while it was hidden.
+    // came yet. In the commit a node attaches in, the ref callback above has
+    // handled it — read it, or (`measureOnAttach: false`) left it to the
+    // observer — so it is not read again here. A re-run in a later commit reads
+    // it: a subtree shown again (`<Activity>`, Suspense) keeps its node, so the
+    // ref callback does not handle it, and the box may have changed while it
+    // was hidden.
     const observed = bounds.width > 0 || bounds.height > 0;
-    if (!observed && readOnAttachRef.current) return;
+    if (!observed && attachedThisCommitRef.current) return;
     const next = elRef.current ? layoutSize(elRef.current, observed ? bounds : undefined) : bounds;
     update(next);
   }, [bounds, update]);
   useLayoutEffect(() => {
-    readOnAttachRef.current = false;
+    attachedThisCommitRef.current = false;
   });
   return [ref, size];
 }
