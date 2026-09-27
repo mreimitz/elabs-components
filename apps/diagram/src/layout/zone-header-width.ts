@@ -12,12 +12,15 @@ export const ZONE_HEADER_CLASS = {
   band: "flex h-11 shrink-0 items-center gap-2 ps-1 pe-2",
   /**
    * DG-20 — the corner label chip: mark, title, subtitle and owner word on one raised
-   * `bg-card` chip that straddles the zone's top line (`-mt-3.5`). Width priority: the owner
+   * `bg-card` chip set over the zone's top-left corner (`-mt-1.5`: it rises 5 px above the
+   * line). Not a full straddle: ELK routes edges 10 px off a zone (`spacing.edgeNode`
+   * default) and does not know about the chip, so a 14 px rise sat on passing lines
+   * (findings §2). Width priority: the owner
    * word never shrinks (it is the owner's greyscale channel), the subtitle gives way first
    * (`shrink-[100]`), the title truncates last. `me-auto` pushes the count and toggle to the
    * end (no spacer element: it would add a second band gap the probe must mirror).
    */
-  chip: "-mt-3.5 me-auto flex min-w-0 items-center gap-2 self-start rounded-md border border-border bg-card px-1.5 py-1 shadow-xs",
+  chip: "-mt-1.5 me-auto flex min-w-0 items-center gap-2 self-start rounded-md border border-border bg-card px-1.5 py-1 shadow-xs",
   title: "min-w-0 truncate text-caption font-medium",
   subtitle: "min-w-0 shrink-[100] truncate text-meta text-muted-foreground",
   owner: "shrink-0 px-1.5 py-0 text-meta uppercase",

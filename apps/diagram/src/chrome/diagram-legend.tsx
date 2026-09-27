@@ -4,7 +4,7 @@ import { useId, useMemo, useState } from "react";
 // already depends on directly (verified-apis.md → flow, "Not re-exported by flow").
 import { useEdges, useNodes } from "@xyflow/react";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { FLOW_EDGE_DEFAULTS, MarkerType, Panel } from "@elabs-ai/components-flow";
+import { MarkerType, Panel } from "@elabs-ai/components-flow";
 import { ServiceLogo } from "@elabs-ai/components-icons";
 import {
   Badge,
@@ -21,6 +21,7 @@ import {
   KIND_GLYPH,
   KIND_LABEL,
   KIND_STROKE,
+  KIND_STROKE_WIDTH,
   MARKER_TYPE,
   SECURE_GLYPH,
   SECURE_WORDS,
@@ -113,8 +114,7 @@ function OwnerSwatch({ owner }: { owner: ZoneOwner }) {
 
 /**
  * A 28×12 edge sample: the kind's stroke + dash + arrowhead, exactly as `DataFlowEdge`
- * paints it — including its stroke WIDTH (`FLOW_EDGE_DEFAULTS.strokeWidth`, the same
- * resting width `FlowEdgePath` draws when no edge sets its own, m6).
+ * paints it — including its stroke WIDTH rung (`KIND_STROKE_WIDTH`, DG-20; m6).
  */
 function EdgeKindSwatch({ kind }: { kind: FlowKind }) {
   const stroke = KIND_STROKE[kind];
@@ -126,7 +126,7 @@ function EdgeKindSwatch({ kind }: { kind: FlowKind }) {
         stroke={stroke}
         strokeDasharray={dash}
         strokeLinecap="round"
-        strokeWidth={FLOW_EDGE_DEFAULTS.strokeWidth}
+        strokeWidth={KIND_STROKE_WIDTH[kind]}
         x1={2}
         x2={20}
         y1={6}
