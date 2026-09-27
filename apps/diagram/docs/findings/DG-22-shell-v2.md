@@ -131,6 +131,21 @@ change `workspace-store.ts`, because it is outside this item's touches.
 **Proposed fix (DG-21):** `open` returns early, or asks, when `saveNow()` gives `failed` or
 `changed-on-disk`.
 
+**Fixed in DG-22 (authorised), in the commit "opening another diagram never drops edits that
+failed to save".** `open` now reads nothing
+when the save gives `failed` or `changed-on-disk`, or the workspace is still in `conflict`.
+It throws `UnsavedEditsError`, whose `path` is the document that keeps its edits. In
+`app.tsx`, `syncDocRoute` then goes back to that document (a replace), closes the tab of the
+file that did not open, and toasts that the edits are not saved yet, so the other diagram
+was not opened. Seen in the browser: with the file write forced to fail, a click on another
+diagram in the tree left the edited scratch diagram on screen with its edit, one tab, and
+the toast. After the write worked again, the next edit saved, and a normal switch opened the
+other diagram in a second tab.
+
+Still open: `workspaceActions.create` creates the file before it calls `open`. With unsaved
+edits, the new file is on disk but not opened, and the tree toasts "could not create" with
+this error's text. The file shows in the tree.
+
 ### 12. `editor-visibility.tsx` stays as a shim
 
 DG-22 folded DG-02's "Canvas only" into the mode store: view mode is canvas only.

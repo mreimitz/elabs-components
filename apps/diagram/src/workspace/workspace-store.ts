@@ -207,6 +207,21 @@ export async function settled(): Promise<void> {
 /** The disk side of a change event for the open file (`live-reload.ts`). */
 export type DiskCheck = "ours" | "same" | "reloaded" | "conflict" | "gone";
 
+/**
+ * `open` refused to load another file: the document on screen has edits that did not reach
+ * disk (the write failed, or a disk conflict holds it). `path` is that document; it keeps its
+ * edits.
+ */
+export class UnsavedEditsError extends Error {
+  readonly path: string;
+
+  constructor(path: string, refused: string) {
+    super(`The edits in “${path}” are not saved yet, so “${refused}” was not opened.`);
+    this.name = "UnsavedEditsError";
+    this.path = path;
+  }
+}
+
 export const workspaceActions = {
   /** Fetch the tree again (after any event; DG-22 renders it). */
   async refreshTree(): Promise<WorkspaceTree> {
@@ -217,10 +232,18 @@ export const workspaceActions = {
 
   /**
    * Open a file: finish a pending save of the current one, read the new one, and load it
-   * into the editor with its path (a new canvas, a fresh undo history).
+   * into the editor with its path (a new canvas, a fresh undo history). When the current
+   * document's edits did not reach disk (the save failed, or a disk conflict holds them),
+   * nothing is read or loaded: it throws `UnsavedEditsError` and the edits stay on screen.
    */
   async open(path: string): Promise<void> {
-    await workspaceActions.saveNow();
+    const outcome = await workspaceActions.saveNow();
+    const kept = diagramStore.get().path;
+    const unsaved =
+      outcome.kind === "failed" ||
+      outcome.kind === "changed-on-disk" ||
+      workspaceStore.get().conflict;
+    if (kept !== null && unsaved) throw new UnsavedEditsError(kept, path);
     const { text, mtime } = await readFile(path);
     // `current` first: the autosave's path watcher then sees nothing to catch up on.
     workspaceStore.set({

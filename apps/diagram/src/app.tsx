@@ -25,7 +25,7 @@ import { CanvasPane } from "./panes/canvas-pane";
 import { InspectorPane } from "./panes/inspector-pane"; // DG-14
 import { navigate, parseRoute, toHash, useRoute, type Route } from "./routes/use-hash";
 import { diagramStore, useDiagram } from "./state/diagram-store";
-import { workspaceActions } from "./workspace/workspace-store";
+import { UnsavedEditsError, workspaceActions } from "./workspace/workspace-store";
 import {
   EDITOR_WIDTH_MAX,
   EDITOR_WIDTH_MIN,
@@ -64,6 +64,9 @@ const APP_LABELS = {
   shortcutsHint: "Single keys work anywhere outside a text field.",
   or: "or",
   openFailed: (path: string) => `Could not open ${path}`,
+  notOpened: (current: string, other: string) =>
+    `The edits in “${current}” are not saved yet, so “${other}” was not opened.`,
+  notOpenedDetail: "Your edits are still here.",
 } as const;
 
 /** Page names for the document title and the top bar's breadcrumb. */
@@ -116,11 +119,20 @@ function syncDocRoute(): void {
     },
     (error: unknown) => {
       opening = false;
-      toast.error(APP_LABELS.openFailed(path), {
-        description: error instanceof Error ? error.message : String(error),
-      });
       const now = parseCurrentRoute();
-      if (now.kind === "doc" && now.path === path) navigate({ kind: "home" }, { replace: true });
+      const stillAsked = now.kind === "doc" && now.path === path;
+      if (error instanceof UnsavedEditsError) {
+        // The document on screen kept edits that did not reach disk: stay on it.
+        toast.error(APP_LABELS.notOpened(fileTitle(error.path), fileTitle(path)), {
+          description: APP_LABELS.notOpenedDetail,
+        });
+        if (stillAsked) navigate({ kind: "doc", path: error.path }, { replace: true });
+      } else {
+        toast.error(APP_LABELS.openFailed(path), {
+          description: error instanceof Error ? error.message : String(error),
+        });
+        if (stillAsked) navigate({ kind: "home" }, { replace: true });
+      }
       modeActions.closeTab(path);
       syncDocRoute();
     },
