@@ -1,7 +1,9 @@
 "use client";
 
 import { arc as arcGenerator } from "@visx/shape";
-import { motion, type Transition, useReducedMotion, useSpring, useTransform } from "motion/react";
+import { motion, type Transition, useSpring, useTransform } from "motion/react";
+import { REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
+import { useStillEntrance } from "./use-still-entrance";
 import { memo, useEffect } from "react";
 import { useActivateDatapoint } from "./chart-datapoint-layer";
 import { pieCssVars, pieDatapointTarget, usePieHover, usePieStable } from "./pie-context";
@@ -43,9 +45,6 @@ function getSliceOffset(
   };
 }
 
-/** Reduced-motion entrance: no stagger, no sweep — every slice mounts whole. */
-const REDUCED_MOTION_ENTER: Transition = { duration: 0 };
-
 /**
  * A slice's entrance delay + transition (#549). The sweep is a JS
  * (`useMountProgress`) animation the CSS `--motion-factor` gate never reaches,
@@ -63,9 +62,12 @@ function useSliceEnter(
   enterStaggerScale: number,
   enterTransition: Transition | undefined,
 ): { delay: number; transition: Transition | undefined; prefersReducedMotion: boolean } {
-  const prefersReducedMotion = useReducedMotion() === true;
+  // One reduced-motion source (RM-189): the person's own motion setting, else
+  // the OS. Latched (`useStillEntrance`): switching reduced motion off again
+  // never replays a sweep already shown.
+  const prefersReducedMotion = useStillEntrance();
   return prefersReducedMotion
-    ? { delay: 0, transition: REDUCED_MOTION_ENTER, prefersReducedMotion }
+    ? { delay: 0, transition: REDUCED_MOTION_ENTER_TRANSITION, prefersReducedMotion }
     : {
         // RM-189: the scale spaces the slices; the lead-in is not a stagger.
         delay: 0.1 + index * 0.08 * enterStaggerScale,

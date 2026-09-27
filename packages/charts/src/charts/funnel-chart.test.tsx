@@ -30,13 +30,16 @@ beforeAll(() => {
   }
 });
 
-// One mutable switch instead of a module reset: Motion's own
-// `useReducedMotion` caches the media-query result in module state on its first
-// call, so a second render in the same file could never observe the other
-// branch — and `vi.resetModules()` would re-import React too, whose hooks a
-// component from a second instance cannot use. Same pattern as
-// `marks.test.tsx` / `chart-reveal-clip.test.tsx`.
+// One mutable switch instead of a module reset: `vi.resetModules()` would
+// re-import React too, whose hooks a component from a second instance cannot
+// use. The switch drives the one reduced-motion source (RM-189), the tokens
+// hook. Same pattern as `marks.test.tsx` / `chart-reveal-clip.test.tsx`.
 const motionState = vi.hoisted(() => ({ reduced: false }));
+
+vi.mock("@elabs-ai/components-tokens", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useReducedMotion: () => motionState.reduced,
+}));
 
 // Silence motion/react animation warnings in jsdom (no requestAnimationFrame).
 vi.mock("motion/react", async (importOriginal) => {
@@ -45,7 +48,6 @@ vi.mock("motion/react", async (importOriginal) => {
     ...actual,
     // Keep useMotionValue/useTransform but suppress animate side-effects.
     animate: vi.fn(() => ({ stop: vi.fn() })),
-    useReducedMotion: () => motionState.reduced,
   };
 });
 

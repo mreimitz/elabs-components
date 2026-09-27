@@ -102,7 +102,7 @@ import {
 } from "./chart-datapoint-layer";
 import { isGradientDefComponent, isPatternDefComponent } from "./chart-defs";
 import { useChartFormatters } from "./chart-formatters";
-import { ChartLoadingLabel } from "./chart-loading-label";
+import { ChartLoadingAnnouncement, ChartLoadingLabel } from "./chart-loading-label";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 import {
   ChartSelectionGestureHost,
@@ -2125,6 +2125,7 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartPlotProps>(function BarC
         </ChartSelectionProvider>
       </ChartSelectionGestureScope>
       {showLoadingLabel ? <ChartLoadingLabel exiting={false} text={loadingLabel} /> : null}
+      {!showLoadingLabel && chartPhase === "loading" ? <ChartLoadingAnnouncement /> : null}
     </ChartPlotRoot>,
   );
   return containerSelection.wrap(legendWrapped);

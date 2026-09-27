@@ -599,7 +599,8 @@ export interface CandlestickChartProps {
    * Colour ramp for the candles (RM-186): rising candles take the palette's
    * gain colour and falling ones its loss colour (`"diverging"` is the sign
    * pair, any other palette its first two colours). Unset: `--chart-1` /
-   * `--chart-5`, as before.
+   * `--chart-5`, as before. Whatever the palette, a rising body is drawn
+   * hollow and a falling one solid, so the two never differ by colour alone.
    */
   palette?: ChartPalette;
 }

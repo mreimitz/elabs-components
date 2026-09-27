@@ -29,6 +29,13 @@ const { getMockParentSize, setMockParentSize } = vi.hoisted(() => {
     },
   };
 });
+// The one reduced-motion source (RM-189): the tokens hook, switched per test.
+const motionState = vi.hoisted(() => ({ reduced: false }));
+vi.mock("@elabs-ai/components-tokens", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useReducedMotion: () => motionState.reduced,
+}));
+
 vi.mock("./chart-parent-size", () => ({
   ChartParentSize: ({
     children,
@@ -349,5 +356,44 @@ describe("RadarChart value-format group (fix3)", () => {
     );
     const text = container.querySelector('[data-slot="chart-legend"]')?.textContent ?? "";
     expect(text).toContain("3.234,567");
+  });
+});
+
+describe("RadarArea under reduced motion (RM-189)", () => {
+  afterEach(() => {
+    motionState.reduced = false;
+  });
+
+  /** An animated radar with one area and its points, as first painted. */
+  function renderAnimatedRadar() {
+    return render(
+      <RadarChart data={data} metrics={metrics} size={300}>
+        <RadarArea index={0} />
+      </RadarChart>,
+    );
+  }
+
+  it("mounts the area whole: points at their values, no fade-in", () => {
+    motionState.reduced = true;
+    const { container } = renderAnimatedRadar();
+    const points = Array.from(container.querySelectorAll("circle"));
+    expect(points).toHaveLength(metrics.length);
+    // No sweep from the centre: every point already sits at its own value.
+    expect(
+      points.some((point) => point.getAttribute("cx") !== "0" || point.getAttribute("cy") !== "0"),
+    ).toBe(true);
+    // No fade-in: the area group never starts transparent.
+    const group = points[0]?.closest("g");
+    expect(group?.getAttribute("style") ?? "").not.toMatch(/opacity:\s*0(?![.\d])/);
+  });
+
+  it("still sweeps the area in from the centre when motion is allowed", () => {
+    const { container } = renderAnimatedRadar();
+    const points = Array.from(container.querySelectorAll("circle"));
+    expect(points).toHaveLength(metrics.length);
+    for (const point of points) {
+      expect(point.getAttribute("cx")).toBe("0");
+      expect(point.getAttribute("cy")).toBe("0");
+    }
   });
 });

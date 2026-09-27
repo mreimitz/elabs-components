@@ -470,3 +470,36 @@ describe("ParallelCoordinatesChart — status and empty (RM-184)", () => {
     expect(empty).toHaveAttribute("data-slot", "parallel-coordinates-chart-empty");
   });
 });
+
+// The messages group (RM-187 follow-up): a per-chart override reaches this chart's words.
+describe("ParallelCoordinatesChart — messages", () => {
+  it("prints a `messages` override in place of the catalogue's words", () => {
+    render(
+      <ParallelCoordinatesChart
+        data={[]}
+        dimensions={dims}
+        entity="product"
+        messages={{
+          "charts.chart.emptyTitle": "Keine Daten",
+          "charts.chart.emptyMessage": "Nichts zu zeichnen.",
+        }}
+      />,
+    );
+    expect(screen.getByText("Keine Daten")).toBeInTheDocument();
+    expect(screen.getByText("Nichts zu zeichnen.")).toBeInTheDocument();
+    expect(screen.queryByText("No data")).toBeNull();
+  });
+
+  it("keeps the catalogue's words for every key the override leaves unset", () => {
+    render(
+      <ParallelCoordinatesChart
+        data={[]}
+        dimensions={dims}
+        entity="product"
+        messages={{ "charts.chart.emptyTitle": "Keine Daten" }}
+      />,
+    );
+    expect(screen.getByText("Keine Daten")).toBeInTheDocument();
+    expect(screen.getByText("No data to plot.")).toBeInTheDocument();
+  });
+});

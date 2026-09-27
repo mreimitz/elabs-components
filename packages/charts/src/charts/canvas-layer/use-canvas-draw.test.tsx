@@ -3,9 +3,9 @@
  * reduced motion really disables the enter ramp, and a missing 2D context is a
  * survivable state rather than a crash.
  *
- * `useReducedMotion` is mocked at the module boundary rather than through
- * `matchMedia`: motion reads the query once at subscribe time, so a stubbed
- * media list makes the test assert on motion's caching, not on this hook.
+ * `useReducedMotion` (the tokens hook, the one reduced-motion source — RM-189)
+ * is mocked at the module boundary rather than through `matchMedia`, so the
+ * test asserts on this hook, not on how the tokens hook resolves the setting.
  */
 
 import { render, waitFor } from "@testing-library/react";
@@ -13,9 +13,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { installCanvasContextStub } from "../../test/primitives";
 import { type ChartScales, useCanvasDraw } from "./use-canvas-draw";
 
-const reducedMotion = vi.hoisted(() => ({ value: false as boolean | null }));
+const reducedMotion = vi.hoisted(() => ({ value: false }));
 
-vi.mock("motion/react", async (importOriginal) => ({
+vi.mock("@elabs-ai/components-tokens", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useReducedMotion: () => reducedMotion.value,
 }));

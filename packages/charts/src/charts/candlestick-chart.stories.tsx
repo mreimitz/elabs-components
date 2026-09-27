@@ -47,7 +47,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default — OHLC candles with grid, axes and tooltip. Uses --chart-1 (positive) and --chart-5 (negative) tokens. */
+/**
+ * Default — OHLC candles with grid, axes and tooltip. Rising candles are hollow
+ * (a --chart-1 outline) and falling candles solid (--chart-5), so up and down
+ * differ by shape as well as colour.
+ */
 export const Default: Story = {
   render: () => (
     <CandlestickChart data={ohlcData}>
@@ -96,6 +100,55 @@ export const Loading: Story = {
       );
     }
     await expect(canvasElement.querySelector("svg")).toBeNull();
+  },
+};
+
+/** Every candle body the chart drew, with its hollow/solid kind. */
+const candleBodies = (root: Element) =>
+  Array.from(root.querySelectorAll<SVGRectElement>("[data-candle-body]"));
+
+/**
+ * Rising vs falling — a rising candle (close above open) draws a HOLLOW body: an
+ * outline in the rising colour on the plot's own ground. A falling candle draws a
+ * SOLID body. The shape is the second channel beside colour (WCAG 1.4.1): in
+ * greyscale, an up day still reads apart from a down day. The wicks are unchanged.
+ */
+export const RisingAndFalling: Story = {
+  name: "Rising (hollow) and falling (solid)",
+  render: () => (
+    <CandlestickChart data={ohlcData} animationDuration={0}>
+      <Grid horizontal />
+      <Candlestick animate={false} />
+      <XAxis />
+      <YAxis />
+    </CandlestickChart>
+  ),
+  play: async ({ canvasElement }) => {
+    await waitFor(() => expect(candleBodies(canvasElement)).toHaveLength(ohlcData.length));
+    const bodies = candleBodies(canvasElement);
+    // Data order: each body's kind follows its own open/close.
+    const expected = ohlcData.map((d) => (d.close >= d.open ? "hollow" : "solid"));
+    await expect(bodies.map((body) => body.dataset.candleBody)).toEqual(expected);
+    await expect(expected).toContain("hollow");
+    await expect(expected).toContain("solid");
+    for (const body of bodies) {
+      const hollow = body.dataset.candleBody === "hollow";
+      // A hollow body is painted in the plot's ground; a solid one in its own colour.
+      await expect(body.getAttribute("fill")).toBe(
+        hollow ? chartCssVars.background : "url(#candlestick-negative)",
+      );
+      await expect(body.getAttribute("stroke")).toBe(
+        hollow ? "url(#candlestick-positive)" : "url(#candlestick-negative)",
+      );
+      // The hollow outline actually paints: 2 px on a candle at least 4 px wide, 1 px on a
+      // thinner one, and it leaves a hole (an SVG stroke paints half inside the body).
+      if (hollow) {
+        const width = Number(body.getAttribute("width"));
+        const stroke = Number.parseFloat(getComputedStyle(body).strokeWidth);
+        await expect(stroke).toBe(width < 4 ? 1 : 2);
+        await expect(width - stroke).toBeGreaterThan(0);
+      }
+    }
   },
 };
 
@@ -149,9 +202,9 @@ function expectSeriesPatterns(root: Element, markSelector: string, minPatterns: 
 }
 
 /**
- * High decoration (ADR 0011, #257) — rising and falling bodies each draw their
- * own series pattern (diagonal hatch / dots) inside a solid outline, so the
- * up/down split survives without hue. At decoration 0–7 this is `NoAnimation`.
+ * High decoration (ADR 0011, #257) — a falling (solid) body fills with its series
+ * pattern inside a solid outline; a rising body stays hollow, as at every level,
+ * since it has no fill to texture. At decoration 0–7 this is `NoAnimation`.
  */
 export const HighDecoration: Story = {
   tags: ["!dev"],
@@ -168,7 +221,12 @@ export const HighDecoration: Story = {
     </div>
   ),
   play: async ({ canvasElement }) => {
-    await waitFor(() => expectSeriesPatterns(canvasElement, ".chart-candlesticks rect", 2));
+    await waitFor(() => expectSeriesPatterns(canvasElement, ".chart-candlesticks rect", 1));
+    // Only falling bodies are patterned; every rising body is still hollow.
+    for (const body of candleBodies(canvasElement)) {
+      const patterned = (body.getAttribute("fill") ?? "").startsWith("url(#bp-series-");
+      await expect(patterned).toBe(body.dataset.candleBody === "solid");
+    }
   },
 };
 
@@ -181,8 +239,8 @@ const paintedColors = (root: Element) =>
 /**
  * `palette="diverging"` (RM-186): rising candles take `chartCssVars.signPositive`,
  * falling ones `signNegative` — the two ends of the diverging ramp. The pair shares
- * one lightness, so, like the default pair, it tells gain from loss by colour
- * alone below high decoration; a second channel is a tracked follow-up.
+ * one lightness, so the hollow (rising) and solid (falling) bodies carry the sign
+ * where the hue cannot.
  */
 export const Palette: Story = {
   render: () => (
@@ -200,5 +258,7 @@ export const Palette: Story = {
       expect(paintedColors(canvasElement)).toContain(chartCssVars.signNegative);
       expect(paintedColors(canvasElement)).not.toContain("var(--chart-5)");
     });
+    const kinds = new Set(candleBodies(canvasElement).map((body) => body.dataset.candleBody));
+    await expect(kinds).toEqual(new Set(["hollow", "solid"]));
   },
 };

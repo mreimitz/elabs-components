@@ -52,7 +52,7 @@ source: docs/review/2026-09-25-charts-unification-review.md F06, F26, F32; ADR 0
 
 ## Open follow-ups (final review at ab266a24 — passed, minor only)
 
-- Candlestick shows gain and loss by colour alone (default pair and diverging); it needs a non-colour channel, such as hollow rising bodies.
+- Candlestick shows gain and loss by colour alone (default pair and diverging); it needs a non-colour channel, such as hollow rising bodies. — done 2026-09-27 (charts/followups-a11y-motion)
 - Gantt has no `palette`.
 - The maintainer decided on 2026-09-26: the five separate gain/loss default pairs (LiveLine, ProfitLossLine, Candlestick, Waterfall, Scatter y-gradient) stay until 6.0.0, when they converge on the sign pair.
 - Widths 380/600/900 are not proven by a story mechanism.

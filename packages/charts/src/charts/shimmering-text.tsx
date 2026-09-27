@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion, type Variants } from "motion/react";
+import { motion, type Variants } from "motion/react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { type ComponentProps, useCallback } from "react";
 import { cn } from "@elabs-ai/components-ui";
 
@@ -30,8 +31,10 @@ export function ShimmeringText({
   className,
   ...props
 }: ShimmeringTextProps) {
+  // One reduced-motion source (RM-189): the tokens hook — the person's own
+  // motion setting wins over the OS.
   const reducedMotion = useReducedMotion();
-  const stopped = isStopped || reducedMotion === true;
+  const stopped = isStopped || reducedMotion;
 
   const createCharVariants = useCallback(
     (charIndex: number): Variants => ({

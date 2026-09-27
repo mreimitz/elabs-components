@@ -53,7 +53,7 @@ import {
   type ReactNode,
 } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { useReducedMotion } from "motion/react";
+import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { Calendar, CalendarCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   cn,
@@ -1530,6 +1530,8 @@ function GanttBody({
   // commits the new positions: a transition only starts when the transition property is
   // already in the element's style at the moment the value changes.
   const zoomTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // One reduced-motion source (RM-189): the tokens hook — the person's own
+  // motion setting wins over the OS.
   const prefersReducedMotion = useReducedMotion();
   const armZoomTransition = useCallback(() => {
     const el = scrollRef.current;

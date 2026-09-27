@@ -61,19 +61,30 @@ vi.mock("motion/react", () => ({
 // The stub also records each call's transition: that is what a ring's enter
 // animation actually runs on (RM-168).
 const mountProgressTransitions = vi.hoisted(() => [] as unknown[]);
+const mountProgressCalls = vi.hoisted(
+  () => [] as { transition: unknown; delay: number; replayKey: string }[],
+);
 vi.mock("./use-enter-complete", () => ({
   useEnterComplete: () => true,
 }));
 vi.mock("./use-mount-progress", () => ({
-  useMountProgress: (enterTransition: unknown) => {
+  useMountProgress: (enterTransition: unknown, delay: number, replayKey: string) => {
     mountProgressTransitions.push(enterTransition);
+    mountProgressCalls.push({ transition: enterTransition, delay, replayKey });
     return { get: () => 1 };
   },
 }));
 
+// The one reduced-motion source (RM-189): the tokens hook, switched per test.
+const motionState = vi.hoisted(() => ({ reduced: false }));
+vi.mock("@elabs-ai/components-tokens", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useReducedMotion: () => motionState.reduced,
+}));
+
 import React from "react";
 import type { Transition } from "motion/react";
-import { DEFAULT_CHART_ENTER_TRANSITION } from "./animation";
+import { DEFAULT_CHART_ENTER_TRANSITION, REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
 import { computeRingTickSegments, Ring } from "./ring";
 import { RingCenter } from "./ring-center";
 import { RingChart, type RingChartProps } from "./ring-chart";
@@ -242,6 +253,47 @@ describe("RingChart animationDuration", () => {
     })) {
       expect(transition).toBe(spring);
     }
+  });
+});
+
+// ── Reduced motion is a branch (RM-189) ────────────────────────────────────
+
+describe("RingChart under reduced motion (RM-189)", () => {
+  afterEach(() => {
+    motionState.reduced = false;
+  });
+
+  /** Renders three animated rings and returns every enter they ran. */
+  function enterCallsFor(): typeof mountProgressCalls {
+    mountProgressCalls.length = 0;
+    render(
+      <RingChart animationDuration={400} data={sampleData} size={280}>
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    expect(mountProgressCalls.length).toBeGreaterThanOrEqual(sampleData.length * 2);
+    return [...mountProgressCalls];
+  }
+
+  it("mounts every ring whole: no expand, no sweep, no stagger", () => {
+    motionState.reduced = true;
+    for (const call of enterCallsFor()) {
+      expect(call.transition).toBe(REDUCED_MOTION_ENTER_TRANSITION);
+      expect(call.delay).toBe(0);
+      // The replay key carries the switch, so a live change lands the rings at once.
+      expect(call.replayKey).toMatch(/-still$/);
+    }
+  });
+
+  it("keeps the staggered entrance when motion is allowed", () => {
+    const calls = enterCallsFor();
+    for (const call of calls) {
+      expect(call.transition).not.toBe(REDUCED_MOTION_ENTER_TRANSITION);
+      expect(call.replayKey).not.toMatch(/-still$/);
+    }
+    expect(calls.some((call) => call.delay > 0)).toBe(true);
   });
 });
 

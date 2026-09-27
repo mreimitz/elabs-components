@@ -1,12 +1,13 @@
 /**
- * PieSlice entrance under reduced motion (#549 item 8). `motion/react`'s
- * `useReducedMotion` is forced on; every other export stays real, so the
- * slices' own JS sweep (`useMountProgress`) really runs in jsdom.
+ * PieSlice entrance under reduced motion (#549 item 8). The tokens package's
+ * `useReducedMotion` (the one reduced-motion source, RM-189) is forced on;
+ * `motion/react` stays real, so the slices' own JS sweep (`useMountProgress`)
+ * really runs in jsdom.
  */
 import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("motion/react", async (importOriginal) => ({
+vi.mock("@elabs-ai/components-tokens", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useReducedMotion: () => true,
 }));

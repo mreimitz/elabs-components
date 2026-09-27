@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-27T08:53:46.289Z",
+  "generatedAt": "2026-09-27T09:12:32.377Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -22430,19 +22430,19 @@
               "name": "positiveFill",
               "optional": true,
               "type": "string",
-              "description": "Fill for positive (close >= open) candles. Color or url(#gradient). Default: --chart-1"
+              "description": "Colour of rising candles (close >= open): the outline of their HOLLOW body and their wick. Rising bodies are hollow and falling ones solid, so up and down differ by shape as well as colour. Color or url(#gradient). Default: --chart-1"
             },
             {
               "name": "negativeFill",
               "optional": true,
               "type": "string",
-              "description": "Fill for negative candles. Color or url(#gradient). Default: --chart-5"
+              "description": "Fill of falling candles (a solid body) and their wick. Color or url(#gradient). Default: --chart-5"
             },
             {
               "name": "bodyPatternPositive",
               "optional": true,
               "type": "string",
-              "description": "Optional pattern URL for body only (e.g. url(#pattern)). When set, body is drawn solid first, then pattern overlaid and masked to the body rect."
+              "description": "Optional pattern URL for the rising body (e.g. url(#pattern)). Setting it FILLS rising bodies — drawn solid first, then the pattern overlaid and masked to the body rect — instead of drawing them hollow."
             },
             {
               "name": "bodyPatternNegative",
@@ -22637,7 +22637,7 @@
               "name": "palette",
               "optional": true,
               "type": "ChartPalette",
-              "description": "Colour ramp for the candles (RM-186): rising candles take the palette's gain colour and falling ones its loss colour (`\"diverging\"` is the sign pair, any other palette its first two colours). Unset: `--chart-1` / `--chart-5`, as before.",
+              "description": "Colour ramp for the candles (RM-186): rising candles take the palette's gain colour and falling ones its loss colour (`\"diverging\"` is the sign pair, any other palette its first two colours). Unset: `--chart-1` / `--chart-5`, as before. Whatever the palette, a rising body is drawn hollow and a falling one solid, so the two never differ by colour alone.",
               "kind": "enum"
             },
             {
@@ -29607,6 +29607,14 @@
             "ChartInteractionProps"
           ],
           "props": [
+            {
+              "name": "messages",
+              "optional": true,
+              "type": "ChartMessages",
+              "description": "messages group (RM-187): this chart's own words, keyed by the ui catalogue's `charts.*` message keys. A key set here wins over the `LocaleProvider`; every other key reads the catalogue as before.",
+              "kind": "object",
+              "group": "messages"
+            },
             {
               "name": "data",
               "optional": false,

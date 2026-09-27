@@ -18,6 +18,11 @@ import { cleanup, render, screen, fireEvent, within, act } from "@testing-librar
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GanttStatus, GanttTask, GanttTimeUnit, GanttViewMode, Status } from "./gantt";
 import { buildVirtualizedTasks } from "./gantt-virtualized-fixture";
+import {
+  type MotionPreference,
+  ThemeProvider,
+  useMotionPreference,
+} from "@elabs-ai/components-tokens";
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -41,11 +46,22 @@ function makeMotionElement(tag: string) {
   });
 }
 
+// One stand-in per tag, made once: a fresh component type on every
+// `motion.<tag>` read would remount the element on every render, which hides
+// whether the component itself keeps its nodes.
+const motionElements = new Map<string, ReturnType<typeof makeMotionElement>>();
+
 vi.mock("motion/react", () => ({
   motion: new Proxy({} as Record<string, ReturnType<typeof makeMotionElement>>, {
-    get: (_target, tag: string) => makeMotionElement(tag),
+    get: (_target, tag: string) => {
+      let element = motionElements.get(tag);
+      if (!element) {
+        element = makeMotionElement(tag);
+        motionElements.set(tag, element);
+      }
+      return element;
+    },
   }),
-  useReducedMotion: () => false,
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
 }));
 
@@ -1463,5 +1479,46 @@ describe("Gantt virtualized story fixture is deterministic (#275)", () => {
     // A real assertion, not a vacuous one — the fixture actually renders progress fills.
     expect(first.length).toBeGreaterThan(0);
     expect(second).toEqual(first);
+  });
+});
+
+// ── Reduced motion is latched (RM-189 follow-up review) ────────────────────
+// The bar's clip reveal and the milestone's pop-in are keyed on reduced motion
+// so a switch to reduced lands them at rest. The key is latched: switching
+// reduced motion off again must not remount (and so replay) a mark already shown.
+
+describe("Gantt entrance marks under a motion switch", () => {
+  it("keeps every bar and milestone node when reduced motion is switched off again", () => {
+    const tasks: GanttTask[] = [
+      ...baseTasks,
+      { id: "m1", name: "Launch Day", start: d(10), end: d(10), isMilestone: true },
+    ];
+    const handle: { set?: (next: MotionPreference) => void } = {};
+    function CaptureMotion() {
+      handle.set = useMotionPreference().setMotionPreference;
+      return null;
+    }
+    const { container } = render(
+      <ThemeProvider defaultMotionPreference="reduced" motionStorageKey={null}>
+        <CaptureMotion />
+        <Gantt tasks={tasks} style={{ height: 400 }} />
+      </ThemeProvider>,
+    );
+    // The bar clip carries the progress fill; the milestone is the rotated diamond.
+    const marks = () => [
+      ...Array.from(container.querySelectorAll('[data-slot="gantt-bar-progress"]')).map(
+        (progress) => progress.parentElement,
+      ),
+      ...Array.from(container.querySelectorAll("span.rotate-45")),
+    ];
+    const before = marks();
+    // Two bars with progress above zero, plus the milestone.
+    expect(before).toHaveLength(3);
+    act(() => {
+      handle.set?.("full");
+    });
+    const after = marks();
+    expect(after).toHaveLength(before.length);
+    after.forEach((node, i) => expect(node).toBe(before[i]));
   });
 });
