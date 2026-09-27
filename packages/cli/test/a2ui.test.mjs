@@ -21,7 +21,7 @@ test("a2ui catalog: every type, then one type in full; --json is structured", ()
   assert.match(all.stdout, /Stack\s+builtin\s+children\s+align, direction, gap, justify, wrap/);
   assert.match(
     all.stdout,
-    /AutoChart\s+charts\s+on\.datapointClick, on\.selectionIntent\s+height, loading, spec/,
+    /AutoChart\s+charts\s+on\.datapointClick, on\.selectionIntent\s+height, loading, plotHeight, spec/,
   );
   const one = run(["a2ui", "catalog", "MetricCard"]);
   assert.equal(one.status, 0);
@@ -33,6 +33,51 @@ test("a2ui catalog: every type, then one type in full; --json is structured", ()
   const unknown = run(["a2ui", "catalog", "Nope"]);
   assert.equal(unknown.status, 1);
   assert.match(unknown.stderr, /unknown type "Nope"/);
+});
+
+test("a2ui: AutoChart's Responsive plotHeight, choropleth prose, and a deprecated name that warns without failing (RM-197)", () => {
+  const auto = JSON.parse(run(["a2ui", "catalog", "AutoChart", "--json"]).stdout);
+  assert.equal(auto.props.height.deprecated, true);
+  assert.match(auto.props.height.description, /plotHeight/);
+  assert.ok(
+    Array.isArray(auto.props.plotHeight.oneOf),
+    "plotHeight carries a real oneOf, not `any`",
+  );
+  assert.match(auto.props.spec.description, /\bchoropleth\b/);
+
+  const dir = mkdtempSync(join(tmpdir(), "brand-ui-a2ui-rm197-"));
+  try {
+    const surface = (props) =>
+      JSON.stringify({ a2ui: "1", root: { type: "AutoChart", props: { spec: {}, ...props } } });
+
+    // Both Responsive forms accepted, a malformed one rejected.
+    writeFileSync(join(dir, "px.json"), surface({ plotHeight: 320 }));
+    assert.equal(run(["a2ui", "validate", "px.json"], dir).status, 0);
+    writeFileSync(join(dir, "aspect.json"), surface({ plotHeight: { aspect: 2 } }));
+    assert.equal(run(["a2ui", "validate", "aspect.json"], dir).status, 0);
+    writeFileSync(join(dir, "tiers.json"), surface({ plotHeight: { base: 320, narrow: 240 } }));
+    assert.equal(run(["a2ui", "validate", "tiers.json"], dir).status, 0);
+    writeFileSync(join(dir, "bad.json"), surface({ plotHeight: "tall" }));
+    const bad = run(["a2ui", "validate", "bad.json", "--json"], dir);
+    assert.equal(bad.status, 1);
+    assert.deepEqual(
+      JSON.parse(bad.stdout).errors.map((e) => e.code),
+      ["invalid-value"],
+    );
+
+    // The deprecated `height` name still validates — a warning, never a failure.
+    writeFileSync(join(dir, "deprecated.json"), surface({ height: 300 }));
+    const dep = run(["a2ui", "validate", "deprecated.json", "--json"], dir);
+    assert.equal(dep.status, 0, dep.stderr);
+    const parsed = JSON.parse(dep.stdout);
+    assert.equal(parsed.ok, true);
+    assert.deepEqual(
+      parsed.errors.map((e) => [e.code, e.severity]),
+      [["deprecated-prop", "warning"]],
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("a2ui example validates; a bad surface exits 1 with path/code/message lines", () => {

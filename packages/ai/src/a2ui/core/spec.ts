@@ -87,6 +87,18 @@ export interface A2uiPropSchema {
   required?: boolean;
   default?: A2uiJson;
   description?: string;
+  /**
+   * Kept in the catalog until 6.0.0 (ADR 0042 §8, `DEPRECATION.md`): still validates and
+   * still renders. The replacement name lives in `description`, never a second field —
+   * a stored or model-generated surface that names this prop must keep working.
+   */
+  deprecated?: boolean;
+  /**
+   * A closed set of alternative shapes a value may take (e.g. `Responsive<T>`,
+   * `charts/responsive.ts`: the plain value, or the per-breakpoint `{ base, medium?,
+   * narrow? }` object) — valid when it matches AT LEAST ONE. `type` is then informational.
+   */
+  oneOf?: A2uiPropSchema[];
 }
 
 /** One catalog type — what an agent may emit for it. */
@@ -136,7 +148,8 @@ export type A2uiErrorCode =
   | "invalid-value"
   | "children-not-allowed"
   | "unknown-event"
-  | "invalid-action";
+  | "invalid-action"
+  | "deprecated-prop";
 
 export interface A2uiError {
   /** JSON-pointer-ish path: `root.children[2].props.variant`. */
@@ -145,4 +158,10 @@ export interface A2uiError {
   node: string;
   code: A2uiErrorCode;
   message: string;
+  /**
+   * `"error"` (default, when unset) blocks the surface (`ok: false`). `"warning"` — today
+   * only `deprecated-prop` — is reported but never blocks: a surface naming a deprecated
+   * prop still validates (ADR 0042 §8).
+   */
+  severity?: "error" | "warning";
 }

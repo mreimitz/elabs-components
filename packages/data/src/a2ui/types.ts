@@ -10,6 +10,10 @@ export interface DataA2uiPropSchema {
   /** JSON-compatible, like ai's `A2uiJson`. */
   default?: string | number | boolean | null | object;
   description?: string;
+  /** Kept in the catalog until 6.0.0 (ADR 0042 §8) — the replacement lives in `description`. */
+  deprecated?: boolean;
+  /** A closed set of alternative shapes (e.g. `Responsive<T>`) — valid against any one. */
+  oneOf?: DataA2uiPropSchema[];
 }
 
 export interface DataA2uiTypeSchema {

@@ -91,10 +91,48 @@ async function format(content, file) {
   return prettier.format(content, { ...config, filepath: join(REPO_ROOT, file) });
 }
 
+/**
+ * A handful of named type aliases seen ONLY as a bare identifier inside `Responsive<…>`
+ * (the manifest's type string is the source's literal spelling — `Responsive<ChartPlotHeight>`,
+ * never the inlined union — so there is nothing to pattern-match without knowing the alias).
+ * Not a hand list of DEPRECATED props (§ below) — a closed, ADR-documented set of shapes
+ * (`charts/responsive.ts`). An alias not listed here still gets a real Responsive wrapper;
+ * only its own value shape falls back to `any`, exactly like an unresolved type does today.
+ */
+const NAMED_TYPE_SCHEMAS = {
+  // `number | { aspect: number }` (`responsive.ts`) — both forms are shallow-checked, like
+  // every other object-shaped prop in this catalog (`spec.ts`: "the runtime validator, not
+  // the type, decides").
+  ChartPlotHeight: { type: "number", oneOf: [{ type: "number" }, { type: "object" }] },
+};
+
+/** `Responsive<T>` (ADR 0039) → `T`, or the per-breakpoint `{ base, medium?, narrow? }` —
+ *  a real `oneOf`, never collapsed to `any`. */
+function responsiveSchema(inner) {
+  return {
+    type: inner.type,
+    oneOf: [
+      inner,
+      {
+        type: "object",
+        description:
+          "Per breakpoint: { base, medium?, narrow? } — base's shape is the value above.",
+      },
+    ],
+  };
+}
+
 /** Manifest prop TYPE string → catalog prop schema, or null when an agent cannot set it. */
 export function propSchemaFromType(type) {
   const t = String(type).trim();
   if (!t || t.includes("=>") || /^\(/.test(t)) return null; // functions
+  const responsive = /^Responsive<([\s\S]+)>$/.exec(t);
+  if (responsive) {
+    const innerType = responsive[1].trim();
+    const inner = NAMED_TYPE_SCHEMAS[innerType] ?? propSchemaFromType(innerType) ?? { type: "any" };
+    return responsiveSchema(inner);
+  }
+  if (NAMED_TYPE_SCHEMAS[t]) return { ...NAMED_TYPE_SCHEMAS[t] };
   const parts = t.split("|").map((s) => s.trim());
   if (parts.length > 1 && parts.every((p) => /^"[^"]*"$/.test(p)))
     return { type: "string", enum: parts.map((p) => p.slice(1, -1)) };
@@ -107,6 +145,59 @@ export function propSchemaFromType(type) {
   if (/\[\]$/.test(t) || /^Array</.test(t)) return { type: "array" };
   if (/^\{/.test(t)) return { type: "object" };
   return { type: "any" };
+}
+
+/**
+ * A prop's deprecation, from data — never a hand list of names. The manifest's own
+ * `deprecated` field (joined from the ADR 0042 definitions snapshot's alias rows,
+ * `core.mjs#joinDefinitions`) wins when present; otherwise the `@deprecated` JSDoc tag
+ * every deprecation carries by policy (`DEPRECATION.md` §1) is read straight off the
+ * description text — covers a prop outside the snapshot (no chart/part/surface
+ * definition), e.g. `AutoChart.height`.
+ */
+const DEPRECATED_TAG = /@deprecated\b\s*(.*)/is;
+export function deprecationFromProp(prop) {
+  if (prop?.deprecated && typeof prop.deprecated === "object") {
+    return { replacement: prop.deprecated.replacement };
+  }
+  const m = DEPRECATED_TAG.exec(String(prop?.description || ""));
+  if (!m) return null;
+  return { replacement: /`([^`]+)`/.exec(m[1])?.[1] };
+}
+
+/**
+ * The agent-facing description: the manifest's own text (first line, ≤160 chars), same as
+ * before. For a deprecated prop the `@deprecated …` note — naming the replacement — is
+ * NEVER lost to truncation: it is split off first and the summary is shortened around it,
+ * so a long description cannot push the replacement name past the 160-char budget. The raw
+ * `@deprecated` JSDoc tag word itself is never echoed into agent-facing prose — only what
+ * follows it (or, lacking that, the replacement name alone).
+ */
+export function propDescription(rawDescription, deprecated) {
+  const desc = String(rawDescription || "")
+    .split(/\n/)[0]
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!deprecated) return desc.length > 160 ? `${desc.slice(0, 157)}…` : desc;
+  const idx = desc.search(/@deprecated\b/i);
+  const tagText =
+    idx === -1
+      ? ""
+      : desc
+          .slice(idx)
+          .replace(/^@deprecated\b\s*/i, "")
+          .trim();
+  let note = tagText
+    ? `Deprecated — ${tagText.charAt(0).toLowerCase()}${tagText.slice(1)}`
+    : deprecated.replacement
+      ? `Deprecated — use \`${deprecated.replacement}\`.`
+      : "Deprecated.";
+  if (note.length > 160) note = `${note.slice(0, 157)}…`;
+  const summary = (idx === -1 ? desc : desc.slice(0, idx)).trim();
+  if (!summary) return note;
+  const budget = Math.max(0, 160 - note.length - 1);
+  const head = summary.length > budget ? `${summary.slice(0, Math.max(0, budget - 1))}…` : summary;
+  return `${head} ${note}`;
 }
 
 /** Props an agent must never drive even when the component declares them. */
@@ -140,6 +231,26 @@ export function variantAxes(extendsList, variants) {
 const sortKeys = (o) =>
   Object.fromEntries(Object.entries(o).sort(([a], [b]) => a.localeCompare(b)));
 
+/**
+ * Coverage check (F03, RM-197): every `@elabs-ai/components-charts` catalog entry needs
+ * agent-facing prose — a `summary`, from `catalog.source.json` or, failing that, the
+ * manifest's own intent purpose (`buildCatalog` above). Runs on every `pnpm gen`/
+ * `pnpm gen --check`, so a chart type added to the catalog with no prose fails the build
+ * instead of shipping silently thin. Deliberately in the gen script, not a `pnpm check`
+ * rule — the maintainer wants no new gates for this track.
+ */
+export function assertProseCoverage(source, catalog) {
+  const missing = Object.entries(source.types)
+    .filter(([, src]) => src.package === CHARTS && !src.builtin)
+    .map(([type]) => type)
+    .filter((type) => !catalog[type]?.summary?.trim());
+  if (missing.length) {
+    throw new Error(
+      `gen-a2ui-catalog: missing prose for ${missing.join(", ")} — add a "summary" in catalog.source.json (or a manifest intent purpose).`,
+    );
+  }
+}
+
 /** Build the catalog schema object from the two sources. Throws on a type the manifest lacks. */
 export function buildCatalog(source, manifest) {
   const catalog = {};
@@ -166,14 +277,17 @@ export function buildCatalog(source, manifest) {
         if (NEVER.test(p.name) || omit.has(p.name)) continue;
         const schema = propSchemaFromType(p.type);
         // A prop whose type the manifest cannot name (`any`) is unknowable to an agent
-        // too — it enters the catalog only through an explicit source override.
-        if (!schema || (schema.type === "any" && !src.props?.[p.name])) continue;
+        // too — it enters the catalog only through an explicit source override. A prop
+        // wrapped in `Responsive<…>` is never bare `any`, though: it always carries a
+        // real `oneOf` (the wrapper), even when its own value type could not be named.
+        if (!schema || (schema.type === "any" && !schema.oneOf && !src.props?.[p.name])) continue;
         if (!p.optional) schema.required = true;
-        const desc = String(p.description || "")
-          .split(/\n/)[0]
-          .replace(/\s+/g, " ")
-          .trim();
-        if (desc) schema.description = desc.length > 160 ? `${desc.slice(0, 157)}…` : desc;
+        // Deprecated names STAY (never dropped) until 6.0.0, flagged and still valid
+        // (ADR 0042 §8) — never a hand list of names, always read off the data.
+        const deprecated = deprecationFromProp(p);
+        const desc = propDescription(p.description, deprecated);
+        if (desc) schema.description = desc;
+        if (deprecated) schema.deprecated = true;
         props[p.name] = schema;
       }
       Object.assign(props, variantAxes(table?.extends, ui.variants));
@@ -194,6 +308,7 @@ export function buildCatalog(source, manifest) {
     entry.props = sortKeys(entry.props);
     catalog[type] = entry;
   }
+  assertProseCoverage(source, catalog);
   return sortKeys(catalog);
 }
 

@@ -18,7 +18,9 @@ import {
 } from "./spec";
 
 export type A2uiValidation =
-  | { ok: true; spec: A2uiSurfaceSpec; errors: [] }
+  // `errors` may still hold warnings (`deprecated-prop`) when `ok` is true — only an
+  // "error"-severity issue makes a surface invalid (ADR 0042 §8).
+  | { ok: true; spec: A2uiSurfaceSpec; errors: A2uiError[] }
   | { ok: false; spec: A2uiSurfaceSpec | null; errors: A2uiError[] };
 
 type Report = (e: Omit<A2uiError, "node">) => void;
@@ -47,6 +49,24 @@ function checkValue(
         path,
         code: "invalid-value",
         message: `must be one of ${schema.enum.map((e) => JSON.stringify(e)).join(", ")}; got ${JSON.stringify(value)}`,
+      });
+    }
+    return;
+  }
+  // A closed set of alternative shapes (e.g. `Responsive<T>`): valid against ANY one of
+  // them. Each alternative is tried in an isolated trial list so a failing attempt never
+  // leaks its own sub-errors (e.g. a nested `node` check) into the real result.
+  if (schema.oneOf) {
+    const matches = schema.oneOf.some((alt) => {
+      const trial: A2uiError[] = [];
+      checkValue(value, alt, path, (e) => trial.push({ ...e, node: "" }), trial, catalog);
+      return trial.length === 0;
+    });
+    if (!matches) {
+      report({
+        path,
+        code: "invalid-value",
+        message: `matches none of ${schema.oneOf.length} allowed shapes; got ${Array.isArray(value) ? "array" : typeof value}`,
       });
     }
     return;
@@ -170,6 +190,16 @@ function checkNode(
           });
           continue;
         }
+        // Warning-level only — a deprecated prop still validates (ADR 0042 §8): stored
+        // or model-generated surfaces that named it before the rename keep rendering.
+        if (schema.deprecated) {
+          report({
+            path: `${path}.props.${name}`,
+            code: "deprecated-prop",
+            message: `"${name}" is deprecated${schema.description ? ` — ${schema.description}` : ""}`,
+            severity: "warning",
+          });
+        }
         checkValue(value, schema, `${path}.props.${name}`, report, errors, catalog);
       }
     }
@@ -249,7 +279,10 @@ export function validateA2uiSurface(input: unknown, catalog: A2uiCatalogSchema):
     checkNode(input.root, "root", errors, catalog);
   }
   const spec = input as unknown as A2uiSurfaceSpec;
-  return errors.length ? { ok: false, spec, errors } : { ok: true, spec, errors: [] };
+  // Only "error"-severity issues (the default, unset `severity`) make a surface invalid —
+  // a `deprecated-prop` warning is reported but never flips `ok` (ADR 0042 §8).
+  const blocking = errors.some((e) => (e.severity ?? "error") === "error");
+  return blocking ? { ok: false, spec, errors } : { ok: true, spec, errors };
 }
 
 /**

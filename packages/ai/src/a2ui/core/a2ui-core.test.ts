@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { A2UI_CATALOG_SCHEMA } from "./catalog.generated";
 import { completeJson, parseSurfaceJson } from "./complete-json";
 import { buildA2uiSurfaceSchema } from "./schema";
+import type { A2uiCatalogSchema } from "./spec";
 import { invalidNodePaths, validateA2uiSurface } from "./validate";
 
 const C = A2UI_CATALOG_SCHEMA;
@@ -153,6 +154,83 @@ describe("validateA2uiSurface", () => {
       C,
     );
     expect(ok.ok).toBe(true);
+  });
+});
+
+describe("oneOf and deprecated props (RM-197 — validator mechanics on a synthetic catalog)", () => {
+  // A hand-built catalog, not real chart data: this file can't see the charts package
+  // (one-way dep graph), so it exercises the schema SHAPES `oneOf`/`deprecated` add to
+  // the validator, independent of any one consumer's real props.
+  const catalog: A2uiCatalogSchema = {
+    Widget: {
+      children: false,
+      props: {
+        size: {
+          type: "number",
+          oneOf: [{ type: "number" }, { type: "object" }],
+        },
+        legacySize: {
+          type: "number",
+          deprecated: true,
+          description: "Deprecated — use `size`.",
+        },
+      },
+      events: {},
+      source: "builtin",
+      builtin: true,
+    },
+  };
+
+  it("`oneOf` accepts every listed shape and rejects one that matches none", () => {
+    const plain = validateA2uiSurface(
+      { a2ui: "1", root: { type: "Widget", props: { size: 320 } } },
+      catalog,
+    );
+    expect(plain.ok).toBe(true);
+    expect(plain.errors).toEqual([]);
+
+    const tiered = validateA2uiSurface(
+      { a2ui: "1", root: { type: "Widget", props: { size: { base: 320, narrow: 240 } } } },
+      catalog,
+    );
+    expect(tiered.ok).toBe(true);
+    expect(tiered.errors).toEqual([]);
+
+    const malformed = validateA2uiSurface(
+      { a2ui: "1", root: { type: "Widget", props: { size: "big" } } },
+      catalog,
+    );
+    expect(malformed.ok).toBe(false);
+    expect(malformed.errors).toEqual([
+      expect.objectContaining({ code: "invalid-value", path: "root.props.size" }),
+    ]);
+  });
+
+  it("a `deprecated` prop still validates — a warning, never a failure", () => {
+    const r = validateA2uiSurface(
+      { a2ui: "1", root: { type: "Widget", props: { legacySize: 12 } } },
+      catalog,
+    );
+    expect(r.ok).toBe(true);
+    expect(r.errors).toEqual([
+      expect.objectContaining({
+        code: "deprecated-prop",
+        path: "root.props.legacySize",
+        severity: "warning",
+      }),
+    ]);
+  });
+
+  it("an error-severity issue still blocks even alongside a deprecated-prop warning", () => {
+    const r = validateA2uiSurface(
+      {
+        a2ui: "1",
+        root: { type: "Widget", props: { legacySize: 12, size: "nope" } },
+      },
+      catalog,
+    );
+    expect(r.ok).toBe(false);
+    expect(r.errors.map((e) => e.code)).toEqual(["deprecated-prop", "invalid-value"]);
   });
 });
 

@@ -21,7 +21,11 @@ function propSchema(p: A2uiPropSchema): JsonSchema {
   const base: JsonSchema = {};
   if (p.description) base.description = p.description;
   if (p.default !== undefined) base.default = p.default;
+  // JSON Schema draft 2020-12's own `deprecated` keyword — kept in the catalog until
+  // 6.0.0 (ADR 0042 §8); the replacement name lives in `description`.
+  if (p.deprecated) base.deprecated = true;
   if (p.enum) return { ...base, enum: p.enum };
+  if (p.oneOf) return { ...base, oneOf: p.oneOf.map(propSchema) };
   switch (p.type) {
     case "string":
     case "number":

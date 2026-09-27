@@ -70,4 +70,37 @@ describe("charts A2UI catalog", () => {
     expect(() => assertSelectionSpecContract({ gestures: ["brush"] }, undefined)).toThrow();
     expect(() => assertSelectionSpecContract(undefined, handler)).toThrow(/can never fire/);
   });
+
+  // RM-197: Responsive `plotHeight` carries a real schema (never `any`), `height` stays in
+  // the catalog as a deprecated alias naming its replacement, `spec` covers choropleth, and
+  // Sparkline's renamed `label` does the same — sourced from the manifest / JSDoc, not a
+  // hand list (ADR 0042 §8).
+  it("AutoChart.plotHeight is a real Responsive<ChartPlotHeight> schema, not `any`", () => {
+    const plotHeight = CHARTS_A2UI_CATALOG_SCHEMA.AutoChart!.props.plotHeight!;
+    expect(plotHeight.type).not.toBe("any");
+    expect(plotHeight.oneOf).toBeDefined();
+    expect(plotHeight.oneOf!.length).toBeGreaterThanOrEqual(2);
+    // One alternative is the plain `ChartPlotHeight` (number | { aspect }); the other is the
+    // per-breakpoint `{ base, medium?, narrow? }` object — never the same shape twice.
+    const shapes = plotHeight.oneOf!.map((s) => s.type);
+    expect(shapes).toContain("object");
+  });
+
+  it("AutoChart.height stays in the catalog, flagged deprecated, naming `plotHeight`", () => {
+    const height = CHARTS_A2UI_CATALOG_SCHEMA.AutoChart!.props.height!;
+    expect(height.deprecated).toBe(true);
+    expect(height.description).toMatch(/plotHeight/);
+    expect(height.description).not.toMatch(/@deprecated/); // the raw JSDoc tag never leaks
+  });
+
+  it("AutoChart.spec's type union covers choropleth", () => {
+    const spec = CHARTS_A2UI_CATALOG_SCHEMA.AutoChart!.props.spec as { description?: string };
+    expect(spec.description ?? "").toContain("choropleth");
+  });
+
+  it("Sparkline.label stays in the catalog, flagged deprecated, naming `accessibleLabel`", () => {
+    const label = CHARTS_A2UI_CATALOG_SCHEMA.Sparkline!.props.label!;
+    expect(label.deprecated).toBe(true);
+    expect(label.description).toMatch(/accessibleLabel/);
+  });
 });

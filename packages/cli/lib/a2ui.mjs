@@ -257,9 +257,21 @@ export function renderCatalogText(catalog, type) {
   ].join("\n");
 }
 
-/** One line per error, aligned: `root.children[1].props.variant  invalid-value  …`. */
+/** One line per error (or warning), aligned: `root.children[1].props.variant  invalid-value  …`. */
 export function renderValidationText(file, result) {
-  if (result.ok) return `${file}: valid A2UI surface v${A2UI_VERSION}`;
+  if (result.ok) {
+    // A `deprecated-prop` warning never fails validation (ADR 0042 §8) but is still worth
+    // surfacing — a valid surface naming an old prop is exactly what an agent should fix.
+    const warnings = result.errors.filter((e) => e.severity === "warning");
+    if (!warnings.length) return `${file}: valid A2UI surface v${A2UI_VERSION}`;
+    const width = Math.max(...warnings.map((e) => e.path.length));
+    const rows = warnings.map((e) => `  ${e.path.padEnd(width)}  ${e.code}  ${e.message}`);
+    const noun = warnings.length === 1 ? "warning" : "warnings";
+    return [
+      `${file}: valid A2UI surface v${A2UI_VERSION} — ${warnings.length} ${noun}`,
+      ...rows,
+    ].join("\n");
+  }
   const width = Math.max(...result.errors.map((e) => e.path.length));
   const codeWidth = Math.max(...result.errors.map((e) => e.code.length));
   const rows = result.errors.map(
