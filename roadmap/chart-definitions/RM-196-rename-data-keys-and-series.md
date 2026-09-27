@@ -63,7 +63,18 @@ Ship ADR 0042 Appendix A.6 exactly:
 - `pnpm check --rule charts-deprecated-usage` green: no internal caller, story, doc or template uses an old name.
 - Each renamed prop carries `@deprecated` TSDoc naming the replacement, an autodocs note, and a `### Deprecated` bullet in the changeset (`docs/DEPRECATION.md` in full).
 - The codemod map equals ADR 0042 Appendix A (a test compares the two).
-- Heatmap without `x` / `xDataKey` fails to type-check (type test).
+- ~~Heatmap without `x` / `xDataKey` fails to type-check (type test).~~ **Revised by owner
+  decision, 2026-09-27 (F2):** `docs/DEPRECATION.md` §2 promises the deprecated path keeps
+  working, unchanged, for the rest of the major — a compile-time "one of the pair" union
+  would have broken that promise in this minor, so it was dropped. Heatmap without either
+  `xDataKey`/`x` (or `yDataKey`/`y`) now compiles and renders (every row collapses onto one
+  unnamed column/row); a dev-only warn-once names the missing new-spelling prop, silent in
+  production, and the `./test` double's contract check still throws, naming `xDataKey`
+  unconditionally and `yDataKey` on `variant="matrix"` (the default — review R2-2; the real
+  component ignores `yDataKey` on `variant="calendar"`). At 6.0.0 `xDataKey` becomes required
+  unconditionally and `yDataKey` on `variant="matrix"` (tracked in RM-205). Type test:
+  `heatmap-chart.test-d.ts`; runtime tests: `heatmap-chart.test.tsx` ("RM-196 F2" describe
+  block) and `contract.test.tsx` ("RM-196 F2" describe block).
 
 ## Test / gate
 

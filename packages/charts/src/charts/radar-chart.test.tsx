@@ -467,7 +467,12 @@ describe("RadarChart renamed motion props (RM-196)", () => {
     },
   );
 
-  it("revealSignature (or its deprecated alias motionReplayKey) changing on a rerender replays the entry", () => {
+  it("the deprecated alias motionReplayKey drives the same replay key as revealSignature", () => {
+    // All three renders use the OLD name only: if the alias row were deleted, the
+    // resolved `revealSignature` would sit at `undefined` for every render below,
+    // and the "no replay" assertion after render 2 would pass FOR THE WRONG REASON
+    // (undefined === undefined) — but the "replays" assertion after render 3 would
+    // then fail (nothing changed), which is what actually proves the alias is wired.
     const { rerender } = renderOneArea({ motionReplayKey: "v1" });
     animateSpy.mockClear();
 
@@ -480,10 +485,10 @@ describe("RadarChart renamed motion props (RM-196)", () => {
     );
     expect(animateSpy).not.toHaveBeenCalled();
 
-    // A new value — given through the NEW name this time, proving both names
-    // drive the same replay key — retriggers the entry animation.
+    // A new value, still through the OLD name — retriggers the entry animation only
+    // if `motionReplayKey` is still resolved through to `revealSignature`.
     rerender(
-      <RadarChart data={data} metrics={metrics} size={300} revealSignature="v2">
+      <RadarChart data={data} metrics={metrics} size={300} motionReplayKey="v2">
         <RadarArea index={0} />
       </RadarChart>,
     );

@@ -11,7 +11,7 @@ export interface PatternAreaProps {
   /** Fill color or pattern URL (e.g. `url(#pattern-id)`) */
   fill: string;
   /**
-   * Curve between points: a named alias (RM-196, ADR 0042 A.7 — same vocabulary as
+   * Curve between points: a named alias (same vocabulary as
    * `Line`/`Area`/`AreaBand`'s `curve`, resolved through the same `resolveCurve`) or a raw
    * d3/visx curve factory. Default: `curveMonotoneX`.
    */
