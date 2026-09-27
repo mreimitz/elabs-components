@@ -17,6 +17,7 @@ import {
   seedFormSpec,
   type EntryFormOptions,
 } from "../spec/dialect/form-spec";
+import { refForm } from "../spec/dialect/ids"; // DG-26
 import { parseArchYaml } from "../spec/dialect/parse";
 import { valueAt } from "../spec/dialect/write-back";
 import { diagramStore, editActions, useDiagram } from "../state/diagram-store";
@@ -31,8 +32,19 @@ const INSPECTOR_LABELS = {
   showInYaml: "Show in YAML",
   advanced: "Advanced",
   unset: "Not set",
-  kind: { zone: "Zone", node: "Node", flow: "Flow", note: "Note" },
+  kind: { zone: "Zone", node: "Node", flow: "Flow", note: "Note", component: "Component" },
 } as const;
+
+// DG-26 — a node whose ref names a diagram is labelled "Component"; its form is the node form
+// (Ref under the essential fields, Expand, Docs and Status under Advanced).
+function kindLabel(entry: DiagramEntry): string {
+  return INSPECTOR_LABELS.kind[
+    entry.kind === "node" && entry.node.ref !== undefined && refForm(entry.node.ref) === "diagram"
+      ? "component"
+      : entry.kind
+  ];
+}
+// end DG-26
 
 const COMMON: Pick<EntryFormOptions, "advancedLabel" | "unsetLabel"> = {
   advancedLabel: INSPECTOR_LABELS.advanced,
@@ -118,7 +130,7 @@ function EntryForm({ entry, written, onWrote, onRejected }: EntryFormProps) {
 
   return (
     <SchemaFormProvider spec={seeded.spec} onChange={onChange}>
-      <SchemaFormRoot aria-label={INSPECTOR_LABELS.kind[entry.kind]}>
+      <SchemaFormRoot aria-label={kindLabel(entry)}>
         <SchemaFormFields />
       </SchemaFormRoot>
     </SchemaFormProvider>
@@ -170,7 +182,7 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
       open={open}
       onOpenChange={editActions.setInspectorOpen}
       onClose={() => editActions.setInspectorOpen(false)}
-      title={entry ? `${INSPECTOR_LABELS.kind[entry.kind]} · ${entry.id}` : INSPECTOR_LABELS.title}
+      title={entry ? `${kindLabel(entry)} · ${entry.id}` : INSPECTOR_LABELS.title}
       hasSelection={entry !== null}
       selectionKey={selectedId ?? undefined}
       // P4: library gap — the empty message renders inside a <p>, so it takes text, not a

@@ -10,7 +10,8 @@
     "preview:local": "vite preview --port 5181",
     "typecheck:local": "node scripts/copy-themes.mjs && tsc --noEmit",
     "lint:local": "eslint .",
-    "schema:build": "node scripts/build-schema.mjs && prettier --write schema/arch-diagram.v0.schema.json",
+    "schema:build": "node scripts/build-schema.mjs && prettier --write schema/arch-diagram.v1.schema.json",
+    "dialect:upgrade": "node scripts/upgrade-workspace.mjs",
     "icons:index": "node scripts/build-icon-index.mjs",
     "clean": "rm -rf dist .turbo src/themes"
   },

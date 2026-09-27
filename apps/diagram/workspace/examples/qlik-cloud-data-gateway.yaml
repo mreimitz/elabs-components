@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../schema/arch-diagram.v0.schema.json
+# yaml-language-server: $schema=../../schema/arch-diagram.v1.schema.json
 #
 # Qlik Cloud as SaaS in the EU region. The only Qlik component the customer runs is the
 # Data Gateway VM in the customer's own Azure subscription; it reaches the on-premises
@@ -6,7 +6,7 @@
 # Data Movement gateway lands the change data straight in Snowflake; Qlik Cloud only
 # sends it tasks and runs the transformations inside Snowflake (DG-13 domain review).
 # Top to bottom: customer side, then Snowflake, then Qlik Cloud with its pair as a row.
-diagram: "0"
+diagram: "1"
 title: Qlik Cloud (SaaS) with a customer-hosted Data Gateway and on-premises sources
 description: How a customer-hosted Data Gateway reaches on-premises sources and lands change data in Snowflake without opening an inbound port.
 direction: LR # LR | TB — the ELK direction

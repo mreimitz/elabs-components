@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v1.schema.json
+diagram: "1"
+zones:
+  - id: zone
+    owner: saas
+    children:
+      - id: t
+        ref: ws/components/leaf
+        expand: false
+      - id: a
+      - id: r
+        ref: catalog/aws/rds
+nodes:
+  - id: b
+flows:
+  - a -> t.x
+  - t.x <- b: label
+  - { from: t.y, to: a }
+# expect: none

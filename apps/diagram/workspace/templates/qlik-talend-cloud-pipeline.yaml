@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=../../schema/arch-diagram.v1.schema.json
-# (The v1 schema file arrives with DG-26; until then this modeline points at nothing.)
+# Schema: schema/arch-diagram.v1.schema.json (pnpm run schema:build).
 #
 # Template: Qlik Talend Cloud pipeline (DG-67, template 2).
 # The technical lens is Qlik Open Lakehouse on AWS, as on slide 9 of the Qlik style guide
@@ -8,7 +8,7 @@
 # 12–13) and lands them in the customer's S3 bucket. The Open Lakehouse cluster turns them
 # into Iceberg tables, and the warehouse platforms read those tables through the mirror.
 # The Qlik Talend Cloud tenant is the control plane on top.
-# Written in dialect v1 (plan §4.3). The current app reads dialect "0" only.
+# Written in dialect v1 (plan §4.3).
 diagram: "1"
 title: Qlik Talend Cloud pipeline with Qlik Open Lakehouse on AWS
 description: How Qlik Replicate moves on-premises change data into S3 and the Open Lakehouse cluster turns it into Iceberg tables.

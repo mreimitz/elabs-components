@@ -19,6 +19,7 @@ import {
   LAYOUT_MODES,
   LEGEND_MODES,
   LEGEND_PARTS,
+  NODE_STATUS,
   NODE_STYLES,
   NODE_TYPES,
   ZONE_KINDS,
@@ -31,6 +32,7 @@ import {
   type FlowStyle,
   type LayoutMode,
   type LegendPart,
+  type NodeStatus,
   type NodeStyle,
   type Point,
   type Tone,
@@ -54,8 +56,44 @@ const CLASS_LIST = field.array({
   description: "Names of style classes defined in the diagram’s styles section.",
 });
 
+// DG-26 — v1 keys (maintainer ruling 2026-09-27: nodes are reference-first). No `tier` on
+// DOCS/STATUS/EXPAND: the inspector shows them under Advanced (form-spec.ts:89). REF is
+// essential: it is what the node is.
+const DOCS = field.string({
+  description: "Link to the product's documentation (https://…).",
+});
+const STATUS = field.enum({
+  values: NODE_STATUS,
+  description: "Run state: ok, degraded, down or planned. Shown on the details card (DG-25).",
+});
+const REF = field.string({
+  min: 1,
+  tier: "essential",
+  description:
+    "What this node is: catalog/<pack>/<entry> for a catalog item (catalog/aws/rds), or ws/<folder>/<file name> for another diagram. Keys written beside it override what it supplies.",
+});
+const EXPAND = field.boolean({
+  default: false,
+  description:
+    "Only when ref names a diagram: false draws it as one node, true draws its content inline as a zone.",
+});
+const COMPONENT = field.object({
+  fields: {
+    icon: field.string({
+      description: "Icon (vendor/name) of this diagram when another diagram references it.",
+    }),
+    description: field.string({
+      description: "One sentence about this diagram (Home, the collapsed reference).",
+    }),
+    // Carried, not checked in R1: the point shape and protection are R2's (success-plan :69).
+    extensionPoints: field.array({ of: OPEN_ENTRY }),
+  },
+  description: "Describes this diagram as a reusable part (it usually lives under components/).",
+});
+// end DG-26
+
 export interface RootInput {
-  diagram: "0" | 0;
+  diagram: "1" | 1 | "0" | 0;
   title?: string;
   // DG-68: one-sentence prose under the title, in the title block.
   description?: string;
@@ -69,19 +107,24 @@ export interface RootInput {
   flows?: readonly (string | Record<string, unknown>)[];
   styles?: Record<string, unknown>;
   notes?: readonly { at: string; text: string }[];
+  // DG-26
+  component?: Record<string, unknown>;
+  story?: Record<string, unknown>;
+  visual?: Record<string, unknown>;
+  // end DG-26
 }
 
 export const ROOT_DEF = defineComponent<RootInput>()({
   id: "arch-diagram",
   version: 0,
   label: "Diagram",
-  description: "brand-ui architecture diagram, dialect v0.",
+  description: "brand-ui architecture diagram, dialect v1.",
   groups: [],
   fields: {
     diagram: field.enum({
-      values: ["0", 0],
+      values: ["1", 1, "0", 0],
       required: true,
-      description: 'Dialect version: "0".',
+      description: 'Dialect version: "1". Files that say "0" still open.',
     }),
     title: field.string(),
     // DG-68: the title block's prose line (title-block.tsx); previously accepted nowhere,
@@ -115,6 +158,11 @@ export const ROOT_DEF = defineComponent<RootInput>()({
         },
       }),
     }),
+    // DG-26
+    component: COMPONENT,
+    story: OPEN_ENTRY, // DG-31 replaces it with its definition
+    visual: OPEN_ENTRY, // DG-36 replaces it with its definition
+    // end DG-26
   },
   codeOnly: [],
   targets: [],
@@ -132,6 +180,8 @@ export interface ZoneInput extends HeaderGroupProps {
   parent?: string;
   position?: Point;
   children?: readonly Record<string, unknown>[];
+  docs?: string;
+  status?: NodeStatus;
 }
 
 export const ZONE_DEF = defineComponent<ZoneInput>()({
@@ -157,6 +207,8 @@ export const ZONE_DEF = defineComponent<ZoneInput>()({
     }),
     position: POSITION,
     children: field.array({ of: OPEN_ENTRY }),
+    docs: DOCS, // DG-26
+    status: STATUS, // DG-26
   },
   codeOnly: [],
   targets: [],
@@ -174,6 +226,12 @@ export interface NodeInput extends HeaderGroupProps {
   text?: string;
   parent?: string;
   position?: Point;
+  docs?: string;
+  status?: NodeStatus;
+  /** `catalog/<pack>/<entry>` or `ws/<folder>/…/<file name>`, as written. */
+  ref?: string;
+  /** Only when `ref` is a diagram path: false = one node, true = inline (Part 3). */
+  expand?: boolean;
 }
 
 export const NODE_DEF = defineComponent<NodeInput>()({
@@ -183,6 +241,11 @@ export const NODE_DEF = defineComponent<NodeInput>()({
   groups: [headerGroup],
   fields: {
     id: field.string({ required: true, min: 1 }),
+    // DG-26 — there is no separate "reference" entity: a node is a node, and every node
+    // key is allowed on it. `ref` names what it is; every written key overrides what it
+    // supplies (maintainer ruling 2026-09-27). Placed right after `id`: under reference-first
+    // nodes, `ref` is the node's identity, so it leads the essential group in the inspector.
+    ref: REF,
     type: field.enum({ values: NODE_TYPES, default: "service", tier: "essential" }),
     variant: field.enum({ values: NODE_STYLES }),
     icon: field.string({ description: "Icon name vendor/name.", tier: "essential" }),
@@ -199,6 +262,10 @@ export const NODE_DEF = defineComponent<NodeInput>()({
       description: "Parent zone id (alternative to nesting).",
     }),
     position: POSITION,
+    expand: EXPAND,
+    docs: DOCS,
+    status: STATUS,
+    // end DG-26
   },
   codeOnly: [],
   targets: [],

@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=../../schema/arch-diagram.v1.schema.json
-# (The v1 schema file arrives with DG-26; until then this modeline points at nothing.)
+# Schema: schema/arch-diagram.v1.schema.json (pnpm run schema:build).
 #
 # Template: Qlik Cloud and the customer landscape (DG-67, template 1).
 # The customer keeps its systems in its own data center and its own Azure subscription.
@@ -9,7 +9,7 @@
 # between integration and analytics.
 # The demo script (docs/demo-script.md) relies on three ids here: `tenant`, `tenant.qtdi`
 # and `erp`. Step 7 of the script adds `erp -> tenant.qtdi`, so that flow is left out.
-# Written in dialect v1 (plan §4.3). The current app reads dialect "0" only.
+# Written in dialect v1 (plan §4.3).
 diagram: "1"
 title: Qlik Cloud and the customer landscape
 description: How the customer’s data center reaches the Qlik Cloud tenant through a Data Gateway in Azure, and Salesforce feeds it directly.
@@ -64,20 +64,20 @@ zones:
                 title: Qlik Data Gateway – Direct Access
                 subtitle: Customer-hosted, outbound only
                 description: Lets Qlik Cloud reach data inside the customer's network without opening an inbound port.
-  # The item calls `qlik` "a use: of components/qlik-cloud-tenant". In the plan (§4.2) a
-  # `use:` is a node, and an instance may override only title, expand and position, so it
-  # cannot carry owner or provider. `qlik` therefore stays the SaaS zone and holds the
-  # `tenant` instance.
+  # The item calls `qlik` a reference to components/qlik-cloud-tenant. A reference
+  # (`ref:`) is a node key and a zone cannot carry one, so `qlik` stays the SaaS zone
+  # with owner and provider, and holds the node `tenant`, whose ref names the tenant
+  # diagram (reference-first nodes, DG-26).
   - id: qlik
     owner: saas
     provider: qlik
     title: Qlik Cloud (EU)
     description: The customer's Qlik Cloud tenant, run by Qlik in the EU region.
     children:
-      # No description or docs here: they come from the component, and an instance may
-      # override only title, expand and position (plan V2).
+      # No title, icon or description here: they come from the referenced diagram. Any key
+      # written on this node overrides what the reference supplies (DG-26).
       - id: tenant # the demo script types `tenant.qtdi`; keep this id
-        use: components/qlik-cloud-tenant
+        ref: ws/components/qlik-cloud-tenant
         expand: false # collapsed composite; true = drawn inline as a zone
   # Databricks instead of Snowflake: set `provider: databricks` and `title: Databricks` on
   # this zone, and on the node `icon: databricks/databricks` and `title: Databricks SQL`.
