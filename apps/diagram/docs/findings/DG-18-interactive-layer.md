@@ -174,10 +174,34 @@ Found fixing the wave-3 review's M3 (presentation accepted edits), 2026-09-27.
   focused and a details card open, the first Escape closed the card (Radix marks the event
   handled, so presentation stays) and `document.activeElement` became `BODY`; the review saw
   the same after a drag.
-- **App workaround:** `interaction/presentation-view.tsx`: when a card or menu took the Escape,
-  a frame later (after React Flow's blur) focus goes back to the element that held it, or to
-  the presentation region. Measured after the fix: `DIV[msk]` and `g[salesforce->s3-landing]`.
-  The editor canvas still drops focus this way; the fix there belongs in the library.
+- **Which Escape blurs:** a node's Escape runs `handleNodeClick` with `unselect`: an unselected
+  node is _selected_ (no blur), a selected one is deselected and blurred a frame later. So a node
+  focused by Tab keeps focus on the first Escape and drops it on the second; a flow drops it on
+  the first. Measured in the editor at 1920 before the workaround: node `Esc2 → BODY`, flow
+  `Esc1 → BODY`.
+- **App workaround (wave-3 tail, 2026-09-27):** one place, on the canvas both views share —
+  `interaction/use-canvas-interaction.ts` `keepFocusAfterEscape`, reached through CanvasShell's
+  `onKeyDown`: on Escape, a frame later (after React Flow's blur), if focus is on `<body>` it
+  goes back to the node, zone or flow that held it. `interaction/presentation-view.tsx` keeps
+  only its own fallback: focus left on `<body>` by anything else lands on the presentation
+  region. Measured after: in the editor, Escape ×3 on a Tab-focused node, zone and flow never
+  leaves the element (`DIV[okta]`, `DIV[aws]`, `g[salesforce->s3-landing]`); with a hover card
+  open over a focused node, Escape 1 closes it and keeps `DIV[okta]`, Escape 2 keeps it too.
+  Presentation as before: Escape 1 `DIV[msk]` / `g[salesforce->s3-landing]`, Escape 2 exits to
+  `BUTTON(Present)`.
 - **Proposed API:** `CanvasShell` keeps focus on the element after Escape deselects it (or
   moves it to the pane), for example `escapeDeselects?: "keep-focus" | "blur"`, defaulting to
   keeping focus.
+
+## 10. The `?` key (details card) needs a key event whose `key` is `?`
+
+Checked in the wave-3 tail lane, 2026-09-27; not a defect.
+
+- **What:** `use-canvas-interaction.ts` opens the keyboard card on `event.key === "?"`. A real
+  keyboard sends that for Shift + `/` (US layout) or the `?` key of the layout in use.
+- **Why the review saw `cards: 0`:** `agent-browser press Shift+Slash` sends CDP key `"/"` with
+  `shiftKey: true` (measured: `/ / Slash / shift=true`), and `keyboard type "?"` sends no
+  `keydown` to a focused node at all. `agent-browser press "?"` sends `key "?"`, `code "Slash"`.
+- **Measured with `press "?"`:** Tab to `okta` → `?` opens the card and moves focus into it
+  (`DIV[details-card]`, keyboard cards take focus) → Escape closes it and focus is back on
+  `DIV[okta]`.

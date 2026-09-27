@@ -108,6 +108,20 @@ function withDimmed(node: Node, dimmed: boolean): Node {
   return { ...node, domAttributes };
 }
 
+/**
+ * P4: library gap — on Escape React Flow blurs a focused node (a frame later, once it is
+ * selected) or flow (at once), and CanvasShell passes that through, so focus falls to <body>
+ * (docs/findings/DG-18-interactive-layer.md §9). A frame later, after that blur, focus goes
+ * back to the element that held it. Here, on the canvas, so the editor and presentation share it.
+ */
+function keepFocusAfterEscape(target: EventTarget) {
+  if (!(target instanceof HTMLElement || target instanceof SVGElement)) return;
+  requestAnimationFrame(() => {
+    const active = document.activeElement;
+    if ((active === null || active === document.body) && target.isConnected) target.focus();
+  });
+}
+
 export interface CanvasInteractionOptions {
   nodes: readonly Node[];
   setNodes: Dispatch<SetStateAction<Node[]>>;
@@ -181,6 +195,10 @@ export function useCanvasInteraction({
         setEdges((live) => keepSelection(graph.edges, live));
       },
       onKeyDown: (event) => {
+        if (event.key === "Escape") {
+          keepFocusAfterEscape(event.target);
+          return;
+        }
         if (event.key !== "?" || event.defaultPrevented) return;
         const target = event.target as HTMLElement;
         if (!target.classList.contains("react-flow__node")) return;
