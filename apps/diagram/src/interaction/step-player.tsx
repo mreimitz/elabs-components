@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import { Panel } from "@elabs-ai/components-flow";
 import { Button, IconButton, Text, cn } from "@elabs-ai/components-ui";
 import { ChevronLeft, ChevronRight, ListOrdered, X } from "lucide-react";
@@ -17,6 +17,11 @@ const STEP_LABELS = {
   end: "End walk-through",
   position: (index: number, count: number) => `Step ${index} of ${count}`,
   to: "to",
+  /** The caption as one line: the tooltip of a caption the player clamps. */
+  caption: (step: WalkStep) =>
+    step.flows
+      .map((flow) => `${flow.label ? `${flow.label}: ` : ""}${flow.from} → ${flow.to}`)
+      .join("; "),
 } as const;
 
 /** The floating-surface look of the canvas chrome (`TitleBlock`, `DiagramLegend`). */
@@ -32,6 +37,43 @@ function keyDelta(key: string): 1 | -1 | 0 {
 /** Keys typed into these stay theirs (a node moved by arrow keys, a field). */
 const KEEP_KEYS =
   ".react-flow__node, .react-flow__edge, input, textarea, select, [contenteditable]";
+
+/** The legend (bottom-left) and the zoom controls (bottom-right): the player sits between them. */
+const SIDE_PANELS = ".react-flow__panel.bottom.left, .react-flow__panel.bottom.right";
+/** Room (px) kept between the walking player and each side panel. */
+const SIDE_GAP = 8;
+
+/**
+ * Review-wave3 (player): caps the walking player (`--step-player-room` on `surface`) at twice
+ * the room between the pane's centre, where flow centres the panel, and the nearer side panel.
+ * With the inspector open at 1440 the pane is 685 px and the open legend 174 px, so a
+ * shrink-to-fit player ran 3 px into the legend. Measured while walking only; it changes when
+ * the pane or a side panel does, never between steps.
+ */
+function useSideRoom(surface: RefObject<HTMLDivElement | null>, walking: boolean) {
+  useLayoutEffect(() => {
+    const el = surface.current;
+    const pane = el?.closest<HTMLElement>(".react-flow");
+    if (!el || !pane || !walking) return;
+    const sides = [...pane.querySelectorAll<HTMLElement>(SIDE_PANELS)];
+    const measure = () => {
+      const box = pane.getBoundingClientRect();
+      const centre = box.left + box.width / 2;
+      let half = box.width / 2;
+      for (const side of sides) {
+        const r = side.getBoundingClientRect();
+        if (!side.isConnected || r.width === 0 || r.height === 0) continue;
+        half = Math.min(half, side.classList.contains("left") ? centre - r.right : r.left - centre);
+      }
+      el.style.setProperty("--step-player-room", `${Math.max(0, 2 * (half - SIDE_GAP))}px`);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(pane);
+    for (const side of sides) observer.observe(side);
+    return () => observer.disconnect();
+  }, [surface, walking]);
+}
 
 function StepCaption({ step }: { step: WalkStep }) {
   return (
@@ -62,6 +104,8 @@ export function StepPlayer() {
   const presenting = isPresenting(useHash());
   const index = step === null ? -1 : steps.findIndex((entry) => entry.step === step);
   const current = index === -1 ? undefined : steps[index];
+  const surfaceRef = useRef<HTMLDivElement>(null);
+  useSideRoom(surfaceRef, current !== undefined);
   const startRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   // The control that takes focus after the player swaps its controls (start ↔ walking).
@@ -136,8 +180,9 @@ export function StepPlayer() {
           caption was cut). Under `@2xl` the surface takes the pane's width less the panel's
           margins, and the words take the room between the buttons. */}
       <div
+        ref={surfaceRef}
         className={cn(
-          "pointer-events-auto flex max-w-[min(36rem,calc(100vw-2rem))] items-center gap-1 p-1 @max-2xl:mb-13 @max-2xl:w-[calc(100cqw-2rem)]",
+          "pointer-events-auto flex max-w-[min(36rem,calc(100vw-2rem),var(--step-player-room,36rem))] items-center gap-1 p-1 @max-2xl:mb-13 @max-2xl:w-[calc(100cqw-2rem)] @max-2xl:max-w-none",
           SURFACE,
         )}
       >
@@ -153,13 +198,35 @@ export function StepPlayer() {
               className="aria-disabled:opacity-50"
               onClick={() => move(-1)}
             />
-            <div className="flex min-w-0 flex-col px-1 @max-2xl:flex-1">
-              <Text variant="meta" as="span" className="font-medium tabular-nums">
-                {STEP_LABELS.position(index + 1, steps.length)}
-              </Text>
-              <Text variant="meta" tone="muted" as="span" className="line-clamp-2 break-words">
-                <StepCaption step={current} />
-              </Text>
+            {/* Review-wave3 (player): the surface shrank to the current caption, so its width
+                changed every step and Previous / Next moved under the pointer. Every step's
+                words sit in one grid cell, only the current step's shown: the surface takes
+                the widest step's width (and the tallest's height, clamped) for the whole walk.
+                Its box changes only at walk start and end, which is when the canvas re-fits
+                around it (`panes/canvas-pane.tsx`). */}
+            <div className="grid min-w-0 px-1 @max-2xl:flex-1">
+              {steps.map((entry, at) => (
+                <div
+                  key={entry.step}
+                  className={cn(
+                    "col-start-1 row-start-1 flex min-w-0 flex-col",
+                    at !== index && "invisible",
+                  )}
+                >
+                  <Text variant="meta" as="span" className="font-medium tabular-nums">
+                    {STEP_LABELS.position(at + 1, steps.length)}
+                  </Text>
+                  <Text
+                    variant="meta"
+                    tone="muted"
+                    as="span"
+                    className="line-clamp-2 break-words"
+                    title={STEP_LABELS.caption(entry)}
+                  >
+                    <StepCaption step={entry} />
+                  </Text>
+                </div>
+              ))}
             </div>
             <IconButton
               ref={nextRef}

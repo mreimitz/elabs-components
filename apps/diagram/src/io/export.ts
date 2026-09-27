@@ -272,8 +272,12 @@ function stageOf(flow: HTMLElement, box: Box, options: PictureOptions) {
 
   const viewport = stage.querySelector<HTMLElement>(".react-flow__viewport");
   if (viewport) {
-    const x = (width - box.width) / 2 - box.x;
-    viewport.style.transform = `translate(${x}px, ${above - box.y}px) scale(1)`;
+    // Review-wave3 (player): whole pixels. `drawnBox` reads the box at the live zoom, so it
+    // carries a sub-pixel error that changes with the zoom; unrounded, the picture shifted by a
+    // fraction of a pixel and re-antialiased (30 pixels differed after a walk-through re-fit,
+    // 701 after one "Zoom in"). Rounded, the same diagram gives the same picture at any zoom.
+    const x = Math.round((width - box.width) / 2 - box.x);
+    viewport.style.transform = `translate(${x}px, ${Math.round(above - box.y)}px) scale(1)`;
   }
   const canvas = flow.closest('[data-slot="canvas-shell"]');
   Object.assign(stage.style, {

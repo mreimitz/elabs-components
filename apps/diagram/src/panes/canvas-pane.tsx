@@ -31,6 +31,7 @@ import { useManualLayout } from "../layout/use-manual-layout"; // DG-15
 
 import { InteractionOverlays } from "../interaction/canvas-overlays"; // DG-18
 import { useCanvasInteraction } from "../interaction/use-canvas-interaction"; // DG-18
+import { walkSteps } from "../interaction/steps"; // review-wave3 (player)
 
 /** The pane's strings, in one place (`conventions/i18n-strings`). */
 const CANVAS_LABELS = {
@@ -220,10 +221,15 @@ function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: Diag
   // Wave-2 review M1 (DG-11 defect 5): fit again when the pane changes size (the editor split
   // dragged, the window resized) or the legend opens or closes — at most once per frame, and
   // only while the view is still the last fit's (`refit` leaves a view the user moved alone).
+  // Review-wave3 (player): and when the step player's box changes — "Walk through" grows into
+  // the walking player at walk start and shrinks back at the end; between steps its box holds
+  // (`StepPlayer`), so the view does not move. The player mounts only for a diagram with steps,
+  // so the targets are looked up again when that changes (an edit adds the first `step:`).
   // P4: library gap — CanvasShell re-fits only when `fitViewKey` changes, never on resize; and
   // React Flow's move events carry `event: null` for flow's own zoom buttons and minimap just as
   // for a programmatic fit, so "has the user moved?" is read by comparing the view with the
   // last fit's. docs/findings/DG-12-editor-integration.md.
+  const walkable = useMemo(() => walkSteps(graph).length > 0, [graph]);
   useEffect(() => {
     const pane = paneRef.current;
     if (!pane || !shown) return;
@@ -236,13 +242,15 @@ function DiagramCanvas({ graph, spec, view, structure, stale, presenting }: Diag
       });
     });
     observer.observe(pane);
-    const legend = pane.querySelector('[data-slot="diagram-legend"]');
-    if (legend) observer.observe(legend);
+    for (const slot of ["diagram-legend", "step-player"]) {
+      const panel = pane.querySelector(`[data-slot="${slot}"]`);
+      if (panel) observer.observe(panel);
+    }
     return () => {
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [shown, refit]);
+  }, [shown, refit, walkable]);
 
   // Editor → canvas selection: only a selection the editor made. The canvas's own must not
   // echo back — it already shows it, and an echo from an older render fought flow's collapse

@@ -205,3 +205,36 @@ Checked in the wave-3 tail lane, 2026-09-27; not a defect.
 - **Measured with `press "?"`:** Tab to `okta` → `?` opens the card and moves focus into it
   (`DIV[details-card]`, keyboard cards take focus) → Escape closes it and focus is back on
   `DIV[okta]`.
+
+## 11. The walking step player moved its buttons and covered a node
+
+Fixed in the wave-3 player lane, 2026-09-27 (on `338d9313`); not a library gap.
+
+- **What:** the player's surface shrank to the current caption, so on ClickHouse in
+  presentation at 1920 × 1080 it measured 367, 358, 301, 316 and 307 px wide on steps 1–5 and
+  Previous / Next moved by up to 33 px between clicks. The fit (`chrome/fit-padding.ts`) had
+  cleared the small "Walk through" button, and nothing re-fitted when the player grew, so the
+  `clickpipes` node sat under it on every step (`ink-hits.js`: `clickpipes x step-player`).
+- **Fix:** `interaction/step-player.tsx` stacks every step's words (the "Step n of m" line and
+  the caption) in one grid cell and shows only the current step's (`invisible` on the others),
+  so the surface takes the widest step's width and the tallest step's height for the whole
+  walk, capped as before (`36rem`, or the pane's width under `@2xl`). No measuring code: CSS
+  sizes the cell. A caption clamped at two lines keeps its full text as a `title`.
+  `panes/canvas-pane.tsx` adds the step player's panel to the resize observer that already
+  re-fits for the pane and the legend, so the view moves once at walk start and once at walk
+  end, and not at all when the user has panned or zoomed (`refit`'s rule). See DG-12,
+  "Wave-3 player lane addition", for the library side.
+- **Beside the open legend:** with the inspector open at 1440 × 900 the pane is 685 px and the
+  open legend 174 px; the centred player, capped only by half the pane, ran 3 px into the
+  legend (`panels.js`: `diagram-legend x step-player: 3x56`). While walking, the player caps its
+  width at twice the room between the pane's centre and the nearer bottom panel, less 8 px
+  (`useSideRoom`, `--step-player-room`); it now sits 8 px clear of the legend and keeps its
+  width on every step. Under `@2xl` the full-width, lifted phone player is unchanged.
+- **Export (18f):** the walk-start re-fit changes the zoom, and the export read the diagram's
+  box at the live zoom, so the picture moved by a fraction of a pixel: PNG 1× at rest vs on
+  step 3 differed in 30 pixels at 1920, and one "Zoom in" with no walk made 701 differ.
+  `io/export.ts` rounds the picture's offset to whole pixels; both now measure 0.
+- **Measured after the fix** (presentation, 1920 × 1080, light): at rest the surface is
+  `870,1025,179,40` (x, y, w, h) at zoom 0.998; on steps 1–5 it is `751,1025,416,40` every
+  time, at zoom 0.975 every time; after "End walk-through" the view is back at the resting
+  transform exactly.
