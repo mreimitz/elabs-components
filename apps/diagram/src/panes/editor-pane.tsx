@@ -65,13 +65,21 @@ export function EditorPane() {
   const text = useDiagram((s) => s.text);
   const compiled = useDiagram((s) => s.compiled);
   const selectedId = useDiagram((s) => s.selectedId);
+  const loadCount = useDiagram((s) => s.loadCount);
   const editorRef = useRef<MonacoCodeEditor | null>(null);
   const monacoRef = useRef<MonacoApi | null>(null);
-  const [mounted, setMounted] = useState(false);
+  // The editor instance's generation: a loaded document mounts a new one (below), and every
+  // effect that touches the editor re-runs against it. 0 until the first mount.
+  const [mounted, setMounted] = useState(0);
+  // Canvas → editor highlight, one collection per editor instance.
+  const highlight = useRef<ReturnType<MonacoCodeEditor["createDecorationsCollection"]> | null>(
+    null,
+  );
 
   const onMount: CodeEditorProps["onMount"] = (editor, monacoApi) => {
     editorRef.current = editor;
     monacoRef.current = monacoApi;
+    highlight.current = editor.createDecorationsCollection();
     // Editor → canvas: the cursor inside an entry selects it. Only while the editor has
     // focus, so a programmatic cursor move (an issue click) is not read as a selection.
     // Disposed with the editor on unmount.
@@ -82,7 +90,7 @@ export function EditorPane() {
       const offset = model.getOffsetAt(event.position);
       diagramActions.select(elementAt(rangesOf(latest, compiledText), offset));
     });
-    setMounted(true);
+    setMounted((generation) => generation + 1);
   };
 
   // Markers: every issue, every stage, on its own range.
@@ -92,16 +100,14 @@ export function EditorPane() {
     const model = editor?.getModel();
     if (!mounted || !monacoApi || !model) return;
     monacoApi.editor.setModelMarkers(model, MARKER_OWNER, toMarkers(monacoApi, compiled.issues));
+    // A replaced editor disposes its model; its markers must not outlive it.
+    return () => monacoApi.editor.setModelMarkers(model, MARKER_OWNER, []);
   }, [compiled, mounted]);
 
   // Canvas → editor: highlight the selected entry; reveal it when the canvas chose it.
-  const highlight = useRef<ReturnType<MonacoCodeEditor["createDecorationsCollection"]> | null>(
-    null,
-  );
   useEffect(() => {
     const editor = editorRef.current;
-    if (!mounted || !editor) return;
-    highlight.current ??= editor.createDecorationsCollection();
+    if (!mounted || !editor || !highlight.current) return;
     const { compiledText } = diagramStore.get();
     const entry =
       selectedId === null
@@ -124,9 +130,12 @@ export function EditorPane() {
 
   // DG-14: "Show in YAML" (inspector) — put the cursor on the selected entry and focus it.
   const revealRequest = useDiagram((s) => s.revealRequest);
+  // The request last handled: a new editor instance (a loaded document) must not replay it.
+  const revealed = useRef(0);
   useEffect(() => {
     const editor = editorRef.current;
-    if (!mounted || !editor || revealRequest === 0) return;
+    if (!mounted || !editor || revealRequest === revealed.current) return;
+    revealed.current = revealRequest;
     const { compiled: latest, compiledText, selectedId: id } = diagramStore.get();
     const entry = id === null ? undefined : rangesOf(latest, compiledText).find((r) => r.id === id);
     if (!entry) return;
@@ -153,6 +162,15 @@ export function EditorPane() {
           outline. docs/findings/DG-13-examples-review.md. */}
       <div className="relative min-h-0 flex-1 after:pointer-events-none after:absolute after:inset-0 has-[textarea:focus-visible]:after:focus-ring-static-inset">
         <CodeEditor
+          // Review-wave3 M2: a loaded document (an example, a file, a share link: every
+          // `loadText`, the same boundary DG-16's history resets at) gets a new editor, so
+          // Monaco's undo stack starts at the load and ⌘Z inside the editor cannot bring the
+          // previous document back.
+          // P4: library gap — `path` swaps in a fresh model, but seeds it with the OLD model's
+          // text; the new `value` then arrives through `executeEdits` and is itself undoable
+          // (packages/editor/src/code-editor/code-editor.tsx:291-299, 306-322). A remount is
+          // the only way to reset the undo stack from outside. docs/findings/DG-16-undo-share-files.md.
+          key={loadCount}
           value={text}
           onChange={diagramActions.setText}
           onMount={onMount}

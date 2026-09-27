@@ -34,6 +34,27 @@ app's dev server (React 19 StrictMode) and in `agent-browser`.
 This is the same gap as DG-13 (`DG-13-examples-review.md`). The "Open over edits" dialog
 returns focus by hand, the way DG-13 does (`setTimeout(() => element.focus())`).
 
+## 4. `CodeEditor`'s `path` cannot start a new undo history
+
+Found fixing the wave-3 review's M2 (⌘Z in the editor undid across a document load), 2026-09-27.
+
+- **Where:** `packages/editor/src/code-editor/code-editor.tsx:284-304` (the `path` effect) and
+  `:306-322` (the controlled-value sync). A changed `path` creates the new model from
+  `current?.getValue()`, the OLD model's text (`:291-292`). The new `value`, which arrives in
+  the same render, is then applied by `executeEdits("controlled-value-sync", …)`, so it lands
+  on the new model's undo stack.
+- **Evidence:** with `path={`diagram-${loadCount}.yaml`}` on the app's `CodeEditor`, loading
+  ClickHouse (3,071 chars) and pressing ⌘Z in the editor brought the whole Lakehouse text back
+  (3,367 chars, heading "Lakehouse on AWS…", app Undo enabled), exactly as without `path`.
+- **App workaround:** `panes/editor-pane.tsx` keys `CodeEditor` on the store's `loadCount`, so
+  every load mounts a new editor whose model starts from the loaded text (Monaco's undo stack
+  begins at the load). `onMount` records the new instance; the marker, highlight and "Show in
+  YAML" effects re-run against it.
+- **Proposed API:** seed the swapped-in model from `value` when `value` is controlled, or add
+  `historyKey?: string | number`: when it changes, the model's value is replaced with
+  `setValue` (which clears the undo stack) instead of `executeEdits`. Document it as the
+  "new document" lever.
+
 ## Build note (not a library gap)
 
 The reference code (29d9986c) focused a still-mounted element that React was about to
