@@ -657,7 +657,7 @@ const PieChartCore = memo(function PieChartCore({
   }, [arcs, center, datapointsEnabled, innerRadius, outerRadius, sliceOuterRadii]);
   useRegisterDatapointTargets("slices", datapointTargets);
 
-  // enterTransition replays enter (RM-202: shared with RingChart, F28).
+  // Gates the entrance animation until the mount-load timer clears.
   const effectiveIsLoaded = useArcChartLoaded(
     enterTransition,
     enterStaggerScale,

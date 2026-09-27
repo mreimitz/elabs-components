@@ -1,11 +1,8 @@
 /**
- * pie-ring-engine.ts — the pieces `PieChart` and `RingChart` shared as four
- * separate copies before RM-202 (review F28): one d3/@visx arc-path
- * generator (`pie-chart.tsx`, `pie-slice.tsx`, `ring-chart.tsx` and
- * `ring.tsx` each defined their own) and one "is this child a specific named
- * mark/center component" predicate (`isPieCenter`/`isPieSlice` on Pie,
- * `isRingCenter`/`isRing` on Ring). Pure, framework-free beyond `react`'s
- * `ReactNode`/`isValidElement` types — no context, no component.
+ * The pieces `PieChart` and `RingChart` share: one `@visx/shape` arc-path
+ * generator, and one "is this child a specific named mark/center component"
+ * predicate. Pure, framework-free beyond `react`'s `ReactNode`/
+ * `isValidElement` types — no context, no component.
  */
 import { isValidElement, type ReactNode } from "react";
 import { arc as arcGenerator } from "@visx/shape";
@@ -33,16 +30,15 @@ export function generateArcPath(
 }
 
 /**
- * Is `child` a React element whose component's `displayName`/`name` matches
- * `names`? Reads the name off whatever `child.type` is — a plain function
- * (`PieCenter`, `RingCenter`) or a `memo()` object (`PieSlice`, `Ring`) —
- * rather than gating on `typeof child.type === "function"` first, which
- * would silently never match a memo-wrapped mark (the bug class both
- * `isPieSlice` and `isRing` already worked around separately). `false` for a
- * string child, a fragment, text or `null`, same as every predicate this
- * replaces.
+ * Is `child` a React element whose component is named `name` — checking
+ * both `displayName` and `name` off whatever `child.type` is, a plain
+ * function (`PieCenter`, `RingCenter`) or a `memo()`/`forwardRef()` object
+ * (`PieSlice`, `Ring`)? Either field matching is enough, so a component
+ * exported under a different `displayName` than its function `name` (or
+ * vice versa) still matches. `false` for a string child, a fragment, text
+ * or `null`.
  */
-export function isNamedChartChild(child: ReactNode, names: string | readonly string[]): boolean {
+export function isNamedChartChild(child: ReactNode, name: string): boolean {
   if (!isValidElement(child)) {
     return false;
   }
@@ -50,9 +46,5 @@ export function isNamedChartChild(child: ReactNode, names: string | readonly str
   if (typeof type === "string") {
     return false;
   }
-  const childName = type.displayName || type.name || "";
-  if (!childName) {
-    return false;
-  }
-  return Array.isArray(names) ? names.includes(childName) : childName === names;
+  return type.displayName === name || type.name === name;
 }

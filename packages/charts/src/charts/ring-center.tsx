@@ -38,11 +38,10 @@ export interface RingCenterProps {
  * inside foreignObject renders at incorrect positions.
  *
  * The parent RingChart uses CSS Grid stacking to overlay this HTML content
- * on top of the SVG rings. The shared render itself lives in
- * `ChartCenterEngine` (RM-202, review F28: this and `PieCenter` were
- * near-identical copies); what stays here is Ring's own shape of things:
- * `baseInnerRadius` (not `innerRadius`) sizes the center area, and Ring has
- * no `locale` group yet (F28) to pass through.
+ * on top of the SVG rings. The center area is sized to fit inside the
+ * innermost ring. The value uses the `LocaleProvider`'s locale (RingChart
+ * has no `locale` prop). `children` replaces the value and label only while
+ * a ring is hovered.
  */
 export function RingCenter({
   defaultLabel = "Total",

@@ -38,12 +38,10 @@ export interface PieCenterProps {
  * inside foreignObject renders at incorrect positions.
  *
  * The parent PieChart uses CSS Grid stacking to overlay this HTML content
- * on top of the SVG slices. The shared render itself — the fixed-size box,
- * the custom-`children` branch, the default `ChartStatFlow` — lives in
- * `ChartCenterEngine` (RM-202, review F28: this and `RingCenter` were
- * near-identical copies); what stays here is Pie's own shape of things: a
- * donut with no inner radius has no center to show, and the chart's own
- * `locale` (RM-187) reaches the value text.
+ * on top of the SVG slices. Renders nothing on a solid pie: give the chart
+ * an `innerRadius` to make room. The value uses the chart's `locale`, or
+ * the `LocaleProvider`'s when unset. `children` replaces the value and
+ * label only while a slice is hovered.
  */
 export function PieCenter({
   defaultLabel = "Total",

@@ -40,21 +40,19 @@ export interface ChartCenterEngineProps<TDatum extends ChartCenterEngineDatum> {
   labelClassName?: string;
   prefix?: string;
   suffix?: string;
-  /** `PieCenter`'s own `locale` (RM-187); `RingCenter` never passes one — Ring
-   * has no value-format group yet (F28), and an unset `locale` here already
-   * means "the `LocaleProvider`'s", same as before this component existed. */
+  /** `PieCenter`'s own `locale`; `RingCenter` never passes one, so its value
+   * text always uses the `LocaleProvider`'s locale. */
   locale?: string;
 }
 
 /**
- * The center-content rendering `PieCenter` and `RingCenter` each carried as
- * near-identical copies before RM-202 (review F28: ~40 of ~120 lines
- * differed): a fixed-size box showing either the caller's `children` render
- * prop or the default `ChartStatFlow` value/label pair. Every difference
- * between the two families — whether a `locale` exists, how `centerSize` and
- * `hoveredData` are computed, whether an early guard (`innerRadius <= 0`)
- * applies at all — stays in `PieCenter`/`RingCenter` themselves, passed in
- * here as plain options; this component owns only the shared render.
+ * The center-content rendering `PieCenter` and `RingCenter` share: a
+ * fixed-size box showing either the caller's `children` render prop or the
+ * default `ChartStatFlow` value/label pair. Every difference between the two
+ * families — whether a `locale` exists, how `centerSize` and `hoveredData`
+ * are computed, whether an early guard (`innerRadius <= 0`) applies at all —
+ * stays in `PieCenter`/`RingCenter` themselves, passed in here as plain
+ * options; this component owns only the shared render.
  */
 export function ChartCenterEngine<TDatum extends ChartCenterEngineDatum>({
   hoveredData,

@@ -140,7 +140,7 @@ export interface RingChartProps
   // chart-state group (RM-183): `status` — show the loading skeleton until
   // the data is ready, default `"ready"`; `empty` — title/message/action
   // shown when `data` is empty. Pie and Ring share the frame-size/chart-state
-  // groups (F28) at the prop level, before the engine merge (RM-202).
+  // groups at the prop level.
   //
   // RM-183 review (fix3): the value-format group is NOT adopted here.
   // RingChart has no value-formatted on-chart text today (no legend, no
@@ -315,7 +315,7 @@ const RingChartCore = memo(function RingChartCore({
     });
   }, [geometryScrubbing, data, getRingRadii, getColor, startAngle, endAngle, arcRange]);
 
-  // enterTransition replays enter (RM-202: shared with PieChart, F28).
+  // Gates the entrance animation until the mount-load timer clears.
   const effectiveIsLoaded = useArcChartLoaded(
     enterTransition,
     enterStaggerScale,
@@ -575,7 +575,7 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
   // frame-size group (RM-183): `margin` shrinks the plot's content box —
   // padding on `ChartPlotRoot` (a normal-flow box), `undefined`/no-op at the
   // default `ZERO_MARGIN`, so an unset `margin` renders byte-identical to
-  // before. Ring and Pie share the same groups (F28) at the prop level.
+  // before. Ring and Pie share the same groups at the prop level.
   const marginBox = resolveChartMargin(marginProp, ZERO_MARGIN);
   const marginStyle = marginPaddingStyle(marginBox);
 
@@ -636,8 +636,8 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
     // numbers rather than measuring the DOM, so — unlike the responsive
     // branch below, where `ChartParentSize` measures the already-padded content
     // box for free — margin has to shrink them by hand, exactly as
-    // `PieChart` does (F28: Ring and Pie share this group at the prop
-    // level). Byte-identical to `fixedSize` at the default `ZERO_MARGIN`.
+    // `PieChart` does. Byte-identical to `fixedSize` at the default
+    // `ZERO_MARGIN`.
     const plotWidth = fixedSize - marginBox.left - marginBox.right;
     const plotHeightPx = fixedSize - marginBox.top - marginBox.bottom;
     return (
