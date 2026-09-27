@@ -846,8 +846,10 @@ export const FocusHover: Story = {
         3,
       );
     });
-    const paths = [...canvasElement.querySelectorAll("path.visx-linepath:not([aria-hidden])")];
-    const groupFor = (i: number) => paths[i]?.closest("g");
+    // Re-query on every call: a re-render may swap the path nodes, and a group
+    // found from a stale, detached path would never change opacity again.
+    const groupFor = (i: number) =>
+      canvasElement.querySelectorAll("path.visx-linepath:not([aria-hidden])")[i]?.closest("g");
 
     // issue 545: Tab reaches a keyboard target with NO `legend` set — the
     // chart's own default configuration (`SeriesFocusTargets`, mounted

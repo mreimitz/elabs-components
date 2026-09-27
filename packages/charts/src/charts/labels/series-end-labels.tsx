@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { HaloText } from "../../marks/halo-text";
 import { SELECTION_EXCLUDED_OPACITY } from "../chart-selection";
+import { useSeriesDimTransition } from "../series-hover-dim";
 import { useChartSeriesMode } from "../time-series-chart-shell";
 import type { LabelPlacement } from "./label-layout";
 import { seriesLabelInk } from "./series-label-ink";
@@ -32,10 +33,12 @@ export interface SeriesEndLabelsProps {
  * solver above it (`ChartSeriesModeProvider`'s docblock in
  * `../time-series-chart-shell`). When a series is dimmed to
  * `SELECTION_EXCLUDED_OPACITY`, its end label dims to the same opacity, on
- * the same tween, so the label never outshines its own now-faded line.
+ * the same tween (`useSeriesDimTransition`, one step under reduced motion), so
+ * the label never outshines its own now-faded line.
  */
 export function SeriesEndLabels({ placements }: SeriesEndLabelsProps) {
   const { focusOnHover, hoveredKey } = useChartSeriesMode();
+  const transition = useSeriesDimTransition();
   if (placements.length === 0) return null;
   return (
     <g aria-hidden="true" data-slot="series-end-labels">
@@ -48,7 +51,7 @@ export function SeriesEndLabels({ placements }: SeriesEndLabelsProps) {
             data-series={p.label.dataKey}
             initial={{ opacity: 1 }}
             key={p.id}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
+            transition={transition}
           >
             <line
               stroke={p.label.stroke}
