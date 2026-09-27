@@ -607,3 +607,65 @@ removes them. Line and Area keep both, because they read them on a band x axis.
 | ChartFrame `footerLabels` (`chart-frame/chart-frame.tsx:622`)                                                                                                                                                                                                                                                                                                                                                                     | a word bag, but not named `labels` and not a definition kind; its words move onto `charts.*` keys with RM-187                                                                                                                                            |
 | `DescribeBulletChartInput.labels` (`charts/bullet-chart.tsx:210`)                                                                                                                                                                                                                                                                                                                                                                 | the input of an exported helper function, not a component prop                                                                                                                                                                                           |
 | Choropleth `hideNoData` (`:163`)                                                                                                                                                                                                                                                                                                                                                                                                  | the only inverted boolean found; no plan item renames it, so `invert-boolean` has no row                                                                                                                                                                 |
+
+## Appendix B — FieldSpec gaps (RM-200 spike)
+
+RM-200 is a test-only spike (`packages/charts/src/definitions/formspec-spike.test.ts`, not
+shipped): a small mapper, private to that test file, walks the **BarChart** definition's own
+`fields` plus its `groups`' fields — 53 in total — and converts each `AnyField` to a FormSpec
+`FieldSpec` (`packages/ui/src/components/schema-form/schema-form-spec.ts`) by KIND. Nothing under
+`packages/ui/src/components/schema-form/` changed, and there is still no end-user property-panel
+editor (§13). 36 of the 53 fields map; 17 do not. Every essential-tier field (10 of the 53) either
+maps or is named below — the test fails otherwise, and fails again if a listed field actually maps,
+so this table cannot go stale silently.
+
+### B.1 Essential-tier fields (the ones a first-cut editor would show)
+
+| Field         | Kind (ui `/definition`)                                               | Maps to FormSpec? | Missing kind / note                                                                                                                                                                                                  |
+| ------------- | --------------------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `xDataKey`    | `string`                                                              | yes — `string`    | —                                                                                                                                                                                                                    |
+| `orientation` | `enum` (`"vertical" \| "horizontal"`)                                 | yes — `enum`      | —                                                                                                                                                                                                                    |
+| `tooltip`     | `boolean`                                                             | yes — `boolean`   | —                                                                                                                                                                                                                    |
+| `palette`     | `enum` (5 named ramps)                                                | yes — `enum`      | corrects F39's assumption: BarChart's `palette` names a colour RAMP (`"categorical" \| "sequential" \| …`), not a literal colour — it needs no `color` kind. BarChart declares no field of kind `color` at all today |
+| `scrollbar`   | `enum` (4 values)                                                     | yes — `enum`      | —                                                                                                                                                                                                                    |
+| `data`        | `array` (of an open, arbitrary-key row object)                        | no                | **object-array** — FormSpec's `list` holds strings only and `key-value` is a fixed `{ key, value }` row; a chart's row data is neither                                                                               |
+| `stacked`     | `enum` (`false \| true \| "percent" \| "diverging"`)                  | no                | **enum with non-string values** — FormSpec's `EnumOption` const (`schema-form-spec.ts:36`) is a string only; `stacked` is the one BarChart field that mixes booleans into an enum                                    |
+| `sort`        | `union` (`enum("none"\|"asc"\|"desc")` \| `{ by, dir }`)              | no                | **union** — no FieldSpec kind for "one of several shapes"; a discriminated `group` needs a shared named branch key, which this union's two branches don't have                                                       |
+| `legend`      | `union` (`boolean` \| a config object)                                | no                | **union**, same gap as `sort`; the object branch also nests two `Responsive<T>` members (`position`, `layout`)                                                                                                       |
+| `plotHeight`  | `responsive` (`{ base, medium?, narrow? }` of `number \| { aspect }`) | no                | **Responsive\<T\>** — no per-breakpoint FieldSpec kind (ADR 0039)                                                                                                                                                    |
+
+### B.2 What else the spike found (advanced tier, 43 fields: 31 map, 12 don't)
+
+- The three gaps above (object-array, union, Responsive<T>) account for 10 of BarChart's 12
+  advanced-tier misses too: `annotations`/`analytics`/`selectionGestures`/`overlays`
+  (object-array), `track`/`margin` (union), `maxVisibleItems` (Responsive<T>).
+- A fourth gap, only visible at advanced tier here (**object**: `colorBy`, `window`,
+  `defaultWindow`, `enterTransition`, `comparison`) — FieldSpec has no generic nested-object kind.
+  `group` is the closest primitive, but it holds NAMED alternative branches (an auth-method tab
+  strip), not an arbitrary field map, so it does not fit a plain settings object either.
+- **`appliesWhen` → `visibleWhen` maps cleanly for the one case BarChart has.**
+  `divergingCenter`'s `appliesWhen: { field: "stacked", equals: "diverging" }` becomes
+  `visibleWhen: { field: "stacked", equals: "diverging" }` verbatim, and the spike's render test
+  proves it live: the field is absent from a rendered `SchemaForm` until `values.stacked ===
+"diverging"`, then appears — even though `stacked` itself is one of the five essential fields
+  that does NOT map (B.1), because `visibleWhen` reads the flat `values` object by name,
+  independent of whether the controlling field has its own rendered control. The `{ field, in }`
+  form of `AppliesWhen` (one of several values) has no FormSpec equivalent — `visibleWhen` is
+  `equals` only — but no BarChart field uses it today, so the spike did not need a real example.
+- **What mapped cleanly, beyond B.1:** every plain `string`/`number`/`integer`/`boolean` field, and
+  every `enum` whose values are all strings — 31 of BarChart's 43 advanced fields, including
+  `accessibleLabel`/`accessibleDescription` (the ui `a11y` group), `status` (an enum despite
+  looking like the loading alias), `animationDuration`/`animationEasing`, and `stackOrder`/
+  `comparisonLabel` (both plain string-valued enums, unlike `stacked`).
+
+### B.3 Reading this for a future real generator
+
+- The FieldSpec vocabulary (`string | number | integer | boolean | enum | multi-enum | list |
+key-value | file | group`) is missing exactly the three kinds F39 named — **colour**,
+  **Responsive\<T\>**, **object-array** — plus two this spike surfaced by reading the real,
+  implemented definitions rather than the pre-implementation review: a **union** kind (`sort`,
+  `legend`, `track`, `margin`, and BarChart is only one family), and a plain **nested-object** kind
+  distinct from `group`'s named-branch shape (`colorBy`, `window`, `comparison`, …).
+- `palette` turned out not to need `color` at all — worth re-checking the other props F39 named
+  (`series[]`, `analytics[]`, `annotations[]`) against their real definitions the same way before
+  sizing any future work here; this spike only mapped BarChart.

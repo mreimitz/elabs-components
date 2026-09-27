@@ -1,7 +1,7 @@
 ---
 id: RM-200
 title: "FormSpec spike for BarChart (test-only); FieldSpec gaps recorded in ADR 0042"
-status: planned
+status: done
 priority: P3
 effort: S–M (1.5 days)
 wave: 5
@@ -36,3 +36,16 @@ source: docs/review/2026-09-25-charts-unification-review.md F39; ADR 0042 (out o
 ## Test / gate
 
 `pnpm --filter @elabs-ai/components-charts test`.
+
+## Outcome
+
+Shipped as `packages/charts/src/definitions/formspec-spike.test.ts` (test-only; nothing under
+`packages/ui/src/components/schema-form/` changed, no changeset). Of BarChart's 10 essential-tier
+fields, 5 map cleanly to a FieldSpec (`xDataKey`, `orientation`, `tooltip`, `palette`, `scrollbar`)
+and 5 are listed unmapped with the missing kind: `data` (object-array), `stacked` (enum with
+non-string values), `sort` and `legend` (union), `plotHeight` (`Responsive<T>`). Across all 53
+fields (essential + advanced), 36 map and 17 don't; a fifth gap kind — a plain nested object,
+distinct from `group`'s named-branch shape — only shows up at advanced tier. `appliesWhen` maps
+onto `visibleWhen` cleanly for BarChart's one case (`divergingCenter`, gated on `stacked`), proven
+by rendering the generated FormSpec with the real `SchemaForm` and watching the field hide/show.
+Full table and detail: ADR 0042 Appendix B.
