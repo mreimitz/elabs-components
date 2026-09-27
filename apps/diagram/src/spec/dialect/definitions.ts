@@ -241,6 +241,11 @@ export const NODE_DEF = defineComponent<NodeInput>()({
   groups: [headerGroup],
   fields: {
     id: field.string({ required: true, min: 1 }),
+    // DG-26 — there is no separate "reference" entity: a node is a node, and every node
+    // key is allowed on it. `ref` names what it is; every written key overrides what it
+    // supplies (maintainer ruling 2026-09-27). Placed right after `id`: under reference-first
+    // nodes, `ref` is the node's identity, so it leads the essential group in the inspector.
+    ref: REF,
     type: field.enum({ values: NODE_TYPES, default: "service", tier: "essential" }),
     variant: field.enum({ values: NODE_STYLES }),
     icon: field.string({ description: "Icon name vendor/name.", tier: "essential" }),
@@ -257,10 +262,6 @@ export const NODE_DEF = defineComponent<NodeInput>()({
       description: "Parent zone id (alternative to nesting).",
     }),
     position: POSITION,
-    // DG-26 — there is no separate "reference" entity: a node is a node, and every node
-    // key is allowed on it. `ref` names what it is; every written key overrides what it
-    // supplies (maintainer ruling 2026-09-27).
-    ref: REF,
     expand: EXPAND,
     docs: DOCS,
     status: STATUS,
