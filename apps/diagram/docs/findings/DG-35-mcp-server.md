@@ -34,6 +34,18 @@ The tab had `#d/proof/retail.yaml` open before step 9. It showed "Order stream" 
 reload redraws the open file on every MCP write. `DG-35-proof.png` is that tab after the fix
 (1440 × 900): three zones, seven nodes, six flows, and the animated dashed flow into Snowflake.
 
+## Gates and the local-mode smoke
+
+- `typecheck:local` exit 0, no `error TS`. `lint:local` `✖ 12 problems (0 errors, 12 warnings)`,
+  the same count as the base. `brand-ui audit --strict apps/diagram/src` "exiting 0 (0 blocking
+  style + 0 content-slop)". Prettier: "All matched files use Prettier code style!".
+  Nothing under `packages/` changed, and no `package.json` or lockfile changed.
+- Local mode on :5197, on a throwaway `smoke/local-mode.yaml` (trashed and deleted afterwards):
+  Home (DG-22's placeholder) → the Workspace tree → open the file (2 nodes, 1 edge) → `E` opens
+  the YAML editor → typed `direction: TB` → `⌘S` → the file on disk had the line and the top
+  bar said "Saved" → Present (`#d/smoke/local-mode.yaml&present`, drawn top to bottom) →
+  `Escape` → Export → PNG 1× downloaded a 324 × 497 PNG. No page errors.
+
 ## Decisions and deviations
 
 ### 1. The R1 box cut the tab bridge and resources
