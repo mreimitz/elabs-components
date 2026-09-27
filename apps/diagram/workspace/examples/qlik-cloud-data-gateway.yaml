@@ -8,7 +8,7 @@
 # Top to bottom: customer side, then Snowflake, then Qlik Cloud with its pair as a row.
 diagram: "0"
 title: Qlik Cloud (SaaS) with a customer-hosted Data Gateway and on-premises sources
-direction: TB # LR | TB — the ELK direction
+direction: LR # LR | TB — the ELK direction
 nodeStyle: icon # icon | card — default node variant (D5)
 theme: qlik # optional brand theme family for the canvas
 legend: auto # auto | none | [owners, providers, edges]
