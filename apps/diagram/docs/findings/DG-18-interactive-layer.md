@@ -112,3 +112,52 @@ the ClickHouse example (steps 1–5) and the lakehouse seed.
   (browser, twice in a row). The root cause is not located: flow's `expandGroup`
   (`group-operations.ts:308`) or the app's re-layout of a fold. Header toggles in the
   "wrong" order still lose the flow; that path predates DG-18.
+- **Root cause, located (w3fix-folds, 2026-09-27):** flow's group operations, not the app's
+  re-layout. The walk-through, on ClickHouse with `E` = "Consume" (`topics -> clickpipes`),
+  `C` = Confluent Cloud, `K` = ClickHouse Cloud
+  (`packages/flow/src/use-flow-groups/group-operations.ts`):
+  1. Fold C (`collapseGroup`, L228): `E` crosses C, so it is hidden (L294–296) and stashed on
+     C (L250). The proxy `P1 = C -> clickpipes` (groupId C) is added (L256–264, L297).
+  2. Fold K: `E`, already hidden, crosses K and is stashed on K in its hidden form (L250).
+     Its proxy `P2 = topics -> K` is built by `{ ...edge }` (L256–257), so it copies
+     `hidden: true`. `P1` crosses K too: stashed on K, and its proxy `P3 = C -> K`
+     (groupId K) is the one flow drawn.
+  3. Unfold C (`expandGroup`, L308): C's proxies (`P1`) are removed (L327–333) and `E` is
+     restored from C's stash, visible (L334–337), although `clickpipes` is hidden inside K.
+     `P3` still starts at C, which is open now: the flow is drawn from C's box, not from
+     `topics`.
+  4. Unfold K: `P2` and `P3` are removed, and `E` is restored from K's stash — the hidden
+     copy. `P1` no longer exists, so nothing brings it back. `E` stays hidden: 9 flows → 8.
+
+  `expandGroup` is an exact inverse only when zones are opened last-folded-first. Two
+  library defects:
+  - **(a) a proxy copies `hidden` from an edge that is already hidden** (L256–264, the
+    `...edge` spread), and the stash keeps the edge in that hidden form (L250).
+  - **(b) expand restores a stash wholesale instead of undoing only what this group
+    changed** (L320–324 for nodes, L334–337 for edges). The stash is a picture of the
+    whole graph at fold time, so any fold or unfold made after it (by another group) is
+    overwritten. The same defect opens a zone inside a folded zone with its children
+    visible inside the outer chip, and the outer zone's later unfold folds it again from
+    its own snapshot (group operations only; the canvas offers visible zones only).
+
+- **Measured** (in-page script over the live graph of all four examples: every pair of
+  zones — siblings, nested, and unrelated — folded in both orders and opened in both
+  orders, plus every triple of top-level zones in all 6 × 6 orders; 272 permutations):
+  flow's `collapseGroup` / `expandGroup` alone leave 148 of them different from the fresh
+  load (a flow hidden, a proxy left behind, or a zone still folded).
+- **App workaround:** `src/layout/zone-folds.ts` (`foldZone`, `unfoldZone`, `toggleZone`).
+  Each runs flow's operation and then draws the flows again from node visibility: a flow is
+  hidden exactly when an end is hidden, and a flow with an end inside a folded zone gets one
+  proxy, in flow's shape, from the outermost folded zone around each such end (none when both
+  ends land on the same zone). A zone inside folded zones is folded or opened with those zones
+  opened around it and folded again after. Every canvas fold goes through it: the header
+  chevron, double-click on a header, Collapse all / Expand all, and DG-15's expand before
+  Re-layout. The permutations above: 0 of 272 differ. The app copies flow's proxy id format
+  (`flow-group-proxy__<group>__<edge>`, L73, not exported).
+- **Proposed API:** make `expandGroup` (and `collapseGroup`) recompute edge visibility from
+  node visibility instead of restoring the stash — hide an edge exactly when an end is hidden,
+  rebuild each proxy to the outermost collapsed ancestor of each hidden end, never build a
+  proxy from a hidden edge — and have the snapshots record only what the fold changed
+  (`hidden`, the group's box, the rerouted edges), as DG-15 §4 proposes for nodes. Or, without
+  changing the operations, export `normalizeGroupEdges(nodes, edges)` doing that recompute,
+  and a `groupProxyEdge(edge, groupId, end)` builder so callers never copy the id format.

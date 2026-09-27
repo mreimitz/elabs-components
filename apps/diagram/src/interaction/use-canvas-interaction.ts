@@ -5,14 +5,8 @@
  * the top bar calls. View-only: nothing here writes the text.
  */
 import { useEffect, useMemo, type Dispatch, type SetStateAction } from "react";
-import {
-  collapseGroup,
-  expandGroup,
-  toggleGroupCollapsed,
-  useReactFlow,
-  type Edge,
-  type Node,
-} from "@elabs-ai/components-flow";
+import { useReactFlow, type Edge, type Node } from "@elabs-ai/components-flow";
+import { foldZone, toggleZone, unfoldZone } from "../layout/zone-folds";
 import { isZoneNode } from "../nodes/zone-data";
 import type { CanvasProps } from "../panes/canvas-props";
 import { keepSelection } from "../state/pipeline";
@@ -63,14 +57,13 @@ export function collapseAllZones(graph: Graph): Graph {
   const open = graph.nodes
     .filter((node) => isZoneNode(node) && !node.hidden && !node.data.collapsed)
     .sort((a, b) => depth(b, byId) - depth(a, byId));
-  return open.reduce((next, zone) => collapseGroup(next.nodes, next.edges, zone.id), graph);
+  return open.reduce((next, zone) => foldZone(next, zone.id), graph);
 }
 
 /**
  * Open every folded zone, outermost first, until none is left folded. Among the visible folded
- * zones the last in node order opens first — the reverse of `collapseAllZones`'s order: opening
- * two sibling folds in the order they were folded lost the flow proxied through both (ClickHouse
- * "Consume", findings §8).
+ * zones the last in node order opens first — the reverse of `collapseAllZones`'s order. Through
+ * `unfoldZone` the order no longer decides which flows come back (zone-folds.ts, findings §8).
  */
 export function expandAllZones(graph: Graph): Graph {
   let next = graph;
@@ -83,7 +76,7 @@ export function expandAllZones(graph: Graph): Graph {
       );
     if (!zone) return next;
     opened.add(zone.id);
-    next = expandGroup(next.nodes, next.edges, zone.id);
+    next = unfoldZone(next, zone.id);
   }
 }
 
@@ -114,8 +107,8 @@ export function useCanvasInteraction({
   const step = useInteraction((s) => s.step);
   const cardId = useInteraction((s) => s.card?.id ?? null);
 
-  // Zone folds go through flow's pure group operations on the live graph, like the header
-  // toggle (`useFlowGroups`); DG-12: an updater plus `keepSelection`. With auto layout the
+  // Zone folds go through the app's fold (zone-folds.ts) on the live graph, like the header
+  // toggle; DG-12: an updater plus `keepSelection`. With auto layout the
   // new fold re-lays the visible graph out and fits it (use-diagram-layout.ts, `folded`).
   useEffect(() => {
     const apply = (graph: Graph) => {
@@ -167,7 +160,7 @@ export function useCanvasInteraction({
         const header = target.closest('[data-slot="arch-zone-header"]');
         // The header's own buttons (the collapse toggle) keep their click.
         if (!isZoneNode(node) || !header || target.closest("button")) return;
-        const graph = toggleGroupCollapsed(getNodes(), getEdges(), node.id);
+        const graph = toggleZone({ nodes: getNodes(), edges: getEdges() }, node.id);
         setNodes((live) => keepSelection(graph.nodes, live));
         setEdges((live) => keepSelection(graph.edges, live));
       },

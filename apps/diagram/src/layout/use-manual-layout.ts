@@ -6,7 +6,7 @@
  * `canvas-props.ts`); registers the top bar's handlers with `layoutBridge`.
  */
 import { useCallback, useEffect, useMemo, useRef, type KeyboardEvent } from "react";
-import { expandGroup, useReactFlow, type Edge, type Node } from "@elabs-ai/components-flow";
+import { useReactFlow, type Edge, type Node } from "@elabs-ai/components-flow";
 import { fitZones } from "../nodes/use-zone-autofit";
 import { isZoneNode } from "../nodes/zone-data";
 import type { CanvasProps } from "../panes/canvas-props";
@@ -17,6 +17,7 @@ import { keepSelection } from "../state/pipeline";
 import { layoutBridge } from "./layout-bridge";
 import { manualEdit, type Move, type Placement, type Point } from "./layout-edits";
 import { layoutDiagram } from "./layout-from-spec";
+import { unfoldZone } from "./zone-folds";
 import { afterGesture, dropsOf, type Snapshot } from "./reparent";
 
 /** React Flow moves a selected, focused node with these (5 px, ×4 with Shift). */
@@ -33,9 +34,11 @@ function placementsOf(nodes: Node[]): Placement[] {
 }
 
 /**
- * The graph with every zone collapsed on the canvas expanded again (outermost first:
- * `expandGroup` restores an inner collapsed zone as collapsed). Collapse is view state; the
- * text's picture is the expanded one, plus the zones the text itself marks `collapsed`.
+ * The graph with every zone collapsed on the canvas expanded again (outermost first: flow's
+ * `expandGroup` restores an inner collapsed zone as collapsed). Through `unfoldZone`, so every
+ * flow comes back whatever order the zones were folded in (zone-folds.ts). Collapse is view
+ * state; the text's picture is the expanded one, plus the zones the text itself marks
+ * `collapsed`.
  */
 function expandedOf(nodes: Node[], edges: Edge[]): { nodes: Node[]; edges: Edge[] } {
   let graph = { nodes, edges };
@@ -44,7 +47,7 @@ function expandedOf(nodes: Node[], edges: Edge[]): { nodes: Node[]; edges: Edge[
       (node) => isZoneNode(node) && node.data.collapsed && !node.hidden,
     );
     if (!zone) return graph;
-    graph = expandGroup(graph.nodes, graph.edges, zone.id);
+    graph = unfoldZone(graph, zone.id);
   }
 }
 
