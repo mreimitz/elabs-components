@@ -6,8 +6,8 @@
 # walk one order from the database to a dashboard.
 diagram: "0"
 title: Real-time analytics on ClickHouse Cloud
-description: How one order's change event travels from Postgres through Confluent Cloud CDC into ClickHouse Cloud and out to a dashboard.
-direction: TB
+description: How one order’s change event travels from Postgres through Confluent Cloud CDC into ClickHouse Cloud and out to a dashboard.
+direction: LR
 nodeStyle: icon
 legend: auto
 

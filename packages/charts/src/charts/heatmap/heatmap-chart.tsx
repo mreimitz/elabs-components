@@ -1647,6 +1647,7 @@ const HeatmapChartUnscoped = forwardRef<HTMLDivElement, HeatmapChartProps>(
  * @dataShape one measure per calendar day over several months, as variant="calendar"
  * @avoidWhen more than about 10 columns of continuous data, or exact cell values matter
  *   more than the pattern
+ * @avoidWhen fewer than about two months of days — too sparse to read as a calendar grid
  */
 export const HeatmapChart = forwardRef<HTMLDivElement, HeatmapChartProps>(function HeatmapChart(
   { messages, ...props },

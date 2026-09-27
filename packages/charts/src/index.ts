@@ -1,9 +1,12 @@
 /**
- * @elabs-ai/components-charts — KPI tiles, a chart container, and 14 compositional charts.
+ * @elabs-ai/components-charts — KPI tiles and a family of compositional charts. For the
+ * full, current list of chart containers (picked by data shape, not by name) see
+ * `skills/brand-ui/reference/chart-selection.md`; this docblock's own sample below is not
+ * exhaustive.
  *
  * Token-driven: series use `--chart-1..12` tokens so visuals theme consistently.
  *
- * Chart containers (14):
+ * Chart containers (a sample — see chart-selection.md for the full, current list):
  *   AreaChart, BarChart, LineChart, ScatterChart, PieChart, RingChart,
  *   FunnelChart, RadarChart, CandlestickChart, ComposedChart, LiveLineChart,
  *   ChoroplethChart, SankeyChart, Gantt

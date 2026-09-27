@@ -87,6 +87,29 @@ export interface A2uiPropSchema {
   required?: boolean;
   default?: A2uiJson;
   description?: string;
+  /**
+   * Kept in the catalog until 6.0.0 (ADR 0042 §8, `DEPRECATION.md`): still validates and
+   * still renders. The replacement name lives in `description`, never a second field —
+   * a stored or model-generated surface that names this prop must keep working.
+   */
+  deprecated?: boolean;
+  /**
+   * A set of alternative shapes a value may take (e.g. `Responsive<T>`, `charts/responsive.ts`:
+   * the plain value, or the per-breakpoint `{ base, medium?, narrow? }` object) — valid when
+   * it matches AT LEAST ONE. `type` is then informational. Deliberately `anyOf`, not `oneOf`:
+   * the JSON Schema `oneOf` keyword rejects a value matching MORE than one alternative, which
+   * misfires the moment two alternatives are structurally similar (a published-schema bug,
+   * confirmed with ajv — every alternative here is checked independently, overlap and all).
+   */
+  anyOf?: A2uiPropSchema[];
+  /**
+   * For `type: "object"`: a closed set of named sub-fields — anything else on the value is
+   * rejected, like the surface's own `additionalProperties: false`. Absent, an object-typed
+   * prop is checked only shallowly (is it an object?), same as everywhere else in this catalog.
+   */
+  properties?: Record<string, A2uiPropSchema>;
+  /** Names from `properties` that must be present. */
+  requiredProperties?: string[];
 }
 
 /** One catalog type — what an agent may emit for it. */
@@ -136,7 +159,8 @@ export type A2uiErrorCode =
   | "invalid-value"
   | "children-not-allowed"
   | "unknown-event"
-  | "invalid-action";
+  | "invalid-action"
+  | "deprecated-prop";
 
 export interface A2uiError {
   /** JSON-pointer-ish path: `root.children[2].props.variant`. */

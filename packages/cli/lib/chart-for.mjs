@@ -7,14 +7,24 @@
  * filesystem, no network, no LLM call, so it is unit-testable without either
  * caller and its ranking is reproducible from the manifest alone.
  *
- * WHERE THE DATA COMES FROM: `dataShapes` / `avoidWhen` are NOT authored here or
- * anywhere in `@elabs-ai/components-cli` — they are generated at `pnpm gen`
- * time from each chart container's own `@dataShape` / `@avoidWhen` JSDoc tags
- * (`extractChartDataShapes` in `./core.mjs`), merged into that component's
- * `intent` entry. This module only READS `manifest.packages[pkg].intent[Name]
- * .dataShapes`; it has no way to invent a candidate a container's own source
- * doesn't declare. See `skills/brand-ui/reference/chart-selection.md` for the
- * authored shape → container table this mechanism is meant to serve.
+ * WHERE THE DATA COMES FROM: `dataShapes` / `avoidWhen` / `targets` are NOT
+ * authored here or anywhere in `@elabs-ai/components-cli` — they are generated
+ * at `pnpm gen` time. For a component ADR 0042 §5 gives a `ComponentDefinition`
+ * (a chart/part/surface kind), all three are read off that definition's entry
+ * in the committed snapshot (`packages/cli/lib/definitions.generated.json`,
+ * joined into the manifest's `intent` map by `collectChartDataShapes` in
+ * `./core.mjs`); `targets` (RM-199) is what the snapshot alone can answer —
+ * dataShapes/avoidWhen are still authored as `@dataShape`/`@avoidWhen` JSDoc,
+ * which `gen-definitions.mjs` extracts (`extractChartDataShapes`) when it
+ * builds the snapshot, so this module never re-parses source itself. A
+ * component with no definition yet (a cross-cutting device, not a chart/part/
+ * surface kind) still gets its docblock parsed directly, so it is never
+ * silently dropped for lacking one. This module only READS
+ * `manifest.packages[pkg].intent[Name]` — it has no way to invent a candidate
+ * a container's own source doesn't declare. See
+ * `skills/brand-ui/reference/chart-selection.md` for the authored shape →
+ * container table this mechanism is meant to serve (its "key props" cell is
+ * generated from the same snapshot, `packages/cli/lib/chart-selection-docs.mjs`).
  *
  * RANKING, deliberately legible — two kinds of point, both reproducible by hand:
  *   1. a LITERAL point: a word the caller typed that the container's own
@@ -174,12 +184,25 @@ function overlapScore(queryTokens, shapeText) {
 }
 
 /**
+ * @typedef {object} ChartForTarget
+ * @property {string} id     the target's id, e.g. "x"
+ * @property {string} label  a human label, e.g. "Column"
+ * @property {string} role   "dimension" | "measure"
+ */
+
+/**
  * @typedef {object} ChartForCandidate
  * @property {string} name           the chart container's export name, e.g. "HeatmapChart"
  * @property {string} pkg            the package it ships from, e.g. "@elabs-ai/components-charts"
  * @property {number} score          overlap score (see module docblock) — always > 0
  * @property {string} matchedShape   the container's OWN `@dataShape` text that scored highest
  * @property {string|null} avoidWhen the container's `@avoidWhen` text, when it declared one
+ * @property {ChartForTarget[]|null} targets
+ *   what the container can bind data to (ADR 0042 §5, RM-199) — read straight off the
+ *   component's own definition in the snapshot, `null` for a container with no definition
+ *   yet. The exact PROP names to set are `skills/brand-ui/reference/chart-selection.md`'s
+ *   job (generated from the same snapshot); this is the shape-matching half — which data
+ *   ROLES the container needs, so a candidate's fit is legible without opening the source.
  */
 
 /**
@@ -205,17 +228,22 @@ export function matchChartFor(manifest, query, { limit = 5 } = {}) {
       // didn't ask about — and that shape is what gets quoted back as the
       // reason, so the reader sees exactly why it ranked where it did.
       let best = null;
-      for (const shape of shapes) {
+      shapes.forEach((shape, index) => {
         const { score, density } = overlapScore(queryTokens, shape);
-        if (score > 0 && (!best || score > best.score)) best = { shape, score, density };
-      }
+        if (score > 0 && (!best || score > best.score)) best = { shape, score, density, index };
+      });
       if (best) {
+        // avoidWhens is index-paired with dataShapes; a container with fewer
+        // avoid-whens than shapes falls back to its last declared one, never to a
+        // sibling shape's criterion by accident.
+        const avoidWhens = Array.isArray(meta.avoidWhens) ? meta.avoidWhens : null;
         candidates.push({
           name,
           pkg: pkgName,
           score: best.score,
           matchedShape: best.shape,
-          avoidWhen: meta.avoidWhen ?? null,
+          avoidWhen: avoidWhens?.[best.index] ?? avoidWhens?.at(-1) ?? meta.avoidWhen ?? null,
+          targets: Array.isArray(meta.targets) && meta.targets.length ? meta.targets : null,
           density: best.density,
         });
       }
@@ -277,6 +305,23 @@ export function deviceHints(query) {
   );
 }
 
+/**
+ * One target's prop text for the `binds:` line — a container prop, a child part's
+ * (`Part.prop`), or a data-row field path (`data[].label`) for a `{ field }` target.
+ * Every `{ field }` target in the package today binds against the
+ * default-named `data` array prop; this module reads no `contract.dataProp` because it
+ * takes no imports at all (see the module docblock) — a future family with a
+ * differently-named array prop and `{ field }` targets would need that threaded through
+ * the manifest first.
+ */
+function targetPropText(target) {
+  const from = target?.from ?? {};
+  if (from.part && from.prop) return `${from.part}.${from.prop}`;
+  if (from.prop) return from.prop;
+  if (from.field) return `data[].${from.field}`;
+  return null;
+}
+
 /** Render {@link matchChartFor}'s output as the compact text both the CLI and the MCP tool print. */
 export function renderChartForText(query, candidates) {
   if (!candidates.length) {
@@ -291,6 +336,15 @@ export function renderChartForText(query, candidates) {
   candidates.forEach((c, i) => {
     lines.push(`  ${i + 1}. ${c.name}  (${c.pkg}, score ${c.score})`);
     lines.push(`     shape: ${c.matchedShape}`);
+    if (c.targets?.length)
+      lines.push(
+        `     binds: ${c.targets
+          .map((t) => {
+            const prop = targetPropText(t);
+            return prop ? `${t.label} → ${prop} (${t.role})` : `${t.label} (${t.role})`;
+          })
+          .join(", ")}`,
+      );
     if (c.avoidWhen) lines.push(`     avoid when: ${c.avoidWhen}`);
   });
   const hints = deviceHints(query);

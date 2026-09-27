@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-27T19:05:03.214Z",
+  "generatedAt": "2026-09-27T20:00:04.011Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -2102,7 +2102,7 @@
       "group": "a2ui",
       "verb": "validate",
       "usage": "brand-ui a2ui validate <file> [--json]",
-      "does": "Runs `validateA2uiSurface`: one `path code message` line per problem (unknown type/prop/event, enum value, missing required prop, children on a leaf); exit 1 when invalid."
+      "does": "Runs `validateA2uiSurface`: one `path code message` line per blocking error (unknown type/prop/event, enum value, missing required prop, children on a leaf) — exit 1 when any. Non-blocking issues (a deprecated prop) print separately as warnings and never fail the surface."
     },
     {
       "group": "a2ui",
@@ -34462,7 +34462,33 @@
           "dataShapes": [
             "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\""
           ],
-          "avoidWhen": "fewer than about 4 points — a bar chart reads the same data faster"
+          "avoidWhen": "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster",
+          "avoidWhens": [
+            "one series, or series that don't add up to a meaningful total — use a line chart; fewer than about 4 points — a bar chart reads the same data faster"
+          ],
+          "targets": [
+            {
+              "from": {
+                "prop": "xDataKey"
+              },
+              "id": "x",
+              "label": "X axis",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "part": "Area",
+                "prop": "dataKey"
+              },
+              "id": "series",
+              "label": "Series",
+              "max": null,
+              "min": 1,
+              "role": "measure"
+            }
+          ]
         },
         "AutoChart": {
           "purpose": "Spec-driven chart — hand it a serializable ChartSpec and it picks and renders the right chart.",
@@ -34513,7 +34539,34 @@
             "categorical comparison of one or more measures across a small set of named categories",
             "a single signed measure around a meaningful zero, as diverging bars with a zero line"
           ],
-          "avoidWhen": "a time axis with many points — use a line or area chart"
+          "avoidWhen": "a time axis with many points — use a line or area chart",
+          "avoidWhens": [
+            "a time axis with many points — use a line or area chart",
+            "the zero baseline is not meaningful — plain bars read the same comparison"
+          ],
+          "targets": [
+            {
+              "from": {
+                "prop": "xDataKey"
+              },
+              "id": "x",
+              "label": "Category",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "part": "Bar",
+                "prop": "dataKey"
+              },
+              "id": "series",
+              "label": "Series",
+              "max": null,
+              "min": 1,
+              "role": "measure"
+            }
+          ]
         },
         "BumpChart": {
           "purpose": "Rank over discrete time — who is #1 changes over time. variant=\"lines\" plots the trajectory (rank as an inverted y-axis); variant=\"strip\" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank).",
@@ -34543,7 +34596,42 @@
           "dataShapes": [
             "rank of several entities over ordered periods"
           ],
-          "avoidWhen": "only 2 periods — use a dumbbell chart"
+          "avoidWhen": "only 2 periods — use a dumbbell chart",
+          "avoidWhens": [
+            "only 2 periods — use a dumbbell chart"
+          ],
+          "targets": [
+            {
+              "from": {
+                "prop": "period"
+              },
+              "id": "period",
+              "label": "Period",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "prop": "entity"
+              },
+              "id": "entity",
+              "label": "Entity",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "prop": "valueKey"
+              },
+              "id": "value",
+              "label": "Value",
+              "max": 1,
+              "min": 0,
+              "role": "measure"
+            }
+          ]
         },
         "CandlestickChart": {
           "purpose": "Open–high–low–close price bars over time, one candle per period, with volume and moving averages as optional overlays.",
@@ -34552,7 +34640,62 @@
           "dataShapes": [
             "open, high, low and close per period — an OHLC financial series over time"
           ],
-          "avoidWhen": "the data is not OHLC-shaped — a line of closing values is enough"
+          "avoidWhen": "the data is not OHLC-shaped — a line of closing values is enough",
+          "avoidWhens": [
+            "the data is not OHLC-shaped — a line of closing values is enough"
+          ],
+          "targets": [
+            {
+              "from": {
+                "prop": "xDataKey"
+              },
+              "id": "x",
+              "label": "Period",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "field": "open"
+              },
+              "id": "open",
+              "label": "Open",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            },
+            {
+              "from": {
+                "field": "high"
+              },
+              "id": "high",
+              "label": "High",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            },
+            {
+              "from": {
+                "field": "low"
+              },
+              "id": "low",
+              "label": "Low",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            },
+            {
+              "from": {
+                "field": "close"
+              },
+              "id": "close",
+              "label": "Close",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            }
+          ]
         },
         "CanvasLayer": {
           "purpose": "The canvas mark path for ChartFrame — a drop-in sibling of the SVG marks for views past what the DOM can carry (~20k marks up), with a spatial-grid hit test and a one-tab-stop virtual cursor.",
@@ -34717,7 +34860,10 @@
           "dataShapes": [
             "a measure by geographic region"
           ],
-          "avoidWhen": "there is no real geography — use a bar chart"
+          "avoidWhen": "there is no real geography — use a bar chart",
+          "avoidWhens": [
+            "there is no real geography — use a bar chart"
+          ]
         },
         "ComposedChart": {
           "purpose": "One cartesian frame that layers several series types (bars + lines + areas) together.",
@@ -34746,7 +34892,55 @@
           "dataShapes": [
             "mixed marks on one shared axis — bars with a line target, for example"
           ],
-          "avoidWhen": "a single mark type would do — reach for that container directly"
+          "avoidWhen": "a single mark type would do — reach for that container directly",
+          "avoidWhens": [
+            "a single mark type would do — reach for that container directly"
+          ],
+          "targets": [
+            {
+              "from": {
+                "prop": "xDataKey"
+              },
+              "id": "x",
+              "label": "X axis",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "part": "SeriesBar",
+                "prop": "dataKey"
+              },
+              "id": "bars",
+              "label": "Bar series",
+              "max": null,
+              "min": 0,
+              "role": "measure"
+            },
+            {
+              "from": {
+                "part": "Line",
+                "prop": "dataKey"
+              },
+              "id": "lines",
+              "label": "Line series",
+              "max": null,
+              "min": 0,
+              "role": "measure"
+            },
+            {
+              "from": {
+                "part": "Area",
+                "prop": "dataKey"
+              },
+              "id": "areas",
+              "label": "Area series",
+              "max": null,
+              "min": 0,
+              "role": "measure"
+            }
+          ]
         },
         "DensityScatterChart": {
           "purpose": "A point plot for 10⁵–10⁶ rows: every point drawn, its colour the density around it, zones on the axes classifying it, and an intersection selection (x range × y range × lasso × zone). WebGL dots, screen-space bins, Canvas-2D fallback.",
@@ -34770,7 +34964,10 @@
           "dataShapes": [
             "hundreds of thousands of rows of two continuous measures — where the points pile up, and which zone each falls in"
           ],
-          "avoidWhen": "under ~20k rows — use ScatterChart, which keeps labels, shapes and per-point marks"
+          "avoidWhen": "under ~20k rows — use ScatterChart, which keeps labels, shapes and per-point marks",
+          "avoidWhens": [
+            "under ~20k rows — use ScatterChart, which keeps labels, shapes and per-point marks"
+          ]
         },
         "DistributionChart": {
           "purpose": "One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip.",
@@ -34802,7 +34999,32 @@
           "dataShapes": [
             "the spread of one measure, optionally grouped — a histogram, box plot or strip plot"
           ],
-          "avoidWhen": "a single summary number would do — use a metric card"
+          "avoidWhen": "a single summary number would do — use a metric card",
+          "avoidWhens": [
+            "a single summary number would do — use a metric card"
+          ],
+          "targets": [
+            {
+              "from": {
+                "prop": "valueKey"
+              },
+              "id": "value",
+              "label": "Value",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            },
+            {
+              "from": {
+                "prop": "groupKey"
+              },
+              "id": "group",
+              "label": "Group",
+              "max": 1,
+              "min": 0,
+              "role": "dimension"
+            }
+          ]
         },
         "DrawPath": {
           "purpose": "A path that draws itself in through pathLength 1 — no measurement step, and a real reduced-motion branch rather than a shorter duration.",
@@ -34858,7 +35080,42 @@
             "two time points per category — a before and after, or a range with two ends",
             "two measures per category with a direction — the move from one to the other is the fact, drawn as an arrow (variant=\"arrow\")"
           ],
-          "avoidWhen": "more than 2 points per category — use small-multiple lines"
+          "avoidWhen": "more than 2 points per category — use small-multiple lines",
+          "avoidWhens": [
+            "more than 2 points per category — use small-multiple lines"
+          ],
+          "targets": [
+            {
+              "from": {
+                "prop": "category"
+              },
+              "id": "category",
+              "label": "Category",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "prop": "startKey"
+              },
+              "id": "start",
+              "label": "Start",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            },
+            {
+              "from": {
+                "prop": "endKey"
+              },
+              "id": "end",
+              "label": "End",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            }
+          ]
         },
         "FunnelChart": {
           "purpose": "Stage-by-stage drop-off through an ordered pipeline.",
@@ -34880,7 +35137,32 @@
           "dataShapes": [
             "a sequential process with drop-off between stages"
           ],
-          "avoidWhen": "the stages are not sequential, or there is no drop-off story to tell"
+          "avoidWhen": "the stages are not sequential, or there is no drop-off story to tell",
+          "avoidWhens": [
+            "the stages are not sequential, or there is no drop-off story to tell"
+          ],
+          "targets": [
+            {
+              "from": {
+                "field": "label"
+              },
+              "id": "stage",
+              "label": "Stage",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "field": "value"
+              },
+              "id": "value",
+              "label": "Value",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            }
+          ]
         },
         "Gantt": {
           "purpose": "Schedule grid — tasks as bars over time, with a task table beside them.",
@@ -34904,7 +35186,10 @@
           "dataShapes": [
             "tasks or phases across a timeline, with dependencies between them"
           ],
-          "avoidWhen": "it is not really scheduled work — a dumbbell chart shows a single before and after"
+          "avoidWhen": "it is not really scheduled work — a dumbbell chart shows a single before and after",
+          "avoidWhens": [
+            "it is not really scheduled work — a dumbbell chart shows a single before and after"
+          ]
         },
         "Gauge": {
           "purpose": "Single-value dial against a known range — a KPI with an explicit ceiling.",
@@ -34926,7 +35211,10 @@
           "dataShapes": [
             "a single value against a target or threshold bands"
           ],
-          "avoidWhen": "the trend over time matters more than the instant — use a line chart"
+          "avoidWhen": "the trend over time matters more than the instant — use a line chart",
+          "avoidWhens": [
+            "the trend over time matters more than the instant — use a line chart"
+          ]
         },
         "HairlineFloor": {
           "purpose": "One tick per calendar period along the foot of a plot, every n-th drawn longer — the passage of time in 0.55px of ink, with nothing to read.",
@@ -35014,7 +35302,43 @@
             "two categorical axes (weekday by hour, for example) with one numeric value per cell — ticket volume, event counts; many small cells favour mode=\"dot\" over the default cell fill",
             "one measure per calendar day over several months, as variant=\"calendar\""
           ],
-          "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern"
+          "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+          "avoidWhens": [
+            "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
+            "fewer than about two months of days — too sparse to read as a calendar grid"
+          ],
+          "targets": [
+            {
+              "from": {
+                "prop": "xDataKey"
+              },
+              "id": "x",
+              "label": "Column",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "prop": "yDataKey"
+              },
+              "id": "y",
+              "label": "Row",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "prop": "valueKey"
+              },
+              "id": "value",
+              "label": "Value",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            }
+          ]
         },
         "Leader": {
           "purpose": "The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms.",
@@ -35068,7 +35392,33 @@
           "dataShapes": [
             "one or more measures over continuous time, where the trend itself is the point"
           ],
-          "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart"
+          "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart",
+          "avoidWhens": [
+            "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart"
+          ],
+          "targets": [
+            {
+              "from": {
+                "prop": "xDataKey"
+              },
+              "id": "x",
+              "label": "X axis",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "part": "Line",
+                "prop": "dataKey"
+              },
+              "id": "series",
+              "label": "Series",
+              "max": null,
+              "min": 1,
+              "role": "measure"
+            }
+          ]
         },
         "LiveLineChart": {
           "purpose": "A line chart that appends points as they arrive and keeps a sliding time window, for streaming metrics.",
@@ -35077,7 +35427,32 @@
           "dataShapes": [
             "a metric updating in real time, appended over a rolling window"
           ],
-          "avoidWhen": "the series is static or historical — use a line chart"
+          "avoidWhen": "the series is static or historical — use a line chart",
+          "avoidWhens": [
+            "the series is static or historical — use a line chart"
+          ],
+          "targets": [
+            {
+              "from": {
+                "field": "time"
+              },
+              "id": "time",
+              "label": "Time",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "field": "value"
+              },
+              "id": "value",
+              "label": "Value",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            }
+          ]
         },
         "Marginalia": {
           "purpose": "An italic note in the margin, tied to its mark by a Leader — the analyst's own remark on a printed chart.",
@@ -35178,7 +35553,10 @@
           "dataShapes": [
             "arbitrary node and edge relationships with no hierarchy"
           ],
-          "avoidWhen": "the relationship really is a hierarchy — use a tree chart or a treemap"
+          "avoidWhen": "the relationship really is a hierarchy — use a tree chart or a treemap",
+          "avoidWhens": [
+            "the relationship really is a hierarchy — use a tree chart or a treemap"
+          ]
         },
         "ParallelCoordinatesChart": {
           "purpose": "Same entities across 3-6 mixed-unit dimensions: one hairline per entity threaded through per-axis-normalized vertical scales, so shape and crossing pattern reveal correlation across axes that share no common unit.",
@@ -35213,7 +35591,10 @@
           "dataShapes": [
             "many numeric dimensions compared across entities at once"
           ],
-          "avoidWhen": "more than about 2 entities need per-entity detail — use small-multiple radar"
+          "avoidWhen": "more than about 2 entities need per-entity detail — use small-multiple radar",
+          "avoidWhens": [
+            "more than about 2 entities need per-entity detail — use small-multiple radar"
+          ]
         },
         "PeakRing": {
           "purpose": "A dashed outline around the one mark that matters — the peak, the outlier, the cell the caption is about.",
@@ -35266,7 +35647,32 @@
           "dataShapes": [
             "parts of a whole across a few categories, read as proportions of the total"
           ],
-          "avoidWhen": "more than about 6 slices — use a bar or unit chart"
+          "avoidWhen": "more than 5 slices — use a bar or unit chart",
+          "avoidWhens": [
+            "more than 5 slices — use a bar or unit chart"
+          ],
+          "targets": [
+            {
+              "from": {
+                "field": "label"
+              },
+              "id": "category",
+              "label": "Category",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "field": "value"
+              },
+              "id": "value",
+              "label": "Value",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            }
+          ]
         },
         "QuietDot": {
           "purpose": "The 0.9px pinprick that renders a measured null or zero, so an empty cell in a matrix is never a hole.",
@@ -35316,7 +35722,32 @@
           "dataShapes": [
             "several measures per entity, compared as an overall shape rather than value by value"
           ],
-          "avoidWhen": "more than about 8 spokes, or absolute magnitude matters more than the shape"
+          "avoidWhen": "more than about 8 spokes, or absolute magnitude matters more than the shape",
+          "avoidWhens": [
+            "more than about 8 spokes, or absolute magnitude matters more than the shape"
+          ],
+          "targets": [
+            {
+              "from": {
+                "field": "label"
+              },
+              "id": "category",
+              "label": "Series",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "prop": "metrics"
+              },
+              "id": "metrics",
+              "label": "Metrics",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            }
+          ]
         },
         "RampLegend": {
           "purpose": "The colour-scale key for a sequential or diverging chart: a continuous ramp with its low and high values.",
@@ -35330,7 +35761,42 @@
           "dataShapes": [
             "one proportion against its maximum, read as a single ring"
           ],
-          "avoidWhen": "several categories matter — use a pie or unit chart"
+          "avoidWhen": "several categories matter — use a pie or unit chart",
+          "avoidWhens": [
+            "several categories matter — use a pie or unit chart"
+          ],
+          "targets": [
+            {
+              "from": {
+                "field": "label"
+              },
+              "id": "category",
+              "label": "Category",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "field": "value"
+              },
+              "id": "value",
+              "label": "Value",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            },
+            {
+              "from": {
+                "field": "maxValue"
+              },
+              "id": "max",
+              "label": "Maximum",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            }
+          ]
         },
         "SankeyChart": {
           "purpose": "Flow diagram — how quantity moves between stages or nodes.",
@@ -35360,7 +35826,10 @@
           "dataShapes": [
             "a weighted flow between named nodes, source to target"
           ],
-          "avoidWhen": "the nodes have no real flow between them — use a network chart"
+          "avoidWhen": "the nodes have no real flow between them — use a network chart",
+          "avoidWhens": [
+            "the nodes have no real flow between them — use a network chart"
+          ]
         },
         "SankeyThreadLinks": {
           "purpose": "SankeyChart mode=\"threads\" per-record renderer — one polyline per row instead of one aggregate edge per node pair, for tracing an individual route (e.g. a shipment, a session) through several hops.",
@@ -35406,7 +35875,33 @@
           "dataShapes": [
             "two continuous measures per row — correlation, or the shape of a distribution"
           ],
-          "avoidWhen": "one axis is categorical — use a bar or dumbbell chart"
+          "avoidWhen": "one axis is categorical — use a bar or dumbbell chart",
+          "avoidWhens": [
+            "one axis is categorical — use a bar or dumbbell chart"
+          ],
+          "targets": [
+            {
+              "from": {
+                "prop": "xDataKey"
+              },
+              "id": "x",
+              "label": "X axis",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "part": "Scatter",
+                "prop": "dataKey"
+              },
+              "id": "series",
+              "label": "Series",
+              "max": null,
+              "min": 1,
+              "role": "measure"
+            }
+          ]
         },
         "Sparkline": {
           "purpose": "Tiny, axis-less trend that lives inside a KPI tile or a table cell.",
@@ -35461,7 +35956,10 @@
             "a hierarchy read as a branching tree rather than as sized rectangles",
             "a metric decomposed into driver metrics — a KPI or driver tree"
           ],
-          "avoidWhen": "size, not structure, is the point — use a treemap"
+          "avoidWhen": "size, not structure, is the point — use a treemap",
+          "avoidWhens": [
+            "size, not structure, is the point — use a treemap"
+          ]
         },
         "TreemapChart": {
           "purpose": "Two-level squarified treemap — a hierarchy where area, not position, encodes value.",
@@ -35497,7 +35995,10 @@
           "dataShapes": [
             "a nested hierarchy sized by one measure"
           ],
-          "avoidWhen": "the hierarchy has fewer than 2 levels — a flat bar chart is clearer"
+          "avoidWhen": "the hierarchy has fewer than 2 levels — a flat bar chart is clearer",
+          "avoidWhens": [
+            "the hierarchy has fewer than 2 levels — a flat bar chart is clearer"
+          ]
         },
         "UnitChart": {
           "purpose": "One mark = one honest unit — waffle grid, phyllotaxis field or tick rows, so a share is COUNTED rather than judged by angle or area; lieflat's default replacement for a pie.",
@@ -35532,7 +36033,32 @@
             "parts of a whole as discrete unit counts rather than a percentage, as layout=\"waffle\"",
             "one tally row per category, ticks summing to a total — ticket volume by weekday, for example, as layout=\"rows\""
           ],
-          "avoidWhen": "exact per-unit counts do not matter — a pie or bar chart reads faster"
+          "avoidWhen": "exact per-unit counts do not matter — a pie or bar chart reads faster",
+          "avoidWhens": [
+            "exact per-unit counts do not matter — a pie or bar chart reads faster"
+          ],
+          "targets": [
+            {
+              "from": {
+                "field": "label"
+              },
+              "id": "category",
+              "label": "Category",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "field": "value"
+              },
+              "id": "value",
+              "label": "Value",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            }
+          ]
         },
         "UnitStack": {
           "purpose": "n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random.",
@@ -35592,20 +36118,51 @@
           "dataShapes": [
             "a running total with signed steps into and out of it"
           ],
-          "avoidWhen": "there is no meaningful running total — use diverging bars instead"
+          "avoidWhen": "there is no meaningful running total — use diverging bars instead",
+          "avoidWhens": [
+            "there is no meaningful running total — use diverging bars instead"
+          ],
+          "targets": [
+            {
+              "from": {
+                "field": "label"
+              },
+              "id": "step",
+              "label": "Step",
+              "max": 1,
+              "min": 1,
+              "role": "dimension"
+            },
+            {
+              "from": {
+                "field": "value"
+              },
+              "id": "value",
+              "label": "Value",
+              "max": 1,
+              "min": 1,
+              "role": "measure"
+            }
+          ]
         },
         "BulletChart": {
           "dataShapes": [
             "a single value against a target and 2–3 qualitative bands"
           ],
-          "avoidWhen": "more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`"
+          "avoidWhen": "more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`",
+          "avoidWhens": [
+            "more than one value/target pair needs comparing — use a small-multiple row of bullets or a `DumbbellChart`"
+          ]
         },
         "ChartMultiples": {
           "dataShapes": [
             "many overlapping lines over time — one panel per series instead of a spaghetti chart, so each trend reads on its own",
             "one measure across many categories or groups — a grid of panels that share a scale, read as one picture"
           ],
-          "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart"
+          "avoidWhen": "fewer than 3 panels, or the comparison IS the overlap — use one chart",
+          "avoidWhens": [
+            "fewer than 3 panels, or the comparison IS the overlap — use one chart"
+          ]
         }
       },
       "stories": {
