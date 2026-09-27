@@ -1,7 +1,7 @@
 ---
 id: RM-194
 title: "Rename: Heatmap `showLegend` → `legend`; Heatmap and Gantt `loading` → `status`; Heatmap and Choropleth `empty*` → `empty`"
-status: planned
+status: done
 priority: P1
 effort: M (2 days)
 wave: 4

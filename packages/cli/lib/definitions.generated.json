@@ -960,7 +960,16 @@
       "version": 1
     },
     "Bar": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "showValues",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "labels",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [],
       "description": "One series of bars in a bar chart, read from one field of each row.",
       "fields": {
@@ -1030,6 +1039,38 @@
           ],
           "tier": "advanced"
         },
+        "labels": {
+          "description": "Print each bar's value beside or inside it.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "boolean"
+            },
+            {
+              "kind": "enum",
+              "values": ["outside", "inside"]
+            },
+            {
+              "fields": {
+                "placement": {
+                  "kind": "enum",
+                  "values": ["inside", "outside", "auto"]
+                },
+                "show": {
+                  "kind": "boolean"
+                },
+                "visibility": {
+                  "kind": "enum",
+                  "values": ["always", "hover"]
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "overrides": "data-labels",
+          "tier": "essential"
+        },
         "lineCap": {
           "default": "round",
           "description": "Bar ends: round, butt, or a corner radius in pixels.",
@@ -1053,34 +1094,6 @@
           "kind": "enum",
           "tier": "essential",
           "values": ["categorical", "sequential", "diverging", "mono", "accent"]
-        },
-        "showValues": {
-          "description": "Print each bar's value beside or inside it.",
-          "group": null,
-          "kind": "union",
-          "of": [
-            {
-              "kind": "boolean"
-            },
-            {
-              "kind": "enum",
-              "values": ["outside", "inside"]
-            },
-            {
-              "fields": {
-                "placement": {
-                  "kind": "enum",
-                  "values": ["inside", "outside", "auto"]
-                },
-                "visibility": {
-                  "kind": "enum",
-                  "values": ["always", "hover"]
-                }
-              },
-              "kind": "object"
-            }
-          ],
-          "tier": "essential"
         },
         "stackGap": {
           "description": "Gap around this series' stacked segments. Unset: the chart's.",
@@ -1184,7 +1197,7 @@
           "tier": "advanced"
         }
       },
-      "groups": [],
+      "groups": ["data-labels"],
       "id": "Bar",
       "kind": "part",
       "label": "Bar series",
@@ -1919,16 +1932,19 @@
       "version": 1
     },
     "BarValueAxis": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "numTicks",
+          "precedence": "old-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "tickCount",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [],
       "description": "The value axis of a horizontal bar chart, above or below the bars.",
       "fields": {
-        "numTicks": {
-          "description": "Tick count hint.",
-          "group": null,
-          "kind": "number",
-          "tier": "advanced"
-        },
         "position": {
           "default": "bottom",
           "description": "Edge the axis is drawn on.",
@@ -1936,6 +1952,22 @@
           "kind": "enum",
           "tier": "essential",
           "values": ["top", "bottom"]
+        },
+        "tickCount": {
+          "default": "auto",
+          "description": "How many ticks the axis aims for, or \"auto\" for the axis' own default.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number"
+            },
+            {
+              "kind": "enum",
+              "values": ["auto"]
+            }
+          ],
+          "tier": "advanced"
         },
         "title": {
           "description": "Title of the axis.",
@@ -2011,7 +2043,16 @@
       "version": 1
     },
     "BulletChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "labels",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "messages",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [],
       "contract": {
         "dataKind": "none",
@@ -2076,23 +2117,6 @@
           "kind": "boolean",
           "tier": "advanced"
         },
-        "labels": {
-          "description": "Names interpolated into the accessible description.",
-          "fields": {
-            "comparative": {
-              "kind": "string"
-            },
-            "target": {
-              "kind": "string"
-            },
-            "value": {
-              "kind": "string"
-            }
-          },
-          "group": null,
-          "kind": "object",
-          "tier": "advanced"
-        },
         "locale": {
           "description": "BCP 47 locale the numbers are formatted in.",
           "group": null,
@@ -2143,6 +2167,14 @@
           "description": "Most digits printed after the decimal point.",
           "group": null,
           "kind": "number",
+          "tier": "advanced"
+        },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
           "tier": "advanced"
         },
         "min": {
@@ -2283,7 +2315,7 @@
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "frame-size"],
+      "groups": ["a11y", "frame-size", "messages"],
       "id": "BulletChart",
       "kind": "chart",
       "label": "Bullet chart",
@@ -2377,7 +2409,15 @@
         "highlightKey": {
           "description": "The hero entity, drawn in ink; every other entity draws mono.",
           "group": null,
-          "kind": "string",
+          "kind": "union",
+          "of": [
+            {
+              "kind": "string"
+            },
+            {
+              "kind": "number"
+            }
+          ],
           "tier": "advanced"
         },
         "margin": {
@@ -3093,7 +3133,32 @@
       "version": 1
     },
     "ChoroplethChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "emptyTitle",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "empty.title",
+          "transform": "identity"
+        },
+        {
+          "from": "emptyMessage",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "empty.message",
+          "transform": "identity"
+        },
+        {
+          "from": "zoomEnabled",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "zoom",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [
         "children",
         "enterTransition",
@@ -3196,18 +3261,22 @@
           "required": true,
           "tier": "essential"
         },
-        "emptyMessage": {
-          "default": "No region has data to map.",
-          "description": "Message of the empty state.",
-          "group": null,
-          "kind": "string",
-          "tier": "advanced"
-        },
-        "emptyTitle": {
-          "default": "No data",
-          "description": "Title of the empty state.",
-          "group": null,
-          "kind": "string",
+        "empty": {
+          "default": {
+            "message": "No region has data to map.",
+            "title": "No data"
+          },
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": "chart-state",
+          "kind": "object",
           "tier": "advanced"
         },
         "hideNoData": {
@@ -3307,14 +3376,14 @@
         "status": {
           "default": "ready",
           "description": "Show the loading skeleton until the data is ready.",
-          "group": null,
+          "group": "chart-state",
           "kind": "enum",
           "tier": "advanced",
           "values": ["loading", "ready"]
         },
-        "zoomEnabled": {
+        "zoom": {
           "default": false,
-          "description": "Enable zoom and pan.",
+          "description": "Enable zoom and pan. `zoomControls` alone still turns it on.",
           "group": null,
           "kind": "boolean",
           "tier": "essential"
@@ -3334,7 +3403,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["messages", "a11y", "frame-size"],
+      "groups": ["messages", "a11y", "frame-size", "chart-state"],
       "id": "ChoroplethChart",
       "kind": "chart",
       "label": "Choropleth map",
@@ -3951,7 +4020,16 @@
       "version": 1
     },
     "DensityScatterChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "labels",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "messages",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [
         "colorBy",
         "defaultSelection",
@@ -3961,7 +4039,6 @@
         "formatX",
         "formatY",
         "hiddenKeys",
-        "labels",
         "onFrame",
         "onHiddenKeysChange",
         "onSelectionChange",
@@ -4120,6 +4197,14 @@
           "overrides": "frame-size",
           "tier": "advanced"
         },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
+          "tier": "advanced"
+        },
         "palette": {
           "description": "Colour ramp the marks draw from.",
           "group": null,
@@ -4240,7 +4325,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["a11y", "frame-size"],
+      "groups": ["a11y", "frame-size", "messages"],
       "id": "DensityScatterChart",
       "kind": "chart",
       "label": "Density scatter plot",
@@ -5124,7 +5209,16 @@
       "version": 1
     },
     "FunnelChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "showValues",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "labels",
+          "transform": "boolean-to-labels"
+        }
+      ],
       "codeOnly": [
         "datapointLabel",
         "enterTransition",
@@ -5263,6 +5357,26 @@
           "kind": "enum",
           "tier": "advanced",
           "values": ["vertical", "horizontal"]
+        },
+        "labels": {
+          "default": true,
+          "description": "Show the value of each mark beside it.",
+          "group": "data-labels",
+          "kind": "union",
+          "of": [
+            {
+              "kind": "boolean"
+            },
+            {
+              "fields": {
+                "show": {
+                  "kind": "boolean"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "tier": "essential"
         },
         "layers": {
           "default": 3,
@@ -5431,13 +5545,6 @@
           "kind": "boolean",
           "tier": "essential"
         },
-        "showValues": {
-          "default": true,
-          "description": "Print each stage’s value.",
-          "group": null,
-          "kind": "boolean",
-          "tier": "essential"
-        },
         "staggerDelay": {
           "default": 0.12,
           "description": "Entry delay between stages.",
@@ -5510,7 +5617,7 @@
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "interaction", "frame-size", "chart-state"],
+      "groups": ["a11y", "interaction", "frame-size", "chart-state", "data-labels"],
       "id": "FunnelChart",
       "kind": "chart",
       "label": "Funnel chart",
@@ -5546,7 +5653,16 @@
       "version": 1
     },
     "Gantt": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "loading",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "status",
+          "transform": "loading-to-status"
+        }
+      ],
       "codeOnly": [
         "children",
         "columns",
@@ -5631,6 +5747,20 @@
           "tier": "essential",
           "values": ["comfortable", "compact"]
         },
+        "empty": {
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": "chart-state",
+          "kind": "object",
+          "tier": "advanced"
+        },
         "labelColumnWidth": {
           "default": 240,
           "description": "Left pane width. Ignored when columns is set.",
@@ -5645,13 +5775,6 @@
           "kind": "enum",
           "tier": "advanced",
           "values": ["inside", "start", "end", "hidden"]
-        },
-        "loading": {
-          "default": false,
-          "description": "A shimmer loading state instead of the task tree and canvas.",
-          "group": null,
-          "kind": "boolean",
-          "tier": "essential"
         },
         "locale": {
           "description": "BCP-47 locale for date formatting.",
@@ -5691,6 +5814,14 @@
           "group": null,
           "kind": "boolean",
           "tier": "advanced"
+        },
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": "chart-state",
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
         },
         "tasks": {
           "description": "One row per task.",
@@ -5738,7 +5869,7 @@
           "tier": "advanced"
         }
       },
-      "groups": ["messages"],
+      "groups": ["messages", "chart-state"],
       "id": "Gantt",
       "kind": "chart",
       "label": "Gantt chart",
@@ -5753,7 +5884,16 @@
       "version": 1
     },
     "Gauge": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "labels",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "messages",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": ["children", "enterTransition", "formatOptions", "remainingLabel"],
       "description": "A single value on a radial notch dial, 0–100.",
       "fields": {
@@ -5857,15 +5997,12 @@
           },
           "tier": "advanced"
         },
-        "labels": {
-          "description": "Overrides the shipped English words the accessible text uses.",
-          "fields": {
-            "target": {
-              "kind": "string"
-            }
-          },
-          "group": null,
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
           "kind": "object",
+          "open": true,
           "tier": "advanced"
         },
         "milestones": {
@@ -5995,7 +6132,7 @@
           "unit": "px"
         }
       },
-      "groups": ["a11y"],
+      "groups": ["a11y", "messages"],
       "id": "Gauge",
       "kind": "surface",
       "label": "Gauge",
@@ -6245,10 +6382,58 @@
       "version": 1
     },
     "HeatmapChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "showLegend",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "legend",
+          "transform": "identity"
+        },
+        {
+          "from": "loading",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "status",
+          "transform": "loading-to-status"
+        },
+        {
+          "from": "emptyTitle",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "empty.title",
+          "transform": "identity"
+        },
+        {
+          "from": "emptyMessage",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "empty.message",
+          "transform": "identity"
+        },
+        {
+          "from": "emptyAction",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "empty.action",
+          "transform": "identity"
+        },
+        {
+          "from": "showValues",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "labels",
+          "transform": "boolean-to-labels"
+        }
+      ],
       "codeOnly": [
         "datapointLabel",
-        "emptyAction",
         "onDatapointClick",
         "onSelectionIntent",
         "onWindowChange",
@@ -6369,25 +6554,29 @@
           "kind": "boolean",
           "tier": "advanced"
         },
+        "empty": {
+          "default": {
+            "message": "No data to plot.",
+            "title": "No data"
+          },
+          "description": "Title and message shown when there is nothing to plot.",
+          "fields": {
+            "message": {
+              "kind": "string"
+            },
+            "title": {
+              "kind": "string"
+            }
+          },
+          "group": "chart-state",
+          "kind": "object",
+          "tier": "advanced"
+        },
         "emptyMarkScale": {
           "default": 0.6,
           "description": "Side of the no-data outline, as a fraction of the cell's shorter side.",
           "group": null,
           "kind": "number",
-          "tier": "advanced"
-        },
-        "emptyMessage": {
-          "default": "No data to plot.",
-          "description": "Supporting sentence of the empty state.",
-          "group": null,
-          "kind": "string",
-          "tier": "advanced"
-        },
-        "emptyTitle": {
-          "default": "No data",
-          "description": "Title of the empty state.",
-          "group": null,
-          "kind": "string",
           "tier": "advanced"
         },
         "emptyValue": {
@@ -6406,6 +6595,32 @@
           "tier": "advanced",
           "values": ["max", "none"]
         },
+        "labels": {
+          "description": "Show the value of each mark beside it.",
+          "group": "data-labels",
+          "kind": "union",
+          "of": [
+            {
+              "kind": "boolean"
+            },
+            {
+              "fields": {
+                "show": {
+                  "kind": "boolean"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "tier": "essential"
+        },
+        "legend": {
+          "default": true,
+          "description": "Show the ramp key below the plot.",
+          "group": null,
+          "kind": "boolean",
+          "tier": "essential"
+        },
         "legendLabels": {
           "default": "endpoints",
           "description": "endpoints: lo/hi bracket the strip. ranges: one from–to label per swatch.",
@@ -6413,13 +6628,6 @@
           "kind": "enum",
           "tier": "advanced",
           "values": ["endpoints", "ranges"]
-        },
-        "loading": {
-          "default": false,
-          "description": "Layout-shaped skeleton instead of the data.",
-          "group": null,
-          "kind": "boolean",
-          "tier": "essential"
         },
         "margin": {
           "description": "Space around the plot, in pixels: one number for every side, or per side.",
@@ -6587,13 +6795,6 @@
           "tier": "advanced",
           "values": ["auto", "none"]
         },
-        "showLegend": {
-          "default": true,
-          "description": "Show the ramp key below the plot.",
-          "group": null,
-          "kind": "boolean",
-          "tier": "essential"
-        },
         "showValueHalo": {
           "default": true,
           "description": "Halo behind a mode=cell value label.",
@@ -6601,11 +6802,13 @@
           "kind": "boolean",
           "tier": "advanced"
         },
-        "showValues": {
-          "description": "Print each cell's value on it, as halo text.",
-          "group": null,
-          "kind": "boolean",
-          "tier": "essential"
+        "status": {
+          "default": "ready",
+          "description": "Show the loading skeleton until the data is ready.",
+          "group": "chart-state",
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["loading", "ready"]
         },
         "steps": {
           "default": 5,
@@ -6765,12 +6968,15 @@
         "interaction",
         "selection-gesture",
         "category-navigator",
-        "frame-size"
+        "frame-size",
+        "chart-state",
+        "data-labels"
       ],
       "id": "HeatmapChart",
       "kind": "chart",
       "label": "Heatmap",
       "module": "packages/charts/src/charts/heatmap/heatmap-chart.tsx",
+      "normalize": true,
       "prose": {
         "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
         "dataShapes": [
@@ -7763,7 +7969,16 @@
       "version": 1
     },
     "LiveLineChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "window",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "windowSeconds",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": ["children", "style"],
       "contract": {
         "dataKind": "array",
@@ -7936,7 +8151,7 @@
           "required": true,
           "tier": "essential"
         },
-        "window": {
+        "windowSeconds": {
           "default": 30,
           "description": "Visible time window, in seconds.",
           "group": null,
@@ -7980,15 +8195,33 @@
       "version": 1
     },
     "LiveXAxis": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "numTicks",
+          "precedence": "old-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "tickCount",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": ["formatTime"],
       "description": "The time axis of a live line chart, scrolling with the window.",
       "fields": {
-        "numTicks": {
-          "default": 5,
-          "description": "Number of time ticks across the window.",
+        "tickCount": {
+          "default": "auto",
+          "description": "How many ticks the axis aims for, or \"auto\" for the axis' own default.",
           "group": null,
-          "kind": "number",
+          "kind": "union",
+          "of": [
+            {
+              "kind": "number"
+            },
+            {
+              "kind": "enum",
+              "values": ["auto"]
+            }
+          ],
           "tier": "advanced"
         }
       },
@@ -8475,7 +8708,15 @@
         "highlightKey": {
           "description": "Entity id promoted to the hero line. Unset: no hero.",
           "group": null,
-          "kind": "string",
+          "kind": "union",
+          "of": [
+            {
+              "kind": "string"
+            },
+            {
+              "kind": "number"
+            }
+          ],
           "tier": "advanced"
         },
         "maxInteractiveDatapoints": {
@@ -8554,7 +8795,16 @@
       "version": 1
     },
     "PieChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "align",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "plotAlign",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [
         "children",
         "datapointLabel",
@@ -8586,14 +8836,6 @@
           "group": "a11y",
           "kind": "string",
           "tier": "advanced"
-        },
-        "align": {
-          "default": "start",
-          "description": "Where the pie sits when narrower than its box.",
-          "group": null,
-          "kind": "enum",
-          "tier": "advanced",
-          "values": ["start", "center"]
         },
         "className": {
           "default": "",
@@ -8728,6 +8970,7 @@
           },
           "group": null,
           "kind": "object",
+          "overrides": "data-labels",
           "tier": "advanced"
         },
         "legend": {
@@ -8834,6 +9077,14 @@
           "kind": "enum",
           "tier": "essential",
           "values": ["categorical", "sequential", "diverging", "mono", "accent"]
+        },
+        "plotAlign": {
+          "default": "start",
+          "description": "Where the pie sits when narrower than its box.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["start", "center"]
         },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
@@ -8960,7 +9211,7 @@
           "tier": "essential"
         }
       },
-      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state"],
+      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state", "data-labels"],
       "id": "PieChart",
       "kind": "chart",
       "label": "Pie chart",
@@ -9590,6 +9841,7 @@
               "kind": "object"
             }
           ],
+          "overrides": "data-labels",
           "tier": "advanced"
         },
         "margin": {
@@ -9705,7 +9957,7 @@
           "unit": "px"
         }
       },
-      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state"],
+      "groups": ["a11y", "selection", "interaction", "frame-size", "chart-state", "data-labels"],
       "id": "RingChart",
       "kind": "chart",
       "label": "Ring chart",
@@ -9750,14 +10002,25 @@
       "version": 1
     },
     "SankeyChart": {
-      "aliases": [],
-      "codeOnly": [
-        "children",
-        "enterTransition",
-        "hoveredNodeIndex",
-        "margin",
-        "onNodeHoverChange"
+      "aliases": [
+        {
+          "from": "hoveredNodeIndex",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "hoveredIndex",
+          "transform": "identity"
+        },
+        {
+          "from": "onNodeHoverChange",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "onHoverChange",
+          "transform": "identity"
+        }
       ],
+      "codeOnly": ["children", "enterTransition", "hoveredIndex", "margin", "onHoverChange"],
       "contract": {
         "dataKind": "sankey",
         "requiredProps": ["data", "children"]
@@ -10636,10 +10899,39 @@
       "version": 1
     },
     "Sparkline": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "labels",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "messages",
+          "transform": "identity"
+        },
+        {
+          "from": "label",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "accessibleLabel",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": ["formatValue"],
       "description": "A word-sized trend, as bars or a line.",
       "fields": {
+        "accessibleDescription": {
+          "description": "Accessible description read after the name.",
+          "group": "a11y",
+          "kind": "string",
+          "tier": "advanced"
+        },
+        "accessibleLabel": {
+          "description": "Accessible name, when the visible title is missing or not enough.",
+          "group": "a11y",
+          "kind": "string",
+          "tier": "advanced"
+        },
         "band": {
           "description": "A [lo, hi] normal range drawn as a quiet filled zone.",
           "group": null,
@@ -10702,36 +10994,18 @@
           "kind": "boolean",
           "tier": "essential"
         },
-        "label": {
-          "description": "Accessible name.",
-          "group": null,
-          "kind": "string",
-          "tier": "essential"
-        },
-        "labels": {
-          "description": "Words for the reference facts in the accessible name and readout.",
-          "fields": {
-            "band": {
-              "kind": "string"
-            },
-            "baseline": {
-              "kind": "string"
-            },
-            "target": {
-              "kind": "string"
-            },
-            "value": {
-              "kind": "string"
-            }
-          },
-          "group": null,
-          "kind": "object",
-          "tier": "advanced"
-        },
         "lastValueSuffix": {
           "description": "Appended to the last-value text and the accessible name.",
           "group": null,
           "kind": "string",
+          "tier": "advanced"
+        },
+        "messages": {
+          "description": "Replacement words for this chart, keyed by their charts.* message keys.",
+          "fields": {},
+          "group": "messages",
+          "kind": "object",
+          "open": true,
           "tier": "advanced"
         },
         "pointLabels": {
@@ -10783,7 +11057,7 @@
           "unit": "px"
         }
       },
-      "groups": [],
+      "groups": ["a11y", "messages"],
       "id": "Sparkline",
       "kind": "surface",
       "label": "Sparkline",
@@ -10793,7 +11067,24 @@
       "version": 1
     },
     "TreeChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "zoomable",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "zoom",
+          "transform": "identity"
+        },
+        {
+          "from": "align",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "plotAlign",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": [
         "datapointLabel",
         "onDatapointClick",
@@ -10820,14 +11111,6 @@
           "group": "a11y",
           "kind": "string",
           "tier": "advanced"
-        },
-        "align": {
-          "default": "start",
-          "description": "Where the tree sits when smaller than its container.",
-          "group": null,
-          "kind": "enum",
-          "tier": "advanced",
-          "values": ["start", "center"]
         },
         "className": {
           "description": "Extra class names on the chart root.",
@@ -10965,6 +11248,14 @@
           "tier": "essential",
           "values": ["mono", "categorical"]
         },
+        "plotAlign": {
+          "default": "start",
+          "description": "Where the tree sits when smaller than its container.",
+          "group": null,
+          "kind": "enum",
+          "tier": "advanced",
+          "values": ["start", "center"]
+        },
         "plotHeight": {
           "breakpoints": ["medium", "narrow"],
           "description": "Height of the plot: pixels, or { aspect } as width divided by height. Set { base, medium, narrow } to vary it by breakpoint.",
@@ -10998,6 +11289,13 @@
           "tier": "advanced",
           "values": ["loading", "ready"]
         },
+        "zoom": {
+          "default": false,
+          "description": "A pannable, pinch-zoomable canvas viewport.",
+          "group": null,
+          "kind": "boolean",
+          "tier": "advanced"
+        },
         "zoomRange": {
           "description": "The zoom range with zoomable: [min, max].",
           "group": null,
@@ -11007,13 +11305,6 @@
           "of": {
             "kind": "number"
           },
-          "tier": "advanced"
-        },
-        "zoomable": {
-          "default": false,
-          "description": "A pannable, pinch-zoomable canvas viewport.",
-          "group": null,
-          "kind": "boolean",
           "tier": "advanced"
         }
       },
@@ -11035,7 +11326,16 @@
       "version": 1
     },
     "TreemapChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "showValues",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "labels",
+          "transform": "boolean-to-labels"
+        }
+      ],
       "codeOnly": [
         "datapointLabel",
         "hideLeafLabel",
@@ -11155,6 +11455,26 @@
           "tier": "advanced",
           "values": ["ellipsis", "hide"]
         },
+        "labels": {
+          "default": false,
+          "description": "Show the value of each mark beside it.",
+          "group": "data-labels",
+          "kind": "union",
+          "of": [
+            {
+              "kind": "boolean"
+            },
+            {
+              "fields": {
+                "show": {
+                  "kind": "boolean"
+                }
+              },
+              "kind": "object"
+            }
+          ],
+          "tier": "essential"
+        },
         "legend": {
           "description": "Show or hide the legend, or configure where and how it is drawn.",
           "group": null,
@@ -11260,13 +11580,6 @@
           },
           "tier": "essential"
         },
-        "showValues": {
-          "default": false,
-          "description": "Print each labelled tile's value under its name.",
-          "group": null,
-          "kind": "boolean",
-          "tier": "essential"
-        },
         "status": {
           "default": "ready",
           "description": "Show the loading skeleton until the data is ready.",
@@ -11332,7 +11645,7 @@
           "tier": "essential"
         }
       },
-      "groups": ["messages", "a11y", "selection", "interaction", "chart-state"],
+      "groups": ["messages", "a11y", "selection", "interaction", "chart-state", "data-labels"],
       "id": "TreemapChart",
       "kind": "chart",
       "label": "Treemap",
@@ -11612,7 +11925,16 @@
       "version": 1
     },
     "WaterfallChart": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "showValues",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "labels",
+          "transform": "boolean-to-labels"
+        }
+      ],
       "codeOnly": ["datapointLabel", "onDatapointClick", "selectionStates"],
       "contract": {
         "dataKind": "array",
@@ -11784,28 +12106,38 @@
           "unit": "px"
         },
         "labels": {
-          "description": "Which rows carry a value label, and how the differences read.",
-          "fields": {
-            "differences": {
-              "kind": "enum",
-              "values": ["absolute", "percent", "none"]
-            },
-            "matchColor": {
+          "default": true,
+          "description": "Print the signed value on each step, or a per-row value-label config.",
+          "group": null,
+          "kind": "union",
+          "of": [
+            {
               "kind": "boolean"
             },
-            "placement": {
-              "kind": "enum",
-              "values": ["inside", "outside"]
-            },
-            "totals": {
-              "kind": "enum",
-              "required": true,
-              "values": ["all", "totalsOnly"]
+            {
+              "fields": {
+                "differences": {
+                  "kind": "enum",
+                  "values": ["absolute", "percent", "none"]
+                },
+                "matchColor": {
+                  "kind": "boolean"
+                },
+                "placement": {
+                  "kind": "enum",
+                  "values": ["inside", "outside"]
+                },
+                "totals": {
+                  "kind": "enum",
+                  "required": true,
+                  "values": ["all", "totalsOnly"]
+                }
+              },
+              "kind": "object"
             }
-          },
-          "group": null,
-          "kind": "object",
-          "tier": "advanced"
+          ],
+          "overrides": "data-labels",
+          "tier": "essential"
         },
         "margin": {
           "description": "Space around the plot, in pixels: one number for every side, or per side.",
@@ -11907,13 +12239,6 @@
           "group": null,
           "kind": "color",
           "tier": "advanced"
-        },
-        "showValues": {
-          "default": true,
-          "description": "Print the signed value on each step.",
-          "group": null,
-          "kind": "boolean",
-          "tier": "essential"
         },
         "sort": {
           "default": "data",
@@ -12032,7 +12357,15 @@
           "tier": "advanced"
         }
       },
-      "groups": ["messages", "a11y", "frame-size", "interaction", "analytics", "selection"],
+      "groups": [
+        "messages",
+        "a11y",
+        "frame-size",
+        "interaction",
+        "analytics",
+        "selection",
+        "data-labels"
+      ],
       "id": "WaterfallChart",
       "kind": "chart",
       "label": "Waterfall chart",
@@ -12067,7 +12400,24 @@
       "version": 1
     },
     "XAxis": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "numTicks",
+          "precedence": "old-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "tickCount",
+          "transform": "identity"
+        },
+        {
+          "from": "orientation",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "position",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": ["tickFormat", "tickValues", "title"],
       "description": "The category or time axis along the bottom or top of a cartesian chart.",
       "fields": {
@@ -12098,20 +12448,6 @@
           },
           "tier": "advanced"
         },
-        "numTicks": {
-          "description": "Exact tick count; wins over tickCount.",
-          "group": null,
-          "kind": "number",
-          "tier": "advanced"
-        },
-        "orientation": {
-          "default": "bottom",
-          "description": "Edge the tick labels sit on.",
-          "group": null,
-          "kind": "enum",
-          "tier": "essential",
-          "values": ["top", "bottom"]
-        },
         "periodTicks": {
           "default": false,
           "description": "A hairline tick per calendar period below the plot.",
@@ -12119,6 +12455,14 @@
           "kind": "enum",
           "tier": "advanced",
           "values": ["day", "week", "month", false]
+        },
+        "position": {
+          "default": "bottom",
+          "description": "Edge the tick labels sit on.",
+          "group": null,
+          "kind": "enum",
+          "tier": "essential",
+          "values": ["top", "bottom"]
         },
         "scale": {
           "description": "Numeric x only: how values map to pixels.",
@@ -12129,7 +12473,7 @@
         },
         "tickCount": {
           "default": "auto",
-          "description": "How many ticks the axis aims for, or auto to fit the plot size.",
+          "description": "How many ticks the axis aims for, or \"auto\" for the axis' own default.",
           "group": null,
           "kind": "union",
           "of": [
@@ -12187,7 +12531,24 @@
       "version": 1
     },
     "YAxis": {
-      "aliases": [],
+      "aliases": [
+        {
+          "from": "numTicks",
+          "precedence": "old-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "tickCount",
+          "transform": "identity"
+        },
+        {
+          "from": "orientation",
+          "precedence": "new-wins",
+          "removeIn": "6.0.0",
+          "since": "5.6.0",
+          "to": "position",
+          "transform": "identity"
+        }
+      ],
       "codeOnly": ["formatValue", "title"],
       "description": "The value axis beside a cartesian chart's plot, on the left or the right.",
       "fields": {
@@ -12232,13 +12593,7 @@
           "kind": "boolean",
           "tier": "advanced"
         },
-        "numTicks": {
-          "description": "Tick count hint; wins over tickCount.",
-          "group": null,
-          "kind": "number",
-          "tier": "advanced"
-        },
-        "orientation": {
+        "position": {
           "default": "left",
           "description": "Side of the plot the tick labels sit on.",
           "group": null,
@@ -12261,7 +12616,7 @@
         },
         "tickCount": {
           "default": "auto",
-          "description": "How many ticks the axis aims for, or auto to fit the plot size.",
+          "description": "How many ticks the axis aims for, or \"auto\" for the axis' own default.",
           "group": null,
           "kind": "union",
           "of": [

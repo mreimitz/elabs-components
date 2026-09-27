@@ -3,11 +3,16 @@
  * BarChart. Kind defaults match the destructuring of `BarValueAxis`
  * (`charts/bar-value-axis.tsx`).
  *
+ * RM-192 (ADR 0042 A.2, row 8): `numTicks` is a deprecated `old-wins` alias of `tickCount`,
+ * gained here — not declared as a field of its own, only through `aliases` below and the
+ * `@deprecated` prop on `BarValueAxisProps`.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
 import { field } from "@elabs-ai/components-ui/definition";
 
+import { axisGroup } from "../../charts/props/axis";
 import type { BarValueAxisProps } from "../../charts/bar-value-axis";
 import { valueFormatGroup } from "../../charts/props/value-format";
 import { definePart } from "../define-chart";
@@ -24,10 +29,7 @@ export const BAR_VALUE_AXIS_PART = /* @__PURE__ */ definePart<BarValueAxisProps>
       tier: "essential",
       description: "Edge the axis is drawn on.",
     }),
-    numTicks: field.number({
-      tier: "advanced",
-      description: "Tick count hint.",
-    }),
+    tickCount: axisGroup.fields.tickCount,
     valueFormat: valueFormatGroup.fields.valueFormat,
     title: field.string({
       tier: "essential",
@@ -39,4 +41,15 @@ export const BAR_VALUE_AXIS_PART = /* @__PURE__ */ definePart<BarValueAxisProps>
     position: "bottom",
   },
   targets: [],
+  // RM-192 — ADR 0042 A.2, row 8.
+  aliases: [
+    {
+      from: "numTicks",
+      to: "tickCount",
+      transform: "identity",
+      precedence: "old-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ],
 });

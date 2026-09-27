@@ -4,6 +4,11 @@
  * field, whose `"auto"` default is the value `resolveAxisTickTarget` already assumes and the
  * axis reads as unset.
  *
+ * RM-192 (ADR 0042 A.2, rows 6, 10): `numTicks` and `orientation` are deprecated aliases of
+ * `tickCount` (old-wins) and `position` (new-wins) — neither is declared as a field of its
+ * own, only through `aliases` below and the `@deprecated` prop on `XAxisProps`, the same
+ * convention RM-191's word-bag rows use.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -26,10 +31,6 @@ export const X_AXIS_PART = /* @__PURE__ */ definePart<XAxisProps>()({
   description: "The category or time axis along the bottom or top of a cartesian chart.",
   groups: [],
   fields: {
-    numTicks: field.number({
-      tier: "advanced",
-      description: "Exact tick count; wins over tickCount.",
-    }),
     tickCount: axisGroup.fields.tickCount,
     // A time axis takes `Date` ticks, which the field vocabulary cannot carry: numbers only.
     ticks: partialFieldFor<XAxisProps["ticks"]>()(
@@ -51,7 +52,7 @@ export const X_AXIS_PART = /* @__PURE__ */ definePart<XAxisProps>()({
       tier: "advanced",
       description: "Numeric x only: how values map to pixels.",
     }),
-    orientation: field.enum({
+    position: field.enum({
       values: ["top", "bottom"],
       tier: "essential",
       description: "Edge the tick labels sit on.",
@@ -87,11 +88,30 @@ export const X_AXIS_PART = /* @__PURE__ */ definePart<XAxisProps>()({
   },
   codeOnly: ["title", "tickFormat", "tickValues"],
   defaults: {
-    orientation: "bottom",
+    position: "bottom",
     titlePlacement: "outside",
     tickerHalfWidth: 50,
     tickMode: "domain",
     periodTicks: false,
   },
   targets: [],
+  // RM-192 — ADR 0042 A.2, rows 6 and 10.
+  aliases: [
+    {
+      from: "numTicks",
+      to: "tickCount",
+      transform: "identity",
+      precedence: "old-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+    {
+      from: "orientation",
+      to: "position",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ],
 });

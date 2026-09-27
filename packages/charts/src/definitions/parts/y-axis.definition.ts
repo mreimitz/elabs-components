@@ -4,6 +4,10 @@
  * field, whose `"auto"` default is the value `resolveAxisTickTarget` already assumes.
  * `valueFormat` has no default: ComposedChart checks whether the caller set it.
  *
+ * RM-192 (ADR 0042 A.2, rows 7, 11): `numTicks` and `orientation` are deprecated aliases of
+ * `tickCount` (old-wins) and `position` (new-wins) — neither is declared as a field of its
+ * own, only through `aliases` below and the `@deprecated` prop on `YAxisProps`.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -29,14 +33,10 @@ export const Y_AXIS_PART = /* @__PURE__ */ definePart<YAxisProps>()({
   groups: [],
   fields: {
     yAxisId: yAxisIdField,
-    orientation: field.enum({
+    position: field.enum({
       values: ["left", "right"],
       tier: "essential",
       description: "Side of the plot the tick labels sit on.",
-    }),
-    numTicks: field.number({
-      tier: "advanced",
-      description: "Tick count hint; wins over tickCount.",
     }),
     tickCount: axisGroup.fields.tickCount,
     ticks: field.array({
@@ -91,11 +91,30 @@ export const Y_AXIS_PART = /* @__PURE__ */ definePart<YAxisProps>()({
   },
   codeOnly: ["title", "formatValue"],
   defaults: {
-    orientation: "left",
+    position: "left",
     titlePlacement: "outside",
     labelPlacement: "outside",
     unitOn: "last",
     matchSeriesColor: false,
   },
   targets: [],
+  // RM-192 — ADR 0042 A.2, rows 7 and 11.
+  aliases: [
+    {
+      from: "numTicks",
+      to: "tickCount",
+      transform: "identity",
+      precedence: "old-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+    {
+      from: "orientation",
+      to: "position",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ],
 });

@@ -8,6 +8,9 @@
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup } from "@testing-library/react";
+import { resetWarnOnce } from "@elabs-ai/components-ui/definition";
+import { DensityScatterChart as DensityScatterChartDouble } from "../../test";
 import { DENSITY_SCATTER_CHART } from "../../definitions/density-scatter-chart.definition";
 import { installCanvasContextStub } from "../../test/primitives";
 import { DensityScatterChart } from "./density-scatter-chart";
@@ -108,12 +111,12 @@ describe("DensityScatterChart", () => {
     expect(last).not.toHaveProperty("x");
   });
 
-  it("a custom labels.xRange/from/to still composes the range thumb's name (deprecated)", () => {
+  it("a custom messages.xRange/from/to still composes the range thumb's name (deprecated)", () => {
     render(
       <DensityScatterChart
         accessibleLabel="Lateral deviation"
         data={DATA}
-        labels={{ xRange: "distance", from: "start", to: "end" }}
+        messages={{ xRange: "distance", from: "start", to: "end" }}
         selectionGestures={["range"]}
         zones={LATERAL_ZONES}
       />,
@@ -206,5 +209,89 @@ describe("DensityScatterChart", () => {
         renderer: "webgl",
       });
     });
+  });
+});
+
+// ── RM-191 renames (ADR 0042 A.1) ────────────────────────────────────────────
+//
+// Each renamed prop: the old name renders the same DOM as the new one, warns once in
+// development and never in production, the `./test` double stays silent under its default
+// `deprecatedProps: "ignore"`, and when both names are set the new one wins (`new-wins`).
+
+/** `container.innerHTML` with React's per-root `useId` values made comparable. */
+const rm191Html = (container: HTMLElement) =>
+  container.innerHTML.replace(/«r[0-9a-z]+»|:r[0-9a-z]+:|_r_[0-9a-z]+_/g, "«id»");
+
+const rm191WarnSpy = () => vi.spyOn(console, "warn").mockImplementation(() => {});
+
+describe("DensityScatterChart `labels` → `messages` (RM-191, row 4)", () => {
+  afterEach(() => {
+    cleanup();
+    resetWarnOnce();
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  const base = {
+    accessibleLabel: "Lateral deviation",
+    data: DATA,
+    zones: LATERAL_ZONES,
+    legend: true,
+    renderer: "canvas2d" as const,
+  };
+  const WORDS = { outside: "Elsewhere", resetView: "Back to full view" };
+
+  it("the old name renders the same DOM as the new one", () => {
+    rm191WarnSpy();
+    const renamed = render(<DensityScatterChart {...base} messages={WORDS} />).container;
+    const old = render(<DensityScatterChart {...base} labels={WORDS} />).container;
+    expect(rm191Html(old)).toBe(rm191Html(renamed));
+    expect(old.textContent).toContain("Elsewhere");
+  });
+
+  it("warns once in development, however often it renders", () => {
+    const warn = rm191WarnSpy();
+    const { rerender } = render(<DensityScatterChart {...base} labels={WORDS} />);
+    rerender(<DensityScatterChart {...base} labels={{ outside: "Beyond" }} />);
+    render(<DensityScatterChart {...base} labels={WORDS} />);
+    const renameWarnings = warn.mock.calls.filter(([m]) => String(m).includes('"labels"'));
+    expect(renameWarnings).toEqual([
+      [
+        '[DensityScatterChart] "labels" is deprecated and will be removed in 6.0.0. Use "messages".',
+      ],
+    ]);
+  });
+
+  it("never warns in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const warn = rm191WarnSpy();
+    render(<DensityScatterChart {...base} labels={WORDS} />);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("the ./test double stays silent under its default", () => {
+    const warn = rm191WarnSpy();
+    render(<DensityScatterChartDouble {...base} labels={WORDS} />);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("`messages` also takes the `charts.*` words of the shared parts it renders", () => {
+    const { container } = render(
+      <DensityScatterChart
+        {...base}
+        messages={{ "charts.chart.loading": "Diagramm lädt…" }}
+        status="loading"
+      />,
+    );
+    expect(container.textContent).toContain("Diagramm lädt…");
+  });
+
+  it("both names set: `messages` wins", () => {
+    rm191WarnSpy();
+    const { container } = render(
+      <DensityScatterChart {...base} labels={{ outside: "Old" }} messages={{ outside: "New" }} />,
+    );
+    expect(container.textContent).toContain("New");
+    expect(container.textContent).not.toContain("Old");
   });
 });

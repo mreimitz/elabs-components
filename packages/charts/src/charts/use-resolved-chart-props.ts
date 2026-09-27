@@ -15,13 +15,16 @@
  * Families adopt it one by one (the charts-unification track, wave 3). The cartesian core
  * calls it (RM-182): Line, Area, Composed, Bar, Scatter, Candlestick, LiveLine and
  * Waterfall, and the axis and series parts they compose (XAxis, YAxis, BarValueAxis,
- * LiveXAxis, Grid, Bar, Line, Area, Scatter, ReferenceLine), which have no alias rows yet.
+ * LiveXAxis, Grid, Bar, Line, Area, Scatter, ReferenceLine). RM-192 (ADR 0042 A.2) added the
+ * first alias rows on four of those parts (XAxis, YAxis, BarValueAxis, LiveXAxis); most
+ * other parts still have none.
  */
 
 import { useMemo } from "react";
 
 import {
   type AnyComponentDefinition,
+  type AliasUse,
   applyAliases,
   type NormalizedAliasRow,
   resolveProps,
@@ -30,9 +33,29 @@ import {
 
 import { warnChartOnce } from "./chart-breakpoint";
 
-/** The development warning for a caller still using an old prop name. */
-function aliasWarning(id: string, row: NormalizedAliasRow): string {
-  return `[${id}] "${row.from}" is deprecated and will be removed in ${row.removeIn}. Use "${row.to}".`;
+/**
+ * The development warning for a caller still using an old prop name. When the caller gave the
+ * new name too, it also says which value was dropped: `use.oldIgnored` (a `new-wins` row) says
+ * the old one was; `use.newIgnored` (an `old-wins` row — RM-192's `numTicks` rows are the
+ * first) says the new one was (ADR 0042 §8).
+ */
+function aliasWarning(id: string, row: NormalizedAliasRow, use?: AliasUse): string {
+  const warning = `[${id}] "${row.from}" is deprecated and will be removed in ${row.removeIn}. Use "${row.to}".`;
+  if (use?.oldIgnored) return `${warning} "${row.from}" was ignored because "${row.to}" is set.`;
+  if (use?.newIgnored) {
+    return `${warning} "${row.to}" was ignored: "${row.from}" still wins while both are set — remove "${row.from}".`;
+  }
+  return warning;
+}
+
+/** `rawProps` with each old name mapped to its new one, warning once per old name in development. */
+function renameChartProps<Props extends object>(
+  def: AnyComponentDefinition,
+  rawProps: Props,
+): Props {
+  return applyAliases(def, rawProps, (row, use) =>
+    warnChartOnce(`${def.id}.${row.from}`, aliasWarning(def.id, row, use)),
+  );
 }
 
 /** `rawProps` with renamed props mapped and the definition's defaults filled in. */
@@ -41,9 +64,31 @@ export function useResolvedChartProps<D extends AnyComponentDefinition, Props ex
   rawProps: Props,
 ): ResolvedProps<Props, D> {
   return useMemo(() => {
-    const renamed = applyAliases(def, rawProps, (row) =>
-      warnChartOnce(`${def.id}.${row.from}`, aliasWarning(def.id, row)),
-    );
-    return resolveProps(def, renamed);
+    const resolved = resolveProps(def, renameChartProps(def, rawProps));
+    // RM-193 review (P2-6): a definition's optional `normalize` (ADR 0042 §3) runs here,
+    // inside the same memo as alias resolution and default-filling, so it recomputes only
+    // when `def`/`rawProps` actually change — not on every render. `HeatmapChart` is the
+    // only definition that declares one today (its palette-dependent `labels` default);
+    // every other family's `normalize` is `undefined`, so this is a no-op for them.
+    const normalize = def.normalize as
+      | ((props: ResolvedProps<Props, D>, ctx: unknown) => ResolvedProps<Props, D>)
+      | undefined;
+    return normalize?.(resolved, undefined) ?? resolved;
   }, [def, rawProps]);
+}
+
+/**
+ * `rawProps` with renamed props mapped, and nothing else: no defaults filled. For a surface
+ * whose definition describes its props but whose defaults still live in its own
+ * destructuring (Gauge, Sparkline — RM-191), so a rename never changes what an unset prop
+ * reads. Same rows, same once-per-name development warning as `useResolvedChartProps`.
+ *
+ * Temporary: it goes away once Gauge and Sparkline take their defaults from their
+ * definitions and call `useResolvedChartProps` like every other family.
+ */
+export function useRenamedChartProps<Props extends object>(
+  def: AnyComponentDefinition,
+  rawProps: Props,
+): Props {
+  return useMemo(() => renameChartProps(def, rawProps), [def, rawProps]);
 }

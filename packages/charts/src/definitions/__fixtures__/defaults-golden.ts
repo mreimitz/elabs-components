@@ -133,7 +133,7 @@ export const DEFAULTS_GOLDEN: Record<
   },
   LiveLineChart: {
     dataKey: "value",
-    window: 30,
+    windowSeconds: 30,
     numXTicks: 5,
     nowOffsetUnits: 0,
     exaggerate: false,
@@ -148,7 +148,7 @@ export const DEFAULTS_GOLDEN: Record<
     negativeFill: "var(--chart-2)",
     orientation: "vertical",
     positiveFill: "var(--chart-1)",
-    showValues: true,
+    labels: true,
     sort: "data",
     totalFill: "var(--chart-foreground)",
     status: "ready",
@@ -163,7 +163,7 @@ export const DEFAULTS_GOLDEN: Record<
     labelOverflow: "ellipsis",
     otherThreshold: 0,
     drilldown: false,
-    showValues: false,
+    labels: false,
     valueFormat: "compact",
   },
   TreeChart: {
@@ -171,12 +171,12 @@ export const DEFAULTS_GOLDEN: Record<
     nodeSize: 7,
     palette: "mono",
     collapsible: true,
-    zoomable: false,
+    zoom: false,
     defaultZoom: 1,
     minimap: false,
     nodeWidth: 160,
     nodeHeight: 72,
-    align: "start",
+    plotAlign: "start",
   },
   SankeyChart: {
     animationDuration: 1100,
@@ -201,7 +201,7 @@ export const DEFAULTS_GOLDEN: Record<
   ChoroplethChart: {
     animationDuration: 800,
     center: [0, 20],
-    zoomEnabled: false,
+    zoom: false,
     zoomMin: 0.5,
     zoomMax: 4,
     initialZoom: {
@@ -214,22 +214,23 @@ export const DEFAULTS_GOLDEN: Record<
     },
     className: "",
     hideNoData: false,
-    emptyTitle: "No data",
-    emptyMessage: "No region has data to map.",
+    // RM-194: `emptyTitle` / `emptyMessage` renamed to `empty.*`, same words.
+    empty: { title: "No data", message: "No region has data to map." },
     status: "ready",
   },
   HeatmapChart: {
     cellRadius: 4,
-    emptyMessage: "No data to plot.",
-    emptyTitle: "No data",
+    // RM-194: `emptyTitle` / `emptyMessage` renamed to `empty.*` (same words),
+    // `loading: false` to `status: "ready"`, `showLegend` to `legend`.
+    empty: { title: "No data", message: "No data to plot." },
     emptyMarkScale: 0.6,
     emptyValue: "quiet",
     highlight: "max",
-    loading: false,
+    status: "ready",
     palette: "sequential",
     revealOn: "mount",
     legendLabels: "endpoints",
-    showLegend: true,
+    legend: true,
     showValueHalo: true,
     steps: 5,
     variant: "matrix",
@@ -237,7 +238,8 @@ export const DEFAULTS_GOLDEN: Record<
   Gantt: {
     density: "comfortable",
     labelColumnWidth: 240,
-    loading: false,
+    // RM-194: `loading: false` renamed to `status: "ready"`.
+    status: "ready",
   },
   DistributionChart: {
     orientation: "horizontal",
@@ -290,7 +292,7 @@ export const DEFAULTS_GOLDEN: Record<
     geometryScrubbing: false,
     seams: 0,
     half: false,
-    align: "start",
+    plotAlign: "start",
   },
   RingChart: {
     strokeWidth: 12,
@@ -308,7 +310,7 @@ export const DEFAULTS_GOLDEN: Record<
     color: "var(--chart-1)",
     layers: 3,
     showPercentage: true,
-    showValues: true,
+    labels: true,
     showLabels: true,
     staggerDelay: 0.12,
     gap: 4,
@@ -344,14 +346,14 @@ export const DEFAULTS_GOLDEN: Record<
   },
   // ── Parts (RM-182) ───────────────────────────────────────────────────────
   XAxis: {
-    orientation: "bottom",
+    position: "bottom",
     titlePlacement: "outside",
     tickerHalfWidth: 50,
     tickMode: "domain",
     periodTicks: false,
   },
   YAxis: {
-    orientation: "left",
+    position: "left",
     titlePlacement: "outside",
     labelPlacement: "outside",
     unitOn: "last",
@@ -360,9 +362,9 @@ export const DEFAULTS_GOLDEN: Record<
   BarValueAxis: {
     position: "bottom",
   },
-  LiveXAxis: {
-    numTicks: 5,
-  },
+  // RM-192: `numTicks` is gone (deprecated alias only); `tickCount`'s own field default
+  // ("auto") is not repeated here — it was never in `defaults` either.
+  LiveXAxis: {},
   Grid: {
     mode: "lines",
     horizontal: true,

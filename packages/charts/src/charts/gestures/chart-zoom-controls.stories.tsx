@@ -104,7 +104,7 @@ function Hosts() {
   return (
     <div className="flex flex-col gap-4">
       <div className="h-[280px] w-full max-w-lg" data-testid="tree-host">
-        <TreeChart accessibleLabel="Teams" data={tree} zoomable />
+        <TreeChart accessibleLabel="Teams" data={tree} zoom />
       </div>
       <div data-testid="gantt-host">
         <p className="text-caption text-muted-foreground">{pixelsPerDay}px/day</p>

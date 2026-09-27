@@ -1,7 +1,7 @@
 ---
 id: RM-195
 title: "Rename: interaction names (`zoom`, `windowSeconds`, Sankey hover, `plotAlign`); `highlightKey` type widening"
-status: planned
+status: done
 priority: P1
 effort: M–L (3 days)
 wave: 4
@@ -49,7 +49,7 @@ Ship ADR 0042 Appendix A.5 exactly:
 
 - Defaults stay per kind (Choropleth and Tree zoom `false`; LiveLine 30 s).
 - Sankey resolves aliases before its controlled check, so either name controls hover.
-- A.7: Bump and Parallel `highlightKey` widen to Bar's `string | number | ((datum, index) => boolean)` — a type widening with no alias row and no warning.
+- A.7: Bump and Parallel `highlightKey` widen to `string | number` — a type widening with no alias row and no warning. Bar's predicate-function form is a 6.0 question, not part of this widening.
 - Not renamed (ADR A.9): Heatmap `highlight`, Network `emphasis`, Scatter `highlightKey`, Choropleth `zoomMin` / `zoomMax` / `initialZoom` / `zoomControls`, Tree `zoomRange` / `defaultZoom`.
 
 ## Acceptance

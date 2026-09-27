@@ -7,7 +7,7 @@
  * Matrix Heat (5×6, shade + a number in every cell), F10 Dot Heat (7×12, dot
  * area), G14 Single Axis (7 rows × 24 h, symbol size), L4 Arc Matrix (8×12
  * bubbles) and L17 Calendar Heat (52×7, dot area with month ticks). They differ
- * in `mode`, `variant` and `showValues` — not in kind — so they are one
+ * in `mode`, `variant` and `labels` — not in kind — so they are one
  * container with three encodings, not six components.
  *
  * ## The four decisions worth knowing before changing anything here
@@ -22,7 +22,7 @@
  *    diverging ramp are lightness-symmetric BY CONSTRUCTION, so in greyscale a
  *    `+1` cell and a `-1` cell are the same cell (WCAG 1.4.1; the package rule
  *    names this item by name). So `palette="diverging"` turns on a second
- *    channel it cannot turn off: the value labels (`showValues` defaults to
+ *    channel it cannot turn off: the value labels (`labels` defaults to
  *    `true` there), and a 45° hatch on every negative cell when they are off.
  * 4. **Keyboard targets are real `<button>`s outside the `<svg>`.** The chart
  *    body is `aria-hidden`; a focusable node inside it is the axe
@@ -126,7 +126,10 @@ import type { ChartCategoryNavigatorProps } from "../navigator/types";
 import type { ResolvedProps } from "@elabs-ai/components-ui/definition";
 import { HEATMAP_CHART } from "../../definitions/heatmap-chart.definition";
 import { resolveChartMargin } from "../chart-margin";
+import { isDataLabelsOn, type ChartDataLabelsConfig } from "../props/data-labels";
 import type { FrameSizeGroupProps } from "../props/frame-size";
+import type { ChartStatus } from "../chart-phase";
+import type { ChartEmptyState, ChartStateGroupProps } from "../props/chart-state";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
 import { useChartTranslate } from "../chart-messages";
 import type { ChartMessages } from "../props/messages";
@@ -171,7 +174,9 @@ export interface HeatmapChartProps
     ChartInteractionProps,
     // Selection gestures — RM-143/144: column / row ranges, rect / lasso on cells.
     ChartSelectionGestureProps,
-    FrameSizeGroupProps {
+    FrameSizeGroupProps,
+    // chart-state group — RM-194: `status` and `empty`.
+    ChartStateGroupProps {
   /**
    * messages group (RM-187): this chart's own words, keyed by the ui
    * catalogue's `charts.*` message keys. A key set here wins over the
@@ -211,11 +216,16 @@ export interface HeatmapChartProps
    */
   steps?: number;
   /**
+   * @deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3,
+   * row 14). Read until 6.0.0, with one development warning; when both are set, `labels` wins.
+   */
+  showValues?: boolean;
+  /**
    * Print each cell's value on it, as halo text (G20). Default `false`, except
    * on `palette="diverging"` where it defaults to `true` — see decision 3 in
    * the module docblock for why sign cannot ride on hue alone.
    */
-  showValues?: boolean;
+  labels?: boolean | ChartDataLabelsConfig;
   /**
    * Which cell gets the dashed peak ring. Default `"max"`, the lieflat
    * convention; the ringed cell is also the one the accessible summary names.
@@ -260,6 +270,12 @@ export interface HeatmapChartProps
   /** How values are rendered in labels, the tooltip and the legend. Default `"compact"`. */
   valueFormat?: ChartValueFormat;
   /** Show the ramp key below the plot. Default `true`. */
+  legend?: boolean;
+  /**
+   * Show the ramp key below the plot.
+   *
+   * @deprecated Since 5.6.0, use `legend` (the same boolean). Removed in 6.0.0.
+   */
   showLegend?: boolean;
   /**
    * How the legend key states the scale — the same `"ranges"`/`"endpoints"`
@@ -295,15 +311,41 @@ export interface HeatmapChartProps
    * scrolls into view, then plays once.
    */
   revealOn?: ChartRevealOn;
-  /** Layout-shaped skeleton instead of the data. */
+  /**
+   * `"loading"` draws a layout-shaped skeleton instead of the data, until the
+   * data is `"ready"`. Default `"ready"`.
+   */
+  status?: ChartStatus;
+  /**
+   * What the chart shows when there is nothing to plot: a `title`, a supporting
+   * `message`, and an `action` rendered below the message — typically the
+   * control that undoes the filter which emptied the grid. Each key you leave
+   * out keeps its default. Default `{ title: "No data", message: "No data to plot." }`.
+   */
+  empty?: ChartEmptyState;
+  /**
+   * Layout-shaped skeleton instead of the data.
+   *
+   * @deprecated Since 5.6.0, use `status` — `loading={true}` is `status="loading"`,
+   * `loading={false}` is `status="ready"`. Removed in 6.0.0.
+   */
   loading?: boolean;
-  /** Supporting sentence of the empty state, shown when there is nothing to plot. */
+  /**
+   * Supporting sentence of the empty state, shown when there is nothing to plot.
+   *
+   * @deprecated Since 5.6.0, use `empty.message`. Removed in 6.0.0.
+   */
   emptyMessage?: string;
-  /** Title of the empty state. Default `"No data"`. */
+  /**
+   * Title of the empty state.
+   *
+   * @deprecated Since 5.6.0, use `empty.title`. Removed in 6.0.0.
+   */
   emptyTitle?: string;
   /**
-   * An action for the empty state — typically the control that undoes the
-   * filter which emptied the grid. Rendered below the message.
+   * An action for the empty state, rendered below the message.
+   *
+   * @deprecated Since 5.6.0, use `empty.action`. Removed in 6.0.0.
    */
   emptyAction?: ReactNode;
   /**
@@ -1138,22 +1180,20 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
       cellRadius,
       className,
       data,
-      emptyAction,
-      emptyMessage,
-      emptyTitle,
+      empty,
       emptyMarkScale,
       emptyValue,
       highlight,
-      loading,
+      status,
       margin: marginProp,
       mode,
       palette,
       revealOn,
       rowHighlight,
       legendLabels,
-      showLegend,
+      legend,
       showValueHalo,
-      showValues,
+      labels,
       steps,
       style,
       valueFormat,
@@ -1177,13 +1217,24 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
     },
     ref,
   ) {
+    // RM-194: `status` is the chart-state name; the old `loading` flag arrives here
+    // already mapped onto it by `useResolvedChartProps`.
+    const loading = status === "loading";
+    // Per key, so a caller who sets only `empty.message` keeps the default title.
+    const emptyTitle = empty.title ?? HEATMAP_CHART.defaults.empty.title;
+    const emptyMessage = empty.message ?? HEATMAP_CHART.defaults.empty.message;
     const { locale } = useLocale();
     const rootRef = useRef<HTMLDivElement | null>(null);
     const mergedRootRef = useMemo(() => mergeRefs(ref, rootRef), [ref]);
     const formatValue = useChartValueFormatter(valueFormat);
     const formatValueSet = useChartValueSetFormatterFactory(valueFormat);
     const resolvedMode: HeatmapMode = mode ?? (variant === "calendar" ? "dot" : "cell");
-    const resolvedShowValues = showValues ?? palette === "diverging";
+    // RM-193 — `labels` replaces `showValues`; the palette-computed default now lives in
+    // `HEATMAP_CHART.normalize`, which `useResolvedChartProps` already ran (RM-193 review
+    // P2-6) before this shell ever sees `labels` — this only unwraps the `{ show }` shape
+    // the `boolean-to-labels` alias transform can still leave behind. No fallback here:
+    // duplicating `palette === "diverging"` a second time is what the review flagged.
+    const resolvedShowValues = isDataLabelsOn(labels, false);
     const margin = useMemo(
       () =>
         resolveChartMargin(
@@ -1381,7 +1432,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
               role="status"
             >
               <StatePanel
-                actions={emptyAction}
+                actions={empty.action}
                 className="size-full gap-1 overflow-hidden py-2"
                 description={emptyMessage}
                 kind="empty"
@@ -1451,7 +1502,7 @@ const HeatmapChartShell = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
             {xAxisLabel}
           </p>
         ) : null}
-        {showLegend && !isEmpty ? (
+        {legend && !isEmpty ? (
           <HeatmapLegend
             continuous={bodyScale.continuous}
             emptyValue={emptyValue}
@@ -1498,7 +1549,11 @@ const HeatmapChartBase = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
 const HeatmapChartUnscoped = forwardRef<HTMLDivElement, HeatmapChartProps>(
   function HeatmapChart(rawProps, ref) {
     // RM-185: every default comes from the definition (`HEATMAP_CHART`), aliases first.
-    const props = useResolvedChartProps(HEATMAP_CHART, rawProps);
+    // RM-193: `HEATMAP_CHART.normalize` fills the palette-computed `labels` default;
+    // `useResolvedChartProps` now calls it itself, inside its own memo (RM-193 review
+    // P2-6) — `labels` below is already resolved, not only the defaults `resolveProps`
+    // fills on its own.
+    const props = useResolvedChartProps(HEATMAP_CHART, rawProps) as HeatmapChartShellProps;
     // RM-145: the selection session + toolbar; a pass-through with gestures off.
     const containerSelection = useContainerSelection(props, props.x, {
       rows: props.data,

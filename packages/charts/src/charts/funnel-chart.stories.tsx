@@ -11,6 +11,21 @@ const meta = {
   tags: ["autodocs"],
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component:
+          "A sequence of stages shrinking toward a goal, read left-to-right or top-to-bottom, " +
+          "with per-stage value, percentage and conversion readouts.\n\n" +
+          "**Deprecated since 5.6.0, removed in 6.0.0** — `showValues` still works and logs " +
+          "one development warning; use `labels` instead.",
+      },
+    },
+  },
+  argTypes: {
+    showValues: {
+      description: "Deprecated since 5.6.0 — use `labels`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
   },
 } satisfies Meta<typeof FunnelChart>;
 
@@ -29,7 +44,7 @@ export const Default: Story = {
     data: conversionFunnel,
     orientation: "horizontal",
     showLabels: true,
-    showValues: true,
+    labels: true,
     showPercentage: true,
   },
   render: (args) => (
@@ -102,7 +117,7 @@ export const Vertical: Story = {
     data: conversionFunnel,
     orientation: "vertical",
     showLabels: true,
-    showValues: true,
+    labels: true,
     showPercentage: true,
   },
   render: (args) => (
@@ -118,7 +133,7 @@ export const WithGrid: Story = {
     orientation: "horizontal",
     grid: true,
     showLabels: true,
-    showValues: true,
+    labels: true,
     showPercentage: true,
   },
   render: (args) => (
@@ -134,7 +149,7 @@ export const StraightEdges: Story = {
     orientation: "horizontal",
     edges: "straight",
     showLabels: true,
-    showValues: true,
+    labels: true,
     showPercentage: false,
   },
   render: (args) => (
@@ -152,7 +167,7 @@ export const WithAccessibleLabel: Story = {
         data={conversionFunnel}
         orientation="horizontal"
         showLabels
-        showValues
+        labels
         showPercentage
         accessibleLabel="Conversion funnel chart"
         accessibleDescription="Visitors 12,000 → Signups 4,800 (40%) → Activated 2,100 (18%) → Paid 840 (7%)."
@@ -172,7 +187,7 @@ export const TokenColors: Story = {
     ],
     orientation: "horizontal",
     showLabels: true,
-    showValues: false,
+    labels: false,
     showPercentage: true,
   },
   render: (args) => (
@@ -195,7 +210,7 @@ export const ConversionBetween: Story = {
     orientation: "horizontal",
     showConversion: "between",
     showLabels: true,
-    showValues: true,
+    labels: true,
     showPercentage: true,
   },
   render: (args) => (
@@ -213,7 +228,7 @@ export const ConversionMargin: Story = {
     orientation: "horizontal",
     showConversion: "margin",
     showLabels: true,
-    showValues: true,
+    labels: true,
     showPercentage: true,
   },
   render: (args) => (
@@ -269,7 +284,7 @@ export const EntranceIsContrastSafe: Story = {
     data: conversionFunnel,
     orientation: "horizontal",
     showLabels: true,
-    showValues: true,
+    labels: true,
     showPercentage: true,
   },
   render: (args) => (

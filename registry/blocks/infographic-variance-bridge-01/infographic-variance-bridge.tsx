@@ -47,7 +47,7 @@ function InfographicVarianceBridgeSkeleton({ className }: { className?: string }
  * "What drove the change?" — a revenue bridge from last quarter's total to
  * this quarter's, split into named drivers, with a `Leader` callout on the
  * one that actually explains the move. Every step's sign is stated in words
- * on its own label (`WaterfallChart`'s `showValues`) — colour is never the
+ * on its own label (`WaterfallChart`'s `labels`) — colour is never the
  * only channel (`.claude/rules/conventions.md` § Accessibility).
  *
  * The chart draws the DELTAS only, zero-based (never the Q2/Q3 totals

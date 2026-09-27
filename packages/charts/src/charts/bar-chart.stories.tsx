@@ -21,6 +21,18 @@ const meta = {
   title: "Charts/BarChart",
   component: BarChart,
   tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          "Grouped, stacked or single-series bars, honest by default (zero-based) with " +
+          "per-bar value labels, comparison overlays and a category axis that thins itself " +
+          "at narrow widths.\n\n**Deprecated since 5.6.0, removed in 6.0.0** — the `Bar` part's " +
+          "`showValues` prop still works and logs one development warning; use `labels` " +
+          "instead (same shape as every other family's value-label prop).",
+      },
+    },
+  },
 } satisfies Meta<typeof BarChart>;
 
 export default meta;
@@ -83,7 +95,7 @@ const regionVisitorColumns = [
  * source and export chrome around it.
  *
  * Left out: the placement-`"auto"`/hover-only value-label mode
- * (`showValues={{ placement: "auto" }}` / `{ visibility: "hover" }`) doesn’t
+ * (`labels={{ placement: "auto" }}` / `{ visibility: "hover" }`) doesn’t
  * read here — a stacked layout always centres a segment’s label regardless
  * of placement, so the two features conflict, and the always-on centred
  * label reads better on a totals chart.
@@ -120,8 +132,8 @@ export const Showcase: Story = {
           xDataKey="region"
         >
           <Grid horizontal />
-          <Bar dataKey="New" fill="var(--chart-1)" lineCap="butt" showValues="inside" />
-          <Bar dataKey="Returning" fill="var(--chart-2)" lineCap="butt" showValues="inside" />
+          <Bar dataKey="New" fill="var(--chart-1)" lineCap="butt" labels="inside" />
+          <Bar dataKey="Returning" fill="var(--chart-2)" lineCap="butt" labels="inside" />
           <BarXAxis />
           <YAxis domain={[0, 50000]} title="Visitors" />
           <ChartTooltip />
@@ -188,7 +200,7 @@ function PlotRuler() {
  * 8–10 is a different mechanism, for telling series apart without hue).
  *
  * The `Ruler` mark gives the card-sized plot a sense of measure with no axis;
- * the values are printed on the bars instead (`showValues`).
+ * the values are printed on the bars instead (`labels`).
  */
 export const HairlineHatch: Story = {
   render: () => (
@@ -204,9 +216,9 @@ export const HairlineHatch: Story = {
         xDataKey="quarter"
       >
         <PlotRuler />
-        <Bar dataKey="actual" fill="var(--chart-1)" showValues />
-        <Bar dataKey="plan" fill="var(--chart-2)" fillStyle="hatch" showValues />
-        <Bar dataKey="lastYear" fill="var(--chart-foreground-muted)" fillStyle="hatch" showValues />
+        <Bar dataKey="actual" fill="var(--chart-1)" labels />
+        <Bar dataKey="plan" fill="var(--chart-2)" fillStyle="hatch" labels />
+        <Bar dataKey="lastYear" fill="var(--chart-foreground-muted)" fillStyle="hatch" labels />
         <ChartTooltip />
       </BarChart>
     </div>
@@ -612,10 +624,10 @@ export const DensityComparison: Story = {
   },
 };
 
-// --- RM-027: showValues, unit mode, diverging, highlightKey, palette -------
+// --- RM-027: labels, unit mode, diverging, highlightKey, palette -------
 
 /**
- * `showValues` prints each bar's value as a `HaloText` label (the
+ * `labels` prints each bar's value as a `HaloText` label (the
  * `text-chart-value` role) — lieflat G3 Chunky Bars. `animate={false}` settles
  * the labels immediately for a stable story.
  */
@@ -624,7 +636,7 @@ export const WithValues: Story = {
     <div className="h-72 w-[560px]">
       <BarChart data={monthlyData} xDataKey="month">
         <Grid horizontal />
-        <Bar animate={false} dataKey="revenue" fill="var(--chart-1)" lineCap="round" showValues />
+        <Bar animate={false} dataKey="revenue" fill="var(--chart-1)" lineCap="round" labels />
         <BarXAxis />
       </BarChart>
     </div>
@@ -681,7 +693,7 @@ export const Diverging: Story = {
     <div className="h-72 w-[560px]">
       <BarChart data={profitLossData} xDataKey="month">
         <Grid horizontal />
-        <Bar animate={false} dataKey="net" fill="var(--chart-1)" lineCap="round" showValues />
+        <Bar animate={false} dataKey="net" fill="var(--chart-1)" lineCap="round" labels />
         <BarXAxis />
       </BarChart>
     </div>
@@ -715,7 +727,7 @@ export const DivergingDecorated: Story = {
     <div className="h-72 w-full max-w-[560px]" data-decoration="10">
       <BarChart data={profitLossData} xDataKey="month">
         <Grid horizontal />
-        <Bar animate={false} dataKey="net" fill="var(--chart-1)" lineCap="round" showValues />
+        <Bar animate={false} dataKey="net" fill="var(--chart-1)" lineCap="round" labels />
         <BarXAxis />
       </BarChart>
     </div>
@@ -1151,13 +1163,7 @@ const likertData = [
 
 function likertBars() {
   return LIKERT_SERIES.map((series) => (
-    <Bar
-      dataKey={series.key}
-      fill={series.fill}
-      key={series.key}
-      lineCap="butt"
-      showValues="inside"
-    />
+    <Bar dataKey={series.key} fill={series.fill} key={series.key} lineCap="butt" labels="inside" />
   ));
 }
 
@@ -1337,7 +1343,7 @@ export const SortedColorBy: Story = {
         xDataKey="store"
       >
         <Grid vertical />
-        <Bar dataKey="sales" lineCap="butt" showValues />
+        <Bar dataKey="sales" lineCap="butt" labels />
         <BarYAxis />
       </BarChart>
     </div>
@@ -1387,7 +1393,7 @@ export const TrackBars: Story = {
   render: () => (
     <div className="h-64 w-full">
       <BarChart data={completion} orientation="horizontal" track xDataKey="team">
-        <Bar dataKey="done" fill="var(--chart-1)" lineCap="butt" showValues="inside" />
+        <Bar dataKey="done" fill="var(--chart-1)" lineCap="butt" labels="inside" />
         <BarYAxis />
       </BarChart>
     </div>
@@ -1412,14 +1418,14 @@ export const SignedHorizontal: Story = {
   render: () => (
     <div className="h-64 w-full">
       <BarChart data={netChange} orientation="horizontal" xDataKey="team">
-        <Bar dataKey="change" fill="var(--chart-1)" showValues zeroLine />
+        <Bar dataKey="change" fill="var(--chart-1)" labels zeroLine />
         <BarYAxis />
       </BarChart>
     </div>
   ),
 };
 
-/** `showValues={{ visibility: "hover" }}`: a value label only for the hovered category. */
+/** `labels={{ visibility: "hover" }}`: a value label only for the hovered category. */
 export const ValuesOnHover: Story = {
   name: "Values on hover",
   parameters: { layout: "padded" },
@@ -1427,7 +1433,7 @@ export const ValuesOnHover: Story = {
     <div className="h-72 w-full">
       <BarChart data={monthlyData} xDataKey="month">
         <Grid horizontal />
-        <Bar dataKey="revenue" fill="var(--chart-1)" showValues={{ visibility: "hover" }} />
+        <Bar dataKey="revenue" fill="var(--chart-1)" labels={{ visibility: "hover" }} />
         <BarXAxis />
         <ChartTooltip />
       </BarChart>

@@ -20,6 +20,11 @@
  * RM-187: the group's `locale` member is listed — the formatter behind `valueFormat`
  * takes the chart's own `locale` over the `LocaleProvider`'s.
  *
+ * RM-191 (ADR 0042 A.1 row 1): the word-bag `labels` moved to `messages`, which comes from the
+ * `messages` group — no own field of that name. Its word-bag keys (`value`, `target`,
+ * `comparative`) sit beside the group's `charts.*` keys; the group's open object accepts both.
+ * The old name stays readable through the alias row until 6.0.0.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -29,9 +34,9 @@ import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import { chartStateGroup } from "../charts/props/chart-state";
 import { frameSizeGroup } from "../charts/props/frame-size";
+import { messagesGroup } from "../charts/props/messages";
 import { valueFormatGroup } from "../charts/props/value-format";
 import type { BulletChartProps } from "../charts/bullet-chart";
-import { partialFieldFor } from "../charts/props/typed-field";
 import { classNameField } from "./cartesian-fields";
 import { paletteGroup } from "../charts/props/palette";
 import { defineChart } from "./define-chart";
@@ -47,7 +52,7 @@ export const BULLET_CHART = /* @__PURE__ */ defineChart<BulletChartDefinitionPro
   specTypes: [],
   // `currency`, `maxFractionDigits` and `locale` (RM-187) extend `valueFormat` as own
   // fields referencing the group's field objects.
-  groups: [a11yGroup, frameSizeGroup],
+  groups: [a11yGroup, frameSizeGroup, messagesGroup],
   fields: {
     // Palette — RM-186: no default; unset keeps the family's own colours.
     palette: paletteGroup.fields.palette,
@@ -81,17 +86,6 @@ export const BULLET_CHART = /* @__PURE__ */ defineChart<BulletChartDefinitionPro
     }),
     showAxis: field.boolean({ tier: "advanced", description: "Show the hairline tick axis." }),
     valueFormat: valueFormatGroup.fields.valueFormat,
-    labels: partialFieldFor<BulletChartProps["labels"]>()(
-      field.object({
-        fields: {
-          value: field.string(),
-          target: field.string(),
-          comparative: field.string(),
-        },
-        tier: "advanced",
-        description: "Names interpolated into the accessible description.",
-      }),
-    ),
     higherIsBetter: field.boolean({
       tier: "advanced",
       description: "Whether ascending band values read better for this measure.",
@@ -111,6 +105,17 @@ export const BULLET_CHART = /* @__PURE__ */ defineChart<BulletChartDefinitionPro
     higherIsBetter: true,
   },
   targets: [],
+  // RM-191 — ADR 0042 A.1 row 1.
+  aliases: [
+    {
+      from: "labels",
+      to: "messages",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ],
   contract: {
     dataKind: "none",
     requiredProps: ["value"],

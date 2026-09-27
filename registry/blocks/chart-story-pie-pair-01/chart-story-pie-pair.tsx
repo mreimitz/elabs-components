@@ -71,7 +71,7 @@ export function ChartStoryPiePair({ className }: { className?: string }) {
             <div className="relative" key={year}>
               <PieChart
                 accessibleLabel={`Handover place of consumer parcels, ${year}`}
-                align="center"
+                plotAlign="center"
                 data={slices(year)}
                 innerRadius={0.5}
                 labels={{ placement: "inside", show: ["percent"], minAngle: 0.3 }}

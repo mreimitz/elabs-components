@@ -624,7 +624,7 @@ export default function DeveloperPlatformPage({
                 sparkline={
                   <Sparkline
                     height={28}
-                    label="Production deploys per day, last 7 days"
+                    accessibleLabel="Production deploys per day, last 7 days"
                     values={dora.perDay}
                     variant="bar"
                     width={112}

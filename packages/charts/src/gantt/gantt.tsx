@@ -87,6 +87,8 @@ import { GanttProgressLine } from "./gantt-progress-line";
 import { useChartTranslate } from "../charts/chart-messages";
 import { ChartZoomControls } from "../charts/gestures/chart-zoom-controls";
 import type { ChartMessages } from "../charts/props/messages";
+import type { ChartStatus } from "../charts/chart-phase";
+import type { ChartEmptyState } from "../charts/props/chart-state";
 import { ChartMessagesScope } from "../charts/chart-messages";
 import { useLayoutMeasure } from "../charts/layout-size";
 
@@ -750,8 +752,23 @@ export interface GanttProps
   /** Left pane width (px). Default 240. Ignored when `columns` is set (widths sum). */
   labelColumnWidth?: number;
   /**
+   * chart-state group (RM-194). `"loading"` renders a built-in shimmer loading state
+   * (Skeleton rows in both panes) instead of the task tree and canvas, until the tasks
+   * are `"ready"`. Use while data is in flight. Default `"ready"`.
+   */
+  status?: ChartStatus;
+  /**
+   * chart-state group (RM-194): what shows when `tasks` is empty. `message` replaces the
+   * default sentence, `title` is printed above it and `action` below it. Unset keys keep
+   * the default: no title, the `charts.gantt.noTasksToDisplay` message, no action.
+   */
+  empty?: ChartEmptyState;
+  /**
    * When true, renders a built-in shimmer loading state (Skeleton rows in both panes)
    * instead of the task tree and canvas. Use while data is in flight.
+   *
+   * @deprecated Since 5.6.0, use `status` — `loading={true}` is `status="loading"`,
+   * `loading={false}` is `status="ready"`. Removed in 6.0.0.
    */
   loading?: boolean;
   children?: ReactNode;
@@ -1818,11 +1835,15 @@ const GanttUnscoped = forwardRef<HTMLDivElement, GanttProps>(function Gantt(rawP
     onSortChange,
     onColumnResize,
     labelColumnWidth,
-    loading,
+    status,
+    empty,
     className,
     children,
     ...props
   } = useResolvedChartProps(GANTT, rawProps);
+  // RM-194: `status` is the chart-state name; an old `loading` flag arrives already
+  // mapped onto it by `useResolvedChartProps`.
+  const loading = status === "loading";
   const t = useChartTranslate();
   const resolvedDensity: "comfortable" | "compact" = density ?? "comfortable";
   const resolvedRowHeight = rowHeightProp ?? ROW_HEIGHT[resolvedDensity];
@@ -2021,7 +2042,13 @@ const GanttUnscoped = forwardRef<HTMLDivElement, GanttProps>(function Gantt(rawP
           className="flex flex-1 flex-col items-center justify-center gap-2 py-12 text-muted-foreground"
         >
           <Calendar className="size-8 opacity-40" aria-hidden="true" />
-          <p className="text-body">{t("charts.gantt.noTasksToDisplay")}</p>
+          {empty?.title ? (
+            <h3 className="text-body font-semibold text-foreground">{empty.title}</h3>
+          ) : null}
+          <p className="text-body">{empty?.message ?? t("charts.gantt.noTasksToDisplay")}</p>
+          {empty?.action ? (
+            <div className="mt-1 flex items-center gap-2">{empty.action}</div>
+          ) : null}
         </div>
       </div>
     );

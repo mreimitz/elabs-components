@@ -73,7 +73,7 @@ export function MarketingBento({
               className="w-full"
               fit="fill"
               height={44}
-              label="Parcels scanned per hour today"
+              accessibleLabel="Parcels scanned per hour today"
               values={[120, 180, 260, 340, 420, 390, 410, 460, 430, 380, 300, 220]}
             />
           </Tile>

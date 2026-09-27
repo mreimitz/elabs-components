@@ -5287,7 +5287,7 @@
     "summary": "Flow diagram — how quantity moves between stages or nodes.",
     "question": "",
     "block": null,
-    "stories": 8,
+    "stories": 9,
     "first": "charts-sankeychart--default",
     "featured": 5
   },

@@ -1054,3 +1054,6 @@ export {
 // Palette — RM-186: the one `resolveColorBy`'s option bag and result, so a caller of the
 // public export can name what it passes and gets back.
 export { type ResolveColorByOptions, type ResolvedColorBy } from "./chart-context";
+// ChartEmptyState — RM-194: the shape of the `empty` prop every chart-state family takes
+// (`empty={{ title, message, action }}`), so a caller can name what it passes.
+export { type ChartEmptyState } from "./props/chart-state";

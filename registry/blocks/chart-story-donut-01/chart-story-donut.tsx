@@ -46,7 +46,7 @@ export function ChartStoryDonut({ className }: { className?: string }) {
     >
       <PieChart
         accessibleLabel="Cost of delivering one parcel, by step"
-        align="center"
+        plotAlign="center"
         cornerRadius={2}
         data={COST_PER_PARCEL}
         groupSmall={{ threshold: 0.03 }}

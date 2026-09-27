@@ -3,6 +3,7 @@ import {
   resolveAxisTickTarget,
   tickTargetForHeight,
   tickTargetForWidth,
+  withoutNonFiniteNumTicks,
   X_TICK_TARGET_MAX,
   X_TICK_TARGET_MIN,
   Y_TICK_TARGET_SHORT,
@@ -53,5 +54,44 @@ describe("resolveAxisTickTarget (RM-108)", () => {
 
   it("ignores a non-finite explicit value", () => {
     expect(resolveAxisTickTarget({ numTicks: Number.NaN, autoTarget: 4 })).toBe(4);
+  });
+});
+
+describe("withoutNonFiniteNumTicks (RM-192 fix round 1)", () => {
+  it("strips null, not just NaN and ±Infinity — a first-pass `!= null` guard misses null", () => {
+    expect(withoutNonFiniteNumTicks({ numTicks: null as never, tickCount: 8 })).toStrictEqual({
+      tickCount: 8,
+    });
+    expect(withoutNonFiniteNumTicks({ numTicks: Number.NaN, tickCount: 8 })).toStrictEqual({
+      tickCount: 8,
+    });
+    expect(
+      withoutNonFiniteNumTicks({ numTicks: Number.POSITIVE_INFINITY, tickCount: 8 }),
+    ).toStrictEqual({ tickCount: 8 });
+    expect(
+      withoutNonFiniteNumTicks({ numTicks: Number.NEGATIVE_INFINITY, tickCount: 8 }),
+    ).toStrictEqual({ tickCount: 8 });
+  });
+
+  it("a stripped numTicks leaves an explicit tickCount to resolve on its own", () => {
+    expect(
+      resolveAxisTickTarget({
+        ...withoutNonFiniteNumTicks({ numTicks: null as never, tickCount: 8 }),
+        autoTarget: 4,
+      }),
+    ).toBe(8);
+  });
+
+  it("passes a finite numTicks, or an unset one, through untouched", () => {
+    expect(withoutNonFiniteNumTicks({ numTicks: 5, tickCount: 8 })).toStrictEqual({
+      numTicks: 5,
+      tickCount: 8,
+    });
+    // An explicit type argument, since `{ tickCount: 8 }` shares no property with
+    // `{ numTicks?: number }` — TS's "weak type" rule would otherwise reject it,
+    // even though an unset `numTicks` is exactly the case this asserts.
+    expect(
+      withoutNonFiniteNumTicks<{ numTicks?: number; tickCount: number }>({ tickCount: 8 }),
+    ).toStrictEqual({ tickCount: 8 });
   });
 });

@@ -109,7 +109,7 @@ export function ChartStoryPareto({ className }: { className?: string }) {
         <YAxis
           domain={[0, 100]}
           matchSeriesColor
-          orientation="right"
+          position="right"
           valueFormat={{ suffix: " %" }}
           yAxisId="right"
         />

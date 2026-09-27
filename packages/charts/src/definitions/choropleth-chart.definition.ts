@@ -11,6 +11,15 @@
  * simple, honest field-vocabulary shape — left to code, per ADR 0042's codeOnly escape
  * hatch, rather than guessed at.
  *
+ * RM-194 (ADR 0042 A.4, rows 23–24): `emptyTitle` / `emptyMessage` → `empty.title` /
+ * `empty.message`, each an alias row until 6.0.0. The family applies the `chart-state` group
+ * (`status`, `empty`), which now declares `status` in place of an own field, and the kind
+ * default `empty` keeps the family's own words.
+ *
+ * RM-195 (ADR 0042 A.5, row 25): `zoomEnabled` → `zoom`, an alias row until 6.0.0. `zoom` is
+ * on the `charts-group-drift` exception list — a map viewport zoom, not the navigator
+ * commons' window `zoom`.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -49,7 +58,7 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
   label: "Choropleth map",
   description: "Regions shaded by a measure, on a real map projection.",
   specTypes: ["choropleth"],
-  groups: [messagesGroup, a11yGroup, frameSizeGroup],
+  groups: [messagesGroup, a11yGroup, frameSizeGroup, chartStateGroup],
   fields: {
     // Palette — RM-186: no default; unset keeps the family's own colours.
     palette: paletteGroup.fields.palette,
@@ -79,8 +88,6 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
       description: "Remove every region without data from the map.",
     }),
     annotations: annotationsField,
-    emptyTitle: field.string({ tier: "advanced", description: "Title of the empty state." }),
-    emptyMessage: field.string({ tier: "advanced", description: "Message of the empty state." }),
     center: field.array({
       of: field.number(),
       min: 2,
@@ -88,11 +95,13 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
       tier: "advanced",
       description: "Center coordinates: [longitude, latitude].",
     }),
-    zoomEnabled: field.boolean({ tier: "essential", description: "Enable zoom and pan." }),
+    zoom: field.boolean({
+      tier: "essential",
+      description: "Enable zoom and pan. `zoomControls` alone still turns it on.",
+    }),
     zoomMin: field.number({ tier: "advanced", description: "Minimum zoom scale." }),
     zoomMax: field.number({ tier: "advanced", description: "Maximum zoom scale." }),
     margin: frameSizeGroup.fields.margin,
-    status: chartStateGroup.fields.status,
     className: classNameField,
   },
   codeOnly: [
@@ -113,16 +122,42 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
   defaults: {
     animationDuration: DEFAULT_CHOROPLETH_ANIMATION_DURATION_MS,
     center: [0, 20],
-    zoomEnabled: false,
+    zoom: false,
     zoomMin: 0.5,
     zoomMax: 4,
     initialZoom: DEFAULT_INITIAL_ZOOM,
     className: "",
     hideNoData: false,
-    emptyTitle: "No data",
-    emptyMessage: "No region has data to map.",
+    empty: { title: "No data", message: "No region has data to map." },
     status: DEFAULT_CHART_STATUS,
   },
+  // RM-194 — ADR 0042 A.4 rows 23–24. RM-195 — ADR 0042 A.5 row 25.
+  aliases: [
+    {
+      from: "emptyTitle",
+      to: "empty.title",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+    {
+      from: "emptyMessage",
+      to: "empty.message",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+    {
+      from: "zoomEnabled",
+      to: "zoom",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ],
   targets: [],
   contract: {
     dataKind: "feature-collection",

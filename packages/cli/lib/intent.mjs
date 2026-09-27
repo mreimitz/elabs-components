@@ -1594,11 +1594,13 @@ export const INTENT = {
     purpose: "Schedule grid — tasks as bars over time, with a task table beside them.",
     category: "chart",
     relationships: { usedInside: ["ChartFrame"], pairsWith: ["DataTable"] },
-    stateTokens: { loading: "loading → skeleton rows + overlay spinner" },
+    stateTokens: {
+      status: 'status="loading" → skeleton rows + overlay spinner; "ready" → the grid',
+    },
     antiPatterns: [
       "Mutating task dates inside the component on drag — Gantt is emit-only; the app owns the model (D5).",
       "Bar labels that rely on the bar fill for contrast — check the label against the bar color in every theme.",
-      "Rendering the grid without `loading` while rows are still fetching — skeleton rows must hold the layout.",
+      'Rendering the grid without status="loading" while rows are still fetching — skeleton rows must hold the layout.',
     ],
   },
 
@@ -1793,13 +1795,13 @@ export const INTENT = {
       cell: "value \u2192 an ordered ramp step (--chart-seq-*, --chart-div-*, --chart-mono-* via resolvePalette)",
       empty: "null or 0 \u2192 a QuietDot pinprick in --chart-foreground-muted, not a hole",
       peak: "the highlighted cell \u2192 a dashed PeakRing in --chart-foreground",
-      loading: "loading \u2192 the same grid as skeleton cells in --muted",
+      status: 'status="loading" \u2192 the same grid as skeleton cells in --muted',
     },
     antiPatterns: [
-      "steps: 0 (the continuous ramp) when the reader must compare exact values \u2014 opacity is not countable; keep the stepped ramp or turn showValues on.",
+      "steps: 0 (the continuous ramp) when the reader must compare exact values \u2014 opacity is not countable; keep the stepped ramp or turn labels on.",
       'emptyValue="blank" on data that contains real zeroes \u2014 a measured zero then looks identical to a missing row, which is the one thing the pinprick exists to prevent.',
       "Forcing the calendar variant into a narrow box (overflow-hidden, a tall aspectRatio) \u2014 it enforces a minimum width and scrolls on purpose; squeezed day cells fall below the 24px target size.",
-      'Leaning on the darkest ramp step to say "this is the peak" \u2014 colour alone; highlight draws the ring, and a diverging palette needs showValues or its negative hatch for sign.',
+      'Leaning on the darkest ramp step to say "this is the peak" \u2014 colour alone; highlight draws the ring, and a diverging palette needs labels or its negative hatch for sign.',
     ],
   },
 

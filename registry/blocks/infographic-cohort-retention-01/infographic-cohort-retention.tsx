@@ -97,7 +97,7 @@ export function InfographicCohortRetention({
               palette="sequential"
               rowHighlight={(cohort) => cohort === scenario.highlightCohort}
               showValueHalo={false}
-              showValues
+              labels
               valueFormat="percent"
               valueKey="retentionFraction"
               x="monthsSince"

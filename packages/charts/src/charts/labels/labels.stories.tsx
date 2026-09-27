@@ -14,7 +14,7 @@ import { YAxis } from "../y-axis";
 /**
  * The label engine (RM-110, #485): series end labels with a key fallback,
  * automatic value labels, scatter point labels culled by width, and the Bar
- * `showValues` object. Every label the collision solver drops is restated in
+ * `labels` object. Every label the collision solver drops is restated in
  * one `sr-only` span beside the chart's svg.
  */
 const meta = {
@@ -271,7 +271,7 @@ const regions = [
 ];
 
 /**
- * `showValues={{ placement: "auto" }}`: inside a bar long enough to hold the
+ * `labels={{ placement: "auto" }}`: inside a bar long enough to hold the
  * label, outside a short one. The second chart prints only the hovered bar.
  */
 export const BarValuesAutoAndHover: Story = {
@@ -279,12 +279,7 @@ export const BarValuesAutoAndHover: Story = {
     <div className="grid w-full max-w-[900px] gap-6 md:grid-cols-2">
       <BarChart data={regions} xDataKey="region">
         <Grid horizontal />
-        <Bar
-          animate={false}
-          dataKey="sales"
-          fill="var(--chart-1)"
-          showValues={{ placement: "auto" }}
-        />
+        <Bar animate={false} dataKey="sales" fill="var(--chart-1)" labels={{ placement: "auto" }} />
         <BarXAxis />
       </BarChart>
       <BarChart data={regions} xDataKey="region">
@@ -293,7 +288,7 @@ export const BarValuesAutoAndHover: Story = {
           animate={false}
           dataKey="sales"
           fill="var(--chart-2)"
-          showValues={{ placement: "outside", visibility: "hover" }}
+          labels={{ placement: "outside", visibility: "hover" }}
         />
         <BarXAxis />
       </BarChart>

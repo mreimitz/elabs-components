@@ -1,3 +1,562 @@
 {
-  "mappings": []
+  "mappings": [
+    {
+      "alias": {
+        "from": "showValues",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "labels",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "part",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "showValues": "labels"
+      },
+      "source": "Bar",
+      "target": "Bar"
+    },
+    {
+      "alias": {
+        "from": "numTicks",
+        "precedence": "old-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "tickCount",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "part",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "numTicks": "tickCount"
+      },
+      "source": "BarValueAxis",
+      "target": "BarValueAxis"
+    },
+    {
+      "alias": {
+        "from": "labels",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "messages",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "labels": "messages"
+      },
+      "source": "BulletChart",
+      "target": "BulletChart"
+    },
+    {
+      "alias": {
+        "from": "emptyTitle",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "empty.title",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "emptyTitle": "empty.title"
+      },
+      "source": "ChoroplethChart",
+      "target": "ChoroplethChart"
+    },
+    {
+      "alias": {
+        "from": "emptyMessage",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "empty.message",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "emptyMessage": "empty.message"
+      },
+      "source": "ChoroplethChart",
+      "target": "ChoroplethChart"
+    },
+    {
+      "alias": {
+        "from": "zoomEnabled",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "zoom",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "zoomEnabled": "zoom"
+      },
+      "source": "ChoroplethChart",
+      "target": "ChoroplethChart"
+    },
+    {
+      "alias": {
+        "from": "labels",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "messages",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "labels": "messages"
+      },
+      "source": "DensityScatterChart",
+      "target": "DensityScatterChart"
+    },
+    {
+      "alias": {
+        "from": "showValues",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "labels",
+        "transform": "boolean-to-labels"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "showValues": "labels"
+      },
+      "source": "FunnelChart",
+      "target": "FunnelChart"
+    },
+    {
+      "alias": {
+        "from": "loading",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "status",
+        "transform": "loading-to-status"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "loading": "status"
+      },
+      "source": "Gantt",
+      "target": "Gantt"
+    },
+    {
+      "alias": {
+        "from": "labels",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "messages",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "surface",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "labels": "messages"
+      },
+      "source": "Gauge",
+      "target": "Gauge"
+    },
+    {
+      "alias": {
+        "from": "showLegend",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "legend",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "showLegend": "legend"
+      },
+      "source": "HeatmapChart",
+      "target": "HeatmapChart"
+    },
+    {
+      "alias": {
+        "from": "loading",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "status",
+        "transform": "loading-to-status"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "loading": "status"
+      },
+      "source": "HeatmapChart",
+      "target": "HeatmapChart"
+    },
+    {
+      "alias": {
+        "from": "emptyTitle",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "empty.title",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "emptyTitle": "empty.title"
+      },
+      "source": "HeatmapChart",
+      "target": "HeatmapChart"
+    },
+    {
+      "alias": {
+        "from": "emptyMessage",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "empty.message",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "emptyMessage": "empty.message"
+      },
+      "source": "HeatmapChart",
+      "target": "HeatmapChart"
+    },
+    {
+      "alias": {
+        "from": "emptyAction",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "empty.action",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "emptyAction": "empty.action"
+      },
+      "source": "HeatmapChart",
+      "target": "HeatmapChart"
+    },
+    {
+      "alias": {
+        "from": "showValues",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "labels",
+        "transform": "boolean-to-labels"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "showValues": "labels"
+      },
+      "source": "HeatmapChart",
+      "target": "HeatmapChart"
+    },
+    {
+      "alias": {
+        "from": "window",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "windowSeconds",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "window": "windowSeconds"
+      },
+      "source": "LiveLineChart",
+      "target": "LiveLineChart"
+    },
+    {
+      "alias": {
+        "from": "numTicks",
+        "precedence": "old-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "tickCount",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "part",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "numTicks": "tickCount"
+      },
+      "source": "LiveXAxis",
+      "target": "LiveXAxis"
+    },
+    {
+      "alias": {
+        "from": "align",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "plotAlign",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "align": "plotAlign"
+      },
+      "source": "PieChart",
+      "target": "PieChart"
+    },
+    {
+      "alias": {
+        "from": "hoveredNodeIndex",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "hoveredIndex",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "hoveredNodeIndex": "hoveredIndex"
+      },
+      "source": "SankeyChart",
+      "target": "SankeyChart"
+    },
+    {
+      "alias": {
+        "from": "onNodeHoverChange",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "onHoverChange",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "onNodeHoverChange": "onHoverChange"
+      },
+      "source": "SankeyChart",
+      "target": "SankeyChart"
+    },
+    {
+      "alias": {
+        "from": "labels",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "messages",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "surface",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "labels": "messages"
+      },
+      "source": "Sparkline",
+      "target": "Sparkline"
+    },
+    {
+      "alias": {
+        "from": "label",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "accessibleLabel",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "surface",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "label": "accessibleLabel"
+      },
+      "source": "Sparkline",
+      "target": "Sparkline"
+    },
+    {
+      "alias": {
+        "from": "zoomable",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "zoom",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "zoomable": "zoom"
+      },
+      "source": "TreeChart",
+      "target": "TreeChart"
+    },
+    {
+      "alias": {
+        "from": "align",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "plotAlign",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "align": "plotAlign"
+      },
+      "source": "TreeChart",
+      "target": "TreeChart"
+    },
+    {
+      "alias": {
+        "from": "showValues",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "labels",
+        "transform": "boolean-to-labels"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "showValues": "labels"
+      },
+      "source": "TreemapChart",
+      "target": "TreemapChart"
+    },
+    {
+      "alias": {
+        "from": "showValues",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "labels",
+        "transform": "boolean-to-labels"
+      },
+      "class": "props",
+      "kind": "chart",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "showValues": "labels"
+      },
+      "source": "WaterfallChart",
+      "target": "WaterfallChart"
+    },
+    {
+      "alias": {
+        "from": "numTicks",
+        "precedence": "old-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "tickCount",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "part",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "numTicks": "tickCount"
+      },
+      "source": "XAxis",
+      "target": "XAxis"
+    },
+    {
+      "alias": {
+        "from": "orientation",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "position",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "part",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "orientation": "position"
+      },
+      "source": "XAxis",
+      "target": "XAxis"
+    },
+    {
+      "alias": {
+        "from": "numTicks",
+        "precedence": "old-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "tickCount",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "part",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "numTicks": "tickCount"
+      },
+      "source": "YAxis",
+      "target": "YAxis"
+    },
+    {
+      "alias": {
+        "from": "orientation",
+        "precedence": "new-wins",
+        "removeIn": "6.0.0",
+        "since": "5.6.0",
+        "to": "position",
+        "transform": "identity"
+      },
+      "class": "props",
+      "kind": "part",
+      "pkg": "@elabs-ai/components-charts",
+      "propRemap": {
+        "orientation": "position"
+      },
+      "source": "YAxis",
+      "target": "YAxis"
+    }
+  ]
 }

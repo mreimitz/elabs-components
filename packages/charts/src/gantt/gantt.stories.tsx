@@ -35,8 +35,19 @@ const meta = {
             "longer assigns — annotate it `GanttTimeUnit`, or drop the " +
             "annotation. The inferred form `onViewModeChange={(mode) => …}` is " +
             "unaffected, and no runtime behaviour changed.",
+          "",
+          "**Deprecated since 5.6.0, removed in 6.0.0:** `loading` → `status` " +
+            '(`loading={true}` is `status="loading"`). The old name still works and ' +
+            "logs one development warning.",
         ].join("\n"),
       },
+    },
+  },
+  argTypes: {
+    loading: {
+      description:
+        'Deprecated since 5.6.0 — use `status` (`true` is `"loading"`, `false` is `"ready"`). Removed in 6.0.0.',
+      table: { category: "Deprecated" },
     },
   },
 } satisfies Meta<typeof Gantt>;
@@ -358,7 +369,7 @@ export const Empty: Story = {
 export const Loading: Story = {
   args: {
     tasks: [],
-    loading: true,
+    status: "loading",
     style: { height: 280 },
   },
 };

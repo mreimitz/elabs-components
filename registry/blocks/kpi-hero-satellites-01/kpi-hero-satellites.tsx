@@ -125,7 +125,7 @@ function HeroColumn({ metric, locale }: { metric: KpiMetric; locale: string }) {
           fit="fill"
           formatValue={(value) => formatKpiValue(value, metric.unit, locale, metric.currency)}
           height={44}
-          labels={{ baseline: "last year" }}
+          messages={{ baseline: "last year" }}
           lastValueSuffix="this wk"
           showLastValue
           values={metric.weekly}

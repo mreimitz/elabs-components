@@ -80,7 +80,7 @@ never guesses at them; you reach for the container directly.
 | A nested hierarchy sized by a measure                              | `treemap`                     | `TreemapChart` (`data: TreemapNode` — a HIERARCHY, not flat rows)               | `NetworkChart` (relations, not size)          | The hierarchy has < 2 levels — flat `bar` is clearer                          |
 | Distribution of one measure, optionally grouped                    | `histogram` / `box` / `strip` | `DistributionChart` (`kind`, `valueKey`, `groupKey`)                            | each other (see `kind`)                       | A single summary number would do — use a `MetricCard`                         |
 | Rank of entities over ordered periods                              | `bump`                        | `BumpChart` (`period`, `entity`, `rankKey` or `valueKey`)                       | `line` (if magnitude, not rank, is the point) | Only 2 periods — use `dumbbell`                                               |
-| A single signed measure around a meaningful zero                   | `diverging-bar`               | `BarChart` (`Bar showValues zeroLine`)                                          | `waterfall` (if it accumulates)               | The zero baseline isn't meaningful — use `bar`                                |
+| A single signed measure around a meaningful zero                   | `diverging-bar`               | `BarChart` (`Bar labels zeroLine`)                                              | `waterfall` (if it accumulates)               | The zero baseline isn't meaningful — use `bar`                                |
 
 ### Manual-select (not inferred — `ChartSpec`/`AutoChart` cannot express these shapes; RM-038's `chart-spec.ts` docblock)
 

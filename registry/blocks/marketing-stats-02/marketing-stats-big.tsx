@@ -142,7 +142,7 @@ export function MarketingStatsBig({
                   fit="fill"
                   fitDomain
                   height={36}
-                  label={`${stat.meaning}, trend`}
+                  accessibleLabel={`${stat.meaning}, trend`}
                   values={stat.series}
                   variant="line"
                 />

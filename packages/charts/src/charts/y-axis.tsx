@@ -19,7 +19,12 @@ import { useChartStable, useYScale } from "./chart-context";
 import { useChartFrameSeriesBridge } from "../chart-frame/inline-chip";
 import { DEFAULT_Y_DOMAIN_TWEEN_MS } from "./chart-phase";
 import { LINE_LOADING_PULSE_EASE } from "./line-loading-timing";
-import { type AxisTickCount, resolveAxisTickTarget, tickTargetForHeight } from "./tick-targets";
+import {
+  type AxisTickCount,
+  resolveAxisTickTarget,
+  tickTargetForHeight,
+  withoutNonFiniteNumTicks,
+} from "./tick-targets";
 import { seriesLabelInk } from "./labels/series-label-ink";
 import {
   type AxisDomain,
@@ -40,12 +45,16 @@ export interface YAxisProps {
   /** Scale group id (Recharts `yAxisId`). Default: `"left"`. */
   yAxisId?: string | number;
   /** Which side of the chart to render labels. Default: `"left"`. */
+  position?: YAxisOrientation;
+  /**
+   * @deprecated Use `position` — the same values (ADR 0042 A.2, row 11). Read until 6.0.0,
+   * with one development warning; when both are set, `position` wins.
+   */
   orientation?: YAxisOrientation;
   /**
-   * Explicit tick count hint for `scale.ticks()` (d3) — the long-standing
-   * override; wins over `tickCount`. Actual label count may differ. Clamped to
-   * {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Default: unset
-   * (→ `tickCount`).
+   * @deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before
+   * (ADR 0042 A.2, row 7). Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link
+   * Y_AXIS_MAX_TICK_COUNT}. Read until 6.0.0, with one development warning.
    */
   numTicks?: number;
   /**
@@ -111,7 +120,7 @@ export interface YAxisProps {
   matchSeriesColor?: boolean;
   /**
    * A caption naming which scale this is, above the tick column (RM-121).
-   * `"auto"` → "Left scale" / "Right scale" by `orientation`, through the
+   * `"auto"` → "Left scale" / "Right scale" by `position`, through the
    * locale seam (`charts.axis.leftScale` / `charts.axis.rightScale`).
    */
   sideLabel?: ReactNode | "auto";
@@ -127,17 +136,18 @@ export const DualAxisContext = createContext(false);
 /** Resolve `sideLabel="auto"` through the locale seam. Internal. */
 export function useSideLabel(
   sideLabel: ReactNode | "auto" | undefined,
-  orientation: YAxisOrientation,
+  position: YAxisOrientation,
 ): ReactNode {
   const { t } = useLocale();
   if (sideLabel !== "auto") return sideLabel;
-  return orientation === "right" ? t("charts.axis.rightScale") : t("charts.axis.leftScale");
+  return position === "right" ? t("charts.axis.rightScale") : t("charts.axis.leftScale");
 }
 
 export function YAxis(rawProps: YAxisProps) {
-  // RM-182: the part's definition (Y_AXIS_PART) maps renamed props (no rows until wave 4)
-  // and fills its defaults before anything reads them.
-  const props = useResolvedChartProps(Y_AXIS_PART, rawProps);
+  // RM-192 (ADR 0042 A.2, rows 7, 11): the part's own alias hook — `numTicks`→`tickCount`
+  // (old-wins) and `orientation`→`position` (new-wins). `withoutNonFiniteNumTicks` keeps a
+  // non-finite `numTicks` from looking "set" to the generic old-wins merge (`tick-targets.ts`).
+  const props = useResolvedChartProps(Y_AXIS_PART, withoutNonFiniteNumTicks(rawProps));
   // RM-117: hand the chart's series colours to an enclosing ChartFrame
   // (read by InlineChip). No visual change; a no-op outside a frame.
   useChartFrameSeriesBridge();
@@ -174,7 +184,7 @@ export function YAxis(rawProps: YAxisProps) {
 
 const YAxisInner = memo(function YAxisInner({
   yAxisId,
-  orientation = "left",
+  position = "left",
   numTicks,
   tickCount,
   ticks: tickValuesProp,
@@ -198,9 +208,9 @@ const YAxisInner = memo(function YAxisInner({
     const own = lines.filter((line) => normalizeYAxisId(line.yAxisId) === axisKey);
     return own.length === 1 && own[0]?.stroke ? seriesLabelInk(own[0].stroke) : undefined;
   }, [matchSeriesColor, lines, axisKey]);
-  const resolvedSideLabel = useSideLabel(sideLabel, orientation);
+  const resolvedSideLabel = useSideLabel(sideLabel, position);
   const yScale = useYScale(yAxisId);
-  const isLeft = orientation === "left";
+  const isLeft = position === "left";
   const isInside = labelPlacement === "inside";
 
   const resolvedFormat = valueFormat;
@@ -347,7 +357,7 @@ const YAxisInner = memo(function YAxisInner({
           innerWidth={innerWidth}
           margin={margin}
           placement={titlePlacement}
-          side={orientation}
+          side={position}
           width={width}
         >
           {heading}

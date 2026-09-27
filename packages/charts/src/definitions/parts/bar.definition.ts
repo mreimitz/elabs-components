@@ -12,6 +12,7 @@
 import { field } from "@elabs-ai/components-ui/definition";
 
 import type { BarProps } from "../../charts/bar";
+import { dataLabelsGroup } from "../../charts/props/data-labels";
 import { paletteGroup } from "../../charts/props/palette";
 import { seriesGroup } from "../../charts/props/series";
 import { partialFieldFor } from "../../charts/props/typed-field";
@@ -24,7 +25,10 @@ export const BAR_PART = /* @__PURE__ */ definePart<BarProps>()({
   version: 1,
   label: "Bar series",
   description: "One series of bars in a bar chart, read from one field of each row.",
-  groups: [],
+  // RM-193 (charts-group-drift): `dataLabelsGroup` is applied so Bar's own, richer `labels`
+  // field (placement/visibility, below) is a declared OVERRIDE of the group's plain flag, not
+  // an unrelated field that happens to share its name.
+  groups: [dataLabelsGroup],
   fields: {
     dataKey: seriesGroup.fields.dataKey,
     yAxisId: yAxisIdField,
@@ -76,7 +80,7 @@ export const BAR_PART = /* @__PURE__ */ definePart<BarProps>()({
       description: "Gap between grouped bars.",
     }),
     // A `filter` function inside the spec stays code-only.
-    showValues: partialFieldFor<BarProps["showValues"]>()(
+    labels: partialFieldFor<BarProps["labels"]>()(
       field.union({
         of: [
           field.boolean(),
@@ -85,6 +89,10 @@ export const BAR_PART = /* @__PURE__ */ definePart<BarProps>()({
             fields: {
               placement: field.enum({ values: ["inside", "outside", "auto"] }),
               visibility: field.enum({ values: ["always", "hover"] }),
+              // RM-193 review P2-7: the shared `data-labels` group's own on/off member —
+              // `show: false` turns the label off even though the rest of the object is a
+              // real spec.
+              show: field.boolean(),
             },
           }),
         ],
@@ -121,4 +129,15 @@ export const BAR_PART = /* @__PURE__ */ definePart<BarProps>()({
     groupGap: 4,
   },
   targets: [],
+  // RM-193 — ADR 0042 A.3, row 12. `BarShowValues` moves as is: `identity`.
+  aliases: [
+    {
+      from: "showValues",
+      to: "labels",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ],
 });

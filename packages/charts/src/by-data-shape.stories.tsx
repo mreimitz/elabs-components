@@ -366,7 +366,7 @@ export const RealTimeSeries: Story = story(
       accessibleLabel="Live metric, last 30 seconds"
       data={liveSample}
       value={liveLatest}
-      window={30}
+      windowSeconds={30}
     >
       <LiveLine curve={curveMonotoneX} dataKey="value" />
       <LiveXAxis />
@@ -916,7 +916,7 @@ export const FunnelDropoff: Story = story(
       data={conversionFunnel}
       orientation="horizontal"
       showLabels
-      showValues
+      labels
     />
   </div>,
 );

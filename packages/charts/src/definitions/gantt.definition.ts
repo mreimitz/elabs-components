@@ -17,6 +17,11 @@
  * `className`, `children` and Gantt's own `onSelect`) rather than declaring a codeOnly
  * entry for each key. No behaviour change.
  *
+ * RM-194 (ADR 0042 A.4, row 19): `loading` → `status`, an alias row until 6.0.0. `status` and
+ * `empty` come from the `chart-state` group; the kind default `status: "ready"` is the old
+ * `loading: false`. `empty` has no kind default: unset, the empty state reads the
+ * `charts.gantt.noTasksToDisplay` message, as before.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -24,6 +29,8 @@ import type { HTMLAttributes } from "react";
 
 import { field } from "@elabs-ai/components-ui/definition";
 
+import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
+import { chartStateGroup } from "../charts/props/chart-state";
 import type { GanttProps } from "../gantt/gantt";
 import { looseFieldFor } from "../charts/props/typed-field";
 import { classNameField } from "./cartesian-fields";
@@ -42,7 +49,7 @@ export const GANTT = /* @__PURE__ */ defineChart<GanttDefinitionProps>()({
   label: "Gantt chart",
   description: "Scheduled tasks against a timeline, with dependencies and progress.",
   specTypes: [],
-  groups: [messagesGroup],
+  groups: [messagesGroup, chartStateGroup],
   fields: {
     tasks: looseFieldFor<GanttProps["tasks"]>()(
       field.array({
@@ -113,10 +120,6 @@ export const GANTT = /* @__PURE__ */ defineChart<GanttDefinitionProps>()({
       tier: "advanced",
       description: "Left pane width. Ignored when columns is set.",
     }),
-    loading: field.boolean({
-      tier: "essential",
-      description: "A shimmer loading state instead of the task tree and canvas.",
-    }),
     className: classNameField,
   },
   codeOnly: [
@@ -151,8 +154,19 @@ export const GANTT = /* @__PURE__ */ defineChart<GanttDefinitionProps>()({
   defaults: {
     density: "comfortable",
     labelColumnWidth: 240,
-    loading: false,
+    status: DEFAULT_CHART_STATUS,
   },
+  // RM-194 — ADR 0042 A.4 row 19.
+  aliases: [
+    {
+      from: "loading",
+      to: "status",
+      transform: "loading-to-status",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ],
   targets: [],
   contract: {
     dataProp: "tasks",

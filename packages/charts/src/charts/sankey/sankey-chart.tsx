@@ -92,8 +92,20 @@ export interface SankeyChartProps {
   /** Child components (SankeyNode, SankeyLink, SankeyTooltip) */
   children: ReactNode;
   /** Controlled hovered node index (e.g. from ChartLegend). */
+  hoveredIndex?: number | null;
+  /**
+   * Controlled hovered node index.
+   *
+   * @deprecated Since 5.6.0, use `hoveredIndex`. Removed in 6.0.0.
+   */
   hoveredNodeIndex?: number | null;
   /** Called when node hover changes from the chart surface. */
+  onHoverChange?: (index: number | null) => void;
+  /**
+   * Called when node hover changes from the chart surface.
+   *
+   * @deprecated Since 5.6.0, use `onHoverChange`. Removed in 6.0.0.
+   */
   onNodeHoverChange?: (index: number | null) => void;
   /**
    * Rendering mode (RM-037). `"aggregate"` (default) is today's behavior —
@@ -546,8 +558,8 @@ const SankeyChartUnscoped = forwardRef<HTMLDivElement, SankeyChartProps>(
       nodePadding = 24,
       className = "",
       children,
-      hoveredNodeIndex,
-      onNodeHoverChange,
+      hoveredIndex,
+      onHoverChange,
       mode = "aggregate",
       accessibleLabel,
       accessibleDescription,
@@ -621,12 +633,12 @@ const SankeyChartUnscoped = forwardRef<HTMLDivElement, SankeyChartProps>(
                   data={data}
                   enterTransition={enterTransition}
                   height={height}
-                  hoveredNodeIndexProp={hoveredNodeIndex}
+                  hoveredNodeIndexProp={hoveredIndex}
                   margin={margin}
                   mode={mode}
                   nodePadding={nodePadding}
                   nodeWidth={nodeWidth}
-                  onNodeHoverChange={onNodeHoverChange}
+                  onNodeHoverChange={onHoverChange}
                   revealSignature={revealSignature}
                   width={width}
                 >

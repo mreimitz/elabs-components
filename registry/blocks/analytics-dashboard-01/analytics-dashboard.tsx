@@ -162,7 +162,7 @@ export function AnalyticsDashboard({
               fit="fill"
               fitDomain
               height={36}
-              label="Network revenue, last 12 months"
+              accessibleLabel="Network revenue, last 12 months"
               values={facts.trend12}
               variant="line"
             />

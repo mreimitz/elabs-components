@@ -413,7 +413,7 @@ export const AreaMultiplesDeltaFigures: Story = {
           <Grid horizontal />
           <Area dataKey="price" name={panel.title} />
           <XAxis />
-          <YAxis orientation="right" />
+          <YAxis position="right" />
         </AreaChart>
       )}
     </ChartMultiples>

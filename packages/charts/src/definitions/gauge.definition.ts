@@ -4,9 +4,14 @@
  * destructuring of `GaugeInner`/its outer wrapper (`charts/gauge.tsx`).
  * `activeFillOpacity`/`inactiveFillOpacity` have no kind default: both are
  * resolved with `??` against a module constant inside the component, never a
- * literal destructuring default. `labels` has no kind default either: it is
- * shallow-merged against `DEFAULT_GAUGE_LABELS` inside the component, never
- * assigned that object as its own default.
+ * literal destructuring default. `messages` has no kind default either: its
+ * word-bag keys are shallow-merged against `DEFAULT_GAUGE_LABELS` inside the
+ * component, never assigned that object as its own default.
+ *
+ * RM-191 (ADR 0042 A.1 row 2): the word-bag `labels` moved to `messages`, which
+ * comes from the `messages` group — no own field of that name. Its word-bag key
+ * (`target`) sits beside the group's `charts.*` keys; the group's open object
+ * accepts both. The old name stays readable through the alias row until 6.0.0.
  *
  * `formatOptions`, `enterTransition`, `remainingLabel` and `children` (defs
  * elements — gradients/patterns, the same convention as `PieChart`) are each a
@@ -19,6 +24,7 @@
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
 import type { GaugeProps } from "../charts/gauge";
+import { messagesGroup } from "../charts/props/messages";
 import { defineSurface } from "./define-chart";
 
 export const GAUGE = /* @__PURE__ */ defineSurface<GaugeProps>()({
@@ -26,7 +32,7 @@ export const GAUGE = /* @__PURE__ */ defineSurface<GaugeProps>()({
   version: 1,
   label: "Gauge",
   description: "A single value on a radial notch dial, 0–100.",
-  groups: [a11yGroup],
+  groups: [a11yGroup, messagesGroup],
   fields: {
     value: field.number({
       min: 0,
@@ -131,11 +137,6 @@ export const GAUGE = /* @__PURE__ */ defineSurface<GaugeProps>()({
       tier: "advanced",
       description: "Named bands marked with short outer-rim ticks.",
     }),
-    labels: field.object({
-      fields: { target: field.string() },
-      tier: "advanced",
-      description: "Overrides the shipped English words the accessible text uses.",
-    }),
   },
   codeOnly: ["formatOptions", "enterTransition", "remainingLabel", "children"],
   defaults: {
@@ -152,4 +153,15 @@ export const GAUGE = /* @__PURE__ */ defineSurface<GaugeProps>()({
     minWidth: 300,
   },
   targets: [],
+  // RM-191 — ADR 0042 A.1 row 2.
+  aliases: [
+    {
+      from: "labels",
+      to: "messages",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+  ],
 });

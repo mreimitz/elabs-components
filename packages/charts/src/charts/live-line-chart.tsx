@@ -63,6 +63,12 @@ export interface LiveLineChartProps
   /** Key used for the value field in context data. Default: "value" */
   dataKey?: string;
   /** Visible time window in seconds. Default: 30 */
+  windowSeconds?: number;
+  /**
+   * Visible time window in seconds.
+   *
+   * @deprecated Since 5.6.0, use `windowSeconds`. Removed in 6.0.0.
+   */
   window?: number;
   /** Number of X-axis ticks (used to compute leading offset). Default: 5 */
   numXTicks?: number;
@@ -659,7 +665,7 @@ export const LiveLineChart = forwardRef<HTMLDivElement, LiveLineChartProps>(
       data,
       value,
       dataKey,
-      window: windowSecs,
+      windowSeconds: windowSecs,
       numXTicks,
       nowOffsetUnits,
       exaggerate,

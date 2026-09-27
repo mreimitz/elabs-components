@@ -51,8 +51,40 @@ const meta = {
           "A grid of two categorical axes — weekday by hour, or any category by category — " +
           'shaded or sized by one numeric value per cell, with a `variant="calendar"` mode ' +
           "for one measure per day across a year. Cell fill suits few, dense cells; " +
-          '`mode="dot"` reads better once cells get small and numerous.',
+          '`mode="dot"` reads better once cells get small and numerous.' +
+          "\n\n**Deprecated since 5.6.0, removed in 6.0.0** — each old name still works and " +
+          "logs one development warning: `showLegend` → `legend`; `loading` → " +
+          '`status` (`loading={true}` is `status="loading"`); `emptyTitle` / ' +
+          "`emptyMessage` / `emptyAction` → `empty: { title, message, action }`; " +
+          "`showValues` → `labels`.",
       },
+    },
+  },
+  argTypes: {
+    showLegend: {
+      description: "Deprecated since 5.6.0 — use `legend`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    loading: {
+      description:
+        'Deprecated since 5.6.0 — use `status` (`true` is `"loading"`, `false` is `"ready"`). Removed in 6.0.0.',
+      table: { category: "Deprecated" },
+    },
+    emptyTitle: {
+      description: "Deprecated since 5.6.0 — use `empty.title`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    emptyMessage: {
+      description: "Deprecated since 5.6.0 — use `empty.message`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    emptyAction: {
+      description: "Deprecated since 5.6.0 — use `empty.action`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
+    },
+    showValues: {
+      description: "Deprecated since 5.6.0 — use `labels`. Removed in 6.0.0.",
+      table: { category: "Deprecated" },
     },
   },
 } satisfies Meta<typeof HeatmapChart>;
@@ -205,7 +237,7 @@ export const MatrixWithValues: Story = {
     x: "region",
     y: "product",
     valueKey: "revenue",
-    showValues: true,
+    labels: true,
     cellRadius: 9,
     valueFormat: "compact",
     aspectRatio: "5 / 3",
@@ -442,7 +474,7 @@ export const DivergingDark: Story = {
 /** The same data with the labels off — sign then rides a 45° hatch. */
 export const DivergingHatched: Story = {
   name: "Diverging — hatched (labels off)",
-  args: { ...Diverging.args, showValues: false },
+  args: { ...Diverging.args, labels: false },
   render: Diverging.render,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -470,7 +502,7 @@ export const ZeroVersusMissing: Story = {
     y: "product",
     valueKey: "delta",
     palette: "diverging",
-    showValues: false,
+    labels: false,
     cellRadius: 6,
     aspectRatio: "5 / 3",
   },
@@ -491,7 +523,7 @@ export const ZeroVersusMissing: Story = {
 
 /** The layout-shaped skeleton: the same grid, so nothing shifts when data lands. */
 export const Loading: Story = {
-  args: { ...Matrix.args, loading: true },
+  args: { ...Matrix.args, status: "loading" },
   render: Matrix.render,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -528,16 +560,18 @@ export const Empty: Story = {
     x: "hour",
     y: "day",
     valueKey: "count",
-    emptyTitle: "No traffic",
-    emptyMessage: "No traffic recorded.",
-    emptyAction: (
-      <button
-        className="focus-ring rounded-md border border-input px-3 py-1 text-body"
-        type="button"
-      >
-        Clear filters
-      </button>
-    ),
+    empty: {
+      title: "No traffic",
+      message: "No traffic recorded.",
+      action: (
+        <button
+          className="focus-ring rounded-md border border-input px-3 py-1 text-body"
+          type="button"
+        >
+          Clear filters
+        </button>
+      ),
+    },
   },
   render: (args) => (
     <div className="w-[560px]">
@@ -585,7 +619,7 @@ function DrilldownDemo() {
         cellRadius={9}
         data={REVENUE}
         onDatapointClick={(point) => setSelected(point)}
-        showValues
+        labels
         valueFormat="compact"
         valueKey="revenue"
         x="region"

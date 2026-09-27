@@ -438,3 +438,88 @@ describe("fitEndLabels (#281)", () => {
     }
   });
 });
+
+// ── RM-195: `highlightKey` widens to `string | number` (ADR 0042 A.7) ──
+// A type widening only — no alias row, no warning (unlike the renames above).
+
+describe("BumpChart highlightKey (RM-195)", () => {
+  // Entities named "1" / "2" so a NUMBER highlightKey can only match by the
+  // `==`-free `String(...)` rule (never a coincidental strict `===`).
+  const numericEntityData = [
+    { quarter: "Q1", product: "1", share: 10 },
+    { quarter: "Q1", product: "2", share: 20 },
+    { quarter: "Q2", product: "1", share: 15 },
+    { quarter: "Q2", product: "2", share: 25 },
+  ];
+
+  const heroStroke = (container: HTMLElement) =>
+    container.querySelector(
+      '[data-slot="bump-chart-series"] path[stroke="var(--chart-foreground)"]',
+    );
+
+  it("accepts a number, matched against the entity via String()", () => {
+    const { container } = render(
+      <BumpChart
+        data={numericEntityData}
+        entity="product"
+        highlightKey={2}
+        period="quarter"
+        valueKey="share"
+      />,
+    );
+    expect(heroStroke(container)).not.toBeNull();
+  });
+
+  it("a numeric highlightKey renders identically to the equivalent string", () => {
+    const chart = (highlightKey: string | number) =>
+      render(
+        <BumpChart
+          data={numericEntityData}
+          entity="product"
+          highlightKey={highlightKey}
+          period="quarter"
+          valueKey="share"
+        />,
+      ).container.innerHTML;
+    expect(chart(2)).toBe(chart("2"));
+  });
+
+  it("no hero renders when highlightKey names no entity", () => {
+    const { container } = render(
+      <BumpChart
+        data={numericEntityData}
+        entity="product"
+        highlightKey={99}
+        period="quarter"
+        valueKey="share"
+      />,
+    );
+    expect(heroStroke(container)).toBeNull();
+  });
+
+  it('a null highlightKey never matches an entity literally named "null"', () => {
+    // The bug this guards: `highlightKey === undefined ? undefined : String(highlightKey)`
+    // turns `null` into the STRING "null", which would coincidentally hero an
+    // entity actually named "null" — `== null` treats both `null` and
+    // `undefined` as "no highlight", matching
+    // ParallelCoordinatesChart's `resolveHeroEntity`.
+    const dataWithNullNamedEntity = [
+      { quarter: "Q1", product: "null", share: 10 },
+      { quarter: "Q1", product: "Atlas", share: 20 },
+      { quarter: "Q2", product: "null", share: 15 },
+      { quarter: "Q2", product: "Atlas", share: 25 },
+    ];
+    const { container } = render(
+      <BumpChart
+        data={dataWithNullNamedEntity}
+        entity="product"
+        // @ts-expect-error — `null` is handled defensively, not part of the public
+        // `string | number` type.
+        highlightKey={null}
+        period="quarter"
+        valueKey="share"
+      />,
+    );
+    expect(heroStroke(container)).toBeNull();
+  });
+});

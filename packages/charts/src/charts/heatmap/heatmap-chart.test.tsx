@@ -14,14 +14,35 @@
  *
  * The rendered pass (cells, ticks, tooltip, click and keyboard) lives in
  * `heatmap-chart.stories.tsx`, run by `pnpm --filter @elabs-ai/components-docs test-storybook`.
+ *
+ * `ChartParentSize` is replaced by a stand-in that reports `plot` — 0 × 0 by
+ * default, what jsdom measures, so every test above keeps that limitation. The
+ * RM-194 renamed-prop tests set a real size when they need the body (the
+ * loading skeleton lives behind the size guard).
  */
 
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { render, screen } from "@testing-library/react";
-import { beforeAll, describe, expect, it } from "vitest";
+import type { ReactElement } from "react";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { resetWarnOnce, toJsonSchema } from "@elabs-ai/components-ui/definition";
+import { HEATMAP_CHART } from "../../definitions/heatmap-chart.definition";
+import { HeatmapChart as HeatmapChartDouble } from "../../test";
 import { HeatmapChart } from "./heatmap-chart";
+
+const plot = vi.hoisted(() => ({ width: 0, height: 0 }));
+vi.mock("../chart-parent-size", async () => {
+  const React = await import("react");
+  return {
+    ChartParentSize: ({
+      children,
+    }: {
+      children: (size: { width: number; height: number }) => React.ReactNode;
+    }) => React.createElement("div", null, children({ width: plot.width, height: plot.height })),
+  };
+});
 
 beforeAll(() => {
   if (typeof window !== "undefined" && !window.ResizeObserver) {
@@ -31,6 +52,15 @@ beforeAll(() => {
       disconnect() {}
     };
   }
+  // The rendered body (RM-194 tests) plays its reveal off an IntersectionObserver.
+  globalThis.IntersectionObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return [];
+    }
+  } as unknown as typeof IntersectionObserver;
 });
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -153,7 +183,13 @@ describe("HeatmapChart", () => {
 
     it("keeps the figure name, the root slot and exactly one live region", () => {
       const { container } = render(
-        <HeatmapChart data={[]} emptyMessage="Nothing yet." valueKey="count" x="hour" y="day" />,
+        <HeatmapChart
+          data={[]}
+          empty={{ message: "Nothing yet." }}
+          valueKey="count"
+          x="hour"
+          y="day"
+        />,
       );
       const figure = screen.getByRole("figure");
       expect(figure).toHaveAccessibleName("Heatmap, 0 rows × 0 columns, no values.");
@@ -173,8 +209,7 @@ describe("HeatmapChart", () => {
       render(
         <HeatmapChart
           data={[]}
-          emptyAction={<button type="button">Clear filters</button>}
-          emptyTitle="No traffic"
+          empty={{ action: <button type="button">Clear filters</button>, title: "No traffic" }}
           valueKey="count"
           x="hour"
           y="day"
@@ -265,5 +300,248 @@ describe("HeatmapChart", () => {
       );
       expect(cell).toContain("export const DEFAULT_EMPTY_MARK_SCALE = 0.6;");
     });
+  });
+});
+
+// ── RM-194: renamed props (ADR 0042 A.4 rows 17, 18, 20–22) ─────────────────
+
+/** One render's markup, `useId` tokens renumbered so two renders compare. */
+function markupOf(ui: ReactElement): string {
+  const { container, unmount } = render(ui);
+  const html = container.innerHTML;
+  unmount();
+  const ids = [...new Set(html.match(/_r_[0-9a-z]+_|«r[0-9a-z]+»|:r[0-9a-z]+:/g) ?? [])];
+  return ids.reduce((out, id, i) => out.split(id).join(`@id${i}@`), html);
+}
+
+/** The `console.warn` calls that are deprecation warnings. */
+const deprecations = (spy: { mock: { calls: unknown[][] } }) =>
+  spy.mock.calls.filter(([message]) => String(message).includes("is deprecated"));
+
+describe("HeatmapChart renamed props (RM-194)", () => {
+  const base = { valueKey: "count", x: "hour", y: "day" } as const;
+  const action = <button type="button">Clear filters</button>;
+
+  afterEach(() => {
+    plot.width = 0;
+    plot.height = 0;
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  // Each case: the old name, the new one, and the markup the old name must NOT produce
+  // (the default), so "renders identically" is never two defaults compared.
+  const rows = [
+    {
+      from: "showLegend",
+      to: "legend",
+      old: { data: punchCard, showLegend: false },
+      next: { data: punchCard, legend: false },
+    },
+    {
+      from: "loading",
+      to: "status",
+      old: { data: punchCard, loading: true },
+      next: { data: punchCard, status: "loading" as const },
+    },
+    {
+      from: "emptyTitle",
+      to: "empty.title",
+      old: { data: [], emptyTitle: "No traffic" },
+      next: { data: [], empty: { title: "No traffic" } },
+    },
+    {
+      from: "emptyMessage",
+      to: "empty.message",
+      old: { data: [], emptyMessage: "No traffic recorded." },
+      next: { data: [], empty: { message: "No traffic recorded." } },
+    },
+    {
+      from: "emptyAction",
+      to: "empty.action",
+      old: { data: [], emptyAction: action },
+      next: { data: [], empty: { action } },
+    },
+    // RM-193 (ADR 0042 A.3 row 14) — not in RM-193's own `touches` list, but its own
+    // acceptance criteria require deprecation coverage per family; flagged as a
+    // deviation in the final report. `palette` defaults to "sequential" here, so the
+    // default (neither name given) renders `labels: false` — distinct from both.
+    {
+      from: "showValues",
+      to: "labels",
+      old: { data: punchCard, showValues: true },
+      next: { data: punchCard, labels: true },
+    },
+  ];
+
+  it.each(rows)("$from renders exactly what $to renders", ({ old, next }) => {
+    plot.width = 400;
+    plot.height = 300;
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const viaOld = markupOf(<HeatmapChart {...base} {...old} />);
+    expect(viaOld).toBe(markupOf(<HeatmapChart {...base} {...next} />));
+    expect(viaOld).not.toBe(markupOf(<HeatmapChart {...base} data={old.data} />));
+  });
+
+  it.each(rows)("$from warns once in development, naming $to", ({ from, to, old }) => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<HeatmapChart {...base} {...old} />).unmount();
+    render(<HeatmapChart {...base} {...old} />).unmount();
+    expect(deprecations(spy)).toEqual([
+      [`[HeatmapChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}".`],
+    ]);
+  });
+
+  it.each(rows)("$from never warns in production", ({ old }) => {
+    resetWarnOnce();
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<HeatmapChart {...base} {...old} />).unmount();
+    expect(deprecations(spy)).toEqual([]);
+  });
+
+  it.each(rows)(
+    "$from keeps the ./test double silent under the default deprecatedProps",
+    ({ old }) => {
+      resetWarnOnce();
+      const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      render(<HeatmapChartDouble {...base} {...old} />).unmount();
+      expect(spy).not.toHaveBeenCalled();
+    },
+  );
+
+  it('loading={true} and status="loading" draw the same skeleton at the same time', () => {
+    plot.width = 400;
+    plot.height = 300;
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const viaOld = render(<HeatmapChart {...base} data={punchCard} loading />);
+    const skeleton = viaOld.container.querySelector('[data-slot="heatmap-skeleton"]');
+    expect(skeleton).not.toBeNull();
+    const html = skeleton?.outerHTML;
+    viaOld.unmount();
+    const viaNew = render(<HeatmapChart {...base} data={punchCard} status="loading" />);
+    expect(viaNew.container.querySelector('[data-slot="heatmap-skeleton"]')?.outerHTML).toBe(html);
+  });
+
+  it("lets the new name win when both are given (new-wins)", () => {
+    plot.width = 400;
+    plot.height = 300;
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const legend = render(<HeatmapChart {...base} data={punchCard} legend={false} showLegend />);
+    expect(legend.container.querySelector('[data-slot="heatmap-legend"]')).toBeNull();
+    legend.unmount();
+    const ready = render(<HeatmapChart {...base} data={punchCard} loading status="ready" />);
+    expect(ready.container.querySelector('[data-slot="heatmap-skeleton"]')).toBeNull();
+    ready.unmount();
+    render(
+      <HeatmapChart
+        {...base}
+        data={[]}
+        empty={{ title: "New title", message: "New message" }}
+        emptyMessage="Old message"
+        emptyTitle="Old title"
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "New title" })).toBeInTheDocument();
+    expect(screen.getByText("New message")).toBeInTheDocument();
+    expect(screen.queryByText("Old message")).toBeNull();
+  });
+
+  it("says an old name was ignored when its new name is also given", () => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <HeatmapChart
+        {...base}
+        data={[]}
+        legend
+        showLegend={false}
+        empty={{ title: "New title" }}
+        emptyTitle="Old title"
+        emptyMessage="Kept message"
+      />,
+    ).unmount();
+    const ignored = (from: string, to: string) =>
+      `[HeatmapChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}". ` +
+      `"${from}" was ignored because "${to}" is set.`;
+    expect(deprecations(spy)).toEqual([
+      [ignored("showLegend", "legend")],
+      [ignored("emptyTitle", "empty.title")],
+      [
+        '[HeatmapChart] "emptyMessage" is deprecated and will be removed in 6.0.0. Use "empty.message".',
+      ],
+    ]);
+  });
+
+  it("showValues → labels: new-wins, and says which one was dropped", () => {
+    plot.width = 400;
+    plot.height = 300;
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    // RM-193 review P2-8: this used to assert only the warning, never what actually
+    // rendered — a mutation that dropped `new-wins` and kept `showValues` winning
+    // instead would still have passed every assertion here.
+    const { container } = render(
+      <HeatmapChart {...base} data={punchCard} labels={false} showValues />,
+    );
+    expect(container.querySelectorAll('[data-slot="halo-text"]')).toHaveLength(0);
+    expect(deprecations(spy)).toEqual([
+      [
+        '[HeatmapChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels". ' +
+          '"showValues" was ignored because "labels" is set.',
+      ],
+    ]);
+  });
+
+  it("with neither `showValues` nor `labels`, keeps the palette-driven default (RM-193 acceptance)", () => {
+    plot.width = 400;
+    plot.height = 300;
+    const sequential = render(<HeatmapChart {...base} data={punchCard} />);
+    expect(sequential.container.querySelectorAll('[data-slot="halo-text"]')).toHaveLength(0);
+    sequential.unmount();
+    const diverging = render(<HeatmapChart {...base} data={punchCard} palette="diverging" />);
+    expect(diverging.container.querySelectorAll('[data-slot="halo-text"]').length).toBeGreaterThan(
+      0,
+    );
+  });
+
+  it("`labels={{}}` (no `show` key) also keeps the palette-driven default, same as unset (re-review)", () => {
+    plot.width = 400;
+    plot.height = 300;
+    const sequential = render(<HeatmapChart {...base} data={punchCard} labels={{}} />);
+    expect(sequential.container.querySelectorAll('[data-slot="halo-text"]')).toHaveLength(0);
+    sequential.unmount();
+    const diverging = render(
+      <HeatmapChart {...base} data={punchCard} labels={{}} palette="diverging" />,
+    );
+    expect(diverging.container.querySelectorAll('[data-slot="halo-text"]').length).toBeGreaterThan(
+      0,
+    );
+  });
+
+  it("leaves the code-only emptyAction out of the JSON Schema and types the other old names", () => {
+    const properties = toJsonSchema(HEATMAP_CHART).properties as Record<string, unknown>;
+    expect(properties).not.toHaveProperty("emptyAction");
+    expect(properties).toMatchObject({
+      showLegend: { type: "boolean", deprecated: true },
+      emptyTitle: { type: "string", deprecated: true },
+      emptyMessage: { type: "string", deprecated: true },
+    });
+  });
+
+  it("merges an old empty name into a partial empty object, key by key", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <HeatmapChart {...base} data={[]} empty={{ message: "Only a message" }} emptyTitle="Old" />,
+    );
+    expect(screen.getByRole("heading", { name: "Old" })).toBeInTheDocument();
+    expect(screen.getByText("Only a message")).toBeInTheDocument();
+  });
+
+  it("keeps the default title when only empty.message is set", () => {
+    render(<HeatmapChart {...base} data={[]} empty={{ message: "Only a message" }} />);
+    expect(screen.getByRole("heading", { name: "No data" })).toBeInTheDocument();
+    expect(screen.getByText("Only a message")).toBeInTheDocument();
   });
 });

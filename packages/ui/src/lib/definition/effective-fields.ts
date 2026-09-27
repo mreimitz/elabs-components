@@ -135,3 +135,17 @@ export function planOf(def: AnyComponentDefinition): DefinitionPlan {
   plans.set(def, plan);
   return plan;
 }
+
+/**
+ * The field an alias row's `to` names: a prop's own field or, for a dotted path
+ * (`"empty.title"`), that member of an object prop's field. `undefined` when the
+ * path names no described field (a code-only member such as `empty.action`).
+ */
+export function aliasTargetField(plan: DefinitionPlan, to: string): AnyField | undefined {
+  const [key = "", ...members] = to.split(".");
+  let field: AnyField | undefined = plan.byKey.get(key)?.field;
+  for (const member of members) {
+    field = field?.kind === "object" ? field.fields[member] : undefined;
+  }
+  return field;
+}

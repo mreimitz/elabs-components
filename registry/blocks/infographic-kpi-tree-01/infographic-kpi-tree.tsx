@@ -222,7 +222,7 @@ function KpiTreeCard({ metric, selected, locale, currency, pillOnRight }: KpiTre
         <Sparkline
           fitDomain
           height={28}
-          label={`${metric.name}, last 12 months`}
+          accessibleLabel={`${metric.name}, last 12 months`}
           values={metric.monthly.slice(-12)}
           variant="line"
           // Growing across, the chart's open/close pill sits on the card's right edge, mid-height — the sparkline stops short of it.
@@ -490,7 +490,7 @@ export function InfographicKpiTree({
           <TreeChart<KpiTreeMetric>
             accessibleDescription={`${endpoints}; ${splitSentence}.`}
             accessibleLabel={`${root.name} driver tree`}
-            align="center"
+            plotAlign="center"
             data={data}
             datapointLabel={(point) =>
               labelFor(point.datum as unknown as TreeDatapointDatum<KpiTreeMetric>)
@@ -508,7 +508,7 @@ export function InfographicKpiTree({
             renderLink={(link: TreeChartLinkRenderProps<KpiTreeMetric>) => (
               <KpiTreeLinkOperator link={link} />
             )}
-            zoomable
+            zoom
             renderNode={(node: TreeChartNodeRenderProps<KpiTreeMetric>) => (
               <KpiTreeCard
                 currency={currency}

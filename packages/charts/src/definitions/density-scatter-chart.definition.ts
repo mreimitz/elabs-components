@@ -13,6 +13,11 @@
  * definition's props type omits it (keeping only `className`) rather than declaring a
  * codeOnly entry for each key. No behaviour change.
  *
+ * RM-191 (ADR 0042 A.1 row 4): the word-bag `labels` moved to `messages`, which comes from the
+ * `messages` group — no own field and no code-only entry of that name. Its word-bag keys sit
+ * beside the group's `charts.*` keys; the group's open object accepts both. The old name stays
+ * readable through the alias row until 6.0.0.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
@@ -24,6 +29,7 @@ import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
 import { chartStateGroup } from "../charts/props/chart-state";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { legendGroup } from "../charts/props/legend";
+import { messagesGroup } from "../charts/props/messages";
 import type { DensityScatterChartProps } from "../charts/density-scatter/density-scatter-chart";
 import { looseFieldFor } from "../charts/props/typed-field";
 import { aspectRatioField, classNameField } from "./cartesian-fields";
@@ -43,7 +49,7 @@ export const DENSITY_SCATTER_CHART =
     label: "Density scatter plot",
     description: "A large point cloud, shaded by density or zone.",
     specTypes: [],
-    groups: [a11yGroup, frameSizeGroup],
+    groups: [a11yGroup, frameSizeGroup, messagesGroup],
     fields: {
       // Palette — RM-186: no default; unset keeps the family's own colours.
       palette: paletteGroup.fields.palette,
@@ -128,7 +134,6 @@ export const DENSITY_SCATTER_CHART =
       "formatX",
       "formatY",
       "formatValue",
-      "labels",
       "onFrame",
       "hiddenKeys",
       "onHiddenKeysChange",
@@ -145,6 +150,17 @@ export const DENSITY_SCATTER_CHART =
       status: DEFAULT_CHART_STATUS,
     },
     targets: [],
+    // RM-191 — ADR 0042 A.1 row 4.
+    aliases: [
+      {
+        from: "labels",
+        to: "messages",
+        transform: "identity",
+        precedence: "new-wins",
+        since: "5.6.0",
+        removeIn: "6.0.0",
+      },
+    ],
     contract: {
       dataKind: "none",
       requiredProps: ["data"],
