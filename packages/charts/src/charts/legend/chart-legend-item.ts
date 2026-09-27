@@ -1,17 +1,15 @@
-/**
- * chart-legend-item.ts — the one legend row type.
- *
- * Every legend surface describes its rows with `ChartLegendItem`: the entries
- * a chart container publishes, the legend the container engine mounts, the
- * composable `Legend`, `pieLegendItems` and a scatter encoding key. Each keeps
- * its own public name as an interface extending a `LegendItemShape` projection (the fields it uses,
- * each required or optional exactly as before), so the names stay what
- * consumers already hold while the fields are documented once, here.
- *
- * Internal: `ChartLegendItem` and `LegendItemShape` are not exported from the
- * package entry point; the public names are `LegendItem`, `LegendItemData`,
- * `PieLegendItem` and `ScatterEncodingLegendItem`.
- */
+// chart-legend-item.ts — the one legend row type.
+//
+// Every legend surface describes its rows with `ChartLegendItem`: the entries
+// a chart container publishes, the legend the container engine mounts, the
+// composable `Legend`, `pieLegendItems` and a scatter encoding key. Each keeps
+// its own public name as an interface extending a `LegendItemShape` projection (the fields it uses,
+// each required or optional exactly as before), so the names stay what
+// consumers already hold while the fields are documented once, here.
+//
+// Internal: `ChartLegendItem` and `LegendItemShape` are not exported from the
+// package entry point; the public names are `LegendItem`, `LegendItemData`,
+// `PieLegendItem` and `ScatterEncodingLegendItem`.
 
 import type { SeriesMarkerShape } from "../series-pattern";
 

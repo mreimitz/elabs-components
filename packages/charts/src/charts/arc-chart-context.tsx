@@ -1,14 +1,12 @@
 "use client";
 
-/**
- * arc-chart-context.tsx — the one context shape `PieChart` and `RingChart`
- * share: the fields both publish, the split stable/hover providers, the
- * guarded hooks and the one default colour list. Each family extends the
- * stable shape with its own geometry and keeps its public names
- * (`PieProvider`/`usePie*`, `RingProvider`/`useRing*`).
- *
- * Internal: not exported from the package entry point.
- */
+// arc-chart-context.tsx — the one context shape `PieChart` and `RingChart`
+// share: the fields both publish, the split stable/hover providers, the
+// guarded hooks and the one default colour list. Each family extends the
+// stable shape with its own geometry and keeps its public names
+// (`PieProvider`/`usePie*`, `RingProvider`/`useRing*`).
+//
+// Internal: not exported from the package entry point.
 
 import type { Transition } from "motion/react";
 import { type Context, createContext, type RefObject, useContext, useMemo } from "react";
