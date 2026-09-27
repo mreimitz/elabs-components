@@ -20,10 +20,26 @@ export const DIMMED = "data-dimmed";
 /**
  * P4: library gap — flow has no dimmed or highlight state for nodes and edges
  * (docs/findings/DG-18-interactive-layer.md §5).
- * Everything the walk-through dims, at one opacity, with no transition (reduced motion needs
- * none). On CanvasShell's root, so it reaches the nodes, the edge paths and the edge labels.
+ * What the walk-through dims, with no transition (reduced motion needs none). On
+ * CanvasShell's root, so it reaches the nodes, the edge paths and the edge labels; keyed on the
+ * attribute only, so the export (which strips it) draws the resting look.
+ *
+ * Lines, icons, node marks and ports fade to 25 %. Label text does not: axe holds this text to
+ * 4.5:1, and measured on ClickHouse at step 3, fading whole labels by opacity passes that only
+ * at 0.95 in light, 0.85 in dark and not even at 0.95 in qlik-light, because subtitles and
+ * schedule words are already `muted-foreground`. So dimmed text takes the muted ink at full
+ * opacity (every theme holds it at 4.5:1 on the canvas surfaces), a dimmed label or card's
+ * outline takes the quietest border, and the step badge's colour fill gives way to the label
+ * paper, so its number stays readable.
  */
-const DIM_CLASS = "[&_[data-dimmed]]:opacity-25";
+const DIM_CLASS = [
+  "[&_path[data-dimmed]]:opacity-25",
+  "[&_[data-dimmed]_:is([data-slot=arch-mark],[data-slot=flow-port])]:opacity-25",
+  "[&_[data-dimmed]_:is(svg,img):not([data-slot=arch-mark]_*)]:opacity-25",
+  "[&_[data-dimmed]_:not([data-slot=arch-mark],[data-slot=flow-port])]:border-border",
+  "[&_[data-dimmed]_[data-slot=badge]]:bg-flow-node",
+  "[&_[data-dimmed]_*]:text-muted-foreground",
+].join(" ");
 
 /**
  * Words a keyboard user hears on every node: React Flow's one description for all nodes.
@@ -90,6 +106,20 @@ function withDimmed(node: Node, dimmed: boolean): Node {
   const { [DIMMED]: _dropped, ...rest } = (node.domAttributes ?? {}) as Record<string, unknown>;
   const domAttributes = (dimmed ? { ...rest, [DIMMED]: "true" } : rest) as Node["domAttributes"];
   return { ...node, domAttributes };
+}
+
+/**
+ * P4: library gap — on Escape React Flow blurs a focused node (a frame later, once it is
+ * selected) or flow (at once), and CanvasShell passes that through, so focus falls to <body>
+ * (docs/findings/DG-18-interactive-layer.md §9). A frame later, after that blur, focus goes
+ * back to the element that held it. Here, on the canvas, so the editor and presentation share it.
+ */
+function keepFocusAfterEscape(target: EventTarget) {
+  if (!(target instanceof HTMLElement || target instanceof SVGElement)) return;
+  requestAnimationFrame(() => {
+    const active = document.activeElement;
+    if ((active === null || active === document.body) && target.isConnected) target.focus();
+  });
 }
 
 export interface CanvasInteractionOptions {
@@ -165,6 +195,10 @@ export function useCanvasInteraction({
         setEdges((live) => keepSelection(graph.edges, live));
       },
       onKeyDown: (event) => {
+        if (event.key === "Escape") {
+          keepFocusAfterEscape(event.target);
+          return;
+        }
         if (event.key !== "?" || event.defaultPrevented) return;
         const target = event.target as HTMLElement;
         if (!target.classList.contains("react-flow__node")) return;

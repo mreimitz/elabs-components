@@ -23,9 +23,11 @@ import {
   toast,
   useIsMobile,
 } from "@elabs-ai/components-ui";
+import { useEditorVisibility } from "../shell/editor-visibility";
 import { createStore } from "../state/create-store";
 import { diagramStore, useDiagram } from "../state/diagram-store";
 import {
+  canvasDrawn,
   pictureFileName,
   pictureOfCanvas,
   pngBlob,
@@ -83,7 +85,9 @@ function title() {
 }
 
 function picture() {
-  return pictureOfCanvas(title(), { transparent: exportOptions.get().transparent });
+  return canvasDrawn().then(() =>
+    pictureOfCanvas(title(), { transparent: exportOptions.get().transparent }),
+  );
 }
 
 function savePng(scale: PictureScale) {
@@ -123,27 +127,46 @@ function copyPng() {
   );
 }
 
+/** Nothing to do before an export: the canvas is on screen. */
+const NOTHING = () => {};
+
 /**
  * The export items, in the wide bar's menu, the compact bar's submenu or the phone's group.
  * `disabled`: nothing is drawn (the group has no trigger that could carry it).
+ * `showCanvas`: runs first, inside the click — the phone's Editor tab opens the Canvas tab,
+ * and the export waits for it to draw (`canvasDrawn`).
  */
-function ExportItems({ disabled = false }: { disabled?: boolean }) {
+function ExportItems({
+  disabled = false,
+  showCanvas = NOTHING,
+}: {
+  disabled?: boolean;
+  showCanvas?: () => void;
+}) {
   const transparent = useTransparent();
   const canCopy = typeof ClipboardItem !== "undefined" && Boolean(navigator.clipboard?.write);
+  const withCanvas = (run: () => void) => () => {
+    showCanvas();
+    run();
+  };
   return (
     <>
       {SCALES.map((scale) => (
-        <DropdownMenuItem key={scale} disabled={disabled} onSelect={() => savePng(scale)}>
+        <DropdownMenuItem
+          key={scale}
+          disabled={disabled}
+          onSelect={withCanvas(() => savePng(scale))}
+        >
           <ImageDown aria-hidden="true" />
           {EXPORT_LABELS.png(scale)}
         </DropdownMenuItem>
       ))}
-      <DropdownMenuItem disabled={disabled} onSelect={saveSvg}>
+      <DropdownMenuItem disabled={disabled} onSelect={withCanvas(saveSvg)}>
         <FileCode aria-hidden="true" />
         {EXPORT_LABELS.svg}
       </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem disabled={disabled || !canCopy} onSelect={copyPng}>
+      <DropdownMenuItem disabled={disabled || !canCopy} onSelect={withCanvas(copyPng)}>
         <Copy aria-hidden="true" />
         {EXPORT_LABELS.copyPng}
       </DropdownMenuItem>
@@ -192,13 +215,18 @@ export function ExportMenu({ compact }: ExportMenuProps) {
 export function ExportMenuItems() {
   const drawn = useDiagram((s) => Boolean(s.drawn.graph));
   const phone = useIsMobile();
+  const visibility = useEditorVisibility();
   if (phone) {
     return (
       <>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>{EXPORT_LABELS.export}</DropdownMenuLabel>
         <DropdownMenuGroup aria-label={EXPORT_LABELS.export}>
-          <ExportItems disabled={!drawn} />
+          <ExportItems
+            disabled={!drawn}
+            // The Editor tab does not mount the canvas (app.tsx `PhoneWorkspace`).
+            showCanvas={() => visibility?.setCanvasOnly(true)}
+          />
         </DropdownMenuGroup>
       </>
     );

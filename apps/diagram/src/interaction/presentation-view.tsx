@@ -28,19 +28,13 @@ export function PresentationView() {
         exitPresentation();
         return;
       }
-      // A card or menu took this Escape. React Flow also takes it on a focused node or flow:
-      // it deselects and blurs it (a node a frame later), which drops focus to <body>
-      // (review-wave3 M3). Once that has happened, hand focus back to what held it.
-      // P4: library gap — CanvasShell lets React Flow's Escape blur drop focus to <body>.
-      // docs/findings/DG-18-interactive-layer.md.
-      const target = event.target;
+      // A card or menu took this Escape. A node or flow React Flow blurred on it gets focus
+      // back from the canvas (`use-canvas-interaction.ts`, review-wave3 M3), a frame earlier
+      // than this; anything else that left focus on <body> lands on the presentation region.
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const active = document.activeElement;
-        if (active !== null && active !== document.body) return;
-        if ((target instanceof HTMLElement || target instanceof SVGElement) && target.isConnected) {
-          target.focus();
-        } else {
+        if (active === null || active === document.body) {
           document.getElementById(WORKSPACE_ID)?.focus();
         }
       });
