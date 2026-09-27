@@ -47,6 +47,12 @@ const CANVAS_LABELS = {
   edit: "Edit", // DG-22 review
   notADiagram: "The text is not a diagram",
   notADiagramHint: "Fix the first error in the editor.",
+  // DG-22 review 2 (SF2): a dialect Atlas does not read yet is not an error in the file —
+  // showing "Fix the first error" invited editing a curated template that autosaves.
+  newerFormatTitle: "This diagram uses a newer format",
+  newerFormatHint: (version: string) =>
+    `Atlas cannot draw format ${version} yet. It opens in a later version; the file is unchanged.`,
+  fixInEditor: "Fix it in the editor.",
   source: (nodes: number, flows: number) =>
     `Atlas · ${nodes} ${nodes === 1 ? "node" : "nodes"} · ${flows} ${flows === 1 ? "flow" : "flows"}`,
   layingOut: "Laying out the diagram…",
@@ -72,6 +78,11 @@ export interface CanvasPaneProps {
   presenting?: boolean;
 }
 
+/** `Dialect "1" is not supported…` → `"1"` (the version `normalize.ts` quoted in its message). */
+function issueVersion(message: string): string {
+  return /Dialect "([^"]*)"/.exec(message)?.[1] ?? "?";
+}
+
 /**
  * The right-hand canvas: the last compile with a graph (DG-12 store), laid out once (DG-11),
  * then patched in place while only words change.
@@ -83,7 +94,7 @@ export function CanvasPane({ presenting = false }: CanvasPaneProps) {
   const loadCount = useDiagram((s) => s.loadCount);
   const blank = useDiagram((s) => s.text.trim() === ""); // DG-20
   const viewing = useDocMode() === "view"; // DG-22 review
-  const { graph, spec, view } = drawn;
+  const { graph, spec, view, issues } = drawn;
   // DG-20 step 8: the review-only composite mock (`?composite-mock`), memoised so the
   // canvas sees one graph object per compile.
   const shownGraph = useMemo(() => (graph ? withCompositeMock(graph) : graph), [graph]);
@@ -106,6 +117,12 @@ export function CanvasPane({ presenting = false }: CanvasPaneProps) {
           {CANVAS_LABELS.edit}
         </Button>
       ) : undefined;
+    // DG-22 review 2 (SF2): the first issue is why the text did not compile. A dialect this
+    // app cannot read yet is not a mistake in the file, so it gets its own, non-error state
+    // with no Edit action; every other failure keeps the error kind but names itself instead
+    // of a generic hint.
+    const firstIssue = issues[0];
+    const unsupportedVersion = firstIssue?.code === "unsupported-version";
     return (
       <div className="grid h-full w-full place-items-center p-6">
         {/* DG-20: a blank document is empty (an invitation); text that is not a diagram is
@@ -118,11 +135,22 @@ export function CanvasPane({ presenting = false }: CanvasPaneProps) {
             description={CANVAS_LABELS.emptyHint}
             actions={editAction}
           />
+        ) : unsupportedVersion ? (
+          <StatePanel
+            kind="empty"
+            icon={<Workflow aria-hidden="true" />}
+            title={CANVAS_LABELS.newerFormatTitle}
+            description={CANVAS_LABELS.newerFormatHint(issueVersion(firstIssue.message))}
+          />
         ) : (
           <StatePanel
             kind="error"
             title={CANVAS_LABELS.notADiagram}
-            description={CANVAS_LABELS.notADiagramHint}
+            description={
+              firstIssue
+                ? `${firstIssue.message} ${CANVAS_LABELS.fixInEditor}`
+                : CANVAS_LABELS.notADiagramHint
+            }
             actions={editAction}
           />
         )}
