@@ -596,9 +596,6 @@ const NetworkChartUnscoped = forwardRef<HTMLDivElement, NetworkChartProps>(
     const resolved = useResolvedChartProps(NETWORK_CHART, props);
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       resolved;
-    if (!onDatapointClick && !copyValueOnActivate) {
-      return <NetworkChartBody {...resolved} ref={ref} />;
-    }
     return (
       <ChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}

@@ -805,9 +805,6 @@ function ParallelCoordinatesBody({
 }: BodyProps) {
   const defaultDatapointLabel = useDefaultParallelDatapointLabel(plotProps.rows, plotProps.axes);
   const core = <ParallelCoordinatesPlot {...plotProps} />;
-  if (!onDatapointClick && !copyValueOnActivate) {
-    return core;
-  }
   return (
     <ChartDatapointProvider
       copyValueOnActivate={copyValueOnActivate}

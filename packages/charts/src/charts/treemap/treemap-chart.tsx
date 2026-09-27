@@ -867,9 +867,6 @@ export const TreemapChartBase = forwardRef<HTMLDivElement, TreemapChartProps>(
   function TreemapChart(props, ref) {
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
-    if (!onDatapointClick && !copyValueOnActivate) {
-      return <TreemapChartBody {...props} ref={ref} />;
-    }
     return (
       <ChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}

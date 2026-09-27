@@ -547,20 +547,18 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
   } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
   // The provider sits ABOVE the chart body so `Ring` can read the drill-down
-  // activator and the core can register ring targets (#349).
-  const withInteraction = (chart: ReactNode) =>
-    onDatapointClick || copyValueOnActivate ? (
-      <ChartDatapointProvider
-        datapointLabel={datapointLabel}
-        maxInteractiveDatapoints={maxInteractiveDatapoints}
-        copyValueOnActivate={copyValueOnActivate}
-        onDatapointClick={onDatapointClick}
-      >
-        {chart}
-      </ChartDatapointProvider>
-    ) : (
-      chart
-    );
+  // activator and the core can register ring targets (#349). Its own
+  // `disabled` default makes it a no-op with neither prop set.
+  const withInteraction = (chart: ReactNode) => (
+    <ChartDatapointProvider
+      datapointLabel={datapointLabel}
+      maxInteractiveDatapoints={maxInteractiveDatapoints}
+      copyValueOnActivate={copyValueOnActivate}
+      onDatapointClick={onDatapointClick}
+    >
+      {chart}
+    </ChartDatapointProvider>
+  );
 
   // frame-size group (RM-183): `margin` shrinks the plot's content box —
   // padding on `ChartPlotRoot` (a normal-flow box), `undefined`/no-op at the

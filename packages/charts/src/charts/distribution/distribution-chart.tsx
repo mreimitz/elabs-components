@@ -535,9 +535,9 @@ const DistributionChartUnscoped = forwardRef<HTMLDivElement, DistributionChartPr
       </ChartSelectionGestureScope>
     );
 
-    // The provider is mounted only when the caller asked for interaction, so an
-    // ordinary chart's DOM is byte-identical to a non-interactive one (#349).
-    if (!(onDatapointClick || copyValueOnActivate)) return containerSelection.wrap(scoped);
+    // The provider's own `disabled` default makes it a no-op without either
+    // prop, so an ordinary chart's DOM is byte-identical to a non-interactive
+    // one (#349).
     return containerSelection.wrap(
       <ChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}

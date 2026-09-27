@@ -1828,9 +1828,6 @@ function DumbbellBody({
     [formatValue, rowByIndex, t, valueLabelFormat],
   );
   const core = <DumbbellPlot {...plotProps} />;
-  if (!onDatapointClick && !copyValueOnActivate) {
-    return core;
-  }
   return (
     <ChartDatapointProvider
       copyValueOnActivate={copyValueOnActivate}

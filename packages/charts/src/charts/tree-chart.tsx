@@ -1928,12 +1928,12 @@ const TreeChartUnscoped = forwardRef<HTMLDivElement, TreeChartProps>(
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       resolved;
     // ALWAYS the same element tree: adding or dropping a handler must not
-    // remount the body (and lose its open branches, focus and flight). Without
-    // one the provider is `disabled`: no context, no layer, no extra DOM.
+    // remount the body (and lose its open branches, focus and flight). The
+    // provider's own `disabled` default covers this: without a handler, no
+    // context, no layer, no extra DOM.
     return (
       <ChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}
-        disabled={!onDatapointClick && !copyValueOnActivate}
         datapointLabel={
           (datapointLabel ?? defaultTreeDatapointLabel) as unknown as ChartDatapointProviderLabel
         }

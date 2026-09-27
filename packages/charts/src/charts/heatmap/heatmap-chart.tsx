@@ -1553,9 +1553,6 @@ const HeatmapChartBase = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
   function HeatmapChart(props, ref) {
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
-    if (!(onDatapointClick || copyValueOnActivate)) {
-      return <HeatmapChartShell {...props} ref={ref} />;
-    }
     return (
       <ChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}

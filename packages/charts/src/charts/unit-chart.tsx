@@ -806,9 +806,6 @@ UnitChartBody.displayName = "UnitChartBody";
 // Unwrapped implementation; the public docblock sits on `UnitChart` below.
 const UnitChartBase = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChart(props, ref) {
   const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } = props;
-  if (!onDatapointClick && !copyValueOnActivate) {
-    return <UnitChartBody {...props} ref={ref} />;
-  }
   return (
     <ChartDatapointProvider
       copyValueOnActivate={copyValueOnActivate}

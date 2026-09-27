@@ -1039,9 +1039,6 @@ function BumpBody({
     [formatValue, pointByIndex, shortDateFmt, tChart],
   );
 
-  if (!onDatapointClick && !copyValueOnActivate) {
-    return core;
-  }
   return (
     <ChartDatapointProvider
       copyValueOnActivate={copyValueOnActivate}

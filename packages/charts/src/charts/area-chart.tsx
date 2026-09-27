@@ -425,12 +425,8 @@ function ChartInner({
   );
 
   // The provider sits ABOVE the chart body so the shell (and every shape
-  // primitive under it) can read the drill-down registry from context. It is
-  // mounted only when a handler exists — the opt-out path gains no context.
-  if (!onDatapointClick && !copyValueOnActivate) {
-    return chart;
-  }
-
+  // primitive under it) can read the drill-down registry from context. Its
+  // own `disabled` default makes it a no-op with neither prop set.
   return (
     <ChartDatapointProvider
       datapointLabel={datapointLabel}

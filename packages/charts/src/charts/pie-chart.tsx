@@ -1126,22 +1126,19 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
     descId,
   } = useChartA11yContainerProps(accessibleLabel, description); // Labels — RM-110
 
-  // If fixed size is provided, use it directly
   // The provider sits ABOVE the chart body so `PieSlice` can read the
-  // drill-down activator and the core can register slice targets (#349).
-  const withInteraction = (chart: ReactNode) =>
-    onDatapointClick || copyValueOnActivate ? (
-      <ChartDatapointProvider
-        datapointLabel={datapointLabel}
-        maxInteractiveDatapoints={maxInteractiveDatapoints}
-        copyValueOnActivate={copyValueOnActivate}
-        onDatapointClick={onDatapointClick}
-      >
-        {chart}
-      </ChartDatapointProvider>
-    ) : (
-      chart
-    );
+  // drill-down activator and the core can register slice targets (#349). Its
+  // own `disabled` default makes it a no-op with neither prop set.
+  const withInteraction = (chart: ReactNode) => (
+    <ChartDatapointProvider
+      datapointLabel={datapointLabel}
+      maxInteractiveDatapoints={maxInteractiveDatapoints}
+      copyValueOnActivate={copyValueOnActivate}
+      onDatapointClick={onDatapointClick}
+    >
+      {chart}
+    </ChartDatapointProvider>
+  );
 
   // frame-size group (RM-183): `margin` shrinks the plot's content box —
   // padding on `ChartPlotRoot` (a normal-flow box, unlike Funnel/Unit's

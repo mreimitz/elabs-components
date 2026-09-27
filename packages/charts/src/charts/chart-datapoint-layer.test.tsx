@@ -46,7 +46,12 @@ import {
   DEFAULT_CHART_INTERACTIONS,
   type ChartInteractions,
 } from "./chart-config-context";
-import { clampDatapointRectToPlot, MIN_DATAPOINT_TARGET_SIZE } from "./chart-datapoint-layer";
+import {
+  ChartDatapointProvider,
+  clampDatapointRectToPlot,
+  MIN_DATAPOINT_TARGET_SIZE,
+  useChartDatapointsEnabled,
+} from "./chart-datapoint-layer";
 import { LineChart } from "./line-chart";
 import { XAxis } from "./x-axis";
 
@@ -99,6 +104,57 @@ describe("ChartDatapointLayer — opt-out (#349)", () => {
     const { container } = renderLineChart();
     expect(container.querySelector('[data-slot="chart-datapoint-layer"]')).toBeNull();
     expect(container.querySelectorAll("button")).toHaveLength(0);
+  });
+});
+
+/** Reports whether a `ChartDatapointProvider` ancestor is enabled. */
+function EnabledProbe({ onEnabled }: { onEnabled: (enabled: boolean) => void }) {
+  onEnabled(useChartDatapointsEnabled());
+  return null;
+}
+
+function renderProvider(props: {
+  onDatapointClick?: () => void;
+  copyValueOnActivate?: boolean;
+  disabled?: boolean;
+}) {
+  let enabled: boolean | undefined;
+  render(
+    <ChartDatapointProvider {...props}>
+      <EnabledProbe onEnabled={(value) => (enabled = value)} />
+    </ChartDatapointProvider>,
+  );
+  return enabled;
+}
+
+describe("ChartDatapointProvider — self-computed `disabled` (RM-204)", () => {
+  // Every family used to gate mounting the provider itself on this same
+  // expression (`if (!onDatapointClick && !copyValueOnActivate) return core;`,
+  // or the equivalent ternary) before always rendering it. The provider now
+  // computes the identical default itself, so every family can mount it
+  // unconditionally — this is the one seam all of them share.
+  it("is disabled with neither onDatapointClick nor copyValueOnActivate", () => {
+    expect(renderProvider({})).toBe(false);
+  });
+
+  it("is enabled with only onDatapointClick", () => {
+    expect(renderProvider({ onDatapointClick: () => {} })).toBe(true);
+  });
+
+  it("is enabled with only copyValueOnActivate", () => {
+    expect(renderProvider({ copyValueOnActivate: true })).toBe(true);
+  });
+
+  it("is enabled with both onDatapointClick and copyValueOnActivate", () => {
+    expect(renderProvider({ onDatapointClick: () => {}, copyValueOnActivate: true })).toBe(true);
+  });
+
+  it("an explicit disabled={true} wins over an active handler (Tree's own-tree-shape case)", () => {
+    expect(renderProvider({ onDatapointClick: () => {}, disabled: true })).toBe(false);
+  });
+
+  it("an explicit disabled={false} wins with neither prop set", () => {
+    expect(renderProvider({ disabled: false })).toBe(true);
   });
 });
 

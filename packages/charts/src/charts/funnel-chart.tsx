@@ -1456,9 +1456,6 @@ export const FunnelChart = forwardRef<HTMLDivElement, FunnelChartProps>(
         : resolved;
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
-    if (!onDatapointClick && !copyValueOnActivate) {
-      return <FunnelChartBody {...props} ref={ref} />;
-    }
     return (
       <ChartDatapointProvider
         datapointLabel={datapointLabel}

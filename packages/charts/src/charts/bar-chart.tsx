@@ -710,10 +710,8 @@ function ChartInner(props: ChartInnerProps) {
   }
   const core = <ChartCore {...props} />;
   // The provider sits ABOVE the chart body so `Bar` can publish its own bar
-  // geometry as keyboard targets. Mounted only when a handler exists (#349).
-  if (!onDatapointClick && !copyValueOnActivate) {
-    return core;
-  }
+  // geometry as keyboard targets (#349). Its own `disabled` default makes it
+  // a no-op with neither `onDatapointClick` nor `copyValueOnActivate` set.
   return (
     <ChartDatapointProvider
       datapointLabel={datapointLabel}
