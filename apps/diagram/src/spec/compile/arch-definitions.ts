@@ -51,6 +51,7 @@ const NODE_FIELDS = {
   text: { kind: "string" },
   docs: { kind: "string" }, // DG-26
   status: { kind: "string" }, // DG-26
+  catalogEntry: { kind: "string" }, // DG-26 (1b)
 } as const satisfies Record<string, FlowFieldDefinition>;
 
 const ZONE_FIELDS = {

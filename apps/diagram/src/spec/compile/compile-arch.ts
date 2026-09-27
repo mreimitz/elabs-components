@@ -54,6 +54,8 @@ export type CompiledNodeData = {
   text?: string;
   docs?: string;
   status?: NodeStatus;
+  /** The catalog entry name ("aws/glue") once a catalog reference resolved (Part 1b). */
+  catalogEntry?: string;
 };
 
 export type CompiledZoneData = {
@@ -268,6 +270,7 @@ export function compileArch(ast: ArchDiagram): ArchCompileResult {
       text: node.text,
       docs: node.docs,
       status: node.status,
+      catalogEntry: node.catalogEntry, // DG-26
     });
   };
   const isDiagramRef = (node: ArchNodeSpec) =>

@@ -5,12 +5,13 @@
  * and the icon index (JSON). DG-35 moved the React-free half to `spec/check-text.ts` so the
  * dev server runs the same checks.
  */
-import type { ArchDiagram } from "../spec/dialect";
+import type { ArchDiagram, ReferenceSources } from "../spec/dialect";
 import type { ArchCompileView } from "../spec/compile/compile-arch";
 import { checkText, type DiagramIssue } from "../spec/check-text";
 import { createArchRegistry } from "../spec/compile/registry";
 import { toReactFlow, type FlowSpec, type ReactFlowGraph } from "../spec/flow-spec";
 import { ICON_NAMES } from "../icons/icon-names";
+import { currentCatalog } from "../catalog/catalog-bundle"; // DG-26
 
 export type { DiagramIssue, IssueStage } from "../spec/check-text";
 
@@ -31,8 +32,11 @@ export interface CompiledDiagram {
   ok: boolean;
 }
 
-export function compileText(text: string): CompiledDiagram {
-  const checked = checkText(text, ICON_NAMES);
+export function compileText(
+  text: string,
+  sources: ReferenceSources = { catalog: currentCatalog() }, // DG-26
+): CompiledDiagram {
+  const checked = checkText(text, ICON_NAMES, sources);
   const graph = checked.spec
     ? archRegistry.decorate(toReactFlow(checked.spec, archRegistry.definitions))
     : null;

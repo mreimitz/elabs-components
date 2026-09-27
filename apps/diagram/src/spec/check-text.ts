@@ -10,6 +10,7 @@ import {
   parseArchYaml,
   type ArchDiagram,
   type ArchIssueSeverity,
+  type ReferenceSources,
   type SourceRange,
 } from "./dialect";
 import { locate } from "./dialect/source-map";
@@ -43,8 +44,12 @@ export interface CheckedText {
   ok: boolean;
 }
 
-export function checkText(text: string, iconNames: ReadonlySet<string>): CheckedText {
-  const checked = checkArchYaml(text, iconNames);
+export function checkText(
+  text: string,
+  iconNames: ReadonlySet<string>,
+  sources: ReferenceSources = {},
+): CheckedText {
+  const checked = checkArchYaml(text, iconNames, sources);
   const issues: DiagramIssue[] = checked.issues.map((i) => ({ ...i, stage: "dialect" }));
   if (!checked.ast) {
     return { ast: null, spec: null, view: null, origin: {}, issues, ok: false };
