@@ -86,10 +86,46 @@
       "presentation": { "reveal": "silent", "panel": "shared", "close": true }
     },
     {
-      "label": "stop: all apps",
-      "detail": "Kill the website (:3000) and Storybook (:6006) dev servers and their task wrappers",
+      "label": "dev: diagram",
+      "detail": "Start the diagram test app (apps/diagram) on http://localhost:5180, or reuse one already running from this checkout",
       "type": "shell",
-      "command": "node .vscode/stop-app.mjs home:3000 storybook:6006",
+      // Same handshake as "dev: storybook": the wrapper prints its own markers. See the
+      // header of .vscode/start-diagram.mjs.
+      "command": "node .vscode/start-diagram.mjs",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "diagram",
+        "source": "diagram",
+        "fileLocation": "absolute",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "__DIAGRAM_BOOT__",
+          "endsPattern": "__DIAGRAM_READY__"
+        }
+      },
+      "presentation": {
+        "group": "apps",
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    },
+    {
+      "label": "stop: diagram",
+      "detail": "Kill the diagram app's server on :5180 AND the task wrapper that started it",
+      "type": "shell",
+      // Kill the wrapper too, for the same stale-task reason as "stop: storybook".
+      "command": "node .vscode/stop-app.mjs diagram:5180",
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "shared", "close": true }
+    },
+    {
+      "label": "stop: all apps",
+      "detail": "Kill the website (:3000), Storybook (:6006) and diagram app (:5180) dev servers and their task wrappers",
+      "type": "shell",
+      "command": "node .vscode/stop-app.mjs home:3000 storybook:6006 diagram:5180",
       "problemMatcher": [],
       "presentation": { "reveal": "always", "panel": "shared", "close": false }
     }

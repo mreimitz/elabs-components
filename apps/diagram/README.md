@@ -9,5 +9,7 @@ A local test-and-demo app for `@elabs-ai/components-flow`: it renders **system a
 Start here: `docs/2026-09-26-plan.md` (decisions, dialect, phases) · `docs/2026-09-26-research.md` (landscape, licensing, React Flow facts, repo inventory) · `roadmap/README.md` (work packages).
 
 ```sh
-pnpm --filter @elabs-ai/diagram dev          # once P0 has landed
+pnpm --filter @elabs-ai/diagram dev          # http://localhost:5180
 ```
+
+To debug it in VS Code, pick **📐 Diagram (apps/diagram)** in Run and Debug and press F5: it starts the app (or reuses one already running from this checkout), opens Chrome with the debugger attached, and Shift+F5 stops the server. Breakpoints bind in the app's `src/` and in the library's `packages/*/src`.
