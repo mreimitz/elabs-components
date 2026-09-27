@@ -12,6 +12,7 @@ import { useSyncExternalStore } from "react";
 import { createStore } from "../state/create-store";
 import { diagramActions, diagramStore, documentActions, editActions } from "../state/diagram-store";
 import { yamlFileName } from "../io/files";
+import { DIALECT_VERSION } from "../spec/dialect/types"; // DG-26
 import {
   getTree,
   getVersions,
@@ -376,7 +377,7 @@ export const workspaceActions = {
 
   /** A new diagram `<folder>/<slug of title>.yaml` (a free name), opened. Returns its path. */
   async create(folder: string, title: string): Promise<string> {
-    const text = `diagram: "0"\ntitle: ${JSON.stringify(title)}\n`;
+    const text = `diagram: "${DIALECT_VERSION}"\ntitle: ${JSON.stringify(title)}\n`;
     const path = await createUniqueFile(folder, yamlFileName(title), text);
     await workspaceActions.open(path);
     void workspaceActions.refreshTree().catch(() => undefined); // n12: the tree's own error state already reports it

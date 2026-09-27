@@ -4,10 +4,10 @@ import { FLOW_EDGE_TYPE_KEY, type DataFlowEdgeData } from "../edges/data-flow-ed
 import { edgeAriaLabel, edgeMarkers } from "../edges/edge-style";
 
 /**
- * DG-20 step 8 — a MOCKED collapsed composite node (plan V3: a `use: components/<path>`
+ * DG-20 step 8 — a MOCKED collapsed composite node (plan V3: a `ref: ws/components/<path>`
  * instance drawn collapsed), placed in the lakehouse example so the maintainer can review the
  * look before DG-22 builds the real thing. Nothing here is the composite feature: no
- * `use:`, no drill-down, no resolution — one extra node and two flows added to the graph the
+ * `ref:`, no drill-down, no resolution — one extra node and two flows added to the graph the
  * canvas draws, only when the page URL carries `?composite-mock`.
  */
 

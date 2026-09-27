@@ -20,6 +20,8 @@ export {
 } from "./spec/dialect/write-back";
 export { flowItem, nodeItem } from "./spec/dialect/entry-text";
 export { entrySnippet } from "./catalog/entry-snippet"; // DG-24
+export { upgradeText } from "./spec/dialect/upgrade"; // DG-26
+export { catalogRefsOf, diagramRefsOf, refFileOf, refForm } from "./spec/dialect/ids"; // DG-26
 export { ICON_NAMES };
 
 /** `checkText` against the app's own icon names — what the browser's compile checks. */

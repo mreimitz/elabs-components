@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v1.schema.json
+diagram: "1"
+nodes:
+  - id: t
+    ref: ws/components/leaf
+notes:
+  - at: t.x
+    text: Hello
+# expect: unknown-note-target @ 7:9

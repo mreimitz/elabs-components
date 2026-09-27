@@ -1,8 +1,13 @@
 /**
- * Dialect v0 vocabulary and the normalized AST. React-free, dependency-free.
+ * Dialect v1 vocabulary (a superset of v0) and the normalized AST. React-free,
+ * dependency-free.
  */
 
-export const DIALECT_VERSION = "0";
+/** The dialect this app writes: new files, the upgrader's target. */
+export const DIALECT_VERSION = "1";
+/** Every dialect this app reads (N3: an older major still opens). */
+export const READ_VERSIONS = ["0", "1"] as const;
+export type DialectVersion = (typeof READ_VERSIONS)[number];
 
 export const DIRECTIONS = ["LR", "TB"] as const;
 export const NODE_STYLES = ["icon", "card"] as const;
@@ -40,6 +45,17 @@ export type FlowStyle = (typeof FLOW_STYLES)[number];
 export type FlowSecure = (typeof FLOW_SECURE)[number];
 export type FlowDirection = (typeof FLOW_DIRECTIONS)[number];
 export type Tone = "neutral" | "info" | "success" | "warning" | "destructive";
+/** Plan V13. DG-25 shows it on the card; the canvas look is DG-33's (out of R1). */
+export const NODE_STATUS = ["ok", "degraded", "down", "planned"] as const;
+export type NodeStatus = (typeof NODE_STATUS)[number];
+/**
+ * Keys a reference supplies when the node does not write them (maintainer ruling
+ * 2026-09-27: nodes are reference-first). Part 1b fills them for catalog references;
+ * Part 2 reads title and icon for diagram references. `description` and `docs` are
+ * applied by the reader (DG-25), not filled.
+ */
+export const SUPPLIED_KEYS = ["title", "subtitle", "icon", "type", "badges"] as const;
+export type SuppliedKey = (typeof SUPPLIED_KEYS)[number];
 
 export interface Point {
   x: number;
@@ -65,6 +81,8 @@ export interface ArchZoneSpec {
   collapsed: boolean;
   direction?: Direction;
   position?: Point;
+  docs?: string;
+  status?: NodeStatus;
 }
 
 export interface ArchNodeSpec {
@@ -83,6 +101,16 @@ export interface ArchNodeSpec {
   href?: string;
   text?: string;
   position?: Point;
+  docs?: string;
+  status?: NodeStatus;
+  /** `catalog/<pack>/<entry>` or `ws/<folder>/…/<file name>`, as written. */
+  ref?: string;
+  /** Only with `ref`: the SUPPLIED_KEYS this node does not write. */
+  unwritten?: readonly SuppliedKey[];
+  /** As written. Means something only on a diagram reference: false = one node, true = inline (Part 3). */
+  expand?: boolean;
+  /** The catalog entry name ("aws/glue") once a catalog reference resolved (Part 1b). */
+  catalogEntry?: string;
 }
 
 export interface ArchFlowSpec {
@@ -114,8 +142,18 @@ export interface ArchStyleSpec {
   badge?: string;
 }
 
+/** `component:` (plan §4.2): marks and describes a diagram meant to be referenced. */
+export interface ArchComponentSpec {
+  icon?: string;
+  description?: string;
+  /** Carried, not checked: the shape and its enforcement are R2's (success-plan :69). */
+  extensionPoints?: readonly Record<string, unknown>[];
+}
+
 export interface ArchDiagram {
   version: typeof DIALECT_VERSION;
+  /** What the file said ("0" or "1"); `version` above is always the dialect this app writes. */
+  sourceVersion: DialectVersion;
   title?: string;
   // DG-68: the title block's prose line (title-block.tsx description prop).
   description?: string;
@@ -131,4 +169,10 @@ export interface ArchDiagram {
   flows: ArchFlowSpec[];
   styles: Record<string, ArchStyleSpec>;
   notes: ArchNoteSpec[];
+  /** Describes this diagram as a reusable reference (plan §4.2). */
+  component?: ArchComponentSpec;
+  /** DG-31 defines it; open in R1. */
+  story?: Record<string, unknown>;
+  /** DG-36 defines it; open in R1. */
+  visual?: Record<string, unknown>;
 }

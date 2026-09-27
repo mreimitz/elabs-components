@@ -67,6 +67,18 @@ export const workspaceTools = [
       additionalProperties: false,
     },
     handler: async ({ path, text, base }, ctx) => {
+      // DG-26 — a file in a newer dialect than this Atlas reads is left alone, never rewritten
+      // (the same guard `compose.mjs`'s editFile applies to a surgical edit).
+      const surface = await ctx.bridge.load();
+      const current = surface.checkDiagram((await readDiagram(path)).text);
+      const newer = current.ast
+        ? undefined
+        : current.issues.find((i) => i.code === "unsupported-version");
+      if (newer) {
+        throw new Error(
+          `${path} is written in a newer dialect than this Atlas reads (${newer.message}) Leave the file alone: do not change its version or rewrite it.`,
+        );
+      }
       const warnings = await ctx.bridge.assertValid(text);
       const written = await workspace.write(path, text, { base });
       return { ...written, warnings };
@@ -85,7 +97,11 @@ export const workspaceTools = [
           ...PATH,
           description: 'New workspace-relative path ending in .yaml, e.g. "acme/landscape.yaml".',
         },
-        text: { type: "string", description: 'The YAML document, starting with diagram: "0".' },
+        text: {
+          type: "string",
+          description:
+            'The YAML document, starting with diagram: "1" (files that say "0" are read too).',
+        },
       },
       required: ["path", "text"],
       additionalProperties: false,

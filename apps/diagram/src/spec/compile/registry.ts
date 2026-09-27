@@ -19,12 +19,13 @@ import type {
 } from "../dialect";
 import type { FlowSpecDefinitions } from "../flow-spec/types";
 import type { ReactFlowGraph } from "../flow-spec/to-react-flow";
-import type {
-  ArchMarkedKind,
-  ArchNodeData,
-  ArchNodeKind,
-  ArchNodeType as ComponentNodeType,
-  ArchNodeVariant,
+import {
+  type ARCH_COMPOSITE_TYPE, // DG-26
+  type ArchMarkedKind,
+  type ArchNodeData,
+  type ArchNodeKind,
+  type ArchNodeType as ComponentNodeType,
+  type ArchNodeVariant,
 } from "../../nodes/arch-node-data";
 import {
   isZoneNode,
@@ -49,6 +50,7 @@ import { archEdgeTypes } from "../../edges/edge-types";
 import { edgeAriaLabel, edgeMarkers } from "../../edges/edge-style";
 import {
   ARCH_DEFINITIONS,
+  COMPOSITE_TYPE_KEY, // DG-26
   NODE_TYPE_KEY,
   type FLOW_TYPE_KEY,
   type ZONE_TYPE_KEY,
@@ -56,6 +58,7 @@ import {
 import type { LegendMode } from "../../chrome/build-legend";
 import type {
   ArchCompileView,
+  CompiledCompositeData,
   CompiledFlowData,
   CompiledNodeData,
   CompiledZoneData,
@@ -84,7 +87,14 @@ export type VocabularyParity = [
   Assert<CompiledZoneData extends ZoneData ? true : false>,
   Assert<CompiledFlowData extends DataFlowEdgeData ? true : false>,
   Assert<Equals<ArchCompileView["legend"], LegendMode>>,
+  // DG-26
+  Assert<Equals<typeof COMPOSITE_TYPE_KEY, typeof ARCH_COMPOSITE_TYPE>>,
+  Assert<CompiledCompositeData extends ArchNodeData ? true : false>,
 ];
+
+// DG-26 — "<title>, Component" (matches ARCH_KIND_LABEL's capitalization) plus, when broken,
+// the reason in words (N11).
+const COMPOSITE_ARIA = { kind: "Component" } as const;
 
 /** `arch/<kind>` → the kind, for every type that draws a mark (all but `arch/note`). */
 const MARKED_KIND = new Map<string, ArchMarkedKind>(
@@ -126,6 +136,16 @@ export function createArchRegistry(): ArchRegistry {
             const name = title.get(node.id) ?? node.id;
             return { ...node, ariaLabel: `${name}, ${KIND_LABEL[kind]}, ${OWNER_LABEL[owner]}` };
           }
+          // DG-26 — a collapsed diagram reference names its reason in words when broken (N11).
+          if (node.type === COMPOSITE_TYPE_KEY) {
+            const data = node.data as CompiledCompositeData;
+            const name = `${title.get(node.id) ?? node.id}, ${COMPOSITE_ARIA.kind}`;
+            return {
+              ...node,
+              ariaLabel: data.broken && data.subtitle ? `${name}, ${data.subtitle}` : name,
+            };
+          }
+          // end DG-26
           const kind = node.type ? MARKED_KIND.get(node.type) : undefined;
           return kind
             ? { ...node, ariaLabel: archNodeAriaLabel(kind, title.get(node.id) ?? node.id) }

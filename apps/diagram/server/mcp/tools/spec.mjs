@@ -41,7 +41,7 @@ export const specTools = [
   {
     name: "spec_schema",
     description:
-      "The diagram dialect's JSON Schema (v0): every key a diagram may use. Read it once " +
+      "The diagram dialect's JSON Schema (v1): every key a diagram may use. Read it once " +
       "when unsure of a key.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     handler: async (_args, ctx) => (await ctx.bridge.load()).buildArchSchema(),

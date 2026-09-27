@@ -1,10 +1,10 @@
-# yaml-language-server: $schema=../../schema/arch-diagram.v0.schema.json
+# yaml-language-server: $schema=../../schema/arch-diagram.v1.schema.json
 #
 # Real-time analytics on ClickHouse Cloud. Change events leave the customer's Postgres
 # through a Confluent Cloud CDC connector, ClickPipes ingests the topic into ClickHouse
 # Cloud in the customer's region, and dashboards query it over PrivateLink. Steps 1–5
 # walk one order from the database to a dashboard.
-diagram: "0"
+diagram: "1"
 title: Real-time analytics on ClickHouse Cloud
 description: How one order’s change event travels from Postgres through Confluent Cloud CDC into ClickHouse Cloud and out to a dashboard.
 direction: LR
