@@ -33,9 +33,11 @@ vi.mock("../charts/chart-parent-size", () => {
 });
 
 // ── useLayoutMeasure → fixed 560×288 ─────────────────────────────────────────
+// The real hook hands back one size object until the size changes; so does this.
+const MEASURED_BOX = { width: 560, height: 288 };
 vi.mock("../charts/layout-size", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  useLayoutMeasure: () => [() => undefined, { width: 560, height: 288 }],
+  useLayoutMeasure: () => [() => undefined, MEASURED_BOX],
 }));
 
 // ── ResizeObserver stub (FunnelChart uses it directly) ────────────────────────

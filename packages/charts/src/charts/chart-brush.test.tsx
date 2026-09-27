@@ -12,9 +12,11 @@ import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// The real hook hands back one size object until the size changes; so does this.
+const MEASURED_BOX = { width: 560, height: 288 };
 vi.mock("./layout-size", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  useLayoutMeasure: () => [() => undefined, { width: 560, height: 288 }],
+  useLayoutMeasure: () => [() => undefined, MEASURED_BOX],
 }));
 
 // ChartParentSize measures with ResizeObserver + real layout, which jsdom lacks.

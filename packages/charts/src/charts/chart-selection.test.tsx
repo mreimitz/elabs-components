@@ -28,9 +28,19 @@ vi.mock("./chart-parent-size", () => {
 const measureBox = vi.hoisted(() => ({ width: 560, height: 288 }));
 /** The families that ran their own ResizeObserver on the stubbed rect before RM-189. */
 const SELF_MEASURED = new Set(["funnel-chart", "network-chart", "treemap-chart", "unit-chart"]);
+// The real hook hands back one size object until the size changes; so does this.
+const measured = vi.hoisted(() => ({ current: { width: 0, height: 0 } }));
 vi.mock("./layout-size", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  useLayoutMeasure: () => [() => undefined, { ...measureBox }],
+  useLayoutMeasure: () => {
+    if (
+      measured.current.width !== measureBox.width ||
+      measured.current.height !== measureBox.height
+    ) {
+      measured.current = { ...measureBox };
+    }
+    return [() => undefined, measured.current];
+  },
 }));
 
 import { Bar } from "./bar";

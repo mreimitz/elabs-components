@@ -7,9 +7,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // Real render + a11y are covered by the Storybook interaction tests.
 const MEASURED_WIDTH = 300;
 const MEASURED_HEIGHT = 120;
+// The real hook hands back one size object until the size changes; so does this.
+const MEASURED_BOX = { width: MEASURED_WIDTH, height: MEASURED_HEIGHT };
 vi.mock("./layout-size", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  useLayoutMeasure: () => [() => undefined, { width: MEASURED_WIDTH, height: MEASURED_HEIGHT }],
+  useLayoutMeasure: () => [() => undefined, MEASURED_BOX],
 }));
 
 import { scaleLinear } from "@visx/scale";

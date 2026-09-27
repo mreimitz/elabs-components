@@ -33,7 +33,7 @@ vi.mock("./chart-parent-size", () => ({
 
 vi.mock("./layout-size", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  useLayoutMeasure: () => [() => undefined, { width: BOX.width, height: BOX.height }],
+  useLayoutMeasure: () => [() => undefined, BOX],
 }));
 
 import { ChartFrame } from "../chart-frame";

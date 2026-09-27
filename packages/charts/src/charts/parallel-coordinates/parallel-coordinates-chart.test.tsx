@@ -5,9 +5,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // Mock it to return a fixed size so the chart's inner
 // render gate (width > 0 && height > 0) is satisfied — the same technique
 // `dumbbell-chart.test.tsx` uses.
+// The real hook hands back one size object until the size changes; so does this.
+const MEASURED_BOX = { width: 640, height: 320 };
 vi.mock("../layout-size", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  useLayoutMeasure: () => [() => undefined, { width: 640, height: 320 }],
+  useLayoutMeasure: () => [() => undefined, MEASURED_BOX],
 }));
 
 import type { ChartDatapoint } from "../chart-datapoint";

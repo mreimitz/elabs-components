@@ -283,7 +283,12 @@ export const Sparkline = forwardRef<SVGSVGElement, SparklineProps>(function Spar
   const elRef = useRef<SVGSVGElement>(null);
   const fill = fit === "fill";
   const [measureRef, measured] = useLayoutMeasure(FILL_MEASURE);
-  const width = fill && measured.width > 0 ? measured.width : widthProp;
+  // Hidden, the node measures 0. Keep the last real width so a re-shown
+  // sparkline paints at it, not at the `width` fallback, until it is measured.
+  const [filledWidth, setFilledWidth] = useState(0);
+  if (measured.width > 0 && measured.width !== filledWidth) setFilledWidth(measured.width);
+  const lastWidth = measured.width > 0 ? measured.width : filledWidth;
+  const width = fill && lastWidth > 0 ? lastWidth : widthProp;
   // `fit="fixed"` never measures: the ref goes to the node only to fill.
   const svgRef = useMemo(
     () => mergeRefs(ref, elRef, fill ? measureRef : undefined),

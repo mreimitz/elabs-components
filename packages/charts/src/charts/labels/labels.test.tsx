@@ -38,9 +38,16 @@ vi.mock("../chart-parent-size", () => {
   };
 });
 
+// The real hook hands back one size object until the size changes; so does this.
+const measured = vi.hoisted(() => ({ current: { width: 0, height: 0 } }));
 vi.mock("../layout-size", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  useLayoutMeasure: () => [() => undefined, { ...box }],
+  useLayoutMeasure: () => {
+    if (measured.current.width !== box.width || measured.current.height !== box.height) {
+      measured.current = { ...box };
+    }
+    return [() => undefined, measured.current];
+  },
 }));
 
 beforeAll(() => {

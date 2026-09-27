@@ -62,7 +62,7 @@ vi.mock("../charts/chart-parent-size", async () => {
 
 vi.mock("../charts/layout-size", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  useLayoutMeasure: () => [() => undefined, { width: BOX.width, height: BOX.height }],
+  useLayoutMeasure: () => [() => undefined, BOX],
 }));
 
 import { BulletChartBase } from "../charts/bullet-chart";

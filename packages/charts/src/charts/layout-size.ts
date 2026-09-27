@@ -130,9 +130,9 @@ function usedContentBox(el: Element): LayoutSize | null {
 
 function usedBox(el: Element, box: "border-box" | "content-box"): LayoutSize | null {
   const style = getComputedStyle(el);
-  let width = parseFloat(style.width);
-  let height = parseFloat(style.height);
-  if (!Number.isFinite(width) || !Number.isFinite(height)) return null;
+  let width = pxLength(style.width);
+  let height = pxLength(style.height);
+  if (width === null || height === null) return null;
   // `width`/`height` measure the box `box-sizing` names; step to the one asked for.
   const sized = style.boxSizing === "border-box" ? "border-box" : "content-box";
   if (sized !== box) {
@@ -149,6 +149,16 @@ function usedBox(el: Element, box: "border-box" | "content-box"): LayoutSize | n
 }
 
 /**
+ * A used length in px, or `null` for anything else: jsdom's empty string,
+ * `auto`, or the `100%` a node with no box keeps as its computed value.
+ */
+function pxLength(value: string): number | null {
+  if (!value.endsWith("px")) return null;
+  const length = parseFloat(value);
+  return Number.isFinite(length) ? length : null;
+}
+
+/**
  * Which box of its node `useLayoutMeasure` reads:
  * - `"border-box"` (default): the layout box, `layoutSize`.
  * - `"content-box"`: inside the padding and border (Gantt's root; Sparkline's
@@ -161,7 +171,13 @@ export type LayoutBox = "border-box" | "content-box" | "client";
 /** `el`'s size in `box`. */
 export function boxSize(el: Element, box: LayoutBox = "border-box"): LayoutSize {
   if (box === "client") return { width: el.clientWidth, height: el.clientHeight };
-  if (box === "content-box") return usedContentBox(el) ?? layoutSize(el);
+  if (box === "content-box") {
+    // A node with no box (`display: none`, or inside a hidden parent) keeps its
+    // specified size as its computed one, `100%` or even `300px`, yet has no
+    // size. Offsets settle this for the border box; an `<svg>` has none.
+    if (el.getClientRects().length === 0) return { width: 0, height: 0 };
+    return usedContentBox(el) ?? layoutSize(el);
+  }
   return layoutSize(el);
 }
 

@@ -91,11 +91,11 @@ import { ChartMessagesScope } from "../charts/chart-messages";
 import { useLayoutMeasure } from "../charts/layout-size";
 
 /**
- * The root's content box (inside its border), as its ResizeObserver reported
- * it before. Sized on the observer's first callback, as it was: no read in the
- * mount commit.
+ * The root's content box (inside its border), the box its own ResizeObserver
+ * reported before. Read when the root attaches, so the first frame already
+ * paints at the pane's width, not at `MIN_CANVAS_WIDTH` and then again.
  */
-const ROOT_MEASURE = { box: "content-box", measureOnAttach: false } as const;
+const ROOT_MEASURE = { box: "content-box" } as const;
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -1895,7 +1895,7 @@ const GanttUnscoped = forwardRef<HTMLDivElement, GanttProps>(function Gantt(rawP
   // also floor at "fit" and the canvas never runs narrower than the pane.
   // The root's content box, on the one chart measurement path. The root only
   // exists once the chart has tasks and is not loading; it is measured when it
-  // attaches, and its first size lands on the observer's first callback.
+  // attaches, so the mount commit already has the pane's width.
   const [measureRoot, rootBox] = useLayoutMeasure(ROOT_MEASURE);
   const mergedRef = useMemo(() => mergeRefs(ref, measureRoot), [ref, measureRoot]);
   const paneWidth = Math.max(0, rootBox.width - resolvedLabelColumnWidth);
