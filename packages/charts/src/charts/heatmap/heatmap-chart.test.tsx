@@ -26,7 +26,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { render, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetWarnOnce, toJsonSchema } from "@elabs-ai/components-ui/definition";
 import { HEATMAP_CHART } from "../../definitions/heatmap-chart.definition";
 import { HeatmapChart as HeatmapChartDouble } from "../../test";
@@ -674,6 +674,14 @@ describe("HeatmapChart renamed props (RM-196)", () => {
 // `contract.test.tsx`, not here. ───────────────────────────────────────────
 
 describe("HeatmapChart neither xDataKey/x nor yDataKey/y is given (RM-196 F2)", () => {
+  // review R2-1: `warnChartOnce` dedupes through the SHARED, test-resettable set every
+  // other chart warning uses (`@elabs-ai/components-ui/definition`'s `warnOnce`) — reset
+  // it before EVERY test in this block, not just some, so a warned key from one test can
+  // never suppress another test's own warning regardless of run order.
+  beforeEach(() => {
+    resetWarnOnce();
+  });
+
   afterEach(() => {
     plot.width = 0;
     plot.height = 0;
@@ -682,7 +690,6 @@ describe("HeatmapChart neither xDataKey/x nor yDataKey/y is given (RM-196 F2)", 
   });
 
   it("warns once in development, naming xDataKey, when neither x nor xDataKey is given", () => {
-    resetWarnOnce();
     const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
     render(<HeatmapChart data={punchCard} valueKey="count" yDataKey="day" />).unmount();
     render(<HeatmapChart data={punchCard} valueKey="count" yDataKey="day" />).unmount();
@@ -694,7 +701,6 @@ describe("HeatmapChart neither xDataKey/x nor yDataKey/y is given (RM-196 F2)", 
   });
 
   it("warns once in development, naming yDataKey, when neither y nor yDataKey is given (matrix variant)", () => {
-    resetWarnOnce();
     const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
     render(<HeatmapChart data={punchCard} valueKey="count" xDataKey="hour" />).unmount();
     render(<HeatmapChart data={punchCard} valueKey="count" xDataKey="hour" />).unmount();
@@ -706,7 +712,6 @@ describe("HeatmapChart neither xDataKey/x nor yDataKey/y is given (RM-196 F2)", 
   });
 
   it('never warns about yDataKey on variant="calendar", where it is ignored', () => {
-    resetWarnOnce();
     const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
     render(
       <HeatmapChart data={punchCard} valueKey="count" xDataKey="hour" variant="calendar" />,
@@ -715,7 +720,6 @@ describe("HeatmapChart neither xDataKey/x nor yDataKey/y is given (RM-196 F2)", 
   });
 
   it("never warns in production", () => {
-    resetWarnOnce();
     vi.stubEnv("NODE_ENV", "production");
     const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
     render(<HeatmapChart data={punchCard} valueKey="count" />).unmount();

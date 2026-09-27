@@ -132,7 +132,10 @@ export const CONTRACT_GOLDEN: Record<ChartDefinitionId, ChartContractSpec> = {
   // calendar variant reads `x` as a date — see `propNamedKeys`.
   HeatmapChart: {
     dataKind: "array",
-    requiredProps: ["data", "xDataKey", "yDataKey", "valueKey"],
+    // `yDataKey` is required only on `variant="matrix"` (RM-196 F2 review R2-2) — the
+    // real component ignores it on `variant="calendar"`, TSDoc says so.
+    requiredProps: ["data", "xDataKey", "valueKey"],
+    requiredPropsWhen: [{ prop: "yDataKey", onlyWhen: { prop: "variant", equals: "matrix" } }],
     propNamedKeys: [
       { prop: "xDataKey", aliasOf: "x" },
       {

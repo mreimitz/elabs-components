@@ -280,7 +280,12 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
     dataKind: "array",
     // RM-196: the NEW names — after `useResolvedChartProps`/`resolveChartDoubleProps`
     // aliasing, `xDataKey`/`yDataKey` are always set whichever name the caller used.
-    requiredProps: ["data", "xDataKey", "yDataKey", "valueKey"],
+    // `yDataKey` moved to `requiredPropsWhen` (RM-196 F2 review R2-2): the real
+    // component ignores it entirely on `variant="calendar"` (its own TSDoc says so),
+    // so the double must not demand it there either — only on `variant="matrix"`,
+    // the default.
+    requiredProps: ["data", "xDataKey", "valueKey"],
+    requiredPropsWhen: [{ prop: "yDataKey", onlyWhen: { prop: "variant", equals: "matrix" } }],
     propNamedKeys: [
       { prop: "xDataKey", aliasOf: "x" },
       { prop: "yDataKey", aliasOf: "y", onlyWhen: { prop: "variant", equals: "matrix" } },

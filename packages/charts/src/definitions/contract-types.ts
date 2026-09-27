@@ -19,6 +19,15 @@ export interface ChartContractSpec {
   dataKind: "array" | "feature-collection" | "sankey" | "hierarchy" | "tree" | "none";
   /** Prop names (besides the data prop) that must not be `undefined`. */
   requiredProps?: string[];
+  /**
+   * A prop required only conditionally, on another prop's value —
+   * `HeatmapChart`'s `yDataKey`, required on `variant="matrix"` (the default)
+   * but ignored, so not required, on `variant="calendar"` (RM-196 F2 review
+   * R2-2). Checked the same way `requiredProps` is (`props[prop] ===
+   * undefined` fails), but only when `onlyWhen` matches — the same gate
+   * `propNamedKeys`' `onlyWhen` already uses.
+   */
+  requiredPropsWhen?: { prop: string; onlyWhen: { prop: string; equals: unknown } }[];
   /** True when the component accepts a `status` prop that exempts an empty data array. */
   hasStatus?: boolean;
   /** Keys every row of an array-kind data prop must own. */

@@ -848,6 +848,43 @@ describe("assertChartContract: omitting both spellings of a required pair (RM-19
     expect(error.prop).toBe("xDataKey");
     expect(error.message).toMatch(/required prop "xDataKey" is missing/);
   });
+
+  // review R2-2: `yDataKey` is required only on `variant="matrix"` — the real
+  // component ignores it on `variant="calendar"` (its own TSDoc says so), so the
+  // double must not demand it there either.
+  it('`variant="calendar"` with no `yDataKey`/`y`: does NOT throw', () => {
+    expect(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ day: "2026-01-05", val: 1 }],
+          xDataKey: "day",
+          // yDataKey/y both intentionally omitted — ignored on the calendar variant.
+          valueKey: "val",
+          variant: "calendar",
+        },
+        heatmapSpec,
+      ),
+    ).not.toThrow();
+  });
+
+  it('`variant="matrix"` (the default) with no `yDataKey`/`y`: throws, naming "yDataKey"', () => {
+    const error = violation(() =>
+      assertChartContract(
+        "HeatmapChart",
+        {
+          data: [{ col: "A", val: 1 }],
+          xDataKey: "col",
+          // yDataKey/y both intentionally omitted.
+          valueKey: "val",
+          variant: "matrix",
+        },
+        heatmapSpec,
+      ),
+    );
+    expect(error.prop).toBe("yDataKey");
+    expect(error.message).toMatch(/required prop "yDataKey" is missing/);
+  });
 });
 
 // ── deprecatedProps (RM-177, ADR 0042 §8) ────────────────────────────────────

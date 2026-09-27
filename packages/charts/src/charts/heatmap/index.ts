@@ -12,7 +12,6 @@ export {
 export {
   DEFAULT_HEATMAP_STEPS,
   HeatmapChart,
-  type HeatmapChartOwnProps,
   type HeatmapChartProps,
   type HeatmapMargin,
 } from "./heatmap-chart";

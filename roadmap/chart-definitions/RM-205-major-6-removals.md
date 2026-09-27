@@ -34,10 +34,12 @@ source: docs/review/2026-09-25-charts-unification-review.md F35, F36; ADR 0042 (
 - Remove the 39 alias rows of ADR 0042 Appendix A with their deprecated props, Candlestick's `maxVisibleItems` and `windowDomain` (A.8), the `height` aliases, `ChartSelection`, `ChartBrushLayout`, Scatter `trend` and the A2UI deprecated names.
 - Nothing is renamed here. The 6.0 questions in ADR A.9 (confirmation item (e)) are the maintainer's to settle; any rename they lead to is an ADR amendment and a later item.
 - The changeset carries the numbered migration steps generated from the same rows as `chart-codemod-map.generated.json`, and shows `brand-ui codemod packages/cli/lib/chart-codemod-map.generated.json`.
-- RM-196 F2 (owner decision, 2026-09-27): Heatmap's `xDataKey`/`yDataKey` become required
-  props at 6.0.0 — `HeatmapChartProps` regains the compile-time "one of the pair" shape that
-  was dropped in the 5.6.0 minor to honour `docs/DEPRECATION.md` §2's no-break promise; `x`/`y`
-  are removed the same release.
+- RM-196 F2 (owner decision, 2026-09-27): Heatmap's `xDataKey` becomes a required prop at
+  6.0.0 unconditionally, and `yDataKey` becomes required on `variant="matrix"` (the default) —
+  the real component ignores `yDataKey` entirely on `variant="calendar"` (review R2-2), so it
+  stays optional there. `HeatmapChartProps` regains the compile-time shape that was dropped in
+  the 5.6.0 minor to honour `docs/DEPRECATION.md` §2's no-break promise; `x`/`y` are removed the
+  same release.
 
 ## Acceptance
 

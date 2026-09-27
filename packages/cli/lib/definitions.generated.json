@@ -6546,7 +6546,16 @@
             "requireDate": true
           }
         ],
-        "requiredProps": ["data", "xDataKey", "yDataKey", "valueKey"]
+        "requiredProps": ["data", "xDataKey", "valueKey"],
+        "requiredPropsWhen": [
+          {
+            "onlyWhen": {
+              "equals": "matrix",
+              "prop": "variant"
+            },
+            "prop": "yDataKey"
+          }
+        ]
       },
       "description": "A value across two discrete axes, shaded per cell.",
       "fields": {

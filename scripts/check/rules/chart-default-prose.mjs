@@ -472,6 +472,22 @@ export default {
         },
       }, // review F7: an intersection that resolves to no members at all (every part opaque) is
       // a finding — "this module's TSDoc could not be read" — never a silent pass
+      {
+        files: {
+          [SNAPSHOT]: snapshot({ animationDuration: num(1100) }),
+          [MODULE]:
+            "interface CandlestickCommonProps {\n  gap?: number;\n}\ninterface CandlestickBaseProps {\n  /** Entry animation, ms. Default: 1500 */\n  animationDuration?: number;\n}\ninterface CandlestickAltProps {\n  /** Entry animation, ms. Default: 1100 */\n  animationDuration?: number;\n}\ntype CandlestickXorProp = CandlestickBaseProps | CandlestickAltProps;\nexport type CandlestickChartProps = CandlestickCommonProps & CandlestickXorProp;",
+        },
+      }, // RM-196 F2 review R2-6: the PASS fixture above (same union-of-INTERFACE-REFERENCES
+      // shape) proves this path does not crash, but not that it is actually READ — with the
+      // FIRST branch's `animationDuration` correctly matching 1100, skipping the whole
+      // `visitType(reference)` call still gives `members.get("animationDuration") ===
+      // undefined`, and the rule's own `if (!stated || …) continue;` guard treats a missing
+      // member as nothing to check, so 0 findings either way. Documenting the first branch's
+      // default as 1500 against a 1100 definition default breaks that: reading the branch is
+      // now the ONLY way to catch the drift, so a "0 findings" wrong pass here can only come
+      // from `visitType(reference)` being skipped — proven by mutation (comment out that
+      // call and this fixture goes from `fail` to `pass`), not merely fixture coverage.
       { files: { [MODULE]: "export {};" } }, // no snapshot
     ],
   },

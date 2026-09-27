@@ -354,6 +354,12 @@ export function assertChartContract(
       fail(component, p, undefined, `required prop "${p}" is missing`);
     }
   }
+  for (const { prop, onlyWhen } of spec.requiredPropsWhen ?? []) {
+    if (props[onlyWhen.prop] !== onlyWhen.equals) continue;
+    if (props[prop] === undefined) {
+      fail(component, prop, undefined, `required prop "${prop}" is missing`);
+    }
+  }
 
   const dataProp = spec.dataProp ?? "data";
 
