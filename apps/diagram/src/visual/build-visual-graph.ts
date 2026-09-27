@@ -1,5 +1,5 @@
 import { MarkerType, Position, getSmoothStepPath } from "@elabs-ai/components-flow";
-import type { Rect, VisualLayout } from "./lane-layout";
+import { LANE_PADDING, type Rect, type VisualLayout } from "./lane-layout";
 import type { VisualFlow, VisualLens } from "./visual-model";
 import {
   VISUAL_BOX_TYPE,
@@ -10,8 +10,25 @@ import {
   type VisualFlowEdgeType,
 } from "./visual-node-data";
 
+/** The gutter beside every box in a lane (`lane-layout.ts`'s own `LANE_PADDING`), less a
+ * small margin — never occupied by a box, so a same-lane connector's dogleg (below) always
+ * lands clear of the next box over. */
+const SAME_LANE_EDGE_OFFSET = LANE_PADDING - 4;
+
+interface EdgeAnchor {
+  sourceX: number;
+  sourceY: number;
+  sourcePosition: Position;
+  targetX: number;
+  targetY: number;
+  targetPosition: Position;
+  /** `getSmoothStepPath`'s own `offset` — how far the path's first bend sits outside each
+   * rect. Only the same-lane branch below sets this; the rest keep the library default. */
+  offset?: number;
+}
+
 /** Where two rects sit relative to each other, for the edge's anchor points and directions. */
-function anchors(from: Rect, to: Rect) {
+function anchors(from: Rect, to: Rect): EdgeAnchor {
   const fromMidY = from.y + from.height / 2;
   const toMidY = to.y + to.height / 2;
   if (to.x >= from.x + from.width) {
@@ -34,25 +51,21 @@ function anchors(from: Rect, to: Rect) {
       targetPosition: Position.Right,
     };
   }
-  const fromMidX = from.x + from.width / 2;
-  const toMidX = to.x + to.width / 2;
-  if (to.y >= from.y + from.height) {
-    return {
-      sourceX: fromMidX,
-      sourceY: from.y + from.height,
-      sourcePosition: Position.Bottom,
-      targetX: toMidX,
-      targetY: to.y,
-      targetPosition: Position.Top,
-    };
-  }
+  // Same lane (same x range, neither box to the other's side): a straight vertical line down
+  // the boxes' shared centre would cut through whatever box the layout happens to stack
+  // between them (maintainer feedback 2026-09-27, `.evidence/lens-preview-merge/` — "Databricks
+  // jobs' line runs through MSK"). Anchor both ends on the SAME side (left) instead:
+  // `getSmoothStepPath`'s same-position case bends the path at a fixed `offset` outside both
+  // rects rather than on the line between their centres, landing it in the lane's own padding
+  // gutter — empty at every row, so the dogleg clears any box in between, not just this pair.
   return {
-    sourceX: fromMidX,
-    sourceY: from.y,
-    sourcePosition: Position.Top,
-    targetX: toMidX,
-    targetY: to.y + to.height,
-    targetPosition: Position.Bottom,
+    sourceX: from.x,
+    sourceY: fromMidY,
+    sourcePosition: Position.Left,
+    targetX: to.x,
+    targetY: toMidY,
+    targetPosition: Position.Left,
+    offset: SAME_LANE_EDGE_OFFSET,
   };
 }
 
