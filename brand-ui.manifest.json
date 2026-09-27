@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T21:02:45.969Z",
+  "generatedAt": "2026-09-27T07:51:21.862Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -20587,7 +20587,7 @@
               "name": "loadingStroke",
               "optional": true,
               "type": "string",
-              "description": "Pulse stroke color while chart is loading. Default: var(--foreground)",
+              "description": "Pulse stroke color while chart is loading. Default: var(--chart-foreground)",
               "defaultValue": "\"var(--chart-foreground)\"",
               "kind": "color"
             },

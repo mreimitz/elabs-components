@@ -231,7 +231,7 @@ export interface AreaProps {
    * fill/crest at that sample, never a silent zero).
    */
   nulls?: NullsMode;
-  /** Pulse stroke color while chart is loading. Default: var(--foreground) */
+  /** Pulse stroke color while chart is loading. Default: var(--chart-foreground) */
   loadingStroke?: string;
   /** Pulse stroke opacity while chart is loading. Default: 0.5 */
   loadingStrokeOpacity?: number;
