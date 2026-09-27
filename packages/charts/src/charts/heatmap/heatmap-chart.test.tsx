@@ -319,7 +319,9 @@ const deprecations = (spy: { mock: { calls: unknown[][] } }) =>
   spy.mock.calls.filter(([message]) => String(message).includes("is deprecated"));
 
 describe("HeatmapChart renamed props (RM-194)", () => {
-  const base = { valueKey: "count", x: "hour", y: "day" } as const;
+  // RM-196: `xDataKey`/`yDataKey` (never the deprecated `x`/`y`) so these RM-194-only
+  // assertions do not pick up the unrelated RM-196 deprecation warnings too.
+  const base = { valueKey: "count", xDataKey: "hour", yDataKey: "day" } as const;
   const action = <button type="button">Clear filters</button>;
 
   afterEach(() => {

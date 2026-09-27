@@ -31,6 +31,9 @@ export const BAR_PART = /* @__PURE__ */ definePart<BarProps>()({
   groups: [dataLabelsGroup],
   fields: {
     dataKey: seriesGroup.fields.dataKey,
+    // RM-196 (ADR 0042 A.7): Bar gains `name`; unset falls back to `dataKey` in the legend
+    // and tooltip, same as `Line`/`Area`.
+    name: seriesGroup.fields.name,
     yAxisId: yAxisIdField,
     fill: field.color({
       tier: "essential",

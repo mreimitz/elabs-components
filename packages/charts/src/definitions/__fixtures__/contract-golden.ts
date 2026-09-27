@@ -132,12 +132,21 @@ export const CONTRACT_GOLDEN: Record<ChartDefinitionId, ChartContractSpec> = {
   // calendar variant reads `x` as a date — see `propNamedKeys`.
   HeatmapChart: {
     dataKind: "array",
-    requiredProps: ["data", "x", "y", "valueKey"],
+    requiredProps: ["data", "xDataKey", "yDataKey", "valueKey"],
     propNamedKeys: [
-      { prop: "x" },
-      { prop: "y", onlyWhen: { prop: "variant", equals: "matrix" } },
+      { prop: "xDataKey", aliasOf: "x" },
+      {
+        prop: "yDataKey",
+        aliasOf: "y",
+        onlyWhen: { prop: "variant", equals: "matrix" },
+      },
       { prop: "valueKey" },
-      { prop: "x", onlyWhen: { prop: "variant", equals: "calendar" }, requireDate: true },
+      {
+        prop: "xDataKey",
+        aliasOf: "x",
+        onlyWhen: { prop: "variant", equals: "calendar" },
+        requireDate: true,
+      },
     ],
   },
   Gantt: {

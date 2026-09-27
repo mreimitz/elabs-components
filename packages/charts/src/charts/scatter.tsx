@@ -31,6 +31,11 @@ import { SCATTER_PART } from "../definitions/parts/scatter.definition";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
 
 export interface ScatterProps extends Omit<SeriesMarkersProps, "animate"> {
+  /**
+   * Series display name (A.7, RM-196): legend and tooltip text. Unset falls back to
+   * `dataKey`, same as `Line`/`Area`'s `name`.
+   */
+  name?: string;
   /** Y-scale group id (Recharts `yAxisId`). Default: `"left"`. */
   yAxisId?: string | number;
   /** Whether to animate points with clip reveal. Default: true */

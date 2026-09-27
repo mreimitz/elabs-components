@@ -63,12 +63,30 @@ export interface RadarChartProps
   /** Enable animations. Default: true */
   animate?: boolean;
   /** Enter animation budget in ms. Default: 1100 */
+  animationDuration?: number;
+  /**
+   * Enter animation budget in ms.
+   *
+   * @deprecated Since 5.6.0, use `animationDuration`. Removed in 6.0.0.
+   */
   enterDurationMs?: number;
   /** Scales stagger timing (1 = default). */
+  enterStaggerScale?: number;
+  /**
+   * Scales stagger timing (1 = default).
+   *
+   * @deprecated Since 5.6.0, use `enterStaggerScale`. Removed in 6.0.0.
+   */
   staggerScale?: number;
   /** Motion enter transition (spring or cubic-bezier tween). */
   enterTransition?: Transition;
   /** Changes when motion settings change — replays enter animations. */
+  revealSignature?: string;
+  /**
+   * Changes when motion settings change — replays enter animations.
+   *
+   * @deprecated Since 5.6.0, use `revealSignature`. Removed in 6.0.0.
+   */
   motionReplayKey?: string;
   /** Controlled hover state - index of hovered area */
   hoveredIndex?: number | null;
@@ -269,10 +287,13 @@ export const RadarChartBase = forwardRef<HTMLDivElement, RadarChartProps>(functi
     levels = 5,
     margin = 60,
     animate = true,
-    enterDurationMs = DEFAULT_ANIMATION_DURATION_MS,
-    staggerScale = 1,
+    // RM-196 (ADR 0042 A.6, rows 36–38): the public names are `animationDuration` /
+    // `enterStaggerScale` / `revealSignature`; `RadarChartInner`'s own prop names
+    // (`enterDurationMs` / `staggerScale` / `motionReplayKey`) are private and unchanged.
+    animationDuration: enterDurationMs = DEFAULT_ANIMATION_DURATION_MS,
+    enterStaggerScale: staggerScale = 1,
     enterTransition,
-    motionReplayKey = "",
+    revealSignature: motionReplayKey = "",
     className = "",
     hoveredIndex,
     onHoverChange,
