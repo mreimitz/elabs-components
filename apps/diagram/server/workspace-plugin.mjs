@@ -27,6 +27,7 @@ import { URL } from "node:url";
 import { refuseNonLocal } from "./local-guard.mjs";
 import * as workspace from "./workspace-fs.mjs";
 import { createMcpMiddleware } from "./mcp/http.mjs";
+import { createPrompts } from "./mcp/prompts.mjs";
 import { createToolRegistry } from "./mcp/tools/index.mjs";
 import { createSpecBridge } from "./spec-bridge.mjs";
 
@@ -235,7 +236,7 @@ export function atlasWorkspace() {
       });
       // DG-35: the MCP server, on the same origin as the app (http://localhost:5180/mcp).
       const ctx = { tools: createToolRegistry(), bridge: createSpecBridge(server), events };
-      ctx.prompts = { list: async () => [], get: async () => null };
+      ctx.prompts = createPrompts();
       // R1 cut resources: an empty stub, so `resources/list` answers `[]` for a client that asks.
       ctx.resources = { list: async () => [], read: async () => null };
       server.middlewares.use("/mcp", createMcpMiddleware(ctx));
