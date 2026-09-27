@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import { Panel } from "@elabs-ai/components-flow";
 import { Button, IconButton, Text, cn } from "@elabs-ai/components-ui";
 import { ChevronLeft, ChevronRight, ListOrdered, X } from "lucide-react";
@@ -38,6 +38,43 @@ function keyDelta(key: string): 1 | -1 | 0 {
 const KEEP_KEYS =
   ".react-flow__node, .react-flow__edge, input, textarea, select, [contenteditable]";
 
+/** The legend (bottom-left) and the zoom controls (bottom-right): the player sits between them. */
+const SIDE_PANELS = ".react-flow__panel.bottom.left, .react-flow__panel.bottom.right";
+/** Room (px) kept between the walking player and each side panel. */
+const SIDE_GAP = 8;
+
+/**
+ * Review-wave3 (player): caps the walking player (`--step-player-room` on `surface`) at twice
+ * the room between the pane's centre, where flow centres the panel, and the nearer side panel.
+ * With the inspector open at 1440 the pane is 685 px and the open legend 174 px, so a
+ * shrink-to-fit player ran 3 px into the legend. Measured while walking only; it changes when
+ * the pane or a side panel does, never between steps.
+ */
+function useSideRoom(surface: RefObject<HTMLDivElement | null>, walking: boolean) {
+  useLayoutEffect(() => {
+    const el = surface.current;
+    const pane = el?.closest<HTMLElement>(".react-flow");
+    if (!el || !pane || !walking) return;
+    const sides = [...pane.querySelectorAll<HTMLElement>(SIDE_PANELS)];
+    const measure = () => {
+      const box = pane.getBoundingClientRect();
+      const centre = box.left + box.width / 2;
+      let half = box.width / 2;
+      for (const side of sides) {
+        const r = side.getBoundingClientRect();
+        if (!side.isConnected || r.width === 0 || r.height === 0) continue;
+        half = Math.min(half, side.classList.contains("left") ? centre - r.right : r.left - centre);
+      }
+      el.style.setProperty("--step-player-room", `${Math.max(0, 2 * (half - SIDE_GAP))}px`);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(pane);
+    for (const side of sides) observer.observe(side);
+    return () => observer.disconnect();
+  }, [surface, walking]);
+}
+
 function StepCaption({ step }: { step: WalkStep }) {
   return (
     <>
@@ -67,6 +104,8 @@ export function StepPlayer() {
   const presenting = isPresenting(useHash());
   const index = step === null ? -1 : steps.findIndex((entry) => entry.step === step);
   const current = index === -1 ? undefined : steps[index];
+  const surfaceRef = useRef<HTMLDivElement>(null);
+  useSideRoom(surfaceRef, current !== undefined);
   const startRef = useRef<HTMLButtonElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   // The control that takes focus after the player swaps its controls (start ↔ walking).
@@ -141,8 +180,9 @@ export function StepPlayer() {
           caption was cut). Under `@2xl` the surface takes the pane's width less the panel's
           margins, and the words take the room between the buttons. */}
       <div
+        ref={surfaceRef}
         className={cn(
-          "pointer-events-auto flex max-w-[min(36rem,calc(100vw-2rem))] items-center gap-1 p-1 @max-2xl:mb-13 @max-2xl:w-[calc(100cqw-2rem)]",
+          "pointer-events-auto flex max-w-[min(36rem,calc(100vw-2rem),var(--step-player-room,36rem))] items-center gap-1 p-1 @max-2xl:mb-13 @max-2xl:w-[calc(100cqw-2rem)] @max-2xl:max-w-none",
           SURFACE,
         )}
       >
