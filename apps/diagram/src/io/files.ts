@@ -1,9 +1,10 @@
 /**
  * DG-16 — open and save `.yaml` files (plan §10: no backend). Open reads the file the
  * person picked in a file input; Save downloads the text as it is, byte for byte, named
- * after the diagram's title. React-free.
+ * after the diagram's title. React-free. DG-21 turns them into Import and Export (below).
  */
 import { MAX_DOC_BYTES } from "./share-url";
+import { createUniqueFile } from "../workspace/client"; // DG-21
 
 /** The file input's `accept`. */
 export const YAML_ACCEPT = ".yaml,.yml,application/yaml,text/yaml";
@@ -37,6 +38,22 @@ export function downloadYaml(text: string, name: string): void {
   link.click();
   // Revoked on the next task: the download has started from the click.
   setTimeout(() => URL.revokeObjectURL(url));
+}
+
+// ── DG-21: Open/Save become Import/Export ───────────────────────────────────────────────
+// With the workspace (plan V5, V6) a document is a file on disk that autosaves, so a local
+// `.yaml` is imported into the workspace (it becomes a new workspace file) and a download is
+// an export. `readYamlFile` / `downloadYaml` stay: they are the two halves' file I/O.
+
+/** Import: `file` becomes a new workspace file in `folder` (a free name). Returns its path. */
+export async function importYamlFile(file: File, folder: string): Promise<string> {
+  const text = await readYamlFile(file);
+  return createUniqueFile(folder, yamlFileName(file.name.replace(/\.ya?ml$/i, "")), text);
+}
+
+/** Export: download `text` named after the diagram's `title`, byte for byte. */
+export function exportYaml(text: string, title: string | undefined): void {
+  downloadYaml(text, yamlFileName(title));
 }
 
 /** Ask before the tab closes or reloads while `edited()` (the browser shows its own prompt). */

@@ -11,7 +11,7 @@ import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { useInternalNode } from "@xyflow/react";
 import type { DataFlowEdge as DataFlowEdgeType } from "./data-flow-edge-data";
 import { EdgeLabelCluster } from "./edge-label-cluster";
-import { KIND_STROKE, resolveDash, resolveLineStyle } from "./edge-style";
+import { KIND_STROKE, KIND_STROKE_WIDTH, resolveDash, resolveLineStyle } from "./edge-style";
 import { fitRoute, polylineMidpoint, roundedOrthogonalPath, type EndBox } from "./route-path";
 import { isZoneNode, resolveEdgeEnds } from "./zone-endpoint";
 import { useInteraction } from "../interaction/interaction-store"; // DG-18
@@ -187,11 +187,8 @@ export function DataFlowEdge(props: EdgeProps<DataFlowEdgeType>) {
         path={path}
         selected={selected}
         stroke={KIND_STROKE[kind]}
-        strokeWidth={
-          lit
-            ? FLOW_EDGE_DEFAULTS.strokeWidth + FLOW_EDGE_DEFAULTS.selectedWidthIncrease
-            : undefined
-        }
+        // DG-20: the kind's width rung; a lit step draws one selection increment wider.
+        strokeWidth={KIND_STROKE_WIDTH[kind] + (lit ? FLOW_EDGE_DEFAULTS.selectedWidthIncrease : 0)}
         strokeDasharray={resolveDash(lineStyle, wantsMotion)}
         markerStart={markerStart}
         markerEnd={markerEnd}
@@ -202,6 +199,7 @@ export function DataFlowEdge(props: EdgeProps<DataFlowEdgeType>) {
         data-routed={routed ? "elk" : "step"}
         data-motion={wantsMotion ? (marching ? "marching" : "reduced") : undefined}
         data-dimmed={dimmed || undefined}
+        data-lit={lit || undefined}
         style={motionStyle || style ? { ...motionStyle, ...style } : undefined}
       />
       <EdgeLabelCluster
@@ -211,6 +209,7 @@ export function DataFlowEdge(props: EdgeProps<DataFlowEdgeType>) {
         kind={kind}
         selected={selected}
         dimmed={dimmed}
+        lit={lit}
       />
     </>
   );
