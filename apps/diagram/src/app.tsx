@@ -262,26 +262,33 @@ function SplitWorkspace() {
       >
         {editorMounted ? <EditorPane /> : null}
       </ResizablePanel>
-      {editorMounted ? (
-        <ResizableHandle
-          withHandle
-          aria-label={APP_LABELS.resize}
-          onDragging={(isDragging) => {
-            dragStartWidth.current = isDragging ? modeStore.get().editorWidth : null;
-            setDragging(isDragging);
-          }}
-          // P4: library gap — the handle's Enter key (react-resizable-panels 2.1.9, under ui
-          // `ResizableHandle`) collapses/expands the editor through a bare state setter that
-          // skips `onCollapse`/`onExpand`, so the mode would stay out of step. Take Enter
-          // first (capture phase; the library's listener bails on `defaultPrevented`) and route
-          // it through the mode, which slides the panel through its imperative API.
-          onKeyDownCapture={(event) => {
-            if (event.key !== "Enter") return;
-            event.preventDefault();
-            modeActions.toggleMode();
-          }}
-        />
-      ) : null}
+      {/* DG-22 review 2 (n11): always mounted. react-resizable-panels warns "Missing resize
+          handle for PanelGroup" (dev only) when a group's two panels have no handle between
+          them at all — view mode used to drop it along with the editor. Disabled and
+          collapsed to nothing instead of unmounted: the group keeps its handle, view mode
+          keeps no visible or focusable one. */}
+      <ResizableHandle
+        withHandle={editorMounted}
+        disabled={!editorMounted}
+        tabIndex={editorMounted ? undefined : -1}
+        aria-hidden={!editorMounted}
+        aria-label={APP_LABELS.resize}
+        className={editorMounted ? undefined : "w-0 invisible"}
+        onDragging={(isDragging) => {
+          dragStartWidth.current = isDragging ? modeStore.get().editorWidth : null;
+          setDragging(isDragging);
+        }}
+        // P4: library gap — the handle's Enter key (react-resizable-panels 2.1.9, under ui
+        // `ResizableHandle`) collapses/expands the editor through a bare state setter that
+        // skips `onCollapse`/`onExpand`, so the mode would stay out of step. Take Enter
+        // first (capture phase; the library's listener bails on `defaultPrevented`) and route
+        // it through the mode, which slides the panel through its imperative API.
+        onKeyDownCapture={(event) => {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          modeActions.toggleMode();
+        }}
+      />
       <ResizablePanel id="canvas" order={2} minSize={100 - EDITOR_WIDTH_MAX} className={slide}>
         <CanvasWithInspector phone={false} />
       </ResizablePanel>

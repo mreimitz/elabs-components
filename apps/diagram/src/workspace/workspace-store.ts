@@ -367,7 +367,7 @@ export const workspaceActions = {
     const text = `diagram: "0"\ntitle: ${JSON.stringify(title)}\n`;
     const path = await createUniqueFile(folder, yamlFileName(title), text);
     await workspaceActions.open(path);
-    void workspaceActions.refreshTree();
+    void workspaceActions.refreshTree().catch(() => undefined); // n12: the tree's own error state already reports it
     return path;
   },
 
@@ -389,7 +389,7 @@ export const workspaceActions = {
       diagramStore.set({ path });
     }
     renameInRecents(from, moved.to);
-    void workspaceActions.refreshTree();
+    void workspaceActions.refreshTree().catch(() => undefined); // n12: the tree's own error state already reports it
     return moved.to;
   },
 
@@ -400,14 +400,14 @@ export const workspaceActions = {
     const { current } = workspaceStore.get();
     if (current && isAt(current.path, path)) detach();
     renameInRecents(path, null);
-    void workspaceActions.refreshTree();
+    void workspaceActions.refreshTree().catch(() => undefined); // n12: the tree's own error state already reports it
     return trashedTo;
   },
 
   /** A new folder. */
   async mkdir(path: string): Promise<void> {
     await makeFolder(path);
-    void workspaceActions.refreshTree();
+    void workspaceActions.refreshTree().catch(() => undefined); // n12: the tree's own error state already reports it
   },
 
   /** The open file's Git history (the Versions drawer). */

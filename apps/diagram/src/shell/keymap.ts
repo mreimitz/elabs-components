@@ -155,7 +155,9 @@ export function onShellKeyDown(event: KeyboardEvent): void {
   if (key === "e" && doc) {
     event.preventDefault();
     modeActions.toggleMode();
-  } else if (key === "p" && doc && diagramStore.get().drawn.graph) {
+  } else if (key === "p" && doc && (diagramStore.get().drawn.graph?.nodes.length ?? 0) > 0) {
+    // n9: matches the top bar's Present button (interaction-controls.tsx `useAvailable`) —
+    // an empty document has a `graph` with no nodes, so the shortcut must refuse it too.
     event.preventDefault();
     navigate({ ...doc, present: true });
   }

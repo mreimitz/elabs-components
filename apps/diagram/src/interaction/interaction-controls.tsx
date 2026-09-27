@@ -14,9 +14,13 @@ const CONTROL_LABELS = {
   present: "Present",
 } as const;
 
-/** Present needs a drawn diagram; the zone folds need a zone in it. */
+/**
+ * Present needs a drawn diagram with something on it; the zone folds need a zone in it.
+ * n9: an empty ("Nothing to draw yet") document has a `graph` object with zero nodes — the
+ * same "nothing to present" case as a text that does not compile at all, so both disable it.
+ */
 function useAvailable() {
-  const hasGraph = useDiagram((s) => Boolean(s.drawn.graph));
+  const hasGraph = useDiagram((s) => (s.drawn.graph?.nodes.length ?? 0) > 0);
   const hasZones = useDiagram((s) => s.drawn.graph?.nodes.some(isZoneNode) ?? false);
   return { hasGraph, hasZones };
 }
