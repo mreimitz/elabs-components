@@ -337,7 +337,7 @@ const ADVANCED_GROUP_FIELD: FieldSpec = {
 
 // `SchemaForm` renders every field named by NO section before any section
 // (schema-form.tsx:884-913), so leaving `advanced` out of `sections`
-// entirely — as this spike first did — puts it FIRST, ahead of every
+// entirely puts it FIRST, ahead of every
 // essential section. Giving it a section of its own, listed last, is what
 // makes it render last instead. That section's own label deliberately does
 // NOT say "Advanced" too: the `advanced` field is itself a `variant:
@@ -361,7 +361,7 @@ const BAR_CHART_FORM_SPEC: FormSpec = {
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
-describe("RM-200 — BarChart definition → FormSpec (test-only spike)", () => {
+describe("BarChart definition → FormSpec (test-only spike)", () => {
   it("maps or lists every essential-tier field exactly once", () => {
     const essentialKeys = BAR_CHART_DEFINITION_FIELDS.filter(
       (entry) => tierOf(entry.field) === "essential",

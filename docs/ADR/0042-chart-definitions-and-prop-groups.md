@@ -639,9 +639,8 @@ or changes tier, without this table (and the counts below) being updated to matc
 
 - The three gaps above (object-array, union, Responsive<T>) account for 6 of BarChart's 11
   advanced-tier misses: `annotations`/`analytics`/`overlays` (object-array), `track`/`margin`
-  (union), `maxVisibleItems` (Responsive<T>). (Before this fix round it was 7 of 12, with
-  `selectionGestures` counted among the object-arrays — see the next bullet for why it no longer
-  is.)
+  (union), `maxVisibleItems` (Responsive<T>). `selectionGestures` is an array too, but of an
+  all-string enum, so it maps (see the last bullet of this section).
 - A fourth gap, only visible at advanced tier here (**object**: `colorBy`, `window`,
   `defaultWindow`, `enterTransition`, `comparison`) — FormSpec's `FormValue` has no object type
   (`schema-form-spec.ts:340-347`); the whole form's values are one flat object keyed by name,
