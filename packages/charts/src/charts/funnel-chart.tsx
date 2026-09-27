@@ -1,8 +1,9 @@
 "use client";
 
-import type { Transition } from "motion/react";
+import type { MotionValue, Transition } from "motion/react";
 import { motion, useTransform } from "motion/react";
-import { useReducedMotion } from "@elabs-ai/components-tokens";
+import { REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
+import { useStillEntrance } from "./use-still-entrance";
 import {
   type CSSProperties,
   type MutableRefObject,
@@ -296,6 +297,28 @@ function HRing({
   );
 }
 
+/**
+ * A segment's grow-in (`useMountProgress`). Reduced motion (RM-189: the person's
+ * own motion setting, else the OS) is a BRANCH, as in `Ring` / `RadarArea`: no
+ * stagger and no sweep, so the segment mounts whole. Latched
+ * (`useStillEntrance`): the replay key carries it, so a switch to reduced after
+ * mount lands the sweep at once, and the switch back never replays it.
+ */
+function useSegmentEnter(
+  enterTransition: Transition | undefined,
+  delay: number,
+  replayKey: number,
+): { mountProgress: MotionValue<number>; enterComplete: boolean } {
+  const stillEntrance = useStillEntrance();
+  const mountProgress = useMountProgress(
+    stillEntrance ? REDUCED_MOTION_ENTER_TRANSITION : enterTransition,
+    stillEntrance ? 0 : delay,
+    stillEntrance ? `${replayKey}-still` : replayKey,
+  );
+  const mountComplete = useEnterComplete(mountProgress);
+  return { mountProgress, enterComplete: stillEntrance || mountComplete };
+}
+
 function HSegment({
   index,
   normStart,
@@ -329,8 +352,11 @@ function HSegment({
 }) {
   const patternId = `funnel-h-pattern-${index}`;
   const gradientId = `funnel-h-grad-${index}`;
-  const mountProgress = useMountProgress(enterTransition, index * staggerDelay, index);
-  const enterComplete = useEnterComplete(mountProgress);
+  const { mountProgress, enterComplete } = useSegmentEnter(
+    enterTransition,
+    index * staggerDelay,
+    index,
+  );
   const entranceScaleX = useTransform(mountProgress, [0, 1], [0, 1]);
   const entranceScaleY = useTransform(mountProgress, [0, 1], [0, 1]);
 
@@ -532,8 +558,11 @@ function VSegment({
 }) {
   const patternId = `funnel-v-pattern-${index}`;
   const gradientId = `funnel-v-grad-${index}`;
-  const mountProgress = useMountProgress(enterTransition, index * staggerDelay, index);
-  const enterComplete = useEnterComplete(mountProgress);
+  const { mountProgress, enterComplete } = useSegmentEnter(
+    enterTransition,
+    index * staggerDelay,
+    index,
+  );
   const entranceScaleY = useTransform(mountProgress, [0, 1], [0, 1]);
   const entranceScaleX = useTransform(mountProgress, [0, 1], [0, 1]);
 
@@ -707,15 +736,15 @@ function SegmentLabel({
   // the group AT its resting opacity, so the value / percentage / label text is
   // never painted part-way up an opacity ramp (#125 — a fade over HTML text is
   // also what makes axe read a blended, illegible ink mid-entrance).
-  // One reduced-motion source (RM-189): the tokens hook, where the person's
-  // own motion setting wins over the OS. It settles after mount, so the
-  // group is keyed on it: a switch to reduced remounts the group at rest
-  // instead of letting an entrance that already started run on.
-  const prefersReducedMotion = useReducedMotion();
-  const entranceKey = prefersReducedMotion ? "still" : "enter";
-  const entranceInitial = prefersReducedMotion ? false : { opacity: 0 };
-  const entranceTransition: Transition = prefersReducedMotion
-    ? { duration: 0 }
+  // One reduced-motion source (RM-189): the person's own motion setting, else
+  // the OS. Latched (`useStillEntrance`): the group is keyed on it, so a switch
+  // to reduced after mount remounts the group at rest, and the switch back
+  // never replays the fade.
+  const stillEntrance = useStillEntrance();
+  const entranceKey = stillEntrance ? "still" : "enter";
+  const entranceInitial = stillEntrance ? false : { opacity: 0 };
+  const entranceTransition: Transition = stillEntrance
+    ? REDUCED_MOTION_ENTER_TRANSITION
     : { delay: index * staggerDelay + 0.25, duration: 0.35, ease: "easeOut" };
 
   const valueEl = showValues && (

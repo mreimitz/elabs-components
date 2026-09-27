@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import {
@@ -1087,6 +1088,34 @@ export function useTasteProfile(): {
 }
 
 /**
+ * Whether the OS asks for reduced motion. Feature-detected, not just
+ * SSR-guarded: `useReducedMotion` is documented as safe to call from ANY
+ * library component, and jsdom (every consumer package's test environment)
+ * implements no `matchMedia`. A bare call here would crash the consumer's tests
+ * on mount, and a stub in one package's test setup would only hide it from
+ * that package.
+ */
+function readOsReducedMotion(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
+}
+
+/** The server never knows the OS setting: it renders full motion. */
+function readServerReducedMotion(): boolean {
+  return false;
+}
+
+/** Follow live changes of the OS reduced-motion setting. */
+function subscribeOsReducedMotion(onChange: () => void): () => void {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return () => {};
+  }
+  const mql = window.matchMedia(REDUCED_MOTION_QUERY);
+  mql.addEventListener("change", onChange);
+  return () => mql.removeEventListener("change", onChange);
+}
+
+/**
  * Resolve the EFFECTIVE reduced-motion boolean for JS-driven animation (the CSS
  * `--motion-factor` gate cannot reach a JS timeline, e.g. Motion/Framer). Same
  * precedence as the CSS gate: user-explicit beats the OS setting.
@@ -1104,21 +1133,15 @@ export function useTasteProfile(): {
  */
 export function useReducedMotion(): boolean {
   const ctx = useContext(ThemeContext);
-  const [osReducedMotion, setOsReducedMotion] = useState(false);
-
-  useEffect(() => {
-    // Feature-detected, not just SSR-guarded: this hook is documented as safe
-    // to call from ANY library component, and jsdom (every consumer package's
-    // test environment) implements no `matchMedia`. A bare call here crashes
-    // the consumer's tests on mount — and a stub in one package's test setup
-    // would only hide it from that package.
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
-    const mql = window.matchMedia(REDUCED_MOTION_QUERY);
-    const onChange = () => setOsReducedMotion(mql.matches);
-    onChange();
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
+  // Read during render, not in an effect: the first client frame already
+  // carries the OS setting, so no animation starts for one frame before a
+  // reduced-motion setting lands. The server snapshot is `false`, and React
+  // re-renders with the client value after hydration, so SSR stays consistent.
+  const osReducedMotion = useSyncExternalStore(
+    subscribeOsReducedMotion,
+    readOsReducedMotion,
+    readServerReducedMotion,
+  );
 
   const preference = ctx?.motionPreference ?? "system";
   if (preference === "reduced") return true;

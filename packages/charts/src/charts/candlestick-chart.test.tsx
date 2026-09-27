@@ -274,15 +274,44 @@ describe("Candlestick rising vs falling: hollow vs solid bodies", () => {
     expect(falling).toHaveAttribute("data-candle-body", "solid");
     expect(falling).toHaveAttribute("fill", "url(#candlestick-negative)");
     expect(falling).toHaveAttribute("stroke", "url(#candlestick-negative)");
-    // The hollow outline takes the family's mark stroke (the wick's width), heavier than
-    // the solid body's own outline; the wicks are unchanged.
+    // On a candle at least 4 px wide the hollow outline is 2 px, heavier than the solid
+    // body's own 1 px outline, and a hole is left inside it; the wicks are unchanged.
+    expect(Number(rising?.getAttribute("width"))).toBeGreaterThanOrEqual(4);
+    expect(rising).toHaveAttribute("stroke-width", "2");
+    expect(falling).toHaveAttribute("stroke-width", "1");
+    expect(Number(rising?.getAttribute("width")) - 2).toBeGreaterThan(0);
     const [risingWick, fallingWick] = wicks(container);
-    expect(rising?.getAttribute("stroke-width")).toBe(risingWick?.getAttribute("width"));
-    expect(Number(rising?.getAttribute("stroke-width"))).toBeGreaterThan(
-      Number(falling?.getAttribute("stroke-width")),
-    );
+    expect(risingWick).toHaveAttribute("width", "1.5");
+    expect(fallingWick).toHaveAttribute("width", "1.5");
     expect(risingWick).toHaveAttribute("fill", "url(#candlestick-positive)");
     expect(fallingWick).toHaveAttribute("fill", "url(#candlestick-negative)");
+  });
+
+  it("thins the hollow outline to 1 px on a candle narrower than 4 px, so the hole survives", () => {
+    // Enough rows that each candle is under 4 px wide in the 560 px test plot.
+    const many = Array.from({ length: 150 }, (_, i) => ({
+      date: new Date(Date.UTC(2024, 0, 1 + i)),
+      open: 100 + i,
+      high: 106 + i,
+      low: 98 + i,
+      close: 104 + i,
+    }));
+    const { container } = render(
+      <CandlestickChart data={many} animationDuration={0}>
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    const hollow = bodies(container);
+    expect(hollow).toHaveLength(many.length);
+    for (const body of hollow) {
+      const width = Number(body.getAttribute("width"));
+      expect(width).toBeLessThan(4);
+      expect(width).toBeGreaterThan(1);
+      expect(body).toHaveAttribute("data-candle-body", "hollow");
+      expect(body).toHaveAttribute("stroke-width", "1");
+      // An SVG stroke paints half inside the body: the hole is the width minus the stroke.
+      expect(width - 1).toBeGreaterThan(0);
+    }
   });
 
   it("keeps the split while the candles enter (animated branch)", () => {

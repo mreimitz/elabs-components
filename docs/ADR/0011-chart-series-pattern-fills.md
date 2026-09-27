@@ -135,10 +135,21 @@ chart from shipping without a channel — #257's proposed gate is still open.
 
 ## Amendment — 2026-09-27: candlestick rising bodies are hollow
 
-`CandlestickChart` now draws a rising body HOLLOW (an outline in the rising colour on the
-plot's ground) and a falling body solid, at every decoration level — the trading-tool
-convention, decided by the maintainer on 2026-09-27. A hollow body has no fill to
-texture, and a pattern inside it would erase the hollow/solid channel, so at high
-decoration only a FALLING palette body takes its series pattern (index 1, as before); the
-`rising = 0` entry in the table above no longer applies. An author's explicit
-`bodyPatternPositive` still fills rising bodies.
+`CandlestickChart` now draws a rising body HOLLOW (an outline in the rising colour over the
+chart's own ground, `--chart-background`) and a falling body solid, at every decoration
+level — the trading-tool convention, decided by the maintainer on 2026-09-27. Hollow vs
+solid is now Candlestick's WCAG 1.4.1 channel at every decoration level; the series
+pattern is no longer the only non-colour cue, and below high decoration it was none.
+
+A hollow body has no fill to texture, and a pattern inside it would erase the hollow/solid
+channel, so at high decoration only a FALLING palette body takes its series pattern (index
+1, as before); the `rising = 0` entry in the table above no longer applies. An author's
+explicit `bodyPatternPositive` still fills rising bodies.
+
+Limit: the hole needs room. The hollow outline is 2 px, or 1 px on a candle narrower than
+4 px (an SVG stroke paints half inside the body, so the hole is the width minus the
+stroke): a candle 3 px wide keeps a 2 px hole, one 2 px wide a 1 px hole. A candle 1 px
+wide or narrower, and a body no taller than its outline (an unchanged candle is a 1 px
+bar), has no room for a hole and reads as a bar in the rising colour; there colour is the
+only cue again. The gain/loss colour pairs stay as they are until 6.0.0, so nothing
+recolours to compensate; a dense chart keeps the shape only with fewer rows or more width.

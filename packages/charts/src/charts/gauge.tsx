@@ -2,7 +2,8 @@
 
 import { ChartParentSize } from "./chart-parent-size";
 import { motion, type Transition } from "motion/react";
-import { useReducedMotion } from "@elabs-ai/components-tokens";
+import { REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
+import { useStillEntrance } from "./use-still-entrance";
 import {
   Children,
   Fragment,
@@ -321,12 +322,15 @@ function GaugeInner({
 }: GaugeInnerProps) {
   const tChart = useChartTranslate();
   const defaultLabel = defaultLabelProp ?? tChart("charts.gauge.defaultLabel");
-  // One reduced-motion source (RM-189): the tokens hook, where the person's own
-  // motion setting wins over the OS. It settles after mount, so the notches are
-  // keyed on it: a switch to reduced remounts them onto the still transition
-  // instead of letting a spring that already started run on.
-  const prefersReducedMotion = useReducedMotion();
-  const notchKeySuffix = prefersReducedMotion ? "-still" : "";
+  // Reduced motion (RM-189: the person's own motion setting, else the OS) is a
+  // BRANCH: every notch mounts at rest, with no stagger. Motion skips an
+  // animation only when both its duration and its delay are 0, so the delays
+  // below drop to 0 as well. Latched (`useStillEntrance`): a switch to reduced
+  // after mount remounts the notches at rest, and the switch back never
+  // replays them.
+  const stillEntrance = useStillEntrance();
+  const notchKeySuffix = stillEntrance ? "-still" : "";
+  const notchInitial = stillEntrance ? false : { opacity: 0, scale: 0 };
   const themeActiveGradientId = `gauge-theme-active-${useId().replace(/:/g, "")}`;
   // NOTE: not wrapped in `useStableValue` (`use-stable-value.ts`) — its output
   // is actual `ReactElement[]`, not JSON-serializable plain config, so a
@@ -334,8 +338,8 @@ function GaugeInner({
   // `children`-identity-keyed.
   const defsChildren = useMemo(() => collectDefsElements(children), [children]);
 
-  const notchTransition: Transition = prefersReducedMotion
-    ? { duration: 0 }
+  const notchTransition: Transition = stillEntrance
+    ? REDUCED_MOTION_ENTER_TRANSITION
     : (enterTransition ?? DEFAULT_NOTCH_ENTER_TRANSITION);
 
   const stagger = Math.max(0.25, Math.min(2.5, enterStaggerScale));
@@ -632,14 +636,14 @@ function GaugeInner({
             d={createNotchPath(notch.points, notchCornerRadius, notchLength)}
             fill={resolveBgFill(notch.index)}
             fillOpacity={resolvedInactiveFillOpacity}
-            initial={{ opacity: 0, scale: 0 }}
+            initial={notchInitial}
             key={`bg-${notch.index}${notchKeySuffix}`}
             style={{
               transformOrigin: `${centerX}px ${centerY}px`,
             }}
             transition={{
               ...notchTransition,
-              delay: notch.index * 0.015 * stagger,
+              delay: stillEntrance ? 0 : notch.index * 0.015 * stagger,
             }}
           />
         ))}
@@ -652,7 +656,7 @@ function GaugeInner({
               d={createNotchPath(notch.points, notchCornerRadius, notchLength)}
               fill={resolveActiveFill(notch)}
               fillOpacity={resolvedActiveFillOpacity}
-              initial={{ opacity: 0, scale: 0 }}
+              initial={notchInitial}
               key={`active-${notch.index}${notchKeySuffix}`}
               style={{
                 transformOrigin: `${centerX}px ${centerY}px`,
@@ -660,7 +664,7 @@ function GaugeInner({
               transition={{
                 ...notchTransition,
                 // RM-189: the scale spaces the notches; the lead-in is not a stagger.
-                delay: 0.3 + notch.index * 0.02 * stagger,
+                delay: stillEntrance ? 0 : 0.3 + notch.index * 0.02 * stagger,
               }}
             />
           ))}

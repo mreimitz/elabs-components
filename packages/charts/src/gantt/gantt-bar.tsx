@@ -40,7 +40,7 @@ import {
 import { createPortal } from "react-dom";
 import { cva } from "class-variance-authority";
 import { motion } from "motion/react";
-import { useReducedMotion } from "@elabs-ai/components-tokens";
+import { useStillEntrance } from "../charts/use-still-entrance";
 import { cn, Tooltip, TooltipTrigger, TooltipContent } from "@elabs-ai/components-ui";
 import { useChartInteractionPolicy } from "../charts/chart-config-context";
 import { useGantt } from "./gantt-context";
@@ -363,11 +363,11 @@ export function GanttBar({
   const fmt = meta.formatDate;
   const taskTypes = meta.taskTypes;
   const color = resolveBarColor(task, index, taskTypes);
-  // One reduced-motion source (RM-189): the tokens hook, where the person's own
-  // motion setting wins over the OS. It settles after mount, so the entering
-  // marks are keyed on it: a switch to reduced remounts them at rest instead of
-  // letting an entrance that already started run on.
-  const prefersReducedMotion = useReducedMotion();
+  // One reduced-motion source (RM-189): the person's own motion setting, else
+  // the OS. Latched (`useStillEntrance`): the entering marks are keyed on it,
+  // so a switch to reduced after mount remounts them at rest, and the switch
+  // back never replays them.
+  const prefersReducedMotion = useStillEntrance();
   const enterKey = prefersReducedMotion ? "still" : "enter";
   const clipId = useId();
   // Stable, collision-free scope for this row's gap-band patterns (ADR 0011's

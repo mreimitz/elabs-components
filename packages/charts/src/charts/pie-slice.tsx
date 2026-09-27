@@ -2,8 +2,8 @@
 
 import { arc as arcGenerator } from "@visx/shape";
 import { motion, type Transition, useSpring, useTransform } from "motion/react";
-import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
+import { useStillEntrance } from "./use-still-entrance";
 import { memo, useEffect } from "react";
 import { useActivateDatapoint } from "./chart-datapoint-layer";
 import { pieCssVars, pieDatapointTarget, usePieHover, usePieStable } from "./pie-context";
@@ -62,9 +62,10 @@ function useSliceEnter(
   enterStaggerScale: number,
   enterTransition: Transition | undefined,
 ): { delay: number; transition: Transition | undefined; prefersReducedMotion: boolean } {
-  // One reduced-motion source (RM-189): the tokens hook — the person's own
-  // motion setting wins over the OS.
-  const prefersReducedMotion = useReducedMotion();
+  // One reduced-motion source (RM-189): the person's own motion setting, else
+  // the OS. Latched (`useStillEntrance`): switching reduced motion off again
+  // never replays a sweep already shown.
+  const prefersReducedMotion = useStillEntrance();
   return prefersReducedMotion
     ? { delay: 0, transition: REDUCED_MOTION_ENTER_TRANSITION, prefersReducedMotion }
     : {

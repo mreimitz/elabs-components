@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, type Transition } from "motion/react";
-import { useReducedMotion } from "@elabs-ai/components-tokens";
+import { useStillEntrance } from "../charts/use-still-entrance";
 import { forwardRef, type SVGProps } from "react";
 
 /** Default draw duration in seconds — long enough to read as a hand, short enough not to wait. */
@@ -75,7 +75,9 @@ export const DrawPath = forwardRef<SVGPathElement, DrawPathProps>(function DrawP
   { duration = DEFAULT_DRAW_SECONDS, delay = 0, transition, fill, ...props },
   ref,
 ) {
-  const prefersReducedMotion = useReducedMotion();
+  // Latched (`useStillEntrance`): switching reduced motion off again never
+  // replays a draw-in already shown.
+  const prefersReducedMotion = useStillEntrance();
   const resolvedFill = fill ?? "none";
 
   if (prefersReducedMotion) {

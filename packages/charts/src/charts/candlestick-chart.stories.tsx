@@ -140,9 +140,13 @@ export const RisingAndFalling: Story = {
       await expect(body.getAttribute("stroke")).toBe(
         hollow ? "url(#candlestick-positive)" : "url(#candlestick-negative)",
       );
-      // The hollow outline actually paints: a real, non-zero stroke in the browser.
+      // The hollow outline actually paints: 2 px on a candle at least 4 px wide, 1 px on a
+      // thinner one, and it leaves a hole (an SVG stroke paints half inside the body).
       if (hollow) {
-        await expect(Number.parseFloat(getComputedStyle(body).strokeWidth)).toBeGreaterThan(1);
+        const width = Number(body.getAttribute("width"));
+        const stroke = Number.parseFloat(getComputedStyle(body).strokeWidth);
+        await expect(stroke).toBe(width < 4 ? 1 : 2);
+        await expect(width - stroke).toBeGreaterThan(0);
       }
     }
   },

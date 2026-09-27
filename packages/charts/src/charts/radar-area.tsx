@@ -3,7 +3,7 @@
 import type { MotionValue } from "motion/react";
 import { motion, useTransform } from "motion/react";
 import { memo, useId, useMemo } from "react";
-import { useReducedMotion } from "@elabs-ai/components-tokens";
+import { useStillEntrance } from "./use-still-entrance";
 import { DEFAULT_ANIMATION_DURATION_MS, REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
 import { radarCssVars, useRadarHover, useRadarStable } from "./radar-context";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
@@ -135,11 +135,12 @@ export const RadarArea = memo(function RadarArea({
   const campaignStagger = 0.15 * staggerScale * durationFactor;
   const animationDelay = campaignBaseDelay + index * campaignStagger;
 
-  // Reduced motion (the tokens hook: the person's own motion setting, else the
-  // OS) is a BRANCH, as in `PieSlice`: no stagger, no sweep, no fade — the
-  // polygon mounts whole. The replay key carries it, so a switch to reduced
-  // after mount lands the sweep at once instead of letting it run on.
-  const reducedMotion = useReducedMotion();
+  // Reduced motion (RM-189: the person's own motion setting, else the OS) is a
+  // BRANCH, as in `PieSlice`: no stagger, no sweep, no fade — the polygon
+  // mounts whole. Latched (`useStillEntrance`): the replay key and the group's
+  // key carry it, so a switch to reduced after mount lands the entrance at
+  // once, and the switch back never replays it.
+  const reducedMotion = useStillEntrance();
   const mountProgress = useMountProgress(
     reducedMotion ? REDUCED_MOTION_ENTER_TRANSITION : enterTransition,
     reducedMotion ? 0 : animationDelay,
@@ -177,7 +178,8 @@ export const RadarArea = memo(function RadarArea({
         }}
         className={className}
         initial={{ opacity: animate && !reducedMotion ? 0 : 1 }}
-        // Remount at rest when reduced motion switches on mid-entrance.
+        // Remount at rest when reduced motion switches on mid-entrance; latched,
+        // so switching it off again never replays the fade.
         key={reducedMotion ? "still" : "enter"}
         onMouseEnter={() => setHoveredIndex(index)}
         onMouseLeave={() => setHoveredIndex(null)}

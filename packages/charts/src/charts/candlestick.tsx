@@ -27,10 +27,23 @@ const WICK_WIDTH = 1.5;
 /** A solid (falling) body's outline, in the body's own colour. */
 const SOLID_BODY_STROKE_WIDTH = 1;
 /**
- * A hollow (rising) body's outline: the wick's weight, so a rising candle
- * reads as one continuous line figure — the trading-tool convention.
+ * A hollow (rising) body's outline. Heavier than a solid body's, because on a
+ * hollow body the outline IS the mark: it has to hold its colour against the
+ * ground on its own.
  */
-const HOLLOW_BODY_STROKE_WIDTH = WICK_WIDTH;
+const HOLLOW_BODY_STROKE_WIDTH = 2;
+/**
+ * The candle width below which a 2 px outline would all but close the hole (an
+ * SVG stroke paints half inside the body, so the hole is the width minus the
+ * stroke). Narrower candles take the solid body's 1 px outline instead, which
+ * keeps a hole of 2 px down to a candle 3 px wide.
+ */
+const THIN_CANDLE_WIDTH = 4;
+
+/** The hollow outline for a candle `candleWidth` wide. */
+function hollowBodyStrokeWidth(candleWidth: number): number {
+  return candleWidth < THIN_CANDLE_WIDTH ? SOLID_BODY_STROKE_WIDTH : HOLLOW_BODY_STROKE_WIDTH;
+}
 /**
  * A hollow body's inside: the plot's own ground (`--chart-background`), as
  * DumbbellChart's hollow marker. It masks the wick behind the body, so the
@@ -189,7 +202,7 @@ function computeGeometries(
         wickLeft: centerX - WICK_WIDTH / 2,
         bodySolidFill: HOLLOW_BODY_FILL,
         bodyStroke: fill,
-        bodyStrokeWidth: HOLLOW_BODY_STROKE_WIDTH,
+        bodyStrokeWidth: hollowBodyStrokeWidth(candleWidth),
         hollow: true,
         wickFill: fill,
         bodyPattern: undefined,
@@ -413,6 +426,23 @@ function AnimatedCandle({ geometry, delay, enterTransition, revealEpoch }: Anima
   );
 }
 
+/**
+ * The OHLC candle mark inside a `CandlestickChart`: a wick from low to high and a
+ * body from open to close.
+ *
+ * A rising candle (close at or above open, so an unchanged one too) draws a HOLLOW
+ * body: an outline in the rising colour over the chart's own ground
+ * (`--chart-background`). A falling candle draws a SOLID body. Up and down therefore
+ * differ by shape as well as colour (WCAG 1.4.1), at every decoration level and
+ * under every palette.
+ *
+ * Limit: the hole needs room. The hollow outline is 2 px, or 1 px on a candle
+ * narrower than 4 px, so a candle 3 px wide still shows a 2 px hole and one 2 px
+ * wide a 1 px hole. A candle 1 px wide or narrower, and a body no taller than its
+ * outline (an unchanged candle is a 1 px bar), has no room for a hole: it reads as
+ * a bar in the rising colour, and colour is then the only cue. Give such a chart
+ * fewer rows or more width to keep the shape.
+ */
 export function Candlestick({
   animate = true,
   positiveFill = DEFAULT_POSITIVE,

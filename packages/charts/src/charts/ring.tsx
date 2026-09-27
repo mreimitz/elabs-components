@@ -2,7 +2,7 @@
 
 import { arc as arcGenerator } from "@visx/shape";
 import { type MotionValue, motion, useTransform } from "motion/react";
-import { useReducedMotion } from "@elabs-ai/components-tokens";
+import { useStillEntrance } from "./use-still-entrance";
 import { REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
 import { memo, useCallback } from "react";
 import { ChartSelectionMark, resolveMarkPaint, useChartSelection } from "./chart-selection";
@@ -305,11 +305,12 @@ export const Ring = memo(function Ring({
   const activateDatapoint = useActivateDatapoint();
   const selection = useChartSelection();
 
-  // Reduced motion (the tokens hook: the person's own motion setting, else the
-  // OS) is a BRANCH, as in `PieSlice`: no stagger, no expand, no sweep — the
-  // ring mounts whole. The replay keys carry it, so a switch to reduced after
-  // mount lands both progresses at once instead of letting them run on.
-  const reducedMotion = useReducedMotion();
+  // Reduced motion (RM-189: the person's own motion setting, else the OS) is a
+  // BRANCH, as in `PieSlice`: no stagger, no expand, no sweep — the ring mounts
+  // whole. Latched (`useStillEntrance`): the replay keys carry it, so a switch
+  // to reduced after mount lands both progresses at once, and the switch back
+  // never replays them.
+  const reducedMotion = useStillEntrance();
   const mountTransition = reducedMotion ? REDUCED_MOTION_ENTER_TRANSITION : enterTransition;
   const stillKey = reducedMotion ? "-still" : "";
 
