@@ -1,8 +1,35 @@
 import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
 
+/**
+ * `child`'s component name — its `displayName`, or its function `name`, or `""` for a
+ * host element (`"div"`), a fragment or a non-element. Works for a plain function
+ * component AND a `memo()`/`forwardRef()`-wrapped one (`child.type` is then an object,
+ * not a function, but still carries `displayName`/`name`).
+ */
 export function getChartChildComponentName(child: ReactElement): string {
-  const childType = child.type as { displayName?: string; name?: string };
-  return typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
+  const type = child.type as { displayName?: string; name?: string } | string;
+  if (typeof type === "string") {
+    return "";
+  }
+  return type.displayName || type.name || "";
+}
+
+/**
+ * Is `child` a React element whose component is named `name` — checking both
+ * `displayName` and `name` off whatever `child.type` is, a plain function or a
+ * `memo()`/`forwardRef()` object? Either field matching is enough, so a component
+ * exported under a different `displayName` than its function `name` (or vice versa)
+ * still matches. `false` for a string child, a fragment, text or `null`.
+ */
+export function isNamedChartChild(child: ReactNode, name: string): boolean {
+  if (!isValidElement(child)) {
+    return false;
+  }
+  const type = child.type as { displayName?: string; name?: string } | string;
+  if (typeof type === "string") {
+    return false;
+  }
+  return type.displayName === name || type.name === name;
 }
 
 const VISX_PATTERN_COMPONENT_NAMES = new Set([

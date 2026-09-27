@@ -1,5 +1,6 @@
 "use client";
 
+import { getChartChildComponentName } from "./chart-defs";
 import { ChartParentSize } from "./chart-parent-size";
 import type { Transition } from "motion/react";
 import {
@@ -211,17 +212,12 @@ const LINE_DOMAIN_EXCLUDED_NAMES = new Set([
   "PatternArea",
 ]);
 
-function getChildComponentName(child: ReactElement) {
-  const childType = child.type as { displayName?: string; name?: string };
-  return typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
-}
-
 function registersLineDomain(child: ReactElement, props: LineProps | undefined) {
   if (!props?.dataKey) {
     return false;
   }
 
-  const componentName = getChildComponentName(child);
+  const componentName = getChartChildComponentName(child);
   if (componentName === "Line" || child.type === Line) {
     return true;
   }

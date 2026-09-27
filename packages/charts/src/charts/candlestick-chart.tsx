@@ -2,7 +2,7 @@
 
 import { ChartParentSize } from "./chart-parent-size";
 import { useChartEnterReveal, useDateBisector } from "./cartesian-shell-hooks";
-import { isChartDefsComponent } from "./chart-defs";
+import { isChartDefsComponent, isNamedChartChild } from "./chart-defs";
 import { scaleLinear, scaleTime } from "@visx/scale";
 import type { Transition } from "motion/react";
 import {
@@ -300,10 +300,8 @@ const ChartCore = memo(function ChartCore({
   // unwindowed chart keeps its exact DOM.
   const clipMarks = xDomain !== undefined;
   const marksClipId = `candlestick-plot-clip-${useSvgId()}`;
-  const isMarkComponent = (child: ReactElement): boolean => {
-    const displayName = (child.type as { displayName?: string })?.displayName ?? "";
-    return displayName === "Candlestick" || displayName === "AnalyticSeriesLayer";
-  };
+  const isMarkComponent = (child: ReactElement): boolean =>
+    isNamedChartChild(child, "Candlestick") || isNamedChartChild(child, "AnalyticSeriesLayer");
 
   const defsChildren: ReactElement[] = [];
   const restChildren: ReactElement[] = [];

@@ -1,6 +1,7 @@
 "use client";
 
 import { Group } from "@visx/group";
+import { getChartChildComponentName } from "./chart-defs";
 import { ChartParentSize } from "./chart-parent-size";
 import { pie as d3Pie } from "d3-shape";
 import type { Transition } from "motion/react";
@@ -392,10 +393,7 @@ interface PieChartInnerProps {
 
 // Helper to check if a component is a gradient or pattern definition
 function isDefsComponent(child: ReactElement): boolean {
-  const displayName =
-    (child.type as { displayName?: string })?.displayName ||
-    (child.type as { name?: string })?.name ||
-    "";
+  const displayName = getChartChildComponentName(child);
   return (
     displayName.includes("Gradient") ||
     displayName.includes("Pattern") ||

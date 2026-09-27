@@ -20,15 +20,10 @@ import {
 
 import { chartCssVars, useChartStable, useYScale } from "../charts/chart-context";
 import { type ChartFacetScopeValue, useChartFacetScope } from "../charts/chart-config-context";
+import { isNamedChartChild } from "../charts/chart-defs";
 
 /** Stroke width of the muted baseline series (thinner than a panel series' 2 px). */
 const FACET_BASELINE_STROKE_WIDTH = 1.5;
-
-function childName(child: ReactElement): string {
-  const type = child.type as { displayName?: string; name?: string } | string;
-  if (typeof type === "string") return "";
-  return type.displayName || type.name || "";
-}
 
 /** Whether a value axis at `position` (YAxis' `"left" | "right"`) paints labels under shared y. */
 function paintsValueAxis(scope: ChartFacetScopeValue, position: unknown): boolean {
@@ -68,8 +63,7 @@ export function applyFacetScope(
       continue;
     }
     const props = child.props as Record<string, unknown>;
-    const name = childName(child);
-    if (name === "YAxis") {
+    if (isNamedChartChild(child, "YAxis")) {
       // RM-192 (ADR 0042 A.2, row 11): this reads the child's RAW props before any alias
       // runs, so a caller still on the deprecated `orientation` name is read too, until 6.0.
       if (!paintsValueAxis(scope, props.position ?? props.orientation)) continue;
@@ -80,7 +74,7 @@ export function applyFacetScope(
       );
       continue;
     }
-    if (name === "Grid") {
+    if (isNamedChartChild(child, "Grid")) {
       out.push(
         scope.yTicks && props.rowTickValues === undefined
           ? cloneElement(child as ReactElement<{ rowTickValues?: number[] }>, {
@@ -90,7 +84,7 @@ export function applyFacetScope(
       );
       continue;
     }
-    if (name === "XAxis" && scope.sharedX && !scope.bottom) continue;
+    if (isNamedChartChild(child, "XAxis") && scope.sharedX && !scope.bottom) continue;
     out.push(child);
   }
   return out;

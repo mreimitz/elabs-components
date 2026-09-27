@@ -11,20 +11,14 @@
  * solver drops are handed back so the shell can restate them `sr-only`.
  */
 
-import {
-  Children,
-  createContext,
-  isValidElement,
-  type ReactElement,
-  type ReactNode,
-  useContext,
-} from "react";
+import { Children, createContext, isValidElement, type ReactNode, useContext } from "react";
 import {
   type ChartBreakpoint,
   isResponsiveByBreakpoint,
   type Responsive,
   resolveResponsive,
 } from "../chart-breakpoint";
+import { getChartChildComponentName } from "../chart-defs";
 import type { LabelPeaksSpec } from "../line";
 import type { ChartValueFormat } from "../value-format";
 import { type LabelBox, type LabelPlacement, layoutLabels } from "./label-layout";
@@ -140,13 +134,6 @@ interface LabelledSeriesProps {
   children?: ReactNode;
 }
 
-function displayNameOf(child: ReactElement): string {
-  const type = child.type as { displayName?: string; name?: string };
-  return typeof child.type === "function" || typeof child.type === "object"
-    ? (type.displayName ?? type.name ?? "")
-    : "";
-}
-
 /**
  * Resolve `valueLabels`, falling back to the `labelPeaks` alias. `Line`'s own shape
  * always; `Area`'s widened `boolean` (A.7) is never passed here — the caller filters
@@ -198,7 +185,7 @@ export function collectLabelRequests(
   const visit = (node: ReactNode) => {
     Children.forEach(node, (child) => {
       if (!isValidElement(child)) return;
-      const name = displayNameOf(child);
+      const name = getChartChildComponentName(child);
       const props = child.props as LabelledSeriesProps;
       if (name === "ChartLegend") {
         hasLegend = true;

@@ -1,6 +1,7 @@
 "use client";
 
 import type { Transition } from "motion/react";
+import { getChartChildComponentName } from "./chart-defs";
 import {
   Children,
   forwardRef,
@@ -165,12 +166,7 @@ function extractScatterConfigs(children: ReactNode): LineConfig[] {
       return;
     }
 
-    const childType = child.type as {
-      displayName?: string;
-      name?: string;
-    };
-    const componentName =
-      typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
+    const componentName = getChartChildComponentName(child);
 
     const props = child.props as ScatterProps | undefined;
     const isScatterComponent =

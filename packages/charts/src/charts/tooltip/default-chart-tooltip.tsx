@@ -1,4 +1,5 @@
-import { Children, isValidElement, useMemo, type ReactNode } from "react";
+import { Children, isValidElement, useMemo, type ReactElement, type ReactNode } from "react";
+import { isNamedChartChild } from "../chart-defs";
 import { ChartTooltip } from "./chart-tooltip";
 
 /**
@@ -17,11 +18,8 @@ import { ChartTooltip } from "./chart-tooltip";
  * `tooltip={false}` beside it. A host that wants no hover feedback at all
  * sets `ChartConfigProvider`/`ChartFrame` `interactions={{ passive: false }}`.
  */
-function isChartTooltipElement(type: unknown): boolean {
-  if (type === ChartTooltip) return true;
-  if (typeof type !== "function") return false;
-  const named = type as { displayName?: string; name?: string };
-  return (named.displayName || named.name) === "ChartTooltip";
+function isChartTooltipElement(child: ReactElement): boolean {
+  return child.type === ChartTooltip || isNamedChartChild(child, "ChartTooltip");
 }
 
 export function hasChartTooltipChild(children: ReactNode): boolean {
@@ -29,7 +27,7 @@ export function hasChartTooltipChild(children: ReactNode): boolean {
   const visit = (nodes: ReactNode) => {
     Children.forEach(nodes, (child) => {
       if (found || !isValidElement(child)) return;
-      if (isChartTooltipElement(child.type)) {
+      if (isChartTooltipElement(child)) {
         found = true;
         return;
       }

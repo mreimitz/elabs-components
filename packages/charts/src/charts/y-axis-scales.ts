@@ -1,6 +1,7 @@
 import { scaleLinear, scaleLog, scaleSqrt } from "@visx/scale";
 import { Children, isValidElement, type ReactNode } from "react";
 import type { LineConfig } from "./chart-context";
+import { getChartChildComponentName } from "./chart-defs";
 
 /** Default axis id when `yAxisId` is omitted (Recharts-style `0` / primary left axis). */
 export const DEFAULT_Y_AXIS_ID = "left";
@@ -222,11 +223,10 @@ export function collectValueAxisConfigs(
 ): Record<string, ValueAxisConfig> {
   const configs: Record<string, ValueAxisConfig> = {};
   Children.forEach(children, (child) => {
-    if (!isValidElement(child) || typeof child.type !== "function") {
+    if (!isValidElement(child)) {
       return;
     }
-    const type = child.type as { displayName?: string; name?: string };
-    const name = type.displayName || type.name || "";
+    const name = getChartChildComponentName(child);
     if (!componentNames.includes(name)) {
       return;
     }

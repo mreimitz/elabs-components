@@ -39,6 +39,7 @@ import {
 import { useLocale } from "@elabs-ai/components-ui";
 import type { ChartAnnotation } from "../annotations/annotation-types";
 import { ChartAnalyticsDescriptionContext } from "../chart-a11y";
+import { getChartChildComponentName } from "../chart-defs";
 import { useChartValueFormatter } from "../chart-formatters";
 import type { CurveAlias, CurveFactory } from "../curve-types";
 import type { ChartValueFormat } from "../value-format";
@@ -213,8 +214,7 @@ function findValueAxisFormat(
   let found: { valueFormat?: ChartValueFormat; currency?: string; unit?: string } | undefined;
   Children.forEach(children, (child) => {
     if (found || !isValidElement(child)) return;
-    const type = child.type as { displayName?: string; name?: string };
-    const name = typeof child.type === "function" ? type.displayName || type.name || "" : "";
+    const name = getChartChildComponentName(child);
     if (name !== "YAxis") return;
     const props = child.props as {
       valueFormat?: ChartValueFormat;
@@ -235,8 +235,7 @@ export function collectAnalyticsSeries(children: ReactNode): AnalyticsSourceSeri
   const visit = (node: ReactNode) => {
     Children.forEach(node, (child) => {
       if (!isValidElement(child)) return;
-      const type = child.type as { displayName?: string; name?: string };
-      const name = typeof child.type === "function" ? type.displayName || type.name || "" : "";
+      const name = getChartChildComponentName(child);
       const props = child.props as {
         dataKey?: unknown;
         name?: unknown;

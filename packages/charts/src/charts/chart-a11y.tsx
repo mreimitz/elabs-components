@@ -45,6 +45,7 @@ import {
   useId,
   useMemo,
 } from "react";
+import { getChartChildComponentName } from "./chart-defs";
 import { makeValueSetFmt } from "./chart-formatters";
 import { pickNotableIndices } from "./labels/use-chart-labels";
 import type { ChartValueFormat } from "./value-format";
@@ -324,8 +325,7 @@ function collectSummarySeries(children: ReactNode): {
   const visit = (node: ReactNode) => {
     Children.forEach(node, (child) => {
       if (!isValidElement(child)) return;
-      const type = child.type as { displayName?: string; name?: string };
-      const typeName = typeof child.type === "string" ? "" : (type.displayName ?? type.name ?? "");
+      const typeName = getChartChildComponentName(child);
       const props = child.props as SummarisedSeriesProps;
       if (SUMMARISED_SERIES.has(typeName) && typeof props.dataKey === "string") {
         series.push({

@@ -1,6 +1,7 @@
 "use client";
 
 import { localPoint } from "@visx/event";
+import { getChartChildComponentName } from "./chart-defs";
 import { ChartParentSize } from "./chart-parent-size";
 import { scaleLinear, scaleTime } from "@visx/scale";
 import { bisector } from "d3-array";
@@ -221,9 +222,7 @@ function extractLiveLineConfigs(children: ReactNode): LineConfig[] {
     if (!isValidElement(child)) {
       return;
     }
-    const childType = child.type as { displayName?: string; name?: string };
-    const name =
-      typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
+    const name = getChartChildComponentName(child);
     const props = child.props as LiveLineProps | undefined;
     if ((name === "LiveLine" || (props && "dataKey" in props)) && props?.dataKey) {
       configs.push({

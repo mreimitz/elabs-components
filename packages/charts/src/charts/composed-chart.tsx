@@ -1,5 +1,6 @@
 "use client";
 
+import { getChartChildComponentName } from "./chart-defs";
 import { ChartLegendHoverProvider } from "./chart-legend-hover";
 import { ChartParentSize } from "./chart-parent-size";
 import { useChartConfig } from "./chart-config-context";
@@ -203,11 +204,6 @@ export interface ComposedChartProps
   legend?: ContainerLegendProp;
 }
 
-function getChildComponentName(child: ReactElement): string {
-  const childType = child.type as { displayName?: string; name?: string };
-  return typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
-}
-
 function upsertLineConfig(lines: LineConfig[], config: LineConfig): void {
   const index = lines.findIndex((line) => line.dataKey === config.dataKey);
   if (index === -1) {
@@ -228,7 +224,7 @@ function tryAppendSeriesBar(
   lines: LineConfig[],
   barDataKeys: string[],
 ): boolean {
-  const name = getChildComponentName(child);
+  const name = getChartChildComponentName(child);
   if (!(child.type === SeriesBar || name === "SeriesBar")) {
     return false;
   }
@@ -248,7 +244,7 @@ function tryAppendSeriesBar(
 }
 
 function tryAppendLine(child: ReactElement, lines: LineConfig[]): boolean {
-  const name = getChildComponentName(child);
+  const name = getChartChildComponentName(child);
   if (!(child.type === Line || name === "Line")) {
     return false;
   }
@@ -266,7 +262,7 @@ function tryAppendLine(child: ReactElement, lines: LineConfig[]): boolean {
 }
 
 function tryAppendArea(child: ReactElement, lines: LineConfig[]): boolean {
-  const name = getChildComponentName(child);
+  const name = getChartChildComponentName(child);
   if (!(child.type === Area || name === "Area")) {
     return false;
   }
@@ -350,7 +346,7 @@ function collectDualAxisSeries(children: ReactNode): DualAxisSeries[] {
   const series: DualAxisSeries[] = [];
   Children.forEach(children, (child) => {
     if (!isValidElement(child)) return;
-    const name = getChildComponentName(child);
+    const name = getChartChildComponentName(child);
     const props = child.props as { dataKey?: string; yAxisId?: string | number };
     if (!props.dataKey) return;
     if (child.type === SeriesBar || name === "SeriesBar") {
@@ -415,7 +411,7 @@ interface DualAxisPlan {
 function pinnedDomainOf(children: ReactNode, axisId: string): [number, number] | undefined {
   let pinned: [number, number] | undefined;
   Children.forEach(children, (child) => {
-    if (!isValidElement(child) || getChildComponentName(child) !== "YAxis") return;
+    if (!isValidElement(child) || getChartChildComponentName(child) !== "YAxis") return;
     const props = child.props as YAxisProps;
     if (normalizeYAxisId(props.yAxisId) !== axisId || !props.domain) return;
     const [lo, hi] = props.domain;
@@ -474,7 +470,7 @@ function applyDualAxisPlan(children: ReactNode, plan: DualAxisPlan): ReactNode {
     id === plan.rightId ? plan.right : id === plan.leftId ? plan.left : undefined;
   return Children.map(children, (child) => {
     if (!isValidElement(child)) return child;
-    const name = getChildComponentName(child);
+    const name = getChartChildComponentName(child);
     if (name === "YAxis") {
       const props = child.props as YAxisProps;
       const axis = axisFor(normalizeYAxisId(props.yAxisId));
@@ -508,7 +504,7 @@ function withDualAxisTooltipRows(
 ): ReactNode {
   const unitByAxis = new Map<string, string | undefined>();
   Children.forEach(children, (child) => {
-    if (!isValidElement(child) || getChildComponentName(child) !== "YAxis") return;
+    if (!isValidElement(child) || getChartChildComponentName(child) !== "YAxis") return;
     const props = child.props as YAxisProps;
     unitByAxis.set(normalizeYAxisId(props.yAxisId), props.unit);
   });
@@ -521,7 +517,8 @@ function withDualAxisTooltipRows(
       unit: unitByAxis.get(normalizeYAxisId(line.yAxisId)),
     }));
   return Children.map(children, (child) => {
-    if (!isValidElement(child) || getChildComponentName(child) !== "ChartTooltip") return child;
+    if (!isValidElement(child) || getChartChildComponentName(child) !== "ChartTooltip")
+      return child;
     const props = child.props as ChartTooltipProps;
     if (props.rows || props.content || props.unit != null) return child;
     return cloneElement(child as ReactElement<ChartTooltipProps>, { rows });

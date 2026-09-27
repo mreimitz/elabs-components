@@ -21,6 +21,8 @@
 
 import { Children, cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 
+import { getChartChildComponentName } from "./chart-defs";
+
 /** How a stacked `BarChart` lays its segments out. */
 export type BarStackMode = "stacked" | "percent" | "diverging";
 
@@ -345,11 +347,10 @@ export function applyPercentStackAxes(
   options: PercentStackAxesOptions = {},
 ): ReactNode {
   return Children.map(children, (child) => {
-    if (!isValidElement(child) || typeof child.type !== "function") {
+    if (!isValidElement(child)) {
       return child;
     }
-    const childType = child.type as { displayName?: string; name?: string };
-    const name = childType.displayName || childType.name;
+    const name = getChartChildComponentName(child);
     const props = child.props as Readonly<Record<string, unknown>>;
     if (name === "YAxis") {
       if (options.isStackAxis && !options.isStackAxis(props)) {

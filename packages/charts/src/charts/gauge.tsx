@@ -1,5 +1,6 @@
 "use client";
 
+import { getChartChildComponentName } from "./chart-defs";
 import { ChartParentSize } from "./chart-parent-size";
 import { motion, type Transition } from "motion/react";
 import { REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
@@ -31,10 +32,7 @@ import { useRenamedChartProps } from "./use-resolved-chart-props";
 const MILESTONE_LEADER_RESERVE = 18;
 
 function isDefsComponent(child: ReactElement): boolean {
-  const typeLabel =
-    (child.type as { displayName?: string })?.displayName ||
-    (child.type as { name?: string })?.name ||
-    "";
+  const typeLabel = getChartChildComponentName(child);
   return (
     typeLabel.includes("Gradient") ||
     typeLabel.includes("Pattern") ||

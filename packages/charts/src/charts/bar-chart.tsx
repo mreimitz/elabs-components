@@ -1,6 +1,7 @@
 "use client";
 
 import { localPoint } from "@visx/event";
+import { getChartChildComponentName } from "./chart-defs";
 import { ChartParentSize } from "./chart-parent-size";
 import { scaleBand, scaleLinear, type scaleTime } from "@visx/scale";
 import type { Transition } from "motion/react";
@@ -355,9 +356,7 @@ function isBarChild(child: ReactNode): child is ReactElement<BarProps> {
   if (!isValidElement(child)) {
     return false;
   }
-  const childType = child.type as { displayName?: string; name?: string };
-  const componentName =
-    typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
+  const componentName = getChartChildComponentName(child);
   const props = child.props as BarProps | undefined;
   return (
     componentName === "Bar" || Boolean(props && typeof props.dataKey === "string" && props.dataKey)
@@ -605,9 +604,7 @@ function extractCategoryAxisConfig(children: ReactNode): CategoryAxisChildConfig
       return;
     }
 
-    const childType = child.type as { displayName?: string; name?: string };
-    const componentName =
-      typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
+    const componentName = getChartChildComponentName(child);
 
     let placement: CategoryAxisPlacement | null = null;
     if (componentName === "BarXAxis") {
