@@ -22,6 +22,12 @@ export function createSpecBridge(server) {
     return server.ssrLoadModule(SURFACE, { fixStacktrace: true });
   }
 
+  /** DG-26 (1b.5) — the catalog as it is now (read fresh per call). */
+  async function catalogEntries() {
+    const surface = await load();
+    return (await readAll(surface.ICON_NAMES)).entries;
+  }
+
   /**
    * `checkDiagram`, with `ref: catalog/…` resolved against the current catalog (readAll's
    * entries) — the same result the browser gets once the catalog has loaded. Every MCP tool
@@ -30,8 +36,20 @@ export function createSpecBridge(server) {
    */
   async function check(text) {
     const surface = await load();
-    const { entries } = await readAll(surface.ICON_NAMES);
-    return surface.checkDiagram(text, entries);
+    return surface.checkDiagram(text, await catalogEntries());
+  }
+
+  /**
+   * DG-26 (1b.5) — a hint per node `ids` names whose `icon:` names a catalog item and has no
+   * `ref:`; `[]` when the text has no AST (an unparseable diagram gets no hints).
+   * @param {string} text
+   * @param {readonly string[]} ids
+   */
+  async function refHints(text, ids) {
+    const surface = await load();
+    const entries = await catalogEntries();
+    const { ast } = surface.checkDiagram(text, entries);
+    return ast ? surface.refHints(ast, surface.catalogLookupOf(entries), new Set(ids)) : [];
   }
 
   /**
@@ -69,5 +87,5 @@ export function createSpecBridge(server) {
     return checked.issues;
   }
 
-  return { load, check, validate, assertValid };
+  return { load, catalogEntries, check, refHints, validate, assertValid };
 }

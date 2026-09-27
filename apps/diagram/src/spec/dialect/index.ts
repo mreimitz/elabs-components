@@ -61,6 +61,7 @@ export { validateArch } from "./validate";
 export {
   catalogLookupOf,
   resolveCatalogRefs,
+  refHints, // DG-26 (1b.1)
   suppliedBy,
   GLYPH_VENDOR,
   type CatalogLookup,

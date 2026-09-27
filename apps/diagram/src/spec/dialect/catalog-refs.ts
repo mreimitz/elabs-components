@@ -122,3 +122,32 @@ export function resolveCatalogRefs(
   });
   return { ast: { ...ast, nodes }, issues };
 }
+
+/**
+ * Custom nodes (no `ref:`) whose `icon:` names a catalog item: the MCP tools hint at the
+ * reference (CURRENT.md:38, "the MCP tools must write reference-first nodes"). A glyph is not
+ * a catalog item (Ruling 7; `catalog` already excludes them), so a glyph node gets no hint.
+ * `ids`, when given, limits the hints to the nodes a call wrote. Never an issue: a custom node
+ * stays valid, and a human author sees nothing.
+ */
+export function refHints(
+  ast: ArchDiagram,
+  catalog: CatalogLookup,
+  ids?: ReadonlySet<string>,
+): string[] {
+  const hints: string[] = [];
+  for (const node of ast.nodes) {
+    if (node.ref !== undefined) continue;
+    if (ids && !ids.has(node.id)) continue;
+    if (typeof node.icon !== "string") continue;
+    const entry = catalog.get(node.icon);
+    if (!entry) continue;
+    hints.push(
+      `Node "${node.id}" uses the icon of the catalog item ${entry.name}. If the node is ` +
+        `that item, write "ref: catalog/${entry.name}" instead of "icon: ${entry.name}" ` +
+        `(title, type, subtitle and badges then come from the catalog). Keep "icon:" when ` +
+        `the node only borrows the picture.`,
+    );
+  }
+  return hints;
+}

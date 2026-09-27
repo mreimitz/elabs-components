@@ -30,7 +30,12 @@ export {
   type RefFirstResult,
 } from "./spec/dialect/upgrade"; // DG-26 (1b)
 export { catalogRefsOf, diagramRefsOf, refFileOf, refForm } from "./spec/dialect/ids"; // DG-26
-export { catalogLookupOf, suppliedBy, type CatalogRefEntry } from "./spec/dialect/catalog-refs"; // DG-26 (1b)
+export {
+  catalogLookupOf,
+  refHints,
+  suppliedBy,
+  type CatalogRefEntry,
+} from "./spec/dialect/catalog-refs"; // DG-26 (1b)
 export { ICON_NAMES };
 
 /**
