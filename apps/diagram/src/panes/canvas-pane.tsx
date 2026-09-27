@@ -17,7 +17,7 @@ import { DiagramLegend } from "../chrome/diagram-legend";
 import { chromeFitPadding } from "../chrome/fit-padding";
 import { TitleBlock } from "../chrome/title-block";
 import { FIT_MIN_ZOOM, useDiagramLayout } from "../layout/use-diagram-layout";
-import { motionMs } from "../motion";
+import { motionMs, prefersReducedMotion } from "../motion";
 import { isZoneNode } from "../nodes/zone-data";
 import { useZoneAutofit } from "../nodes/use-zone-autofit";
 import type { ArchCompileView } from "../spec/compile/compile-arch";
@@ -42,6 +42,7 @@ import { focusEditor } from "../shell/focus"; // DG-22 review
 import { modeActions, useDocMode } from "../shell/mode-store"; // DG-22 review
 
 import { useLens } from "../shell/lens-store"; // maintainer 2026-09-27 (lens switch)
+import { LensMorphOverlay } from "./lens-morph-overlay"; // orchestrator correction 2026-09-27 (S10 morph)
 import { VisualCanvasPane } from "./visual-canvas-pane"; // maintainer 2026-09-27 (lens switch)
 
 /** The pane's strings, in one place (`conventions/i18n-strings`). */
@@ -111,55 +112,60 @@ function issueVersion(message: string): string {
 }
 
 /**
- * maintainer 2026-09-27 ("the switch from technical to visual") — the pane the rest of the
- * app mounts: technical (`TechnicalCanvasPane`, today's implementation, untouched below) or
- * visual (`VisualCanvasPane`, `src/visual/`), cross-fading between them while a lens switch
- * is in flight (`shell/lens-store.ts`'s `position`, 0 = technical, 1 = visual).
+ * maintainer 2026-09-27 ("the switch from technical to visual"), morph added per an
+ * orchestrator correction the same day — the pane the rest of the app mounts: technical
+ * (`TechnicalCanvasPane`, today's implementation, untouched below) or visual
+ * (`VisualCanvasPane`, `src/visual/`).
  *
- * This is a documented simplification of `docs/2026-09-27-style-system-concept.md` §7's full
- * choreography, not that choreography: each side mounts its OWN `ReactFlowProvider` and fits
- * itself to its own content BEFORE the cross-fade starts (so "target layout computed before
- * the tween" holds, and nothing moves once the fade ends), and the two independently-fitted,
- * already-settled pictures cross-fade — there is no single shared camera move, and a
- * technical node does not fly to its box's slot (no DOM/React-key identity is shared between
- * the two canvases). `position` is applied as a plain inline `opacity` style, re-rendered every
- * animation frame by `shell/lens-store.ts`'s own `requestAnimationFrame` loop — not a CSS
- * transition — so it is exactly as smooth as that loop's frame rate, transform/opacity only,
- * and trivially reversible mid-flight (the store just changes `target`; this component only
- * ever reads the current `position`). `docs/findings/lens-switch-slice.md` has the measured
- * frame times and the honest list of what S10 asks for that this does not yet do.
+ * Both are ALWAYS mounted (not just while a switch is in flight): that is what lets
+ * `docs/2026-09-27-style-system-concept.md` §7's "target layout is computed before the
+ * animation starts" hold for real — the hidden side is continuously laid out and fitted in
+ * the background, so there is no fresh-mount race to win the instant a switch starts. Normal
+ * motion (`!reduced`) hides both real panes (`opacity: 0`) for the width of the transition
+ * and hands the screen to `LensMorphOverlay`, which flies ghost rectangles from each
+ * technical element's on-screen rect to its visual counterpart's (transform/opacity only, one
+ * `position` value driving every ghost — see that file). Reduced motion keeps the ORIGINAL
+ * plain cross-fade (§7 "reduced motion: a 200 ms cross-fade … no movement") — no overlay, no
+ * ghosts, exactly the prior behaviour. `docs/findings/lens-switch-slice.md` has the measured
+ * frame times and the honest list of what §7 asks for that the overlay simplifies.
  *
  * Neither side is draggable/connectable/deletable while the other is fading in — a lens
- * switch is not an interactive moment — and the settled, off-screen side is `inert` so it
- * takes no focus or hit-testing and is invisible to assistive tech.
+ * switch is not an interactive moment — and the settled, hidden side is `inert` so it takes
+ * no focus or hit-testing and is invisible to assistive tech.
  */
 export function CanvasPane(props: CanvasPaneProps) {
   const position = useLens((s) => s.position);
-  const showTechnical = position < 1;
-  const showVisual = position > 0;
-  const crossfading = showTechnical && showVisual;
+  const containerRef = useRef<HTMLDivElement>(null);
+  // Re-read every render, not cached in state: this component already re-renders on every
+  // animation frame while `position` moves (`useLens`), so a preference flipped mid-session
+  // (taste profile) takes effect on the very next transition without a separate subscription.
+  const reduced = prefersReducedMotion();
+  const atTechnical = position === 0;
+  const atVisual = position === 1;
+  const morphing = !reduced && !atTechnical && !atVisual;
+  const technicalOpacity = reduced ? 1 - position : morphing ? 0 : atVisual ? 0 : 1;
+  const visualOpacity = reduced ? position : morphing ? 0 : atVisual ? 1 : 0;
   return (
-    <div className="relative h-full w-full">
-      {showTechnical ? (
-        <div
-          className="absolute inset-0"
-          style={{ opacity: 1 - position }}
-          aria-hidden={crossfading || !showTechnical || undefined}
-          inert={crossfading || !showTechnical || undefined}
-        >
-          <TechnicalCanvasPane {...props} />
-        </div>
-      ) : null}
-      {showVisual ? (
-        <div
-          className="absolute inset-0"
-          style={{ opacity: position }}
-          aria-hidden={crossfading || !showVisual || undefined}
-          inert={crossfading || !showVisual || undefined}
-        >
-          <VisualCanvasPane />
-        </div>
-      ) : null}
+    <div ref={containerRef} className="relative h-full w-full">
+      <div
+        data-lens-pane="technical"
+        className="absolute inset-0"
+        style={{ opacity: technicalOpacity }}
+        aria-hidden={atVisual || undefined}
+        inert={atVisual || undefined}
+      >
+        <TechnicalCanvasPane {...props} />
+      </div>
+      <div
+        data-lens-pane="visual"
+        className="absolute inset-0"
+        style={{ opacity: visualOpacity }}
+        aria-hidden={!atVisual || undefined}
+        inert={!atVisual || undefined}
+      >
+        <VisualCanvasPane />
+      </div>
+      {morphing ? <LensMorphOverlay containerRef={containerRef} position={position} /> : null}
     </div>
   );
 }
