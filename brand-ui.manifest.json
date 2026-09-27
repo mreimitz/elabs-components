@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-27T16:59:46.010Z",
+  "generatedAt": "2026-09-27T17:39:22.851Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -17533,6 +17533,14 @@
           "module": "packages/charts/src/charts/tooltip/index.ts"
         },
         {
+          "name": "DensityAxisOptions",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityCategoryCodes",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
           "name": "DensityColorBy",
           "module": "packages/charts/src/charts/density-scatter/types.ts"
         },
@@ -17545,7 +17553,15 @@
           "module": "packages/charts/src/charts/density-scatter/types.ts"
         },
         {
+          "name": "DensityOverlayContext",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
           "name": "DensityPlotBox",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityPointDescription",
           "module": "packages/charts/src/charts/density-scatter/types.ts"
         },
         {
@@ -17577,11 +17593,23 @@
           "module": "packages/charts/src/charts/density-scatter/types.ts"
         },
         {
+          "name": "DensityStatistic",
+          "module": "packages/charts/src/charts/density-scatter/stat-lines.ts"
+        },
+        {
+          "name": "DensityStatLine",
+          "module": "packages/charts/src/charts/density-scatter/stat-lines.ts"
+        },
+        {
           "name": "DensityView",
           "module": "packages/charts/src/charts/density-scatter/types.ts"
         },
         {
           "name": "DensityZone",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityZoneExtend",
           "module": "packages/charts/src/charts/density-scatter/types.ts"
         },
         {
@@ -18599,6 +18627,10 @@
         {
           "name": "ResolvedDistributionReferenceLine",
           "module": "packages/charts/src/charts/distribution/distribution-reference-line.tsx"
+        },
+        {
+          "name": "ResolvedStatLine",
+          "module": "packages/charts/src/charts/density-scatter/stat-lines.ts"
         },
         {
           "name": "ResolvedTask",
@@ -20143,6 +20175,10 @@
           "module": "packages/charts/src/charts/scatter-encodings.ts"
         },
         {
+          "name": "resolveStatLines",
+          "module": "packages/charts/src/charts/density-scatter/stat-lines.ts"
+        },
+        {
           "name": "resolveYAxisTickCount",
           "module": "packages/charts/src/charts/y-axis-ticks.ts"
         },
@@ -20620,10 +20656,10 @@
             {
               "name": "labelPeaks",
               "optional": true,
-              "type": "boolean",
-              "description": "Ring the peak sample with a filled dot + value label (RM-029). Only takes effect when this `Area` renders as a `HairlineArea` — a single-series chart under high decoration (`data-decoration` ≥ 8). Default: false.",
+              "type": "LabelPeaksSpec | boolean",
+              "description": "`true` rings the peak sample with a filled dot + value label (RM-029) — only takes effect when this `Area` renders as a `HairlineArea`, a single-series chart under high decoration (`data-decoration` ≥ 8). A number or `{ count, minGap? }` instead labels the top-k highest points, the SAME engine `Line.labelPeaks` uses — never a forked copy. Default: `false` — no peak label, today's behaviour.",
               "defaultValue": "false",
-              "kind": "boolean"
+              "kind": "union"
             },
             {
               "name": "name",
@@ -21336,6 +21372,13 @@
               "optional": false,
               "type": "string",
               "description": "Key in data to use for y values",
+              "kind": "string"
+            },
+            {
+              "name": "name",
+              "optional": true,
+              "type": "string",
+              "description": "Series display name: legend and tooltip text. Unset falls back to `dataKey`, same as `Line`/`Area`'s `name`.",
               "kind": "string"
             },
             {
@@ -22511,7 +22554,7 @@
         },
         "CandlestickChart": {
           "extends": [
-            "ChartNavigatorProps",
+            "Omit<ChartNavigatorProps, \"maxVisibleItems\" | \"windowDomain\">",
             "FrameSizeGroupProps",
             "Pick<ChartStateGroupProps, \"status\">",
             "Pick<TooltipGroupProps, \"tooltip\">"
@@ -22665,6 +22708,28 @@
               "kind": "array"
             },
             {
+              "name": "maxVisibleItems",
+              "optional": true,
+              "type": "ChartNavigatorProps[\"maxVisibleItems\"]",
+              "description": "@deprecated has no effect on CandlestickChart; remove the prop.",
+              "kind": "responsive",
+              "deprecated": {
+                "removeIn": "6.0.0",
+                "since": "5.6.0"
+              }
+            },
+            {
+              "name": "windowDomain",
+              "optional": true,
+              "type": "ChartNavigatorProps[\"windowDomain\"]",
+              "description": "@deprecated has no effect on CandlestickChart; remove the prop.",
+              "kind": "enum",
+              "deprecated": {
+                "removeIn": "6.0.0",
+                "since": "5.6.0"
+              }
+            },
+            {
               "name": "tooltip",
               "optional": true,
               "type": "boolean",
@@ -22731,30 +22796,12 @@
               "group": "navigator"
             },
             {
-              "name": "maxVisibleItems",
-              "optional": true,
-              "type": "Responsive<number | \"auto\">",
-              "description": "Category families (RM-141): how many categories the plot shows at once (the associative BI suite \"Number of bars\"). Default `\"auto\"` — as many as keep a readable band (`maxReadableCategories`); with `scrollbar=\"auto\"` the strip appears only once the categories overflow that count.",
-              "from": "ChartNavigatorProps",
-              "kind": "responsive",
-              "group": "navigator"
-            },
-            {
               "name": "maxVisiblePoints",
               "optional": true,
               "type": "number",
               "description": "Time-series families: with `scrollbar=\"auto\"`, rows above this show the strip. Default 2000.",
               "from": "ChartNavigatorProps",
               "kind": "number",
-              "group": "navigator"
-            },
-            {
-              "name": "windowDomain",
-              "optional": true,
-              "type": "\"all\" | \"visible\"",
-              "description": "Category families: `\"all\"` (default) keeps the value axis on the FULL data's domain while scrolling; `\"visible\"` refits it to the window.",
-              "from": "ChartNavigatorProps",
-              "kind": "enum",
               "group": "navigator"
             },
             {
@@ -23467,6 +23514,12 @@
               "optional": true,
               "type": "(key: string, item: LegendItem, index: number) => void",
               "description": "Toggles one item's hidden state. Keyed by `item.key ?? item.label`."
+            },
+            {
+              "name": "toggleControl",
+              "optional": true,
+              "type": "\"item\" | \"checkbox\"",
+              "description": "What hides an item when `onToggleKey` is set. `\"item\"` (default): the whole entry is the `aria-pressed` toggle. `\"checkbox\"`: the entry stays free for `onItemClick` (a host's selection, say) and a small checkbox after it toggles visibility. The checkbox shows while the row is hovered or holds focus, and always on touch screens, which cannot hover. A hidden entry stays in the legend, muted and struck through, in both modes."
             },
             {
               "name": "hideAtDensity",
@@ -25132,12 +25185,23 @@
               "kind": "number"
             },
             {
-              "name": "barGap",
+              "name": "groupGap",
               "optional": true,
               "type": "number",
               "description": "Gap between grouped `SeriesBar` series in px. Default: 4",
               "defaultValue": "4",
               "kind": "number"
+            },
+            {
+              "name": "barGap",
+              "optional": true,
+              "type": "number",
+              "description": "@deprecated Since 5.6.0, use `groupGap`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "groupGap",
+                "removeIn": "6.0.0"
+              }
             },
             {
               "name": "stacked",
@@ -25479,7 +25543,7 @@
               "kind": "union"
             },
             {
-              "name": "xKey",
+              "name": "xDataKey",
               "optional": true,
               "type": "string",
               "description": "Row key for x when `data` is rows. Default `\"x\"`. Also the intent `field` for x ranges.",
@@ -25487,12 +25551,34 @@
               "kind": "string"
             },
             {
-              "name": "yKey",
+              "name": "xKey",
+              "optional": true,
+              "type": "string",
+              "description": "Row key for x when `data` is rows. Also the intent `field` for x ranges. @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "xDataKey",
+                "removeIn": "6.0.0"
+              }
+            },
+            {
+              "name": "yDataKey",
               "optional": true,
               "type": "string",
               "description": "Row key for y when `data` is rows. Default `\"y\"`.",
               "defaultValue": "\"y\"",
               "kind": "string"
+            },
+            {
+              "name": "yKey",
+              "optional": true,
+              "type": "string",
+              "description": "Row key for y when `data` is rows. @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "yDataKey",
+                "removeIn": "6.0.0"
+              }
             },
             {
               "name": "valueKeys",
@@ -25618,14 +25704,14 @@
               "name": "selectionField",
               "optional": true,
               "type": "string",
-              "description": "Field name carried in x-range intents. Default `xKey`.",
+              "description": "Field name carried in x-range intents. Default `xDataKey`.",
               "kind": "string"
             },
             {
               "name": "selectionFieldY",
               "optional": true,
               "type": "string",
-              "description": "Y-range intents carry this field. Default `yKey`.",
+              "description": "Y-range intents carry this field. Default `yDataKey`.",
               "kind": "string"
             },
             {
@@ -25662,6 +25748,93 @@
               "name": "formatY",
               "optional": true,
               "type": "(value: number) => string"
+            },
+            {
+              "name": "xAxis",
+              "optional": true,
+              "type": "DensityAxisOptions",
+              "description": "Per-axis presentation. `labels: false` drops the tick labels (grid lines stay); `tickSpacing` is the target distance between ticks and grid lines in CSS px (default 90 on x, 60 on y)."
+            },
+            {
+              "name": "yAxis",
+              "optional": true,
+              "type": "DensityAxisOptions"
+            },
+            {
+              "name": "minimap",
+              "optional": true,
+              "type": "boolean",
+              "description": "The overview in the plot's bottom-right corner while zoomed: every point at the home window plus the current window as a frame; drag in it to pan. Default `true` (shown only when zoom is on and the plot is large enough).",
+              "defaultValue": "true",
+              "kind": "boolean"
+            },
+            {
+              "name": "zoomControlsPlacement",
+              "optional": true,
+              "type": "\"top-end\" | \"bottom-end\"",
+              "description": "Where the + / − / reset buttons sit while zoomed. `\"top-end\"` (default) or `\"bottom-end\"` — stacked above the minimap, clear of host chrome that overlays the top-right corner (e.g. an embedding app's object menu).",
+              "defaultValue": "\"top-end\"",
+              "kind": "enum"
+            },
+            {
+              "name": "sizeKey",
+              "optional": true,
+              "type": "string",
+              "description": "Per-point size: a `data` value column. Dots scale by area between `sizeRange[0]` and `sizeRange[1]` (CSS px radii, default `[1.2, 6]`).",
+              "kind": "string"
+            },
+            {
+              "name": "sizeRange",
+              "optional": true,
+              "type": "[number, number]",
+              "defaultValue": "[1.2,6]"
+            },
+            {
+              "name": "pointOpacity",
+              "optional": true,
+              "type": "number",
+              "description": "Multiplies the dots' opacity (0–1). Default `1`.",
+              "defaultValue": "1",
+              "kind": "number"
+            },
+            {
+              "name": "densityFloor",
+              "optional": true,
+              "type": "number",
+              "description": "The lightest a lone dot is drawn, 0–1 along its class ramp (background → class colour). Raise it to keep sparse dots — the outside class above all — clearly visible; `1` draws every dot in its full class colour. Default `0.32`.",
+              "kind": "number"
+            },
+            {
+              "name": "selectionTool",
+              "optional": true,
+              "type": "ChartSelectionToolMode",
+              "description": "The active selection tool, controlled — for a host that renders its own tool switch (e.g. a BI host's selection toolbar). Unset: the toolbar owns it."
+            },
+            {
+              "name": "onPointClick",
+              "optional": true,
+              "type": "(index: number, event: ReactPointerEvent<HTMLDivElement>) => void",
+              "description": "A click (no drag) on a dot: the nearest visible point within its radius, by row index. Lets a host select that row's category."
+            },
+            {
+              "name": "onBackgroundClick",
+              "optional": true,
+              "type": "(event: ReactPointerEvent<HTMLDivElement>) => void",
+              "description": "A click (no drag) on the plot that hits no dot — e.g. a BI host opening its selection session (and toolbar) the way a native chart does."
+            },
+            {
+              "name": "describePoint",
+              "optional": true,
+              "type": "(index: number) => DensityPointDescription | undefined",
+              "description": "Extra tooltip content for one hovered dot: a title (e.g. the row's dimension value) and rows appended after the coordinates."
+            },
+            {
+              "name": "showLassoShape",
+              "optional": true,
+              "type": "boolean",
+              "description": "Keep the committed lasso outline drawn while its constraint is active (default `true`). `false`: the dimmed / highlighted dots alone show it.",
+              "defaultValue": "true",
+              "kind": "boolean"
             },
             {
               "name": "formatValue",
@@ -25735,6 +25908,26 @@
               "kind": "enum"
             },
             {
+              "name": "zoneTags",
+              "optional": true,
+              "type": "boolean",
+              "description": "In-plot zone tags (named buttons that select a zone). Default `true`.",
+              "defaultValue": "true",
+              "kind": "boolean"
+            },
+            {
+              "name": "statLines",
+              "optional": true,
+              "type": "readonly DensityStatLine[]",
+              "description": "Average / median / standard-deviation reference lines, over all points or one per colour class (zone or category). Per-class lines take their class's outline colour and run across that class's points; overall lines take `--chart-foreground`. Each statistic has its own dash, every line is tagged in the plot, and all of them are restated in the accessible description. Hidden classes get no line."
+            },
+            {
+              "name": "renderOverlay",
+              "optional": true,
+              "type": "(context: DensityOverlayContext) => ReactNode",
+              "description": "A host layer drawn over the plot (above the zone outlines, below the tooltip) — e.g. an editor for the zones. It receives the current window, the plot box and both projections; it re-renders on every view change. Pointer events reach the chart unless the layer handles them itself."
+            },
+            {
               "name": "hiddenKeys",
               "optional": true,
               "type": "ReadonlySet<string>",
@@ -25744,6 +25937,12 @@
               "name": "onHiddenKeysChange",
               "optional": true,
               "type": "(keys: ReadonlySet<string>) => void"
+            },
+            {
+              "name": "onLegendItemClick",
+              "optional": true,
+              "type": "(key: string, event: ReactMouseEvent | ReactKeyboardEvent) => void",
+              "description": "A click on a legend entry, handed to the host instead of the chart's own behaviour. With `legend={{ toggleControl: \"checkbox\" }}` the checkboxes still hide and show classes, so an entry click is free for, say, a BI engine's own selection. Unset, an entry click toggles the class (or, in checkbox mode, selects its zone)."
             },
             {
               "name": "status",
@@ -27642,25 +27841,47 @@
               "kind": "array"
             },
             {
-              "name": "x",
-              "optional": false,
-              "type": "string",
-              "description": "Row key holding the COLUMN value (discrete; an ISO date in the calendar variant).",
-              "kind": "string"
-            },
-            {
-              "name": "y",
-              "optional": false,
-              "type": "string",
-              "description": "Row key holding the ROW value (discrete). Ignored by `variant=\"calendar\"`.",
-              "kind": "string"
-            },
-            {
               "name": "valueKey",
               "optional": false,
               "type": "string",
               "description": "Row key holding the number. A non-finite or missing value is an empty cell.",
               "kind": "string"
+            },
+            {
+              "name": "xDataKey",
+              "optional": true,
+              "type": "string",
+              "description": "Row field holding the column value (discrete; an ISO date in the calendar variant). Passing neither this nor the deprecated `x` still renders — every row collapses onto one unnamed column — and logs one development warning naming `xDataKey`. Required from 6.0.0.",
+              "kind": "string"
+            },
+            {
+              "name": "x",
+              "optional": true,
+              "type": "string",
+              "description": "Row field holding the column value (discrete; an ISO date in the calendar variant). @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "xDataKey",
+                "removeIn": "6.0.0"
+              }
+            },
+            {
+              "name": "yDataKey",
+              "optional": true,
+              "type": "string",
+              "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`. Passing neither this nor the deprecated `y` still renders on `variant=\"matrix\"` (every row collapses onto one unnamed row) and logs one development warning naming `yDataKey`. Required on `variant=\"matrix\"` from 6.0.0.",
+              "kind": "string"
+            },
+            {
+              "name": "y",
+              "optional": true,
+              "type": "string",
+              "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`. @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "yDataKey",
+                "removeIn": "6.0.0"
+              }
             },
             {
               "name": "mode",
@@ -27673,7 +27894,7 @@
               "name": "variant",
               "optional": true,
               "type": "HeatmapVariant",
-              "description": "Which grid the cells land on. `\"calendar\"` reads `x` as an ISO date, lays the days out as 7 weekday rows × one column per ISO week, ticks the first Monday of each month, and ignores `y` entirely.",
+              "description": "Which grid the cells land on. `\"calendar\"` reads `xDataKey` as an ISO date, lays the days out as 7 weekday rows × one column per ISO week, ticks the first Monday of each month, and ignores `yDataKey` entirely.",
               "defaultValue": "\"matrix\"",
               "kind": "enum"
             },
@@ -28410,7 +28631,7 @@
             {
               "name": "labelPeaks",
               "optional": true,
-              "type": "number | { count: number; minGap?: number }",
+              "type": "LabelPeaksSpec",
               "description": "Label the top-k highest points on the line (RM-028) — lieflat's \"top-2/top-3 peaks, enlarged and labelled\" rule (L3 Barcode Lollipop). A bare number is the peak count at the default {@link DEFAULT_PEAK_MIN_GAP} -sample spacing; pass `{ count, minGap }` to override spacing. A peak within `minGap` samples of an already-picked (necessarily higher — peaks are picked highest-first) peak is skipped — \"the barcode lesson: adjacent peaks must be forced apart\" — so two close peaks label only the taller one. Uses the exported {@link spacedTopK} helper. Default: unset — no peak labels, today's behaviour.",
               "kind": "union"
             },
@@ -29094,8 +29315,8 @@
             {
               "name": "curve",
               "optional": true,
-              "type": "CurveFactory",
-              "description": "Curve function. Default: curveMonotoneX"
+              "type": "CurveFactory | CurveAlias",
+              "description": "Curve between points: a named alias (same vocabulary as `Line`/`Area`/`AreaBand`'s `curve`, resolved through the same `resolveCurve`) or a raw d3/visx curve factory. Default: `curveMonotoneX`."
             },
             {
               "name": "fill",
@@ -29981,8 +30202,8 @@
             {
               "name": "curve",
               "optional": true,
-              "type": "CurveFactory",
-              "description": "Curve function. Default: curveMonotoneX"
+              "type": "CurveFactory | CurveAlias",
+              "description": "Curve between points: a named alias (same vocabulary as `Line`/`Area`/`AreaBand`'s `curve`, resolved through the same `resolveCurve`) or a raw d3/visx curve factory. Default: `curveMonotoneX`."
             },
             {
               "name": "animate",
@@ -30644,8 +30865,8 @@
             {
               "name": "curve",
               "optional": true,
-              "type": "CurveFactory",
-              "description": "Curve function. Default: curveLinear"
+              "type": "CurveFactory | CurveAlias",
+              "description": "Curve between points: a named alias (same vocabulary as `Line`/`Area`/`AreaBand`'s `curve`, resolved through the same `resolveCurve`) or a raw d3/visx curve factory. Default: `curveLinear`."
             },
             {
               "name": "fadeEdges",
@@ -30791,7 +31012,7 @@
               "kind": "boolean"
             },
             {
-              "name": "enterDurationMs",
+              "name": "animationDuration",
               "optional": true,
               "type": "number",
               "description": "Enter animation budget in ms. Default: 1100",
@@ -30799,12 +31020,34 @@
               "kind": "number"
             },
             {
-              "name": "staggerScale",
+              "name": "enterDurationMs",
+              "optional": true,
+              "type": "number",
+              "description": "Enter animation budget in ms. @deprecated Since 5.6.0, use `animationDuration`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "animationDuration",
+                "removeIn": "6.0.0"
+              }
+            },
+            {
+              "name": "enterStaggerScale",
               "optional": true,
               "type": "number",
               "description": "Scales stagger timing (1 = default).",
               "defaultValue": "1",
               "kind": "number"
+            },
+            {
+              "name": "staggerScale",
+              "optional": true,
+              "type": "number",
+              "description": "Scales stagger timing (1 = default). @deprecated Since 5.6.0, use `enterStaggerScale`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "enterStaggerScale",
+                "removeIn": "6.0.0"
+              }
             },
             {
               "name": "enterTransition",
@@ -30813,12 +31056,23 @@
               "description": "Motion enter transition (spring or cubic-bezier tween)."
             },
             {
-              "name": "motionReplayKey",
+              "name": "revealSignature",
               "optional": true,
               "type": "string",
               "description": "Changes when motion settings change — replays enter animations.",
               "defaultValue": "\"\"",
               "kind": "string"
+            },
+            {
+              "name": "motionReplayKey",
+              "optional": true,
+              "type": "string",
+              "description": "Changes when motion settings change — replays enter animations. @deprecated Since 5.6.0, use `revealSignature`. Removed in 6.0.0.",
+              "deprecated": {
+                "since": "5.6.0",
+                "replacement": "revealSignature",
+                "removeIn": "6.0.0"
+              }
             },
             {
               "name": "hoveredIndex",
@@ -31774,6 +32028,13 @@
             "Omit<SeriesMarkersProps, \"animate\">"
           ],
           "props": [
+            {
+              "name": "name",
+              "optional": true,
+              "type": "string",
+              "description": "Series display name: legend and tooltip text. Unset falls back to `dataKey`, same as `Line`/`Area`'s `name`.",
+              "kind": "string"
+            },
             {
               "name": "yAxisId",
               "optional": true,
@@ -34188,30 +34449,7 @@
           "dataShapes": [
             "measures over time where magnitude matters — stacked, or as a stream with offset=\"wiggle\""
           ],
-          "avoidWhen": "fewer than about 4 points — a bar chart reads the same data faster",
-          "targets": [
-            {
-              "from": {
-                "prop": "xDataKey"
-              },
-              "id": "x",
-              "label": "X axis",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "part": "Area",
-                "prop": "dataKey"
-              },
-              "id": "series",
-              "label": "Series",
-              "max": null,
-              "min": 1,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "fewer than about 4 points — a bar chart reads the same data faster"
         },
         "AutoChart": {
           "purpose": "Spec-driven chart — hand it a serializable ChartSpec and it picks and renders the right chart.",
@@ -34262,30 +34500,7 @@
             "categorical comparison of one or more measures across a small set of named categories",
             "a single signed measure around a meaningful zero, as diverging bars with a zero line"
           ],
-          "avoidWhen": "a time axis with many points — use a line or area chart",
-          "targets": [
-            {
-              "from": {
-                "prop": "xDataKey"
-              },
-              "id": "x",
-              "label": "Category",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "part": "Bar",
-                "prop": "dataKey"
-              },
-              "id": "series",
-              "label": "Series",
-              "max": null,
-              "min": 1,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "a time axis with many points — use a line or area chart"
         },
         "BumpChart": {
           "purpose": "Rank over discrete time — who is #1 changes over time. variant=\"lines\" plots the trajectory (rank as an inverted y-axis); variant=\"strip\" is the G21 filmstrip (fixed rows, shade + a printed number carry the per-period rank).",
@@ -34315,39 +34530,7 @@
           "dataShapes": [
             "rank of several entities over ordered periods"
           ],
-          "avoidWhen": "only 2 periods — use a dumbbell chart",
-          "targets": [
-            {
-              "from": {
-                "prop": "period"
-              },
-              "id": "period",
-              "label": "Period",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "prop": "entity"
-              },
-              "id": "entity",
-              "label": "Entity",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "prop": "valueKey"
-              },
-              "id": "value",
-              "label": "Value",
-              "max": 1,
-              "min": 0,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "only 2 periods — use a dumbbell chart"
         },
         "CandlestickChart": {
           "purpose": "Open–high–low–close price bars over time, one candle per period, with volume and moving averages as optional overlays.",
@@ -34356,59 +34539,7 @@
           "dataShapes": [
             "open, high, low and close per period — an OHLC financial series over time"
           ],
-          "avoidWhen": "the data is not OHLC-shaped — a line of closing values is enough",
-          "targets": [
-            {
-              "from": {
-                "prop": "xDataKey"
-              },
-              "id": "x",
-              "label": "Period",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "field": "open"
-              },
-              "id": "open",
-              "label": "Open",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            },
-            {
-              "from": {
-                "field": "high"
-              },
-              "id": "high",
-              "label": "High",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            },
-            {
-              "from": {
-                "field": "low"
-              },
-              "id": "low",
-              "label": "Low",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            },
-            {
-              "from": {
-                "field": "close"
-              },
-              "id": "close",
-              "label": "Close",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "the data is not OHLC-shaped — a line of closing values is enough"
         },
         "CanvasLayer": {
           "purpose": "The canvas mark path for ChartFrame — a drop-in sibling of the SVG marks for views past what the DOM can carry (~20k marks up), with a spatial-grid hit test and a one-tab-stop virtual cursor.",
@@ -34602,52 +34733,7 @@
           "dataShapes": [
             "mixed marks on one shared axis — bars with a line target, for example"
           ],
-          "avoidWhen": "a single mark type would do — reach for that container directly",
-          "targets": [
-            {
-              "from": {
-                "prop": "xDataKey"
-              },
-              "id": "x",
-              "label": "X axis",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "part": "SeriesBar",
-                "prop": "dataKey"
-              },
-              "id": "bars",
-              "label": "Bar series",
-              "max": null,
-              "min": 0,
-              "role": "measure"
-            },
-            {
-              "from": {
-                "part": "Line",
-                "prop": "dataKey"
-              },
-              "id": "lines",
-              "label": "Line series",
-              "max": null,
-              "min": 0,
-              "role": "measure"
-            },
-            {
-              "from": {
-                "part": "Area",
-                "prop": "dataKey"
-              },
-              "id": "areas",
-              "label": "Area series",
-              "max": null,
-              "min": 0,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "a single mark type would do — reach for that container directly"
         },
         "DensityScatterChart": {
           "purpose": "A point plot for 10⁵–10⁶ rows: every point drawn, its colour the density around it, zones on the axes classifying it, and an intersection selection (x range × y range × lasso × zone). WebGL dots, screen-space bins, Canvas-2D fallback.",
@@ -34703,29 +34789,7 @@
           "dataShapes": [
             "the spread of one measure, optionally grouped — a histogram, box plot or strip plot"
           ],
-          "avoidWhen": "a single summary number would do — use a metric card",
-          "targets": [
-            {
-              "from": {
-                "prop": "valueKey"
-              },
-              "id": "value",
-              "label": "Value",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            },
-            {
-              "from": {
-                "prop": "groupKey"
-              },
-              "id": "group",
-              "label": "Group",
-              "max": 1,
-              "min": 0,
-              "role": "dimension"
-            }
-          ]
+          "avoidWhen": "a single summary number would do — use a metric card"
         },
         "DrawPath": {
           "purpose": "A path that draws itself in through pathLength 1 — no measurement step, and a real reduced-motion branch rather than a shorter duration.",
@@ -34781,39 +34845,7 @@
             "two time points per category — a before and after, or a range with two ends",
             "two measures per category with a direction — the move from one to the other is the fact, drawn as an arrow (variant=\"arrow\")"
           ],
-          "avoidWhen": "more than 2 points per category — use small-multiple lines",
-          "targets": [
-            {
-              "from": {
-                "prop": "category"
-              },
-              "id": "category",
-              "label": "Category",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "prop": "startKey"
-              },
-              "id": "start",
-              "label": "Start",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            },
-            {
-              "from": {
-                "prop": "endKey"
-              },
-              "id": "end",
-              "label": "End",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "more than 2 points per category — use small-multiple lines"
         },
         "FunnelChart": {
           "purpose": "Stage-by-stage drop-off through an ordered pipeline.",
@@ -34835,29 +34867,7 @@
           "dataShapes": [
             "a sequential process with drop-off between stages"
           ],
-          "avoidWhen": "the stages are not sequential, or there is no drop-off story to tell",
-          "targets": [
-            {
-              "from": {
-                "field": "label"
-              },
-              "id": "stage",
-              "label": "Stage",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "field": "value"
-              },
-              "id": "value",
-              "label": "Value",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "the stages are not sequential, or there is no drop-off story to tell"
         },
         "Gantt": {
           "purpose": "Schedule grid — tasks as bars over time, with a task table beside them.",
@@ -34991,39 +35001,7 @@
             "two categorical axes (weekday by hour, for example) with one numeric value per cell — ticket volume, event counts; many small cells favour mode=\"dot\" over the default cell fill",
             "one measure per calendar day over several months, as variant=\"calendar\""
           ],
-          "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern",
-          "targets": [
-            {
-              "from": {
-                "prop": "x"
-              },
-              "id": "x",
-              "label": "Column",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "prop": "y"
-              },
-              "id": "y",
-              "label": "Row",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "prop": "valueKey"
-              },
-              "id": "value",
-              "label": "Value",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "more than about 10 columns of continuous data, or exact cell values matter more than the pattern"
         },
         "Leader": {
           "purpose": "The dashed hairline that ties an annotation to the mark it describes — an elbow or a curve, in one of two dash rhythms.",
@@ -35077,30 +35055,7 @@
           "dataShapes": [
             "one or more measures over continuous time, where the trend itself is the point"
           ],
-          "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart",
-          "targets": [
-            {
-              "from": {
-                "prop": "xDataKey"
-              },
-              "id": "x",
-              "label": "X axis",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "part": "Line",
-                "prop": "dataKey"
-              },
-              "id": "series",
-              "label": "Series",
-              "max": null,
-              "min": 1,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "many overlapping series (more than about 6) — use small multiples (ChartMultiples), a stream area chart or a composed chart"
         },
         "LiveLineChart": {
           "purpose": "A line chart that appends points as they arrive and keeps a sliding time window, for streaming metrics.",
@@ -35109,29 +35064,7 @@
           "dataShapes": [
             "a metric updating in real time, appended over a rolling window"
           ],
-          "avoidWhen": "the series is static or historical — use a line chart",
-          "targets": [
-            {
-              "from": {
-                "field": "time"
-              },
-              "id": "time",
-              "label": "Time",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "field": "value"
-              },
-              "id": "value",
-              "label": "Value",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "the series is static or historical — use a line chart"
         },
         "Marginalia": {
           "purpose": "An italic note in the margin, tied to its mark by a Leader — the analyst's own remark on a printed chart.",
@@ -35320,29 +35253,7 @@
           "dataShapes": [
             "parts of a whole across a few categories, read as proportions of the total"
           ],
-          "avoidWhen": "more than about 6 slices — use a bar or unit chart",
-          "targets": [
-            {
-              "from": {
-                "field": "label"
-              },
-              "id": "category",
-              "label": "Category",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "field": "value"
-              },
-              "id": "value",
-              "label": "Value",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "more than about 6 slices — use a bar or unit chart"
         },
         "QuietDot": {
           "purpose": "The 0.9px pinprick that renders a measured null or zero, so an empty cell in a matrix is never a hole.",
@@ -35392,29 +35303,7 @@
           "dataShapes": [
             "several measures per entity, compared as an overall shape rather than value by value"
           ],
-          "avoidWhen": "more than about 8 spokes, or absolute magnitude matters more than the shape",
-          "targets": [
-            {
-              "from": {
-                "field": "label"
-              },
-              "id": "category",
-              "label": "Series",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "prop": "metrics"
-              },
-              "id": "metrics",
-              "label": "Metrics",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "more than about 8 spokes, or absolute magnitude matters more than the shape"
         },
         "RampLegend": {
           "purpose": "The colour-scale key for a sequential or diverging chart: a continuous ramp with its low and high values.",
@@ -35428,39 +35317,7 @@
           "dataShapes": [
             "one proportion against its maximum, read as a single ring"
           ],
-          "avoidWhen": "several categories matter — use a pie or unit chart",
-          "targets": [
-            {
-              "from": {
-                "field": "label"
-              },
-              "id": "category",
-              "label": "Category",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "field": "value"
-              },
-              "id": "value",
-              "label": "Value",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            },
-            {
-              "from": {
-                "field": "maxValue"
-              },
-              "id": "max",
-              "label": "Maximum",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "several categories matter — use a pie or unit chart"
         },
         "SankeyChart": {
           "purpose": "Flow diagram — how quantity moves between stages or nodes.",
@@ -35536,30 +35393,7 @@
           "dataShapes": [
             "two continuous measures per row — correlation, or the shape of a distribution"
           ],
-          "avoidWhen": "one axis is categorical — use a bar or dumbbell chart",
-          "targets": [
-            {
-              "from": {
-                "prop": "xDataKey"
-              },
-              "id": "x",
-              "label": "X axis",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "part": "Scatter",
-                "prop": "dataKey"
-              },
-              "id": "series",
-              "label": "Series",
-              "max": null,
-              "min": 1,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "one axis is categorical — use a bar or dumbbell chart"
         },
         "Sparkline": {
           "purpose": "Tiny, axis-less trend that lives inside a KPI tile or a table cell.",
@@ -35685,29 +35519,7 @@
             "parts of a whole as discrete unit counts rather than a percentage, as layout=\"waffle\"",
             "one tally row per category, ticks summing to a total — ticket volume by weekday, for example, as layout=\"rows\""
           ],
-          "avoidWhen": "exact per-unit counts do not matter — a pie or bar chart reads faster",
-          "targets": [
-            {
-              "from": {
-                "field": "label"
-              },
-              "id": "category",
-              "label": "Category",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "field": "value"
-              },
-              "id": "value",
-              "label": "Value",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "exact per-unit counts do not matter — a pie or bar chart reads faster"
         },
         "UnitStack": {
           "purpose": "n countable marks — rungs, ticks or dots — so a quantity is COUNTED rather than compared; the jitter is seeded, never random.",
@@ -35767,29 +35579,7 @@
           "dataShapes": [
             "a running total with signed steps into and out of it"
           ],
-          "avoidWhen": "there is no meaningful running total — use diverging bars instead",
-          "targets": [
-            {
-              "from": {
-                "field": "label"
-              },
-              "id": "step",
-              "label": "Step",
-              "max": 1,
-              "min": 1,
-              "role": "dimension"
-            },
-            {
-              "from": {
-                "field": "value"
-              },
-              "id": "value",
-              "label": "Value",
-              "max": 1,
-              "min": 1,
-              "role": "measure"
-            }
-          ]
+          "avoidWhen": "there is no meaningful running total — use diverging bars instead"
         },
         "BulletChart": {
           "dataShapes": [

@@ -26,10 +26,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { render, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetWarnOnce, toJsonSchema } from "@elabs-ai/components-ui/definition";
 import { HEATMAP_CHART } from "../../definitions/heatmap-chart.definition";
 import { HeatmapChart as HeatmapChartDouble } from "../../test";
+import { readChartDoubleProps } from "../../test/contract";
 import { HeatmapChart } from "./heatmap-chart";
 
 const plot = vi.hoisted(() => ({ width: 0, height: 0 }));
@@ -319,7 +320,9 @@ const deprecations = (spy: { mock: { calls: unknown[][] } }) =>
   spy.mock.calls.filter(([message]) => String(message).includes("is deprecated"));
 
 describe("HeatmapChart renamed props (RM-194)", () => {
-  const base = { valueKey: "count", x: "hour", y: "day" } as const;
+  // RM-196: `xDataKey`/`yDataKey` (never the deprecated `x`/`y`) so these RM-194-only
+  // assertions do not pick up the unrelated RM-196 deprecation warnings too.
+  const base = { valueKey: "count", xDataKey: "hour", yDataKey: "day" } as const;
   const action = <button type="button">Clear filters</button>;
 
   afterEach(() => {
@@ -543,5 +546,190 @@ describe("HeatmapChart renamed props (RM-194)", () => {
     render(<HeatmapChart {...base} data={[]} empty={{ message: "Only a message" }} />);
     expect(screen.getByRole("heading", { name: "No data" })).toBeInTheDocument();
     expect(screen.getByText("Only a message")).toBeInTheDocument();
+  });
+});
+
+// ── RM-196: `x` → `xDataKey`, `y` → `yDataKey` (ADR 0042 A.6 rows 32–33) ────
+//
+// Unlike RM-194's renamed props, `x`/`y` are a required pair by CONVENTION —
+// the `./test` double's contract still throws when neither spelling is given
+// (see `contract.test.tsx`'s "RM-196 F2" block), even though the real type is
+// no longer compile-time required (owner decision, 2026-09-27, F2 below). So
+// there is still no "neither given" DEFAULT render to compare against here.
+// "Differs from the unset render" is adapted to "differs from a DIFFERENT
+// valid pair" (the axes swapped): that proves the alias actually carries the
+// caller's VALUE through, not merely that two required props happened to
+// render something.
+
+describe("HeatmapChart renamed props (RM-196)", () => {
+  afterEach(() => {
+    plot.width = 0;
+    plot.height = 0;
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  const rows = [
+    {
+      from: "x",
+      to: "xDataKey",
+      old: { data: punchCard, valueKey: "count", x: "hour", yDataKey: "day" },
+      next: { data: punchCard, valueKey: "count", xDataKey: "hour", yDataKey: "day" },
+    },
+    {
+      from: "y",
+      to: "yDataKey",
+      old: { data: punchCard, valueKey: "count", xDataKey: "hour", y: "day" },
+      next: { data: punchCard, valueKey: "count", xDataKey: "hour", yDataKey: "day" },
+    },
+  ];
+
+  it.each(rows)(
+    "$from renders exactly what $to renders, and differs from swapping the axes",
+    ({ old, next }) => {
+      plot.width = 400;
+      plot.height = 300;
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const viaOld = markupOf(<HeatmapChart {...old} />);
+      expect(viaOld).toBe(markupOf(<HeatmapChart {...next} />));
+      const swapped = markupOf(
+        <HeatmapChart data={punchCard} valueKey="count" xDataKey="day" yDataKey="hour" />,
+      );
+      expect(viaOld).not.toBe(swapped);
+    },
+  );
+
+  it.each(rows)("$from warns once in development, naming $to", ({ from, to, old }) => {
+    resetWarnOnce();
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<HeatmapChart {...old} />).unmount();
+    render(<HeatmapChart {...old} />).unmount();
+    expect(deprecations(spy)).toEqual([
+      [`[HeatmapChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}".`],
+    ]);
+  });
+
+  it.each(rows)("$from never warns in production", ({ old }) => {
+    resetWarnOnce();
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<HeatmapChart {...old} />).unmount();
+    expect(deprecations(spy)).toEqual([]);
+  });
+
+  it.each(rows)(
+    "$from keeps the ./test double silent under the default deprecatedProps",
+    ({ old }) => {
+      resetWarnOnce();
+      const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      render(<HeatmapChartDouble {...old} />).unmount();
+      expect(spy).not.toHaveBeenCalled();
+    },
+  );
+
+  it("the double's data-chart-props payload survives the old `x`/`y` names, read off the real chart root (not RTL's wrapper)", () => {
+    const { container, unmount } = render(
+      <HeatmapChartDouble data={punchCard} valueKey="count" x="hour" y="day" />,
+    );
+    // `container` is RTL's own wrapper div; the double's root — the element that
+    // actually carries `data-chart-props` — is its first child. HeatmapChart's
+    // contract validates `xDataKey`/`yDataKey` through `propNamedKeys`, not the
+    // separate `xKey` payload field (`buildChartDoublePayload`), so this reads
+    // `dataLength` — present for every `dataKind: "array"` family — to prove the
+    // double didn't throw and the row count came through.
+    const root = container.firstElementChild as HTMLElement;
+    expect(readChartDoubleProps(root)).toMatchObject({
+      component: "HeatmapChart",
+      dataLength: punchCard.length,
+    });
+    unmount();
+  });
+
+  it("lets the new name win when both are given (new-wins)", () => {
+    plot.width = 400;
+    plot.height = 300;
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const viaNewWins = markupOf(
+      <HeatmapChart
+        data={punchCard}
+        valueKey="count"
+        x="wrong"
+        xDataKey="hour"
+        y="wrong"
+        yDataKey="day"
+      />,
+    );
+    const viaNewOnly = markupOf(
+      <HeatmapChart data={punchCard} valueKey="count" xDataKey="hour" yDataKey="day" />,
+    );
+    expect(viaNewWins).toBe(viaNewOnly);
+  });
+});
+
+// ── RM-196 F2 (owner decision, 2026-09-27 — DEPRECATION.md §2): omitting BOTH
+// spellings of a pair no longer fails to type-check — it renders (every row
+// collapses onto one unnamed column/row) and logs one dev-only warning naming
+// the NEW name. Never throws. Production stays silent. The `./test` double's
+// stricter behaviour (it throws, naming `xDataKey`) is covered in
+// `contract.test.tsx`, not here. ───────────────────────────────────────────
+
+describe("HeatmapChart neither xDataKey/x nor yDataKey/y is given (RM-196 F2)", () => {
+  // review R2-1: `warnChartOnce` dedupes through the SHARED, test-resettable set every
+  // other chart warning uses (`@elabs-ai/components-ui/definition`'s `warnOnce`) — reset
+  // it before EVERY test in this block, not just some, so a warned key from one test can
+  // never suppress another test's own warning regardless of run order.
+  beforeEach(() => {
+    resetWarnOnce();
+  });
+
+  afterEach(() => {
+    plot.width = 0;
+    plot.height = 0;
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("warns once in development, naming xDataKey, when neither x nor xDataKey is given", () => {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<HeatmapChart data={punchCard} valueKey="count" yDataKey="day" />).unmount();
+    render(<HeatmapChart data={punchCard} valueKey="count" yDataKey="day" />).unmount();
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(
+      "[brand-ui/charts] HeatmapChart needs `xDataKey` (or the deprecated `x`); every row is " +
+        "collapsing onto one unnamed column until one is given.",
+    );
+  });
+
+  it("warns once in development, naming yDataKey, when neither y nor yDataKey is given (matrix variant)", () => {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<HeatmapChart data={punchCard} valueKey="count" xDataKey="hour" />).unmount();
+    render(<HeatmapChart data={punchCard} valueKey="count" xDataKey="hour" />).unmount();
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(
+      "[brand-ui/charts] HeatmapChart needs `yDataKey` (or the deprecated `y`); every row is " +
+        "collapsing onto one unnamed row until one is given.",
+    );
+  });
+
+  it('never warns about yDataKey on variant="calendar", where it is ignored', () => {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(
+      <HeatmapChart data={punchCard} valueKey="count" xDataKey="hour" variant="calendar" />,
+    ).unmount();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("never warns in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<HeatmapChart data={punchCard} valueKey="count" />).unmount();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("never throws, and keeps rendering (existing render behaviour, no crash)", () => {
+    expect(() => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      render(<HeatmapChart data={punchCard} valueKey="count" />).unmount();
+    }).not.toThrow();
   });
 });

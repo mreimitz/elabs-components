@@ -3,15 +3,19 @@
 import { curveMonotoneX } from "@visx/curve";
 import { AreaClosed } from "@visx/shape";
 import { useChartStable } from "./chart-context";
-import type { CurveFactory } from "./curve-types";
+import { type CurveAlias, type CurveFactory, resolveCurve } from "./curve-types";
 
 export interface PatternAreaProps {
   /** Key in data to use for y values */
   dataKey: string;
   /** Fill color or pattern URL (e.g. `url(#pattern-id)`) */
   fill: string;
-  /** Curve function. Default: curveMonotoneX */
-  curve?: CurveFactory;
+  /**
+   * Curve between points: a named alias (same vocabulary as
+   * `Line`/`Area`/`AreaBand`'s `curve`, resolved through the same `resolveCurve`) or a raw
+   * d3/visx curve factory. Default: `curveMonotoneX`.
+   */
+  curve?: CurveFactory | CurveAlias;
   /** @deprecated Pattern fill is not clip-revealed; only the stroke `Area` animates. */
   animate?: boolean;
 }
@@ -25,7 +29,7 @@ export function PatternArea({ dataKey, fill, curve = curveMonotoneX }: PatternAr
 
   return (
     <AreaClosed
-      curve={curve}
+      curve={resolveCurve(curve)}
       data={renderData}
       fill={fill}
       x={(d) => xScale(xAccessor(d)) ?? 0}

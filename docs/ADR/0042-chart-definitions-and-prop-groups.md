@@ -342,7 +342,18 @@ These four points refine the flow review's §3.2:
   merge per key, so a caller who sets only `empty.message` keeps the default title (RM-170).
 - **A required prop behind an alias.** Heatmap's `x`/`y` are required today. While both spellings
   exist, the type must still require one of each pair, so a caller who passes neither still fails to
-  compile.
+  compile. **Owner decision, 2026-09-27 (RM-196 F2):** dropped for this minor — `DEPRECATION.md` §2
+  promises the deprecated path keeps working, unchanged, for the rest of the major, and this
+  "one of the pair" union broke that promise not for a caller passing neither name (that caller
+  already failed to compile on e5f37e50, before RM-196 too — `x`/`y` were plain required strings)
+  but for TYPE-LEVEL composition: a union has no statically known members, so
+  `interface X extends HeatmapChartProps {}` and a wrapper spreading
+  `Omit<HeatmapChartProps, "data">` onto JSX both stopped compiling, with no source change of
+  their own (review F1/F2). So `HeatmapChartProps` stays a plain interface with
+  `xDataKey`/`yDataKey`/`x`/`y` all optional; omitting a pair now renders (degrading gracefully)
+  and logs one dev-only warning naming the new spelling, never a compile error and never a throw
+  from the real component. At 6.0.0 `xDataKey` becomes required, and on `variant="matrix"` (the
+  default) so does `yDataKey`; `x`/`y` are removed (RM-205).
 - **A deprecation with no replacement.** `DEPRECATION.md` §2 says a deprecation must name the thing
   to use instead. The two Candlestick members in A.8 never had an effect; their `@deprecated` text
   names the migration ("remove the prop") and RM-196 must say so explicitly.
@@ -525,8 +536,12 @@ groups in §4. Where the two disagree, the row says which won and why.
   Candlestick and Bar. No family names a y column today; `yDataKey` pairs with it on the two
   families whose y is a column key rather than a series part's `dataKey`. DensityScatter keeps its
   defaults (`"x"`, `"y"`), and `xDataKey` keeps `xKey`'s second role as the intent `field` for x
-  ranges. Heatmap's `x` and `y` are required, so the type keeps one of each pair required (see
-  Watch for).
+  ranges. Heatmap's `x` and `y` are required, so the type kept one of each pair required at first —
+  **owner decision, 2026-09-27 (F2):** relaxed for this minor to a dev-only warn-once (see Watch
+  for); `HeatmapChartProps` is a plain interface, `xDataKey`/`yDataKey`/`x`/`y` all optional, and
+  the compile-time requirement returns only at 6.0.0 (RM-205) — `xDataKey` unconditionally,
+  `yDataKey` only on `variant="matrix"` (the default), since the real component ignores `yDataKey`
+  entirely on `variant="calendar"` (review R2-2).
 - **Why the Radar names:** `animationDuration` (ms) is on Line, Area, Composed, Bar, Scatter,
   Candlestick, Sankey, Choropleth and Ring; `enterStaggerScale` on Pie, Ring and Gauge;
   `revealSignature` on Line, Area, Bar, Scatter, Composed, Candlestick, Sankey and Choropleth. Radar

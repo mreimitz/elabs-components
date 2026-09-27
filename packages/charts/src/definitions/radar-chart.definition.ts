@@ -9,15 +9,23 @@
  * value column had no seam for the rest); RM-187 added that seam, so `locale` and
  * `maxFractionDigits` are listed too — both reach the legend's value column.
  *
+ * RM-196 (ADR 0042 A.6, rows 36–38): `enterDurationMs` / `staggerScale` / `motionReplayKey`
+ * → `animationDuration` / `enterStaggerScale` / `revealSignature`, each an alias row until
+ * 6.0.0 — Radar was the only family with its own motion names. Like `valueFormatGroup`,
+ * `motionGroup` stays OFF the `groups` list (Radar has no `animationEasing` prop, one of the
+ * group's members) — the three renamed fields reference the group's field objects instead,
+ * which is also where their (unchanged) defaults now come from, so no kind default repeats
+ * them.
+ *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
 
 import { a11yGroup, field } from "@elabs-ai/components-ui/definition";
 
-import { DEFAULT_ANIMATION_DURATION_MS } from "../charts/animation";
 import { chartStateGroup } from "../charts/props/chart-state";
 import { frameSizeGroup } from "../charts/props/frame-size";
 import { legendGroup } from "../charts/props/legend";
+import { motionGroup } from "../charts/props/motion";
 import type { RadarChartProps } from "../charts/radar-chart";
 import { looseFieldFor } from "../charts/props/typed-field";
 import { valueFormatGroup } from "../charts/props/value-format";
@@ -66,19 +74,9 @@ export const RADAR_CHART = /* @__PURE__ */ defineChart<RadarChartProps>()({
     }),
     margin: frameSizeGroup.fields.margin,
     animate: field.boolean({ tier: "advanced", description: "Enable entry animation." }),
-    enterDurationMs: field.number({
-      unit: "ms",
-      tier: "advanced",
-      description: "Entry animation budget.",
-    }),
-    staggerScale: field.number({
-      tier: "advanced",
-      description: "Scales the entry stagger delay between series.",
-    }),
-    motionReplayKey: field.string({
-      tier: "advanced",
-      description: "Changes to replay the entry animation.",
-    }),
+    animationDuration: motionGroup.fields.animationDuration,
+    enterStaggerScale: motionGroup.fields.enterStaggerScale,
+    revealSignature: motionGroup.fields.revealSignature,
     className: classNameField,
     plotHeight: frameSizeGroup.fields.plotHeight,
     legend: legendGroup.fields.legend,
@@ -94,9 +92,6 @@ export const RADAR_CHART = /* @__PURE__ */ defineChart<RadarChartProps>()({
     levels: 5,
     margin: 60,
     animate: true,
-    enterDurationMs: DEFAULT_ANIMATION_DURATION_MS,
-    staggerScale: 1,
-    motionReplayKey: "",
     className: "",
   },
   targets: [
@@ -115,6 +110,33 @@ export const RADAR_CHART = /* @__PURE__ */ defineChart<RadarChartProps>()({
       from: { prop: "metrics" },
       min: 1,
       max: 1,
+    },
+  ],
+  // RM-196 — ADR 0042 A.6 rows 36–38.
+  aliases: [
+    {
+      from: "enterDurationMs",
+      to: "animationDuration",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+    {
+      from: "staggerScale",
+      to: "enterStaggerScale",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
+    },
+    {
+      from: "motionReplayKey",
+      to: "revealSignature",
+      transform: "identity",
+      precedence: "new-wins",
+      since: "5.6.0",
+      removeIn: "6.0.0",
     },
   ],
   contract: {

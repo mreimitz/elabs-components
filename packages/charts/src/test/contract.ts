@@ -33,7 +33,7 @@ import {
 } from "@elabs-ai/components-ui/definition";
 
 import type { ChartSpec } from "../auto-chart/chart-spec";
-import type { ChartContractSpec } from "../definitions/contract-types";
+import type { ChartContractGate, ChartContractSpec } from "../definitions/contract-types";
 // Direct module imports, never the `auto-chart/index.ts` barrel — the barrel
 // re-exports `AutoChart`, which drags the whole `@visx`-backed engine into the
 // jsdom path and would (correctly) fail `pnpm charts:test-double:check` rung (b).
@@ -331,6 +331,18 @@ function assertTreeNode(component: string, dataProp: string, node: unknown, path
 }
 
 /**
+ * `props[gate.prop]` matches `gate.equals` — an unset gate prop falls back to
+ * `gate.default` first, so a caller who never set the prop is judged against
+ * its REAL default, never treated as "doesn't match anything" (an unset
+ * `variant`, the common case, must be judged as `variant="matrix"`, not
+ * silently exempted from every check gated on it).
+ */
+function gateMatches(props: Record<string, unknown>, gate: ChartContractGate): boolean {
+  const value = props[gate.prop] ?? gate.default;
+  return value === gate.equals;
+}
+
+/**
  * Assert `props` against `spec`, throwing (or warning — see
  * `configureChartTestDouble`) a `ChartContractError` on the FIRST violation
  * found for a given (component, prop) pair.
@@ -339,10 +351,25 @@ export function assertChartContract(
   component: string,
   props: Record<string, unknown>,
   spec: ChartContractSpec,
+  /**
+   * RM-196: the caller's ORIGINAL, pre-alias-resolution props — `props` above is
+   * already resolved (both old and new names readable, ADR 0042 §8), so it cannot
+   * tell which one the caller actually wrote. Only `propNamedKeys`' `aliasOf` reads
+   * this; every other check keeps reading the resolved `props`. Defaults to `props`
+   * itself, so a caller with no alias-aware rows (every family but Heatmap today)
+   * is unaffected.
+   */
+  raw: Record<string, unknown> = props,
 ): void {
   for (const p of spec.requiredProps ?? []) {
     if (props[p] === undefined) {
       fail(component, p, undefined, `required prop "${p}" is missing`);
+    }
+  }
+  for (const { prop, onlyWhen } of spec.requiredPropsWhen ?? []) {
+    if (!gateMatches(props, onlyWhen)) continue;
+    if (props[prop] === undefined) {
+      fail(component, prop, undefined, `required prop "${prop}" is missing`);
     }
   }
 
@@ -450,20 +477,24 @@ export function assertChartContract(
         }
       }
       for (const named of spec.propNamedKeys ?? []) {
-        if (named.onlyWhen && props[named.onlyWhen.prop] !== named.onlyWhen.equals) continue;
+        if (named.onlyWhen && !gateMatches(props, named.onlyWhen)) continue;
         const keyName = (props[named.prop] as string) || named.default;
         if (!keyName) continue;
+        // RM-196: name the violation after whichever of the pair the caller actually
+        // set — `raw` (pre-resolution) has the old name only when the caller wrote it.
+        const displayProp =
+          named.aliasOf && raw[named.aliasOf] !== undefined ? named.aliasOf : named.prop;
         if (!(keyName in record)) {
           fail(
             component,
-            named.prop,
+            displayProp,
             row,
-            `row ${index} of "${dataProp}" is missing the key "${keyName}" named by prop "${named.prop}"`,
+            `row ${index} of "${dataProp}" is missing the key "${keyName}" named by prop "${displayProp}"`,
           );
         } else if (named.requireDate && isInvalidDate(record[keyName])) {
           fail(
             component,
-            named.prop,
+            displayProp,
             record[keyName],
             `row ${index}'s "${keyName}" is not coercible to a valid Date — this is the ` +
               `"RangeError: Invalid time value" class of bug`,

@@ -1158,9 +1158,9 @@ export function ProcessExplorerTemplate() {
                         valueFormat="compact"
                         plotHeight={dockTall ? 340 : 196}
                         valueKey="events"
-                        x="hour"
+                        xDataKey="hour"
                         xOrder={OFFICE_HOURS}
-                        y="day"
+                        yDataKey="day"
                         yOrder={WEEKDAYS}
                       />
                     </Figure>

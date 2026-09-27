@@ -3,3 +3,5 @@ node_modules
 .turbo
 src/themes/
 .evidence/
+# DG-21: deleted workspace files land here (never rm); not versioned.
+workspace/_trash/

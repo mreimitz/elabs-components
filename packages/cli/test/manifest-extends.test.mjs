@@ -445,6 +445,58 @@ test("real manifest: LineChart inherits its mixin props; defaults and deprecatio
     );
 });
 
+test("real manifest: HeatmapChart's x/y pair are plain optional members of HeatmapChartProps, not a union (RM-196 review F1, F2, R2-3)", (t) => {
+  if (!repoRoot) return t.skip("not inside the monorepo — manifest generation unavailable");
+  const rows = flat(generateManifest(repoRoot));
+  const row = (name) => rows.find((r) => r.name === name);
+  const heatmap = row("HeatmapChart");
+  const prop = (r, n) => r.props.props.find((p) => p.name === n);
+  // xDataKey/yDataKey are real, undeprecated members declared directly on HeatmapChartProps
+  // itself (review R2-3 dropped the unreleased HeatmapChartOwnProps split) — an own member
+  // carries no `from`, the same as every other own-declared prop in this file's other tests.
+  assert.equal(prop(heatmap, "xDataKey")?.from, undefined, "own member, not inherited");
+  assert.equal(prop(heatmap, "xDataKey")?.deprecated, undefined, "the new name is never marked");
+  assert.equal(prop(heatmap, "yDataKey")?.from, undefined, "own member, not inherited");
+  assert.equal(prop(heatmap, "yDataKey")?.deprecated, undefined, "the new name is never marked");
+  // x/y are the deprecated aliases, also own members, read by the ordinary interface-props
+  // path without expanding a union.
+  for (const [name, to] of [
+    ["x", "xDataKey"],
+    ["y", "yDataKey"],
+  ])
+    assert.deepEqual(
+      prop(heatmap, name)?.deprecated,
+      { since: "5.6.0", replacement: to, removeIn: "6.0.0" },
+      `HeatmapChart.${name} is deprecated in favour of ${to}`,
+    );
+  // RM-196 F2 (owner decision, 2026-09-27): `HeatmapChartXProp`/`HeatmapChartYProp` — the
+  // "one of the pair" compile-time union — never shipped in a release and are deleted.
+  // Review R2-3: the unreleased HeatmapChartOwnProps/HeatmapChartNavProps split (which no
+  // longer served a purpose once the union was gone) is also deleted — HeatmapChartProps
+  // extends the six real group interfaces directly, as it did before RM-196 (`e5f37e50`).
+  // Every `extends` entry still names a real exported type, none of them silently swallowed.
+  assert.deepEqual(heatmap.props.extends, [
+    "ChartSelectionProps",
+    "ChartInteractionProps",
+    "ChartSelectionGestureProps",
+    "FrameSizeGroupProps",
+    "ChartStateGroupProps",
+    "ChartCategoryNavigatorProps",
+  ]);
+  // Unlike the deleted HeatmapChartOwnProps/HeatmapChartNavProps (declared in this same
+  // file), the six real group interfaces above live in their own shared mixin files — the
+  // resolver already proved each one real by successfully expanding props out of it
+  // (`selectionField` etc., asserted for other families elsewhere in this suite); confirm
+  // it here too, directly, rather than grepping one file that no longer declares them.
+  const resolver = createTypeResolver(repoRoot);
+  const heatmapFile = join(repoRoot, "packages/charts/src/charts/heatmap/heatmap-chart.tsx");
+  for (const name of heatmap.props.extends)
+    assert.ok(
+      resolver.resolve(heatmapFile, name).length > 0,
+      `${name} is a real exported type the resolver can expand, not a dangling extends name`,
+    );
+});
+
 test("joinDefinitions marks an alias row's old name deprecated, and skips a row it cannot place", () => {
   const tables = {
     Chart: {

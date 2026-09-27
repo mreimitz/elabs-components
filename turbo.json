@@ -2,10 +2,11 @@
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
   "globalDependencies": ["tsconfig.json", ".prettierrc.json"],
+  "cacheMaxSize": "10GB",
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "storybook-static/**", ".next/**", "!.next/cache/**"]
+      "outputs": ["dist/**", "storybook-static/**", ".next/**", "!.next/cache/**", "!.next/dev/**"]
     },
     "dev": {
       "cache": false,

@@ -475,9 +475,9 @@ export const CategoryByCategoryMatrix: Story = story(
       data={PUNCH_CARD}
       valueFormat="compact"
       valueKey="count"
-      x="hour"
+      xDataKey="hour"
       xOrder={HOURS}
-      y="day"
+      yDataKey="day"
       yOrder={WEEKDAYS}
     />
   </div>,

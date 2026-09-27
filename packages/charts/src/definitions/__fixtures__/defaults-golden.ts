@@ -92,7 +92,7 @@ export const DEFAULTS_GOLDEN: Record<
     animationDuration: 1100,
     className: "",
     status: "ready",
-    barGap: 4,
+    groupGap: 4,
     stacked: false,
     stackGap: 0,
     insetBars: true,
@@ -248,13 +248,19 @@ export const DEFAULTS_GOLDEN: Record<
     status: "ready",
   },
   DensityScatterChart: {
-    xKey: "x",
-    yKey: "y",
+    xDataKey: "x",
+    yDataKey: "y",
     zones: [],
     cellSize: 5,
     underlay: 4,
     pointRadius: 1.35,
+    pointOpacity: 1,
+    sizeRange: [1.2, 6],
     zoom: true,
+    zoneTags: true,
+    minimap: true,
+    zoomControlsPlacement: "top-end",
+    showLassoShape: true,
     renderer: "webgl",
     status: "ready",
   },
@@ -325,9 +331,10 @@ export const DEFAULTS_GOLDEN: Record<
     // Still a plain number (the kind default), never a `Margin` object.
     margin: 60,
     animate: true,
-    enterDurationMs: 1100,
-    staggerScale: 1,
-    motionReplayKey: "",
+    // RM-196: `animationDuration`/`enterStaggerScale`/`revealSignature` (formerly
+    // `enterDurationMs`/`staggerScale`/`motionReplayKey`) now reference `motionGroup`'s
+    // field objects and get their defaults (1100/1/"") from there, not a kind default —
+    // same reason `valueFormat` etc. above are absent from this object.
     className: "",
   },
   UnitChart: {

@@ -37,6 +37,15 @@ import {
   type PictureScale,
 } from "./export";
 
+/**
+ * n9: a `graph` with zero nodes (the "Nothing to draw yet" empty document) is as undrawable
+ * as no graph at all — both disable Export the same way `canvas-pane.tsx` disables Edit's
+ * neighbour, Present (`interaction-controls.tsx`).
+ */
+function useHasGraph(): boolean {
+  return useDiagram((s) => (s.drawn.graph?.nodes.length ?? 0) > 0);
+}
+
 /** The menu's strings, in one place (`conventions/i18n-strings`). */
 const EXPORT_LABELS = {
   export: "Export",
@@ -190,7 +199,7 @@ export interface ExportMenuProps {
 }
 
 export function ExportMenu({ compact }: ExportMenuProps) {
-  const drawn = useDiagram((s) => Boolean(s.drawn.graph));
+  const drawn = useHasGraph();
   if (compact) return null;
   return (
     <DropdownMenu>
@@ -215,7 +224,7 @@ export function ExportMenu({ compact }: ExportMenuProps) {
  * P4: library gap — ui's sub-menu cannot open inline (docs/findings/DG-17-export.md §11).
  */
 export function ExportMenuItems() {
-  const drawn = useDiagram((s) => Boolean(s.drawn.graph));
+  const drawn = useHasGraph();
   const phone = useIsMobile();
   const visibility = useEditorVisibility();
   if (phone) {

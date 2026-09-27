@@ -161,7 +161,7 @@ export function buildBarLegendItems({
     for (const line of lines) {
       items.push({
         key: `series:${line.dataKey}`,
-        label: line.dataKey,
+        label: line.name ?? line.dataKey,
         color: line.stroke,
         kind: "series",
         marker: "bar",
