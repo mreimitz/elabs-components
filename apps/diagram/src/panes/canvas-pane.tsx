@@ -130,6 +130,13 @@ interface DiagramCanvasProps {
   presenting: boolean;
 }
 
+/** The outline's zones; two share a size, so each carries its own key. */
+const SKELETON_ZONES = [
+  { id: "main", size: "col-span-3 row-span-2 h-80" },
+  { id: "upper", size: "col-span-2 h-36" },
+  { id: "lower", size: "col-span-2 h-36" },
+] as const;
+
 /**
  * DG-20 — the first layout's loading state: the outline of a diagram (three zones, one
  * nested, with a few node tiles), built from `Skeleton` and hidden from assistive tech; one
@@ -142,10 +149,10 @@ function LayoutSkeleton() {
         {CANVAS_LABELS.layingOut}
       </span>
       <div aria-hidden="true" className="grid grid-cols-5 gap-6">
-        {["col-span-3 row-span-2 h-80", "col-span-2 h-36", "col-span-2 h-36"].map((zone) => (
+        {SKELETON_ZONES.map((zone) => (
           <div
-            key={zone}
-            className={cn("flex flex-col gap-4 rounded-lg border border-border p-4", zone)}
+            key={zone.id}
+            className={cn("flex flex-col gap-4 rounded-lg border border-border p-4", zone.size)}
           >
             <Skeleton className="h-6 w-40 rounded-md" />
             <div className="flex flex-1 items-center justify-around gap-4">
