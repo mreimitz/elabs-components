@@ -20,6 +20,20 @@ const MARKER_OWNER = "arch-diagram";
 const IS_MAC = typeof navigator !== "undefined" && /Mac|iP(hone|ad|od)/.test(navigator.platform);
 const TAB_FOCUS_KEYS = IS_MAC ? ["Ctrl", "Shift", "M"] : ["Ctrl", "M"];
 
+/**
+ * The canvas-selected entry in the text: a wash over its range and a rail in the gutter beside
+ * each of its lines. Review-wave3 N4: `--accent` is a hover wash that a neutral theme may set
+ * within a hair of the editor's background (qlik-light: 1.02:1), so the wash cannot be the only
+ * channel; the rail is the conventions' accent-rail gesture. `primary-text`, not `primary`: the
+ * light theme's lime primary is 1.36:1 on the gutter, its text rung is at least 6:1 in light,
+ * dark and qlik-light. The class names are literal so Tailwind generates them.
+ */
+const HIGHLIGHT_OPTIONS = {
+  className: "bg-accent",
+  isWholeLine: false,
+  linesDecorationsClassName: "border-s-2 border-s-primary-text",
+} as const;
+
 /** Keep Monaco on its <textarea> surface (see the P4 note at the CodeEditor). */
 const EDITOR_OPTIONS = { editContext: false } as const;
 
@@ -124,7 +138,7 @@ export function EditorPane() {
       endLineNumber: end.line,
       endColumn: end.col,
     };
-    highlight.current.set([{ range, options: { className: "bg-accent", isWholeLine: false } }]);
+    highlight.current.set([{ range, options: HIGHLIGHT_OPTIONS }]);
     if (!editor.hasTextFocus()) editor.revealRangeInCenterIfOutsideViewport(range);
   }, [selectedId, compiled, mounted]);
 
