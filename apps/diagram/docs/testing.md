@@ -60,3 +60,5 @@ node tests/lens-motion.mjs
 Run motion measurements without concurrent builds or other browser suites on the same machine. Record source-ready preparation separately from a switch requested during document loading, and retain the full request-to-settle time for that loading case. A smooth tween does not establish that the first click responds promptly.
 
 Browser checks complement independent review. Inspect affected surfaces at desktop and phone widths in settled light and dark themes, including keyboard focus and disabled states. Keep results tied to the commit tested, and repeat relevant checks after integrating overlapping workstreams.
+
+When a browser check reads a store directly, import the exact module URL loaded by Vite, including its update query, and assert the current document identity first. A bare import after a hot update can create a separate store instance. Await asynchronous predicates explicitly. Both lens renderers can remain mounted during a transition, so scope canvas locators to the intended lens and wait for its actual visible state. Set up saved edits in the technical lens with Edit enabled.
