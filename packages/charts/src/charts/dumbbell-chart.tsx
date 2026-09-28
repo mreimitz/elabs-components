@@ -56,7 +56,7 @@ import { type ContainerLegendProp, useContainerLegend } from "./legend/use-conta
 import { legendWantsValues, sumLegendValue } from "./legend/legend-values";
 import { spaceSlopeLabels } from "./labels/space-slope-labels";
 
-/** Re-exported for `dumbbell-chart.test.tsx`'s existing import — see its own docblock. */
+/** The public barrel's real source for this export (`charts/index.ts`) — not a test-only re-export. */
 export { spaceSlopeLabels };
 import {
   arrowHeadPath,

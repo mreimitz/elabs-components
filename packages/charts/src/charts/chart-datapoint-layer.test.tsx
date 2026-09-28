@@ -151,12 +151,11 @@ describe("ChartDatapointProvider — the public provider's own default", () => {
 });
 
 describe("AutoChartDatapointProvider — the internal self-gating wrapper (RM-204)", () => {
-  // Every family used to gate mounting the (public) provider itself on this
-  // same expression (`if (!onDatapointClick && !copyValueOnActivate) return
-  // core;`, or the equivalent ternary) before always rendering it.
-  // `AutoChartDatapointProvider` — not part of the public API — computes the
-  // identical default itself, so every family can mount IT unconditionally
-  // instead: the one seam all of them share.
+  // Not part of the public API: `AutoChartDatapointProvider` computes
+  // `!onDatapointClick && !copyValueOnActivate` as its own `disabled` default,
+  // so every one of the 17 chart families can mount it UNCONDITIONALLY —
+  // the one seam they all share — instead of each computing that expression
+  // itself and conditionally rendering the public `ChartDatapointProvider`.
   it("is disabled with neither onDatapointClick nor copyValueOnActivate", () => {
     expect(renderProvider(AutoChartDatapointProvider, {})).toBe(false);
   });

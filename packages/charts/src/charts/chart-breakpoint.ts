@@ -307,8 +307,7 @@ const chartInstanceWarnings = new WeakMap<object, Set<string>>();
  * instance rather than the whole page load (`warnChartOnce`'s scope): unmount and remount
  * the same chart (a new `instance`) and it warns again; re-render it and it does not.
  * `instance` is any object stable for the component's lifetime (a `useRef({})`, a DOM node);
- * entries are dropped once `instance` is garbage collected, so nothing leaks. Sankey, Dumbbell
- * and Bump each kept a private `WeakSet<object>` doing exactly this — this is the one copy.
+ * entries are dropped once `instance` is garbage collected, so nothing leaks.
  */
 export function warnChartOnceFor(instance: object, key: string, message: string): void {
   if (process.env.NODE_ENV === "production") {
