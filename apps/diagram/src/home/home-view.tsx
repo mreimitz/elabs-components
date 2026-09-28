@@ -36,8 +36,8 @@ export function HomeView() {
   // The shell's own live reload (`useLiveReload`, mounted once above Home) already fetches the
   // tree on load; Home only ever reads it, it never re-triggers a fetch of its own.
   // Recent, Folders and Components all read the same tree, so a failed fetch gets exactly one
-  // alert and one Retry here, not one per section (review round 1) — the sections themselves are
-  // hidden entirely while it is showing, instead of leaving three headings over nothing.
+  // alert and one Retry here, not one per section — the sections themselves are hidden entirely
+  // while it is showing, instead of leaving three headings over nothing.
   const treeFailed = tree === null && treeError !== null;
 
   return (
@@ -52,11 +52,19 @@ export function HomeView() {
         </div>
 
         {treeFailed ? (
-          <TreeErrorPanel message={treeError} />
+          // `h2`, not the template picker's `h3`: this panel stands in for Home's three
+          // page-level sections while the tree is unreadable, directly under the page's `h1`.
+          <TreeErrorPanel
+            message={treeError}
+            titleAs="h2"
+            onRecovered={() => document.getElementById("home-recent")?.focus()}
+          />
         ) : (
           <>
             <section aria-labelledby="home-recent" className="flex flex-col gap-4">
-              <Heading id="home-recent" level={2}>
+              {/* `tabIndex={-1}`: a Retry recovering from `treeFailed` moves focus here (see
+                  `onRecovered` above) instead of leaving it to drop to `<body>`. */}
+              <Heading id="home-recent" level={2} tabIndex={-1} className="focus-ring">
                 {HOME_LABELS.recent}
               </Heading>
               {tree === null ? (

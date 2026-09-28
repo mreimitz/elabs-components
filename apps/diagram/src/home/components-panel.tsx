@@ -16,6 +16,7 @@ import { Boxes, ChevronDown } from "lucide-react";
 import { buildComponentEntries, type ComponentEntry } from "./component-usage";
 import { NoPreview } from "./no-preview";
 import { RECENT_LABELS } from "./recent-card";
+import { splitCopySuffix } from "./templates";
 import { thumbSrc } from "./thumbnail";
 import { toHash } from "../routes/use-hash";
 import type { WorkspaceTree } from "../workspace/client";
@@ -74,27 +75,39 @@ function UsedIn({ entry }: { entry: ComponentEntry }) {
           <ChevronDown aria-hidden="true" className="size-3.5" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" aria-labelledby={headingId}>
+      {/* `collisionPadding` keeps it off the viewport edge at narrow widths (`top-bar.tsx` uses
+          the same 8px). */}
+      <PopoverContent align="start" collisionPadding={8} aria-labelledby={headingId}>
         <Text id={headingId} variant="caption" tone="muted" className="mb-2">
           {COMPONENTS_LABELS.usedInHeading(entry.title)}
         </Text>
         <ul className="flex flex-col gap-1">
-          {entry.usedIn.map((usage) => (
-            <li key={usage.path}>
-              <a
-                href={toHash({ kind: "doc", path: usage.path })}
-                className="block max-w-full rounded-sm text-body text-foreground hover:text-primary-text focus-ring"
-              >
-                <span className="line-clamp-2 break-words">{usage.title}</span>
-                {/* The folder tells apart two same-titled diagrams — the same "Workspace" root
-                    wording as `RecentCard`. A copy's own title also carries a "(copy)"/"(copy N)"
-                    suffix (`titleWithCopySuffix`), so two copies in the same folder differ too. */}
-                <Text as="span" variant="meta" tone="muted" className="block truncate">
-                  {usage.folder === "" ? RECENT_LABELS.root : usage.folder}
-                </Text>
-              </a>
-            </li>
-          ))}
+          {entry.usedIn.map((usage) => {
+            // The folder tells apart two same-titled diagrams — the same "Workspace" root
+            // wording as `RecentCard`. A copy's own title also carries a "(copy)"/"(copy N)"
+            // suffix (`titleWithCopySuffix`); `splitCopySuffix` keeps that marker on its own
+            // non-clamped line so two copies in the same folder still differ once the base
+            // title is long enough to clamp.
+            const { base, marker } = splitCopySuffix(usage.title);
+            return (
+              <li key={usage.path}>
+                <a
+                  href={toHash({ kind: "doc", path: usage.path })}
+                  className="block max-w-full rounded-sm text-body text-foreground hover:text-primary-text focus-ring"
+                >
+                  <span className="line-clamp-2 break-words">{base}</span>
+                  {marker !== null ? (
+                    <Text as="span" variant="meta" tone="muted" className="block shrink-0">
+                      {marker}
+                    </Text>
+                  ) : null}
+                  <Text as="span" variant="meta" tone="muted" className="block truncate">
+                    {usage.folder === "" ? RECENT_LABELS.root : usage.folder}
+                  </Text>
+                </a>
+              </li>
+            );
+          })}
         </ul>
       </PopoverContent>
     </Popover>

@@ -22,6 +22,7 @@ import {
   tabsListVariants,
   tabsTriggerVariants,
 } from "@elabs-ai/components-ui";
+import { splitCopySuffix } from "../home/templates";
 import { useRoute } from "../routes/use-hash";
 import { dismissDiskChange } from "../workspace/live-reload";
 import { useWorkspace } from "../workspace/workspace-store";
@@ -95,6 +96,10 @@ export function DocTabs() {
         {docs.map((doc, index) => {
           const selected = doc.path === shown;
           const tabFailed = selected && failed;
+          // A copy's "(copy N)" marker (`splitCopySuffix`) is its own non-shrinking part so the
+          // tab's own truncation never hides it — two copies would otherwise show the same
+          // truncated name.
+          const { base, marker } = splitCopySuffix(doc.title);
           return (
             <div
               key={doc.path}
@@ -128,7 +133,10 @@ export function DocTabs() {
                 onClick={() => openDoc(doc.path)}
                 onKeyDown={(event) => onKeyDown(event, index, doc.path)}
               >
-                <span className="truncate">{doc.title}</span>
+                <span className="min-w-0 flex-1 truncate">{base}</span>
+                {marker !== null ? (
+                  <span className="shrink-0 text-muted-foreground">{marker}</span>
+                ) : null}
                 {tabFailed ? (
                   <>
                     <CircleAlert aria-hidden="true" className="size-3.5 text-destructive" />
