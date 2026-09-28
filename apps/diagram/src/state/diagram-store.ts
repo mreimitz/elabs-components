@@ -148,6 +148,13 @@ export const diagramActions = {
   requestLayout() {
     diagramStore.set((state) => ({ layoutRequest: state.layoutRequest + 1 }));
   },
+  // DG-26 — the catalog or a referenced diagram changed: compile the same text again. Never sets
+  // text, loadedText or loadCount, so the tab stays clean and undo is untouched.
+  recompile() {
+    clearTimeout(pending);
+    compileNow();
+  },
+  // end DG-26
 };
 
 /**

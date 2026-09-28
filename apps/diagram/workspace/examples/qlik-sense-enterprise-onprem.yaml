@@ -34,16 +34,16 @@ zones:
         title: Qlik Sense site
         children:
           - id: central
-            icon: qlik/sense-enterprise
+            ref: catalog/qlik/sense-enterprise
             title: Central node
             subtitle: Repository, proxy, manager scheduler
             class: [tier1]
           - id: rim-engine
-            icon: qlik/sense-enterprise
+            ref: catalog/qlik/sense-enterprise
             title: Rim node (engine)
             subtitle: Consumer apps
           - id: rim-scheduler
-            icon: qlik/sense-enterprise
+            ref: catalog/qlik/sense-enterprise
             title: Rim node (scheduler)
             subtitle: Reloads
       - id: shared
@@ -66,12 +66,11 @@ zones:
         children:
           - id: mssql
             type: datastore
-            icon: microsoft/sql-server
+            ref: catalog/microsoft/sql-server
             title: SQL Server
             subtitle: Finance DWH
           - id: s4
-            icon: sap/s4hana
-            title: SAP S/4HANA
+            ref: catalog/sap/s4hana
             subtitle: ERP
           - id: files
             type: datastore
@@ -93,8 +92,7 @@ zones:
 
 nodes:
   - id: users
-    type: actor
-    icon: lucide/users
+    ref: catalog/generic/users
     title: Business users
     subtitle: Browser, hub
   - id: mobile
@@ -104,7 +102,7 @@ nodes:
     subtitle: Qlik Sense Client-Managed Mobile
   - id: licensing
     type: external
-    icon: qlik/qlik
+    icon: qlik/qlik # a stand-in: the license backend, not the Qlik platform, so no ref (maintainer, 2026-09-27)
     title: Qlik license backend
     subtitle: license.qlikcloud.com
 

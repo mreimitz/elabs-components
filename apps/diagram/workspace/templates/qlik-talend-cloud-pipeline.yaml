@@ -39,13 +39,13 @@ zones:
             docs: https://kafka.apache.org/documentation/
           - id: kinesis
             type: queue
-            icon: aws/kinesis
+            ref: catalog/aws/kinesis
             title: Amazon Kinesis
             description: An AWS service that carries real-time data streams.
             docs: https://docs.aws.amazon.com/kinesis/
           - id: s3-source
             type: datastore
-            icon: aws/simple-storage-service
+            ref: catalog/aws/simple-storage-service
             title: Amazon S3
             subtitle: Source files
             description: Object storage on AWS that holds files the pipeline picks up.
@@ -66,8 +66,7 @@ zones:
             title: RDBMS
             description: Relational databases behind the customer's operational applications.
           - id: sap
-            icon: sap/sap
-            title: SAP
+            ref: catalog/sap/sap
             description: The customer's SAP business systems.
           - id: mainframe
             icon: lucide/server
@@ -92,12 +91,12 @@ zones:
     description: The customer's own AWS network, where the lakehouse runs.
     children:
       - id: nia
-        icon: aws/ec2
+        ref: catalog/aws/ec2
         title: Network Integration Agent
         subtitle: Amazon EC2, on-demand instance
         description: An agent on an EC2 instance that links the Qlik Talend Cloud tenant to the lakehouse in the VPC.
       - id: lakehouse
-        icon: aws/ec2-auto-scaling
+        ref: catalog/aws/ec2-auto-scaling
         title: Open Lakehouse Cluster
         subtitle: Amazon EC2 Auto Scaling group, Spot Instances
         description: Turns the landed data into Apache Iceberg tables and keeps them optimized, on instances that scale with the load.
@@ -109,26 +108,25 @@ zones:
         children:
           - id: landing
             type: datastore
-            icon: aws/simple-storage-service
+            ref: catalog/aws/simple-storage-service
             title: Landing bucket
             description: Receives the captured changes and bulk loads as they arrive.
           - id: config
             type: datastore
-            icon: aws/simple-storage-service
+            ref: catalog/aws/simple-storage-service
             title: Config bucket
             description: Holds the configuration of the Open Lakehouse.
           - id: tables
             type: datastore
-            icon: aws/simple-storage-service
+            ref: catalog/aws/simple-storage-service
             title: Table storage
             subtitle: Iceberg tables
             description: Stores the Apache Iceberg tables that the cluster writes.
       - id: catalog
-        icon: aws/glue
+        ref: catalog/aws/glue
         title: AWS Glue Data Catalog
         subtitle: Iceberg catalog
         description: Registers the Iceberg tables so that other engines can find and query them.
-        docs: https://docs.aws.amazon.com/glue/
   - id: dwh
     owner: saas
     title: DWH platform
@@ -136,19 +134,17 @@ zones:
     children:
       - id: snowflake
         type: datastore
-        icon: snowflake/snowflake
-        title: Snowflake
+        ref: catalog/snowflake/snowflake
         description: A cloud data warehouse; here it reads the mirrored Iceberg tables.
         docs: https://docs.snowflake.com/
       - id: databricks
         type: datastore
-        icon: databricks/databricks
-        title: Databricks
+        ref: catalog/databricks/databricks
         description: A data and AI platform; here it reads the mirrored Iceberg tables.
         docs: https://docs.databricks.com/
       - id: redshift
         type: datastore
-        icon: aws/redshift
+        ref: catalog/aws/redshift
         title: Amazon Redshift
         description: The AWS cloud data warehouse; here it reads the mirrored Iceberg tables.
         docs: https://docs.aws.amazon.com/redshift/
@@ -159,7 +155,7 @@ zones:
     description: The customer's Qlik Talend Cloud tenant, run by Qlik; the control plane of the pipeline.
     children:
       - id: pipelines
-        icon: qlik/talend-cloud
+        ref: catalog/qlik/talend-cloud
         title: Pipeline Design & Operations
         description: Where data engineers design the pipelines and watch them run.
       - id: dpm

@@ -30,8 +30,9 @@ export const catalogTools = [
     name: "catalog_search",
     description:
       "Find icons and parts by product name, alias or tag (case-insensitive substring). " +
-      "Use a result's `icon` as a node's icon:; a part also gives subtitle/badges to copy. " +
-      "Returns { results: [{ name, label, description?, kind?, tags?, icon, part? }] }.",
+      "Use a result's `name` as a node's `ref: catalog/<name>` (title, icon, type, subtitle " +
+      "and badges come with it); a `lucide/*` result is a glyph: use it as `icon:` on a " +
+      "custom node. Returns { results: [{ name, label, description?, kind?, tags?, icon, part? }] }.",
     inputSchema: {
       type: "object",
       properties: {
@@ -51,7 +52,8 @@ export const catalogTools = [
     name: "catalog_get",
     description:
       'One entry by name ("aws/lambda", or a part such as "qlik/data-gateway-direct"): ' +
-      "its metadata and a ready-to-paste node in dialect v1 (`yaml`).",
+      "its metadata and a ready-to-paste reference node (`yaml`: `id` + `ref:`; a glyph " +
+      "gives an `icon:` node).",
     inputSchema: {
       type: "object",
       properties: { name: { type: "string", description: '"vendor/slug", e.g. "aws/lambda".' } },

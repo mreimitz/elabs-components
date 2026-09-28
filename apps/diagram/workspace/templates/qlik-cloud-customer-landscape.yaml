@@ -30,15 +30,14 @@ zones:
         description: The customer's own data center, where the operational systems run.
         children:
           - id: sap
-            icon: sap/s4hana
-            title: SAP S/4HANA
+            ref: catalog/sap/s4hana
             subtitle: ERP
             description: The ERP system for finance, sales and logistics.
           - id: erp # the demo script renames this node in step 6; keep this id
             type: datastore
-            # For Oracle use icon oracle/db. For PostgreSQL use azure/database-postgresql-server
-            # or lucide/database (the icon index has no generic PostgreSQL icon).
-            icon: microsoft/sql-server
+            # For Oracle use ref: catalog/oracle/db. For PostgreSQL use
+            # ref: catalog/azure/database-postgresql-server, or icon: lucide/database (a glyph).
+            ref: catalog/microsoft/sql-server
             title: SQL Server
             description: A Microsoft SQL Server database that stores an operational application's data.
             docs: https://learn.microsoft.com/en-us/sql/sql-server/
@@ -60,7 +59,7 @@ zones:
             description: The customer's virtual network that hosts the gateway.
             children:
               - id: gateway
-                icon: qlik/data-gateway
+                ref: catalog/qlik/data-gateway
                 title: Qlik Data Gateway – Direct Access
                 subtitle: Customer-hosted, outbound only
                 description: Lets Qlik Cloud reach data inside the customer's network without opening an inbound port.
@@ -80,7 +79,7 @@ zones:
         ref: ws/components/qlik-cloud-tenant
         expand: false # collapsed composite; true = drawn inline as a zone
   # Databricks instead of Snowflake: set `provider: databricks` and `title: Databricks` on
-  # this zone, and on the node `icon: databricks/databricks` and `title: Databricks SQL`.
+  # this zone, and on the node `ref: catalog/databricks/databricks` and `title: Databricks SQL`.
   - id: dwh
     owner: saas
     provider: snowflake
@@ -89,8 +88,7 @@ zones:
     children:
       - id: warehouse
         type: datastore
-        icon: snowflake/snowflake
-        title: Snowflake
+        ref: catalog/snowflake/snowflake
         subtitle: Cloud data warehouse
         description: Holds the integrated data that the analytics apps query.
         docs: https://docs.snowflake.com/
@@ -98,25 +96,22 @@ zones:
 nodes:
   - id: salesforce
     type: external
-    icon: salesforce/salesforce
-    title: Salesforce
+    ref: catalog/salesforce/salesforce
     subtitle: SaaS source
     description: The customer's CRM, run by Salesforce as a service.
   - id: idp
     type: external
-    icon: azure/active-directory # Microsoft Entra ID was called Azure Active Directory
+    ref: catalog/azure/active-directory # Microsoft Entra ID was called Azure Active Directory
     title: Microsoft Entra ID
     subtitle: Identity provider
     description: The customer's identity provider; people sign in to Qlik Cloud through it.
     docs: https://learn.microsoft.com/en-us/entra/
   - id: users
-    type: actor
-    icon: lucide/users
+    ref: catalog/generic/users
     title: Business users
     description: Employees who open the analytics apps in the browser.
   - id: answers-users
-    type: actor
-    icon: lucide/users
+    ref: catalog/generic/users
     title: Qlik Answers users
     description: Employees who ask Qlik Answers questions about the company's documents.
   - id: app

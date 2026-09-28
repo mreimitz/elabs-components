@@ -290,6 +290,31 @@ export function setEntryKeys(
   return edits && applyEdits(text, edits);
 }
 
+/**
+ * DG-26 — rename one key of the map at `path` and set its value in ONE splice from the key's
+ * start to the value's end (trimEnd), so the key keeps its line and position and a trailing
+ * comment stays. Block and flow maps. `null` when `from` is missing or has no value, or `to`
+ * already exists.
+ */
+export function renameEntryKey(
+  text: string,
+  path: string,
+  from: string,
+  to: string,
+  value: WriteValue,
+): string | null {
+  const { raw, sourceMap } = parseArchYaml(text);
+  if (raw === undefined) return null;
+  const info = mapAt(sourceMap, path);
+  if (!info) return null;
+  const own = info.keys.find((k) => k.key === from);
+  if (!own || !own.value) return null;
+  if (info.keys.some((k) => k.key === to)) return null;
+  const end = trimEnd(text, own.value[0], own.value[1]);
+  const insert = `${to}: ${yamlValue(value, info.flow)}`;
+  return applyEdits(text, [{ from: own.keyStart, to: end, insert }]);
+}
+
 /** `{ label: …, kind: … }` for a flow written as `a -> b: …`, label first. */
 function flowMap(record: Readonly<Record<string, WriteValue>>): string {
   const keys = Object.keys(record).sort((a, b) => Number(b === "label") - Number(a === "label"));

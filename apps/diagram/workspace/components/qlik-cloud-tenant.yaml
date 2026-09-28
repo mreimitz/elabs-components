@@ -25,21 +25,18 @@ component:
 
 nodes:
   - id: qtdi # the demo script types `tenant.qtdi`; keep this id
-    icon: qlik/talend-cloud
+    ref: catalog/qlik/talend-cloud
     title: Qlik Talend Data Integration
     description: Designs and runs the pipelines that move data into target platforms and transform it there.
   - id: qca
-    icon: qlik/cloud
-    title: Qlik Cloud Analytics
+    ref: catalog/qlik/cloud
     description: Hosts the analytics apps that people open in the browser or see embedded in other apps.
     docs: https://help.qlik.com/en-US/cloud-services/
   - id: answers
-    icon: qlik/answers
-    title: Qlik Answers
+    ref: catalog/qlik/answers
     description: Answers questions in plain language from the documents in its knowledge bases.
   - id: automate
-    icon: qlik/automate
-    title: Qlik Automate
+    ref: catalog/qlik/automate
     description: Runs no-code automations, for example to reload an app when new data arrives.
   - id: catalog
     icon: lucide/layers # intended: a Qlik catalog icon; the icon index has none
