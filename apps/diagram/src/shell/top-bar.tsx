@@ -155,9 +155,10 @@ export function TopBar() {
   // Visual, not once the tween settles) that text is off screen, so these stay disabled exactly
   // like "no AST to rewrite" already does below.
   const lensTarget = useLens((s) => s.target);
+  const lensMoving = useLens((s) => s.position !== 0);
   // No AST (the text is not a diagram), or the visual lens is showing: the toggles have
   // nothing visible to rewrite.
-  const disabled = direction === undefined || lensTarget !== "technical";
+  const disabled = direction === undefined || lensTarget !== "technical" || lensMoving;
   const headerRef = useRef<HTMLElement>(null);
   const compact = useCompact(headerRef);
   const inspectorOpen = useDiagram((s) => s.inspectorOpen); // DG-14

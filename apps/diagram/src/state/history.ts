@@ -166,7 +166,8 @@ export function canUseHistory(): boolean {
   return (
     !isPresenting(window.location.hash) &&
     currentMode() === "edit" &&
-    lensStore.get().target === "technical"
+    lensStore.get().target === "technical" &&
+    lensStore.get().position === 0
   );
 }
 

@@ -218,6 +218,34 @@ function flowRole(
   if (data !== 0) return data > 0 ? "sources" : "targets";
   const any = netFlow(id, flows, members);
   if (any !== 0) return any > 0 ? "sources" : "targets";
+  const successors = new Map<string, Set<string>>();
+  for (const flow of flows) {
+    if (flow.direction === "both") continue;
+    const source = flow.direction === "back" ? flow.to : flow.from;
+    const target = flow.direction === "back" ? flow.from : flow.to;
+    if (!successors.has(source)) successors.set(source, new Set());
+    successors.get(source)!.add(target);
+  }
+  const inside = (node: string) => node === id || members.has(node);
+  const reachesInside = (start: string): boolean => {
+    const seen = new Set<string>();
+    const pending = [start];
+    while (pending.length) {
+      const node = pending.pop()!;
+      if (inside(node)) return true;
+      if (seen.has(node)) continue;
+      seen.add(node);
+      pending.push(...(successors.get(node) ?? []));
+    }
+    return false;
+  };
+  // An outgoing edge that cannot return is an upstream relation in the condensed DAG.
+  // Cycles preserve the documented fallback rather than arbitrarily reversing a loop.
+  for (const node of [id, ...members]) {
+    for (const next of successors.get(node) ?? []) {
+      if (!inside(next) && !reachesInside(next)) return "sources";
+    }
+  }
   return defaultRole;
 }
 

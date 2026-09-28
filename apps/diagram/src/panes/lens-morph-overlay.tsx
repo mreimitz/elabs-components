@@ -24,13 +24,24 @@ interface Rect {
   height: number;
 }
 
-function rectFrom(el: Element, container: DOMRect): Rect {
+interface Camera {
+  x: number;
+  y: number;
+  zoom: number;
+}
+
+function cameraOf(element: HTMLElement): Camera {
+  const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform);
+  return { x: matrix.e, y: matrix.f, zoom: matrix.a };
+}
+
+function rectFrom(el: Element, container: DOMRect, camera: Camera): Rect {
   const r = el.getBoundingClientRect();
   return {
-    left: r.left - container.left,
-    top: r.top - container.top,
-    width: r.width,
-    height: r.height,
+    left: (r.left - container.left - camera.x) / camera.zoom,
+    top: (r.top - container.top - camera.y) / camera.zoom,
+    width: r.width / camera.zoom,
+    height: r.height / camera.zoom,
   };
 }
 
@@ -124,6 +135,8 @@ interface FlowSegment extends Segment {
 }
 
 interface MorphPlan {
+  fromCamera: Camera;
+  toCamera: Camera;
   members: MemberGhost[];
   boxes: BoxGhost[];
   zones: ZoneGhost[];
@@ -131,17 +144,18 @@ interface MorphPlan {
   visualFlows: FlowSegment[];
 }
 
-/**
- * Both panes are already mounted and independently fitted BEFORE this component ever exists
- * (`canvas-pane.tsx` mounts technical and visual unconditionally, not just during a
- * transition — the "target layout computed before the animation starts" rule holds because
- * there is no fresh mount/fit race to win), so every rect read here is real, already-settled,
- * on-screen geometry. That is also why no separate "camera" tween is needed: a ghost's
- * `from`/`to` are where its technical/visual counterpart already sits on screen, so flying
- * between them already reads as one continuous move (§7's "one continuous camera move").
- */
+/** Capture both layouts in graph coordinates; a single camera transforms the whole morph. */
 function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null {
   const containerRect = container.getBoundingClientRect();
+  const technicalViewport = container.querySelector<HTMLElement>(
+    '[data-lens-pane="technical"] .react-flow__viewport',
+  );
+  const visualViewport = container.querySelector<HTMLElement>(
+    '[data-lens-pane="visual"] .react-flow__viewport',
+  );
+  if (!technicalViewport || !visualViewport) return null;
+  const fromCamera = cameraOf(technicalViewport);
+  const toCamera = cameraOf(visualViewport);
   const techEls = container.querySelectorAll<HTMLElement>(
     '[data-lens-pane="technical"] .react-flow__node[data-id]',
   );
@@ -153,12 +167,12 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
   const techRect = new Map<string, Rect>();
   for (const el of techEls) {
     const id = el.dataset.id;
-    if (id) techRect.set(id, rectFrom(el, containerRect));
+    if (id) techRect.set(id, rectFrom(el, containerRect, fromCamera));
   }
   const visRect = new Map<string, Rect>();
   for (const el of visEls) {
     const id = el.dataset.id;
-    if (id) visRect.set(id, rectFrom(el, containerRect));
+    if (id) visRect.set(id, rectFrom(el, containerRect, toCamera));
   }
 
   const lens: VisualLens = deriveVisualLens(ast);
@@ -187,7 +201,7 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
         title: member.title,
         icon: member.icon,
         from,
-        to: rectFrom(row, containerRect),
+        to: rectFrom(row, containerRect, toCamera),
       });
     });
     if (memberRects.length === 0) continue;
@@ -266,7 +280,7 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
     });
   }
 
-  return { members, boxes, zones, technicalFlows, visualFlows };
+  return { fromCamera, toCamera, members, boxes, zones, technicalFlows, visualFlows };
 }
 
 function clamp01(x: number): number {
@@ -362,6 +376,36 @@ export function LensMorphOverlay({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately mount-only, see above
   }, []);
 
+  // The real source/target content participates in exactly the same camera while fading.
+  // The stores retain their settled viewports; restore their DOM transform when the tween ends.
+  useLayoutEffect(() => {
+    const viewports = [
+      ...(containerRef.current?.querySelectorAll<HTMLElement>(".react-flow__viewport") ?? []),
+    ];
+    const original = viewports.map((viewport) => viewport.style.transform);
+    return () =>
+      viewports.forEach((viewport, index) => {
+        viewport.style.transform = original[index]!;
+      });
+  }, [containerRef]);
+  const cameraProgress = smoothstep(position);
+  const camera = plan
+    ? {
+        x: plan.fromCamera.x + (plan.toCamera.x - plan.fromCamera.x) * cameraProgress,
+        y: plan.fromCamera.y + (plan.toCamera.y - plan.fromCamera.y) * cameraProgress,
+        zoom: plan.fromCamera.zoom + (plan.toCamera.zoom - plan.fromCamera.zoom) * cameraProgress,
+      }
+    : null;
+  const cameraTransform = camera
+    ? `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`
+    : "";
+  useLayoutEffect(() => {
+    if (!cameraTransform) return;
+    for (const viewport of containerRef.current?.querySelectorAll<HTMLElement>(
+      ".react-flow__viewport",
+    ) ?? [])
+      viewport.style.transform = cameraTransform;
+  }, [cameraTransform, containerRef]);
   if (!plan) return null;
 
   const gather = subProgress(position, GATHER_START, GATHER_END);
@@ -397,100 +441,106 @@ export function LensMorphOverlay({
       style={{ opacity: overlayOpacity }}
       aria-hidden="true"
     >
-      <svg className="absolute inset-0 h-full w-full">
-        {plan.technicalFlows.map((seg) => (
-          <line
-            key={seg.id}
-            x1={seg.x1}
-            y1={seg.y1}
-            x2={seg.x2}
-            y2={seg.y2}
-            stroke="var(--border-strong)"
-            strokeWidth={1.5}
-            opacity={edgeOut}
-          />
-        ))}
-        {plan.visualFlows.map((seg) => (
-          <line
-            key={seg.id}
-            x1={seg.x1}
-            y1={seg.y1}
-            x2={seg.x2}
-            y2={seg.y2}
-            stroke="var(--border-strong)"
-            strokeWidth={1.5}
-            strokeDasharray={seg.solid ? undefined : "4 3"}
-            opacity={edgeIn}
-          />
-        ))}
-      </svg>
-      {plan.zones.map((zone) => (
-        <div
-          key={zone.id}
-          style={flipStyle(zone.from, zone.to, zoneT)}
-          className="relative overflow-hidden rounded-lg border border-border bg-surface-muted"
-        >
-          {/* The frame above scales non-uniformly (a zone's aspect ratio rarely matches its
+      <div
+        data-morph-camera
+        className="absolute inset-0 origin-top-left"
+        style={{ transform: cameraTransform }}
+      >
+        <svg className="absolute inset-0 h-full w-full overflow-visible">
+          {plan.technicalFlows.map((seg) => (
+            <line
+              key={seg.id}
+              x1={seg.x1}
+              y1={seg.y1}
+              x2={seg.x2}
+              y2={seg.y2}
+              stroke="var(--border-strong)"
+              strokeWidth={1.5}
+              opacity={edgeOut}
+            />
+          ))}
+          {plan.visualFlows.map((seg) => (
+            <line
+              key={seg.id}
+              x1={seg.x1}
+              y1={seg.y1}
+              x2={seg.x2}
+              y2={seg.y2}
+              stroke="var(--border-strong)"
+              strokeWidth={1.5}
+              strokeDasharray={seg.solid ? undefined : "4 3"}
+              opacity={edgeIn}
+            />
+          ))}
+        </svg>
+        {plan.zones.map((zone) => (
+          <div
+            key={zone.id}
+            style={flipStyle(zone.from, zone.to, zoneT)}
+            className="relative overflow-hidden rounded-lg border border-border bg-surface-muted"
+          >
+            {/* The frame above scales non-uniformly (a zone's aspect ratio rarely matches its
               lane's) — this layer counter-scales by the inverse from the same origin so the
               title renders at 1:1 the whole time instead of stretching with it. */}
-          <div style={unscaledLabelStyle(zone.from, zone.to, zoneT)}>
-            {zone.fromTitle ? (
+            <div style={unscaledLabelStyle(zone.from, zone.to, zoneT)}>
+              {zone.fromTitle ? (
+                <div
+                  className="text-meta absolute inset-x-0 top-0 truncate px-3 py-2 font-medium tracking-wide text-muted-foreground uppercase"
+                  style={{ opacity: 1 - zoneT }}
+                >
+                  {zone.fromTitle}
+                </div>
+              ) : null}
               <div
                 className="text-meta absolute inset-x-0 top-0 truncate px-3 py-2 font-medium tracking-wide text-muted-foreground uppercase"
-                style={{ opacity: 1 - zoneT }}
+                style={{ opacity: zoneT }}
               >
-                {zone.fromTitle}
+                {zone.toTitle}
               </div>
-            ) : null}
-            <div
-              className="text-meta absolute inset-x-0 top-0 truncate px-3 py-2 font-medium tracking-wide text-muted-foreground uppercase"
-              style={{ opacity: zoneT }}
-            >
-              {zone.toTitle}
             </div>
           </div>
-        </div>
-      ))}
-      {plan.boxes.map((box) => (
-        <div
-          key={box.id}
-          style={{ ...flipStyle(box.from, box.to, gather), opacity: gather }}
-          className="relative overflow-hidden rounded-lg border-2 border-border bg-card shadow-xs"
-        >
-          {/* `p-3`, `text-caption`/`font-medium`: the real box header's own button padding and
+        ))}
+        {plan.boxes.map((box) => (
+          <div
+            key={box.id}
+            style={{ ...flipStyle(box.from, box.to, gather), opacity: gather }}
+            className="relative overflow-hidden rounded-lg border-2 border-border bg-card shadow-xs"
+          >
+            {/* `p-3`, `text-caption`/`font-medium`: the real box header's own button padding and
               type role (`capability-box-node.tsx`'s `data-slot="capability-box-title"`) — this
               ghost and the real title cross-fade over the exact same `[DRESS_START, 1]` window
               (`overlayOpacity` here sums to 1 with `canvas-pane.tsx`'s `visualOpacity` the whole
               time), so any padding or type mismatch reads as two separate texts rather than one
               smoothly taking over from the other. */}
-          <div style={unscaledLabelStyle(box.from, box.to, gather)}>
-            <div className="text-caption flex items-center truncate p-3 font-medium">
-              {box.title}
+            <div style={unscaledLabelStyle(box.from, box.to, gather)}>
+              <div className="text-caption flex items-center truncate p-3 font-medium">
+                {box.title}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
-      {plan.members.map((member) => (
-        <div
-          key={member.id}
-          style={{ ...flipStyle(member.from, member.to, gather), opacity: memberOpacity }}
-          className="overflow-hidden"
-        >
-          {/* The same `flex items-center gap-1.5` + `ArchMark`/`text-meta` shape
+        ))}
+        {plan.members.map((member) => (
+          <div
+            key={member.id}
+            style={{ ...flipStyle(member.from, member.to, gather), opacity: memberOpacity }}
+            className="overflow-hidden"
+          >
+            {/* The same `flex items-center gap-1.5` + `ArchMark`/`text-meta` shape
               `capability-box-node.tsx`'s own member row renders — an anonymous grey square read
               as nothing was there; this ghost carries the member's own icon and name gathering
               into place, same as the box ghost above carries its title. Counter-scaled by the
               parent's own FLIP tween (`unscaledLabelStyle`) for the same reason a zone/box
               ghost's title is: the icon and text must not stretch with the frame around them. */}
-          <div
-            style={unscaledLabelStyle(member.from, member.to, gather)}
-            className="flex min-w-0 items-center gap-1.5"
-          >
-            <ArchMark icon={member.icon} size={16} variant="mono" className="shrink-0" />
-            <span className="text-meta min-w-0 truncate">{member.title}</span>
+            <div
+              style={unscaledLabelStyle(member.from, member.to, gather)}
+              className="flex min-w-0 items-center gap-1.5"
+            >
+              <ArchMark icon={member.icon} size={16} variant="mono" className="shrink-0" />
+              <span className="text-meta min-w-0 truncate">{member.title}</span>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

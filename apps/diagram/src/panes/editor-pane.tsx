@@ -85,7 +85,7 @@ export function EditorPane() {
   // `technicalLensLocked` closes every other technical write path for (the visual lens showing,
   // or a switch to/from it mid-flight): without this, typing here still autosaved the file even
   // though the inspector was already locked for the same document.
-  const lensLocked = useLens((s) => s.position !== 0);
+  const lensLocked = useLens((s) => s.position !== 0 || s.target !== "technical");
   const editorRef = useRef<MonacoCodeEditor | null>(null);
   const monacoRef = useRef<MonacoApi | null>(null);
   // The editor instance's generation: a loaded document mounts a new one (below), and every

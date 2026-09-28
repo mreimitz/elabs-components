@@ -242,7 +242,7 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
   // `target` (which flips the instant a switch starts, one whole tween ahead of the pane
   // actually becoming hidden), so the inspector's form goes read-only for exactly the same
   // window as the rest of the technical pane's writes, no earlier and no later.
-  const lensLocked = useLens((s) => s.position !== 0);
+  const lensLocked = useLens((s) => s.position !== 0 || s.target !== "technical");
   const raw = useMemo(() => parseArchYaml(compiledText).raw, [compiledText]);
   const entry = selectedId === null ? null : entryOf(compiled, selectedId);
   // DG-26 — a catalog change that lands after the form seeded (recompile() keeps the text, so

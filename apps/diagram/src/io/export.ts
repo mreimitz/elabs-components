@@ -21,6 +21,7 @@
  */
 import { FLOW_EDGE_DEFAULTS } from "@elabs-ai/components-flow";
 import { KIND_STROKE } from "../edges/edge-style";
+import { canvasChrome } from "../chrome/canvas-chrome";
 import { lensStore } from "../shell/lens-store";
 
 /** PNG pixels per CSS pixel. */
@@ -188,7 +189,9 @@ function panelExtent(
   maxWidth?: number,
 ): PanelExtent {
   const none = { width: 0, reach: 0, boxWidth: 0 };
-  const live = flow.querySelector<HTMLElement>(selector);
+  const live =
+    flow.querySelector<HTMLElement>(selector) ??
+    canvasChrome(flow)?.querySelector<HTMLElement>(selector);
   if (!live) return none;
   const panel = maxWidth ? (live.cloneNode(true) as HTMLElement) : live;
   if (maxWidth) {
@@ -251,6 +254,8 @@ function unselect(stage: HTMLElement) {
 /** A clone of the canvas, sized to the picture, with only the picture left in it. */
 function stageOf(flow: HTMLElement, box: Box, options: PictureOptions) {
   const stage = flow.cloneNode(true) as HTMLElement;
+  for (const panel of canvasChrome(flow)?.querySelectorAll(PICTURE_PANELS) ?? [])
+    stage.append(panel.cloneNode(true));
   for (const child of [...stage.children]) {
     if (!child.matches(`.react-flow__renderer, ${PICTURE_PANELS}`)) child.remove();
   }

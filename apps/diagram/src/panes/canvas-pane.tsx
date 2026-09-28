@@ -52,6 +52,7 @@ import {
 
 import { useLens } from "../shell/lens-store"; // maintainer 2026-09-27 (lens switch)
 import { DRESS_START, GATHER_START, LensMorphOverlay, subProgress } from "./lens-morph-overlay"; // orchestrator correction 2026-09-27 (S10 morph)
+import { LensChrome, LensChromeTarget } from "./lens-chrome";
 import { VisualCanvasPane } from "./visual-canvas-pane"; // maintainer 2026-09-27 (lens switch)
 
 /** The pane's strings, in one place (`conventions/i18n-strings`). */
@@ -215,6 +216,8 @@ function applyViewNodeStyle(
  */
 export function CanvasPane(props: CanvasPaneProps) {
   const position = useLens((s) => s.position);
+  const target = useLens((s) => s.target);
+  const [chromeTarget, setChromeTarget] = useState<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const technicalRef = useRef<HTMLDivElement>(null);
   const visualRef = useRef<HTMLDivElement>(null);
@@ -264,43 +267,46 @@ export function CanvasPane(props: CanvasPaneProps) {
   // no connect) for the whole time it is not the shown lens, including mid-morph. `inert`/
   // `aria-hidden` below still only flip at the settled ends, so the pane keeps taking real
   // focus/hit-testing while both sides cross-fade during a switch.
-  const technicalLensLocked = position !== 0;
+  const technicalLensLocked = position !== 0 || target !== "technical";
   return (
-    <div ref={containerRef} className="relative h-full w-full">
-      <div
-        ref={technicalRef}
-        data-lens-pane="technical"
-        className="absolute inset-0 focus-ring-inset"
-        tabIndex={-1}
-        style={
-          {
-            "--pane-opacity": technicalOpacity,
-            "--pane-chrome-opacity": 1 - position,
-          } as CSSProperties
-        }
-        aria-hidden={atVisual || undefined}
-        inert={atVisual || undefined}
-      >
-        <TechnicalCanvasPane {...props} lensLocked={technicalLensLocked} />
+    <LensChromeTarget.Provider value={chromeTarget}>
+      <div ref={containerRef} data-lens-root className="relative h-full w-full">
+        <div
+          ref={technicalRef}
+          data-lens-pane="technical"
+          className="absolute inset-0 focus-ring-inset"
+          tabIndex={-1}
+          style={
+            {
+              "--pane-opacity": technicalOpacity,
+              "--pane-chrome-opacity": 1 - position,
+            } as CSSProperties
+          }
+          aria-hidden={atVisual || undefined}
+          inert={atVisual || undefined}
+        >
+          <TechnicalCanvasPane {...props} lensLocked={technicalLensLocked} />
+        </div>
+        <div
+          ref={visualRef}
+          data-lens-pane="visual"
+          className="absolute inset-0 focus-ring-inset"
+          tabIndex={-1}
+          style={
+            {
+              "--pane-opacity": visualOpacity,
+              "--pane-chrome-opacity": position,
+            } as CSSProperties
+          }
+          aria-hidden={!atVisual || undefined}
+          inert={!atVisual || undefined}
+        >
+          <VisualCanvasPane />
+        </div>
+        {morphing ? <LensMorphOverlay containerRef={containerRef} position={position} /> : null}
+        <div ref={setChromeTarget} className="pointer-events-none absolute inset-0 z-20" />
       </div>
-      <div
-        ref={visualRef}
-        data-lens-pane="visual"
-        className="absolute inset-0 focus-ring-inset"
-        tabIndex={-1}
-        style={
-          {
-            "--pane-opacity": visualOpacity,
-            "--pane-chrome-opacity": position,
-          } as CSSProperties
-        }
-        aria-hidden={!atVisual || undefined}
-        inert={!atVisual || undefined}
-      >
-        <VisualCanvasPane />
-      </div>
-      {morphing ? <LensMorphOverlay containerRef={containerRef} position={position} /> : null}
-    </div>
+    </LensChromeTarget.Provider>
   );
 }
 
@@ -780,44 +786,46 @@ function DiagramCanvas({
         >
           {/* DG-08: title block top-left, legend bottom-left (both in the exported picture). */}
           {/* DG-68: the diagram's own description, one sentence under the title. */}
-          <TitleBlock title={spec.title} description={spec.description} meta={source}>
-            {/* Wave-2 review m4: the stale badge sits in the top band, under the title card —
+          <LensChrome lens="technical">
+            <TitleBlock title={spec.title} description={spec.description} meta={source}>
+              {/* Wave-2 review m4: the stale badge sits in the top band, under the title card —
                 measured against bottom-centre on the four examples at 1920 and 1440, it costs
                 the fit less zoom (Qlik Cloud 0.760 vs 0.740 at 1920). Always mounted — a live
                 region announces what is added to it, not itself appearing — and an invisible,
                 hidden copy of the badge keeps it the badge's size while the diagram is
                 current, so every fit keeps nodes out from under it; the real badge is added
                 over the copy when the text goes stale. */}
-            <div className="grid" role="status" aria-live="polite">
-              <Badge
-                aria-hidden="true"
-                className="invisible col-start-1 row-start-1"
-                variant="warning"
-              >
-                {CANVAS_LABELS.stale}
-              </Badge>
-              {stale ? (
-                <Badge className="col-start-1 row-start-1" variant="warning">
+              <div className="grid" role="status" aria-live="polite">
+                <Badge
+                  aria-hidden="true"
+                  className="invisible col-start-1 row-start-1"
+                  variant="warning"
+                >
                   {CANVAS_LABELS.stale}
                 </Badge>
-              ) : null}
-            </div>
-          </TitleBlock>
-          <DiagramLegend mode={view.legend} />
-          {/* Top-right: the legend owns bottom-left. Hidden while the pane is under `@3xl`
+                {stale ? (
+                  <Badge className="col-start-1 row-start-1" variant="warning">
+                    {CANVAS_LABELS.stale}
+                  </Badge>
+                ) : null}
+              </div>
+            </TitleBlock>
+            <DiagramLegend mode={view.legend} />
+            {/* Top-right: the legend owns bottom-left. Hidden while the pane is under `@3xl`
               (768 px): at 1440 × 900 the pane is 710 px and the title block ran under it
               (wave-2 review m1); at phone width it covered the zoom controls (wave-0 m11). */}
-          <FlowMiniMap position="top-right" pannable zoomable className="@max-3xl:hidden" />
-          {/* P4: library gap — `ZoomControls`' Fit view calls React Flow's `fitView()` with no
+            <FlowMiniMap position="top-right" pannable zoomable className="@max-3xl:hidden" />
+            {/* P4: library gap — `ZoomControls`' Fit view calls React Flow's `fitView()` with no
               options (packages/flow/src/zoom-controls/zoom-controls.tsx:75) and takes no
               `onFitView`, so it ignores the chrome-aware fit and puts nodes under the panels
               (wave-2 review M7). Proposed: `onFitView?: () => void` (or `fitViewOptions`),
               through which the app would run its chrome-aware fit (use-diagram-layout.ts).
               docs/findings/DG-12-editor-integration.md. */}
-          <ZoomControls />
+            <ZoomControls />
 
-          {/* DG-18: details card, step player, presentation exit. */}
-          <InteractionOverlays nodes={nodes} />
+            {/* DG-18: details card, step player, presentation exit. */}
+            <InteractionOverlays nodes={nodes} />
+          </LensChrome>
         </CanvasShell>
       </div>
       {/* P4: library gap — CanvasShell has no `loading` prop; the state overlays the canvas.

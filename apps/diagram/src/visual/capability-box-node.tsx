@@ -89,6 +89,13 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
         <button
           type="button"
           aria-label={`${accessibleName} ${BOX_LABELS.drillHint}`}
+          aria-keyshortcuts="Alt+Enter Alt+Space"
+          onKeyDown={(event) => {
+            if (event.altKey && (event.key === "Enter" || event.key === " ")) {
+              event.preventDefault();
+              lensActions.setLens("technical", { frameNodeIds: data.members.map((m) => m.id) });
+            }
+          }}
           // One `data-slot` name for the component; "aside or not" is state, so it is its own
           // `data-aside` attribute (`conventions.md` `data-slot` rule — a slot name does not
           // vary by state).
@@ -115,11 +122,12 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
             // hairline reads visibly fainter than its own token colour at that weight (the same
             // problem `zoneVariants`'s `trust-boundary` kind solves with `border-2` for the
             // same reason).
-            "focus-ring pointer-events-auto flex h-full w-full flex-col gap-2 border-2 p-3 text-start shadow-xs",
+            "border-muted-foreground focus-ring pointer-events-auto flex h-full w-full flex-col gap-2 border-2 p-3 text-start shadow-xs",
           )}
         >
           <span
             data-slot="capability-box-title"
+            data-member-id={soleMember?.id}
             className="text-caption flex min-w-0 items-center gap-1.5 truncate font-medium"
           >
             {data.aside ? <Network aria-hidden="true" className="size-3.5 shrink-0" /> : null}
@@ -129,7 +137,7 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
               // member is named in the header, not the list below, so its row is here. A plain
               // `<span>`, not `display: contents` — the overlay reads its real, laid-out rect,
               // which a contents box never has (it generates none of its own).
-              <span data-member-id={soleMember.id} className="shrink-0">
+              <span className="shrink-0">
                 <ArchMark icon={soleMember.icon} size={14} variant="mono" />
               </span>
             ) : null}

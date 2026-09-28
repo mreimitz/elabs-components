@@ -21,6 +21,10 @@ export const LANE_HEADER_HEIGHT = 44;
 export const LANE_PADDING = 16;
 export const LANE_WIDTH = 320;
 export const LANE_GAP = 64;
+/** Keep routing columns at least six graph units apart as the number of flows grows. */
+export function laneGap(lens: VisualLens): number {
+  return Math.max(LANE_GAP, (lens.flows.length + 1) * 6 + 8);
+}
 export const BOX_GAP = 16;
 /** A box's own header (title) band, above its member rows. */
 export const BOX_HEADER_HEIGHT = 32;
@@ -75,11 +79,12 @@ function boxHeight(box: VisualBox): number {
 export function layoutVisualLens(lens: VisualLens): VisualLayout {
   const lanes: LaidOutLane[] = [];
   const boxes: LaidOutBox[] = [];
+  const gap = laneGap(lens);
   let x = 0;
   let maxLaneHeight = 0;
   for (const lane of lens.lanes) {
     const members = lens.boxes.filter((b) => b.lane === lane.role);
-    let y = LANE_HEADER_HEIGHT + LANE_PADDING;
+    let y = LANE_HEADER_HEIGHT + LANE_PADDING + lens.flows.length * 8;
     for (const box of members) {
       const height = boxHeight(box);
       boxes.push({
@@ -91,10 +96,13 @@ export function layoutVisualLens(lens: VisualLens): VisualLayout {
     const laneHeight = Math.max(y - BOX_GAP + LANE_PADDING, LANE_HEADER_HEIGHT + LANE_PADDING * 2);
     lanes.push({ lane, rect: { x, y: 0, width: LANE_WIDTH, height: laneHeight } });
     maxLaneHeight = Math.max(maxLaneHeight, laneHeight);
-    x += LANE_WIDTH + LANE_GAP;
+    x += LANE_WIDTH + gap;
   }
   // Every lane panel spans the tallest lane's height (a level page, not a jagged one).
   for (const lane of lanes) lane.rect.height = maxLaneHeight;
-  const bounds: Rect = { x: 0, y: 0, width: Math.max(0, x - LANE_GAP), height: maxLaneHeight };
+  // The final lane reserves the same right routing gutter as the gaps between lanes.
+  const last = lanes.at(-1);
+  if (last) last.rect.width += gap;
+  const bounds: Rect = { x: 0, y: 0, width: Math.max(0, x), height: maxLaneHeight };
   return { lanes, boxes, bounds };
 }

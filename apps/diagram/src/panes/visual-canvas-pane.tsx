@@ -11,6 +11,7 @@ import {
   ReactFlowProvider,
   useReactFlow,
   ZoomControls,
+  FlowMiniMap,
   type Edge,
   type Node,
 } from "@elabs-ai/components-flow";
@@ -20,6 +21,9 @@ import { Button, StatePanel } from "@elabs-ai/components-ui";
 import { useNodesInitialized } from "@xyflow/react";
 import { Workflow } from "lucide-react";
 import { chromeFitPadding } from "../chrome/fit-padding";
+import { LensChrome } from "./lens-chrome";
+import { DiagramLegend } from "../chrome/diagram-legend";
+import { lensActions } from "../shell/lens-store";
 import { TitleBlock } from "../chrome/title-block";
 import { focusEditor } from "../shell/focus";
 import { modeActions, useDocMode } from "../shell/mode-store";
@@ -162,8 +166,12 @@ function VisualFlow({ paneRef, ast, built, source }: VisualFlowProps) {
       onMoveStart={handleMoveStart}
       proOptions={{ hideAttribution: true }}
     >
-      <TitleBlock title={ast.title} description={ast.description} meta={source} />
-      <ZoomControls />
+      <LensChrome lens="visual">
+        <TitleBlock title={ast.title} description={ast.description} meta={source} />
+        <DiagramLegend mode="auto" />
+        <FlowMiniMap position="top-right" pannable zoomable className="@max-3xl:hidden" />
+        <ZoomControls />
+      </LensChrome>
     </CanvasShell>
   );
 }
@@ -190,18 +198,18 @@ export function VisualCanvasPane() {
     // issues) is the one source of truth for why there is nothing to draw. A valid diagram with
     // no groupable content (`ast` parses but `built` has no boxes) still gets the plain empty
     // state, exactly like the technical pane's own `noNodes` case.
-    const editAction =
-      viewing && !ast ? (
-        <Button
-          size="sm"
-          onClick={() => {
-            modeActions.setMode("edit");
-            focusEditor();
-          }}
-        >
-          {VISUAL_LABELS.editAction}
-        </Button>
-      ) : undefined;
+    const editAction = viewing ? (
+      <Button
+        size="sm"
+        onClick={() => {
+          lensActions.setLens("technical");
+          modeActions.setMode("edit");
+          focusEditor();
+        }}
+      >
+        {VISUAL_LABELS.editAction}
+      </Button>
+    ) : undefined;
     const firstIssue = !ast ? issues[0] : undefined;
     if (!blank && firstIssue) {
       if (firstIssue.code === "unsupported-version") {
