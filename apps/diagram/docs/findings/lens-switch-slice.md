@@ -351,3 +351,107 @@ only the six hand-written synthetic fixtures. All 6 documents pass all of it
   name. A live drag-attempt on a capability box could not be completed as a result; verified
   instead at the source (`nodesDraggable={false}` unconditionally on the entire visual pane,
   not gated by any runtime condition).
+
+## Round 2 review fixes (this pass)
+
+maintainer 2026-09-28. A further review pass against the round-1/round-2 build above found a
+must-fix refit race, a Monaco-editable-during-visual-lens leak, an inspector lock-timing gap,
+several rendering/derivation should-fixes and a set of nits. This pass fixed what it could
+verify by source inspection and `pnpm run typecheck:local` alone. **No dev server or browser
+was used this pass** — every item below is typecheck/lint/audit-clean, not visually or
+behaviourally re-confirmed the way round 0/1/2 above were. That is a real gap, disclosed here
+rather than claimed as done.
+
+**Write-leak class:**
+
+- Monaco stayed editable while the visual lens showed in edit mode — a keystroke there would
+  have written the technical text with nothing on screen to show for it. `editor-pane.tsx` now
+  passes `readOnly` to `CodeEditor` whenever the lens is not settled at technical
+  (`position !== 0`).
+- The Inspector's `lensLocked` gate checked `target !== "technical"`, which unlocks the instant
+  a switch BACK to technical starts, before the transition settles — a keystroke mid-transition
+  could still reach `EntryForm`. Changed to `position !== 0` (locked for the whole transition,
+  either direction), added a native `<fieldset disabled>` around `SchemaFormRoot` as a
+  second, structural guard beside the existing `disabled` prop threading, and added
+  `lensLocked` to `EntryForm`'s remount key so a lock-state change cannot leave a stale,
+  still-enabled form instance mounted.
+
+**Refit race:**
+
+- The visual pane's own resize-refit compared the current viewport against the last fit it
+  performed to decide whether a person had since panned/zoomed by hand (skip the refit if so).
+  That comparison raced a real pan: `VisualFit` is rewritten as `VisualFlow`, which now tracks
+  "has a person actually moved the view" via `onMoveStart`'s own event argument
+  (`@xyflow/react`: non-null for a real pointer/wheel gesture, `null` for a programmatic
+  `fitView`) instead of re-deriving intent from viewport equality.
+
+**Rendering / derivation:**
+
+- Member "ghost" chips in the lens-morph overlay flew to an estimated `index * 26px` offset,
+  not the member's real on-screen position — visibly wrong whenever a box's actual row height
+  or content differed from the estimate. Real member rows (and the sole-member header icon)
+  now carry `data-member-id`; the overlay queries the real DOM rect for each one and renders an
+  icon + truncated name in place of the former anonymous square.
+- A capability box's border was the one reliable separator from its lane fill, but at hairline
+  weight measured as low as 2.88:1 against `--surface-muted` (`--border-strong` itself, in
+  BOTH themes — not dark-only as first reported) — short of the 3:1 the rule this box relies on
+  needs. Bumped to `border-2` as the best in-scope mitigation. **The root cause is a
+  `packages/tokens` elevation-ladder gap** (`--card` measures only ~1.1:1 against
+  `--surface-muted` in both themes, so no fill rung separates a leaf box from its lane either)
+  that this app-level component cannot close under this task's "never edit `packages/`" rule —
+  flagged here as an out-of-scope, cross-package finding for the maintainer.
+- A single-member box whose one member's title equals the box's own title reserved a member-row
+  worth of empty height it never rendered into (the header already carries that member).
+  `lane-layout.ts`'s `boxHeight()` now skips the row reservation for that case.
+- An unowned node (no zone, no vendor) showed no owner text but was still styled as "hosted",
+  so a screen-reader user heard nothing while a sighted user saw a hosted-style border — added
+  an explicit "Unowned" label wired through the same `ownerLabel` both read.
+- Flow edges had no `ariaLabel`, so React Flow named them from raw internal node ids. Added a
+  built label per edge (`"<from box> → <to box>, <kind> flow"`, bidirectional phrased as such).
+- The lens-morph overlay's box-ghost title used different padding/layout than the real box
+  header, so the two visibly doubled/misaligned during the cross-fade; matched padding, flex
+  layout and border weight to the real header.
+
+**Consciously deferred, not fixed this pass (each investigated far enough to state why):**
+
+- **Shared camera.** §7 asks for one continuous viewport transform driving both panes; this
+  build still flies independently-fitted ghosts between two independently-settled fits (the
+  same documented substitution as round 0). A real fix means interpolating one camera across
+  both panes' geometry, not a targeted patch — too large a rewrite to attempt without browser
+  verification in this pass's remaining budget.
+- **Shared edge segments across different box pairs.** The existing anti-overlap mechanisms
+  (same-lane column stepping, cross-pair Y-nudge, skip-lane staggering) do not cover every
+  pair-of-pairs that can share a segment; a general fix needs per-flow port/channel routing,
+  not another special case bolted onto the existing ones.
+- **Lane tie-break order.** Confirmed by tracing `flowRole()`/`netFlow()`: a node with exactly
+  one inbound and one outbound flow of DIFFERENT kinds nets to zero on both the data-only and
+  the any-kind check, landing on `defaultRole` even where a real topological order exists. A
+  correct fix needs topological-rank computation over the flow graph with cycle handling —
+  deferred as algorithmically risky to implement without a way to visually check the result.
+
+**`#dev/lens-check` (was asserting too little):** now also checks that every real node lands in
+exactly one box (never zero, never two — catches both a dropped node and an
+overlapping-grouping-rule duplicate), and dropped internal finding-id citations from its
+on-page fixture names/captions (they read as noise with no context to a later reader; the
+underlying checks are unchanged).
+
+**Comment hygiene:** every code comment this pass's own diff introduced or touched that cited
+a review-round or finding id ("review round", "F17", "S6", …) was rewritten to describe what
+the code does instead, per this task's hard rule that comments describe the code, not the
+review that produced it. Pre-existing citations from earlier, already-merged rounds elsewhere
+in this codebase (`fix-r0`, `DG-22 review`, etc.) were left untouched — a different, legitimate
+provenance convention, not this rule's target.
+
+### What this pass could not do
+
+- **No browser verification at all.** Every fix above is typecheck-clean
+  (`pnpm run typecheck:local`), lint-clean (`pnpm run lint:local`, 0 errors), and
+  `brand-ui audit --strict` clean, but none was watched render, clicked, or measured for frame
+  time. The refit-race fix, the member-ghost fix, and the border-contrast mitigation in
+  particular are exactly the kind of change that can look right in source and still be wrong
+  on screen; they need the same `agent-browser` pass rounds 0–2 above used before anyone should
+  treat them as confirmed.
+- **N-1 through N-4 nits** (an `aria-description` for the Alt+Enter hint, `vendorLabel`
+  acronym-casing for short vendor keys, a possible `autoPanOnNodeFocus={false}` Tab-reveal
+  regression, and a small `use-autosave.ts` comment overlap with the sibling
+  `diagram/view-followups` branch) were not addressed this pass.

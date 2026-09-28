@@ -52,8 +52,15 @@ export interface VisualLayout {
   bounds: Rect;
 }
 
+/** A single-member box whose one member's title IS the box's own title (`capability-box-node.tsx`'s
+ * `soleMember`) never renders its member-list row — the header already names and icons that one
+ * member — so it must not reserve a row of height for it either. */
+function isSoleMemberBox(box: VisualBox): boolean {
+  return !box.aside && box.members.length === 1 && box.members[0]?.title === box.title;
+}
+
 function boxHeight(box: VisualBox): number {
-  const rows = Math.max(1, box.members.length);
+  const rows = isSoleMemberBox(box) ? 0 : Math.max(1, box.members.length);
   return Math.max(
     BOX_MIN_HEIGHT,
     BOX_HEADER_HEIGHT + rows * BOX_MEMBER_ROW_HEIGHT + BOX_PADDING * 2,

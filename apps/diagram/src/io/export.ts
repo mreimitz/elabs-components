@@ -76,9 +76,8 @@ interface Box {
  * The canvas the app shows (not a gallery's) — the ACTIVE lens's canvas: technical and
  * visual panes both mount at once during a lens cross-fade (`canvas-pane.tsx`,
  * `data-lens-pane="technical"|"visual"`), so a plain `.react-flow` query always picked the
- * technical one, first in the DOM (maintainer 2026-09-27, review round, F2/F3). `lensStore`
- * is read directly, not via `useLens`, because this module is React-free by design (this
- * file's own header note).
+ * technical one, first in the DOM. `lensStore` is read directly, not via `useLens`, because
+ * this module is React-free by design (this file's own header note).
  * P4: library gap — CanvasShell has no export API, so the exporter finds the canvas and its
  * parts by class name (docs/findings/DG-17-export.md §2).
  */

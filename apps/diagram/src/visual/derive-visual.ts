@@ -23,7 +23,7 @@
  * `LaneRole` for forward compatibility. A node with no zone at all uses the same net-flow rule,
  * over its own edges.
  *
- * **Tiebreak (review round, F6):** no `data` flow crosses the boundary at all → fall back to
+ * **Tiebreak:** no `data` flow crosses the boundary at all → fall back to
  * the net over EVERY flow kind (a control-plane zone, or an actor whose only flow is an
  * access flow, still clearly emits or receives one way). Still tied (truly no flows, or a
  * perfect wash) → `targets`, except a bare actor (no parent zone) defaults to `sources`: a
@@ -58,8 +58,8 @@
  * A node whose every technical flow (either end) is `kind: "access"` or `kind: "network"`, and
  * that has at least one flow, is pulled out of its rule-2 group into a "Network & Access" aside
  * box for its lane instead (one aside box per lane that needs one, not a single global one —
- * findings doc explains why). **Except a `type: actor`** (review round, F9): a person whose
- * only flow happens to be an access flow is not infrastructure and keeps their own box.
+ * findings doc explains why). **Except a `type: actor`**: a person whose only flow happens to
+ * be an access flow is not infrastructure and keeps their own box.
  *
  * ## Rule 3 — flows (concept §3 rule 3)
  * Every technical flow is resolved to a `(fromBox, toBox)` pair and `kind: "data"` → `"data"`,
@@ -256,9 +256,8 @@ function laneForNode(
       return { lane: flowRole(node.parent, ast.flows, members), owner: zone.owner };
     }
   }
-  // maintainer 2026-09-27 (review round, F6): a bare actor (no parent zone at all) ties to
-  // `sources`, not `targets` — a person is where a diagram's flows start, when its own
-  // flows give no other signal.
+  // A bare actor (no parent zone at all) ties to `sources`, not `targets` — a person is
+  // where a diagram's flows start, when its own flows give no other signal.
   const bareDefault: LaneRole = node.type === "actor" ? "sources" : "targets";
   return {
     lane: flowRole(node.id, ast.flows, new Set([node.id]), bareDefault),
@@ -285,8 +284,8 @@ function groupKey(lane: LaneRole, node: ArchNodeSpec): string {
 }
 
 /**
- * A vendor key (`"aws"`, `"gcp"`, `"qlik"`) as a plain label for a box title (review round,
- * F8) — no catalog lookup: `deriveVisualLens` stays synchronous and React-free, and the
+ * A vendor key (`"aws"`, `"gcp"`, `"qlik"`) as a plain label for a box title — no catalog
+ * lookup: `deriveVisualLens` stays synchronous and React-free, and the
  * catalog's own display names load asynchronously. A short key is a known cloud acronym
  * (`aws` → `AWS`); anything longer is just capitalised (`databricks` → `Databricks`).
  */
@@ -302,10 +301,9 @@ export function deriveVisualLens(ast: ArchDiagram): VisualLens {
     .filter((n) => n.type !== "note")
     .map((node) => {
       const { lane, owner } = laneForNode(node, ast, zoneInfo);
-      // maintainer 2026-09-27 (review round, F9): rule 6 pulls infrastructure that only ever
-      // moves access/network traffic into the aside box — a PERSON whose only flows happen to
-      // be access flows (e.g. "Business users" logging in) is not infrastructure and keeps
-      // their own box.
+      // Rule 6 pulls infrastructure that only ever moves access/network traffic into the
+      // aside box — a PERSON whose only flows happen to be access flows (e.g. "Business
+      // users" logging in) is not infrastructure and keeps their own box.
       const aside = node.type !== "actor" && isNetworkOrAccessOnly(node.id, ast.flows);
       return { node, lane, owner, aside };
     });
@@ -355,8 +353,8 @@ export function deriveVisualLens(ast: ArchDiagram): VisualLens {
       zoneId !== undefined && (multiGroupsByZone.get(zoneId) ?? 0) > 1;
     const parentZone =
       !sharesZoneWithAnotherGroup && zoneId !== undefined ? zoneTitle.get(zoneId) : undefined;
-    // maintainer 2026-09-27 (review round, F8): `PLURAL_KIND_LABEL[first.node.type]` names the
-    // group by its FIRST member's type — fine when every member shares one type, wrong for a
+    // `PLURAL_KIND_LABEL[first.node.type]` names the group by its FIRST member's type — fine
+    // when every member shares one type, wrong for a
     // vendor-matched group that does not (a VPC endpoint beside two databases is not
     // "Databases"). A vendor-matched group always has a vendor (rule 2's own grouping key), so
     // the vendor itself is the fallback label there.
@@ -368,8 +366,8 @@ export function deriveVisualLens(ast: ArchDiagram): VisualLens {
           return vendor ? `${vendorLabel(vendor)} services` : PLURAL_KIND_LABEL[first.node.type];
         })();
     const title = single ? first.node.title : (parentZone ?? kindLabel);
-    // maintainer 2026-09-27 (review round, F25): the FIRST member's own id, not a running
-    // counter — `grouped` partitions every node into exactly one group, so this is already
+    // The FIRST member's own id, not a running counter — `grouped` partitions every node
+    // into exactly one group, so this is already
     // unique, and it is also STABLE: an unrelated edit elsewhere in the document used to
     // renumber every later box's id (a plain `box:0`, `box:1`, … counter), which would have
     // broken the orientation drill-down (`frameNodeIds`) and the morph overlay's before/after
@@ -439,8 +437,8 @@ export function deriveVisualLens(ast: ArchDiagram): VisualLens {
     const flowKind: VisualFlowKind = flow.kind === "data" ? "data" : "other";
     const forward = flow.direction !== "back";
     const [a, b] = forward ? [from, to] : [to, from];
-    // maintainer 2026-09-27 (review round, F7): the pair key now includes the visual KIND, so
-    // a control flow one way and a data flow the other way stay two one-way edges (one
+    // The pair key includes the visual KIND, so a control flow one way and a data flow the
+    // other way stay two one-way edges (one
     // dashed, one solid) instead of merging into one bidirectional edge that would invent a
     // data direction that does not exist. Two opposite-direction flows that share a kind still
     // merge bidirectional — the concept's own rule, just kind-scoped.

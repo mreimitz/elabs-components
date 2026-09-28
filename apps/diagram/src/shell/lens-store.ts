@@ -9,10 +9,19 @@
  * `docs/2026-09-27-style-system-concept.md` §7's "single tween `t`, so a mid-flight reverse is
  * continuous": `setLens` only ever changes `target` and lets `position` keep moving from
  * wherever it already is, at a constant rate, so calling it twice in a row (a fast double
- * toggle) reverses smoothly instead of restarting or jumping. `src/panes/canvas-pane.tsx`
- * reads `position` to cross-fade the two panes; see that file and
- * `docs/findings/lens-switch-slice.md` for exactly what this transition does and does not do
- * (a crossfade with each side pre-fitted to its own bounds, not a full shared-camera morph).
+ * toggle) reverses smoothly instead of restarting or jumping. `src/panes/canvas-pane.tsx` reads
+ * `position` to drive the morph (`lens-morph-overlay.tsx`) and the cross-fade; see those files
+ * and `docs/findings/lens-switch-slice.md` for exactly what this transition does and does not
+ * do.
+ *
+ * `setLens` writes the URL with `history.replaceState`, not a `location.hash` assignment: the
+ * latter fires `hashchange`, which `routes/use-hash.ts` turns into a full shell re-render (the
+ * hash string itself changed, so every `useRoute()`/`useHash()` consumer re-renders even though
+ * `parseRoute` ignores `lens=`), landing squarely inside the tween's first frame and stalling
+ * it. `replaceState` updates `location.hash` (so a copied link, or a fresh `lensFromHash()` read
+ * on reload, still sees it) without dispatching `hashchange` or `popstate`, so a lens switch
+ * costs the tween nothing. External hash changes (back/forward, a shared link, any other
+ * `navigate()` call) still go through the `hashchange` listener below.
  */
 import { useSyncExternalStore } from "react";
 import { prefersReducedMotion } from "../motion";
@@ -62,11 +71,17 @@ export function useLens<T>(select: (state: LensState) => T): T {
 
 let rafId = 0;
 
+/** A stalled frame (a long task elsewhere on the main thread) must not jump the tween by
+ * however long the stall was: cap the elapsed time charged to any one frame at twice a normal
+ * 60fps frame, so a stall costs one visibly larger step, never a double-digit percent jump in
+ * `position`. */
+const MAX_FRAME_MS = (1000 / 60) * 2;
+
 function tick(now: number, last: number) {
   const state = lensStore.get();
   const targetPosition = state.target === "visual" ? 1 : 0;
   const duration = prefersReducedMotion() ? REDUCED_DURATION_MS : DURATION_MS;
-  const step = (now - last) / duration;
+  const step = Math.min(now - last, MAX_FRAME_MS) / duration;
   const position =
     targetPosition > state.position
       ? Math.min(targetPosition, state.position + step)
@@ -99,20 +114,16 @@ export const lensActions = {
       frameKey: options.frameNodeIds ? frameKey + 1 : frameKey,
     });
     ensureAnimating();
-    // M-hitch (review round 1, item 2): writing the hash synchronously here put its OWN
-    // listeners (`use-hash.ts`'s router state, `document-controls.tsx`) in the same
-    // render/commit pass as `lensStore.set()` above mounting `LensMorphOverlay` — one fewer
-    // synchronous re-render sharing the main thread with the overlay's `useLayoutEffect`
-    // (`capturePlan`'s `getBoundingClientRect` reads) before the first tween frame paints.
-    // The hash is cosmetic here (`lensStore.target`, not the URL, drives the tween), so one
-    // `requestAnimationFrame` of delay is imperceptible. Measured before/after: this alone did
-    // NOT remove the ~80–130 ms first-frame stall (`docs/findings/lens-switch-slice.md`) — the
-    // dominant cost is `capturePlan`'s own DOM reads, not the hash write. Left in as a real,
-    // if small, reduction in what shares the critical first frame; the stall itself is
-    // unresolved this pass (documented, not re-claimed as fixed).
-    requestAnimationFrame(() => {
-      window.location.hash = hashWithLens(window.location.hash, next === "visual");
-    });
+    // `replaceState`, not a `location.hash` assignment (see the header comment above): the
+    // URL still ends up carrying `lens=` for a copied link or a reload, but the write itself
+    // never dispatches `hashchange`, so it costs the tween nothing — no shell re-render shares
+    // the frame this starts animating on.
+    const hash = hashWithLens(window.location.hash, next === "visual");
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${window.location.pathname}${window.location.search}${hash}`,
+    );
   },
   toggle() {
     lensActions.setLens(lensStore.get().target === "visual" ? "technical" : "visual");

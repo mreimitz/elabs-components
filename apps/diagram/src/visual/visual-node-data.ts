@@ -17,8 +17,8 @@ export interface CapabilityBoxData extends Record<string, unknown> {
   members: VisualBoxMember[];
   aside: boolean;
   owner: ZoneOwner | "unowned";
-  /** S6 (review round 1): the box's own lane title, folded into its accessible name — a screen
-   * reader has no other way to know which lane a box sits in (lane panels are not tab stops,
+  /** The box's own lane title, folded into its accessible name — a screen reader has no other
+   * way to know which lane a box sits in (lane panels are not tab stops,
    * `visual-canvas-pane.tsx`'s `nodesFocusable={false}`). */
   laneTitle: string;
 }

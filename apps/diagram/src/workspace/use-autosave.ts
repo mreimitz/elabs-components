@@ -98,13 +98,13 @@ export function installAutosave(): () => void {
     // viewer-only view into the saved file via a drag and via the thumbnail, and this is that
     // same failure mode's thumbnail half, so it is refused outright rather than repeated.
     //
-    // MF-1 (review round 1): a settled `lens === "technical"` alone is not enough — a save can
-    // land while a visual→technical switch is still in flight, where `lens` already reads
-    // "technical" (`lens-store.ts`'s `tick` only flips it once `position` truly reaches its
-    // target) but `position` has not, so `pictureOfCanvas`'s `liveCanvas()` (which is
-    // `data-lens-pane`-aware, F2/F3) could still capture a cross-faded frame. Both the settled
-    // lens AND `position === 0` (fully at the technical end) must hold, or the thumbnail is
-    // skipped for that save rather than capturing something in between.
+    // A settled `lens === "technical"` alone is not enough — a save can land while a
+    // visual→technical switch is still in flight, where `lens` already reads "technical"
+    // (`lens-store.ts`'s `tick` only flips it once `position` truly reaches its target) but
+    // `position` has not, so `pictureOfCanvas`'s `liveCanvas()` (which is `data-lens-pane`-aware)
+    // could still capture a cross-faded frame. Both the settled lens AND `position === 0` (fully
+    // at the technical end) must hold, or the thumbnail is skipped for that save rather than
+    // capturing something in between.
     const lens = lensStore.get();
     if (lens.lens !== "technical" || lens.position !== 0) return;
     lastThumbAt = Date.now();

@@ -152,11 +152,10 @@ interface EntryFormProps {
   onWrote: (text: string) => void;
   /** The edit could not be written exactly: re-seed from the text. */
   onRejected: () => void;
-  /** maintainer 2026-09-27 (review round, SF-5): the visual lens is showing or mid-transition
-   * — the technical selection this form edits is hidden, so it is a durable, natively
-   * disabled read-only surface (every control disabled, not just visually dimmed) for exactly
-   * as long as `lensTarget !== "technical"`, the same window `canvas-pane.tsx`'s `lensLocked`
-   * closes every other technical write path for. */
+  /** The visual lens is showing or mid-transition — the technical selection this form edits is
+   * hidden, so it is a durable, natively disabled read-only surface (every control disabled,
+   * not just visually dimmed) for exactly the window `canvas-pane.tsx`'s `technicalLensLocked`
+   * closes every other technical write path for (`position !== 0`). */
   disabled: boolean;
 }
 
@@ -190,9 +189,9 @@ function EntryForm({ entry, written, onWrote, onRejected, disabled }: EntryFormP
   const last = useRef<FormValues>(seeded.values);
 
   const onChange = (next: FormValues) => {
-    // SF-5: a belt-and-braces guard beside `disabled` above — the same shape as
-    // `document-controls.tsx`'s `canUseHistory()` re-check in its own onClick, in case
-    // anything ever calls this handler directly instead of through the disabled controls.
+    // A guard beside `disabled` below — the same shape as `document-controls.tsx`'s
+    // `canUseHistory()` re-check in its own onClick — in case anything ever calls this handler
+    // directly instead of through the disabled controls.
     if (disabled) return;
     const patch = entryFormPatch(def, last.current, next);
     last.current = next;
@@ -203,9 +202,15 @@ function EntryForm({ entry, written, onWrote, onRejected, disabled }: EntryFormP
 
   return (
     <SchemaFormProvider spec={seeded.spec} onChange={onChange} disabled={disabled}>
-      <SchemaFormRoot aria-label={kindLabel(entry)}>
-        <SchemaFormFields />
-      </SchemaFormRoot>
+      {/* A native `<fieldset disabled>` on top of the form's own per-field `disabled` prop: it
+          disables every descendant control at the DOM level regardless of the field type, so a
+          gap in the schema form's own disabled wiring for one control kind can never leave a
+          single field editable while the rest of the form is locked. */}
+      <fieldset disabled={disabled} className="contents">
+        <SchemaFormRoot aria-label={kindLabel(entry)}>
+          <SchemaFormFields />
+        </SchemaFormRoot>
+      </fieldset>
     </SchemaFormProvider>
   );
 }
@@ -231,11 +236,13 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
   const selectedId = useDiagram((s) => s.selectedId);
   const compiled = useDiagram((s) => s.compiled);
   const compiledText = useDiagram((s) => s.compiledText);
-  // maintainer 2026-09-27 (review round, SF-5): the same `target !== "technical"` window
-  // `canvas-pane.tsx`'s `lensLocked` closes every technical write path for — the inspector
-  // edits the TECHNICAL selection, which is hidden while the visual lens shows or is
-  // mid-transition, so its form goes read-only for exactly as long.
-  const lensLocked = useLens((s) => s.target !== "technical");
+  // The inspector edits the TECHNICAL selection, hidden while the visual lens shows or the
+  // switch to/from it is mid-flight — read the same `position !== 0` boundary
+  // `canvas-pane.tsx`'s `technicalLensLocked` uses for every other technical write path, not
+  // `target` (which flips the instant a switch starts, one whole tween ahead of the pane
+  // actually becoming hidden), so the inspector's form goes read-only for exactly the same
+  // window as the rest of the technical pane's writes, no earlier and no later.
+  const lensLocked = useLens((s) => s.position !== 0);
   const raw = useMemo(() => parseArchYaml(compiledText).raw, [compiledText]);
   const entry = selectedId === null ? null : entryOf(compiled, selectedId);
   // DG-26 — a catalog change that lands after the form seeded (recompile() keeps the text, so
@@ -283,8 +290,11 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
           {INSPECTOR_LABELS.showInYaml}
         </Button>
         {entry && entry.kind !== "note" ? (
+          // `lensLocked` in the key: flipping the lock remounts the form fresh from `written`
+          // (the file's own values), so a keystroke typed right at the lock boundary can never
+          // leave the uncontrolled form's own DOM value out of step with what the file holds.
           <EntryForm
-            key={`${entry.id}:${seed.n}:${catalogGen}`}
+            key={`${entry.id}:${seed.n}:${catalogGen}:${lensLocked}`}
             entry={entry}
             written={writtenKeys(entry, raw)}
             onWrote={(text) => setSeed((s) => ({ n: s.n, text }))}

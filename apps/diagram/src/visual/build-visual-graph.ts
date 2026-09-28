@@ -23,26 +23,25 @@ import {
  * one steps further out by `SAME_LANE_EDGE_STEP`. */
 const SAME_LANE_EDGE_OFFSET = LANE_PADDING - 4;
 /**
- * maintainer 2026-09-27 (review round, F13): every box in a lane shares one x column
- * (`lane-layout.ts`), so two DIFFERENT same-lane pairs anchor at the identical `sourceX` and
- * their bend lines coincided exactly — two lines drawn on top of each other read as one.
- * Each pair sharing a column now gets its own offset, stepped out by this much; the lane's
- * own left gutter is `LANE_PADDING` (16) wide, and `LANE_GAP` (64) of empty canvas sits
- * beyond that before the previous lane's boxes, so a handful of parallel edges fan out with
- * room to spare before any of them could cross real content.
+ * Every box in a lane shares one x column (`lane-layout.ts`), so two DIFFERENT same-lane pairs
+ * would otherwise anchor at the identical `sourceX` and draw their bend lines exactly on top of
+ * each other, reading as one. Each pair sharing a column gets its own offset, stepped out by
+ * this much; the lane's own left gutter is `LANE_PADDING` (16) wide, and `LANE_GAP` (64) of
+ * empty canvas sits beyond that before the previous lane's boxes, so a handful of parallel edges
+ * fan out with room to spare before any of them could cross real content.
  */
 const SAME_LANE_EDGE_STEP = 10;
 
 /**
- * S2 (review round 1): F7 already stops an opposite-kind pair (a dashed control flow one way,
- * a solid data flow the other) from merging into one bidirectional edge — `derive-visual.ts`'s
- * `pairs` map keys on kind, so they stay two separate `VisualFlow`s. But two flows between the
- * SAME pair of boxes, in opposite directions, anchor at the same two points either way — swap
- * `from`/`to` and `anchors()` returns the mirror image of the same line, so the two edges drew
- * on the exact same path, and a solid line drawn over a dashed one at identical coordinates
- * reads as one bidirectional data line, the exact false direction F7 set out to remove. Each
- * flow in such a pair gets a small perpendicular nudge (this constant, ± an index) so the two
- * render as visibly separate parallel lines instead of one shared path.
+ * An opposite-kind pair (a dashed control flow one way, a solid data flow the other) is kept as
+ * two separate `VisualFlow`s (`derive-visual.ts`'s `pairs` map keys on kind), not merged into
+ * one bidirectional edge. But two flows between the SAME pair of boxes, in opposite directions,
+ * anchor at the same two points either way — swap `from`/`to` and `anchors()` returns the mirror
+ * image of the same line, so the two edges would draw on the exact same path, and a solid line
+ * drawn over a dashed one at identical coordinates reads as one bidirectional data line, the
+ * exact false direction two separate flows are meant to avoid. Each flow in such a pair gets a
+ * small perpendicular nudge (this constant, ± an index) so the two render as visibly separate
+ * parallel lines instead of one shared path.
  */
 const CROSS_KIND_PAIR_NUDGE = 6;
 
@@ -59,9 +58,9 @@ interface EdgeAnchor {
 }
 
 /** Where two rects sit relative to each other, for the edge's anchor points and directions.
- * `yNudge` (S2, review round 1) shifts both ends by the same amount, straight up or down —
- * a plain parallel offset that keeps a pair of opposite-direction, different-kind flows
- * (`CROSS_KIND_PAIR_NUDGE`) from drawing on the exact same line. */
+ * `yNudge` shifts both ends by the same amount, straight up or down — a plain parallel offset
+ * that keeps a pair of opposite-direction, different-kind flows (`CROSS_KIND_PAIR_NUDGE`) from
+ * drawing on the exact same line. */
 function anchors(from: Rect, to: Rect, yNudge = 0): EdgeAnchor {
   const fromMidY = from.y + from.height / 2 + yNudge;
   const toMidY = to.y + to.height / 2 + yNudge;
@@ -114,11 +113,11 @@ function edgePath(from: Rect, to: Rect, offsetOverride?: number, yNudge = 0): st
 }
 
 /**
- * M3 (review round 1): `anchors()`/`edgePath()` above only ever anchor at each box's own edge
- * — correct for an adjacent-lane or same-lane pair, but a flow whose lanes are not adjacent
- * (e.g. Sources straight to Targets, past Customer VPC) drew a straight line from one box's
- * edge to the other's, running directly through every box and member row the line's lane
- * column happened to cross.
+ * `anchors()`/`edgePath()` above only ever anchor at each box's own edge — correct for an
+ * adjacent-lane or same-lane pair, but a flow whose lanes are not adjacent (e.g. Sources
+ * straight to Targets, past Customer VPC) would draw a straight line from one box's edge to the
+ * other's, running directly through every box and member row the line's lane column happened to
+ * cross.
  *
  * The lane grid (`lane-layout.ts`) has one band that is empty in EVERY lane regardless of its
  * content: between the lane header (`LANE_HEADER_HEIGHT`) and the first box
@@ -194,6 +193,7 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
     });
   }
   const rectOf = new Map(layout.boxes.map(({ box, rect }) => [box.id, rect]));
+  const titleOf = new Map(layout.boxes.map(({ box }) => [box.id, box.title]));
   for (const { box, rect } of layout.boxes) {
     nodes.push({
       id: box.id,
@@ -238,11 +238,11 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
       });
   }
 
-  // S2 (review round 1): a box pair with more than one flow between it (an opposite-kind pair
-  // F7 deliberately keeps as two one-way edges, e.g. dashed control one way, solid data the
-  // other) anchors both edges at the same two points either way — swapping `from`/`to` mirrors
-  // the SAME line, not a different one. Skip the same-lane case: those pairs already fan out
-  // via `sameLaneOffset`'s own X step, and stacking a Y-nudge on top would misalign the dogleg.
+  // A box pair with more than one flow between it (an opposite-kind pair deliberately kept as
+  // two one-way edges, e.g. dashed control one way, solid data the other) anchors both edges at
+  // the same two points either way — swapping `from`/`to` mirrors the SAME line, not a different
+  // one. Skip the same-lane case: those pairs already fan out via `sameLaneOffset`'s own X step,
+  // and stacking a Y-nudge on top would misalign the dogleg.
   const crossPairGroup = new Map<string, VisualFlow[]>();
   for (const flow of lens.flows) {
     const from = rectOf.get(flow.from);
@@ -262,8 +262,8 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
       });
   }
 
-  // M3: a flow whose two boxes are more than one lane apart routes through the header gutter
-  // instead of `edgePath()`'s straight box-to-box line. Concurrent skip-lane flows stagger off
+  // A flow whose two boxes are more than one lane apart routes through the header gutter instead
+  // of `edgePath()`'s straight box-to-box line. Concurrent skip-lane flows stagger off
   // `SKIP_LANE_CHANNEL_Y`, sorted by id for a stable order, same idea as `sameLaneOffset` above.
   const skipLaneFlows: VisualFlow[] = [];
   for (const flow of lens.flows) {
@@ -285,11 +285,19 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
       const to = rectOf.get(flow.to);
       if (!from || !to) return null;
       const channelY = skipLaneChannel.get(flow.id);
+      const fromTitle = titleOf.get(flow.from) ?? flow.from;
+      const toTitle = titleOf.get(flow.to) ?? flow.to;
       const edge: VisualFlowEdgeType = {
         id: flow.id,
         source: flow.from,
         target: flow.to,
         type: VISUAL_FLOW_EDGE_TYPE,
+        // Box titles, never the internal `box:…` ids these edges connect: with no `ariaLabel`,
+        // React Flow's default names an edge from its raw node ids ("Edge from box:dbx-workspace
+        // to box:dbx-jobs"), which means nothing to a screen-reader user and exposes an
+        // implementation detail besides. `edgesFocusable={false}` keeps these out of the tab
+        // order, but a virtual cursor can still land on the `role="img"` group RF renders.
+        ariaLabel: `${flow.kind === "data" ? "Data flow" : "Flow"} ${flow.bidirectional ? "between" : "from"} ${fromTitle}${flow.bidirectional ? " and " : " to "}${toTitle}`,
         data: {
           path:
             channelY !== undefined
@@ -299,11 +307,11 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
           bidirectional: flow.bidirectional,
         },
         selectable: false,
-        // M4 (review round 1): with no `color`, React Flow falls back to its own
-        // `defaultMarkerColor` — a literal grey (rgb(177,177,183), ~1.9:1 on the lane panel)
-        // that follows no theme, exactly the gap `edge-style.ts`'s own `edgeMarkers` doc
-        // comment warns about. The arrowhead is the only direction cue on these edges, so it
-        // takes the same token `VisualFlowEdge` already paints its stroke with.
+        // With no `color`, React Flow falls back to its own `defaultMarkerColor` — a literal
+        // grey (rgb(177,177,183), ~1.9:1 on the lane panel) that follows no theme, exactly the
+        // gap `edge-style.ts`'s own `edgeMarkers` doc comment warns about. The arrowhead is the
+        // only direction cue on these edges, so it takes the same token `VisualFlowEdge` already
+        // paints its stroke with.
         markerEnd: {
           type: MarkerType.ArrowClosed,
           width: 16,

@@ -150,10 +150,10 @@ export function TopBar() {
   const warnings = useDiagram(
     (s) => s.compiled.issues.filter((i) => i.severity === "warning").length,
   );
-  // maintainer 2026-09-27 (review round, F5): direction, node style and layout all rewrite the
-  // TEXT — while the visual lens is showing (or on its way in/out, `target`, so the controls
-  // grey out the instant the user clicks Visual, not once the tween settles) that text is off
-  // screen, so these stay disabled exactly like "no AST to rewrite" already does below.
+  // Direction, node style and layout all rewrite the TEXT — while the visual lens is showing
+  // (or on its way in/out, `target`, so the controls grey out the instant the user clicks
+  // Visual, not once the tween settles) that text is off screen, so these stay disabled exactly
+  // like "no AST to rewrite" already does below.
   const lensTarget = useLens((s) => s.target);
   // No AST (the text is not a diagram), or the visual lens is showing: the toggles have
   // nothing visible to rewrite.
@@ -666,10 +666,10 @@ function LensToggle() {
 /**
  * The compact bar's lens entry (DG-68-style menu section, always shown — the lens works in
  * both view and edit mode, unlike the direction/node-style section right below it). No
- * trailing separator of its own (maintainer 2026-09-27, review round, F21): the next section,
- * `edit`'s Direction label or (in view mode) `ExportMenuItems`, always owns the leading
- * separator that follows, the same way `LayoutMenuItems`/`ExportMenuItems` do; owning one here
- * too doubled up in view mode, where nothing sits between this section and Export's own.
+ * trailing separator of its own: the next section, `edit`'s Direction label or (in view mode)
+ * `ExportMenuItems`, always owns the leading separator that follows, the same way
+ * `LayoutMenuItems`/`ExportMenuItems` do; owning one here too would double up in view mode,
+ * where nothing sits between this section and Export's own.
  */
 function LensMenuItems() {
   const lens = useLens((s) => s.target);

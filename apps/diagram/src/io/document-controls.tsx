@@ -147,11 +147,10 @@ export interface DocumentControlsProps {
   compact: boolean;
   /** Undo and Redo show (edit mode). */
   showHistory?: boolean;
-  /** maintainer 2026-09-27 (review round, SF-1): the visual lens is showing or mid-transition
-   * — Undo/Redo would otherwise rewrite the hidden technical text. `TopBar` computes this once
-   * (the same `lensTarget !== "technical"` its own direction/node-style/layout controls use,
-   * F5) and passes it down, so the button and the document-level ⌘Z shortcut (`history.ts`'s
-   * `canUseHistory`) never disagree. */
+  /** The visual lens is showing or mid-transition — Undo/Redo would otherwise rewrite the
+   * hidden technical text. `TopBar` computes this once (the same `lensTarget !== "technical"`
+   * its own direction/node-style/layout controls use) and passes it down, so the button and the
+   * document-level ⌘Z shortcut (`history.ts`'s `canUseHistory`) never disagree. */
   historyDisabled?: boolean;
 }
 

@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { ArchMark } from "../nodes/arch-mark";
 import type { ArchDiagram } from "../spec/dialect";
 import { useDiagram } from "../state/diagram-store";
 import { deriveVisualLens } from "../visual/derive-visual";
@@ -87,14 +88,16 @@ function laneForZone(
 
 interface MemberGhost {
   id: string;
+  title: string;
+  icon?: string;
   from: Rect;
   to: Rect;
 }
 
 interface BoxGhost {
   id: string;
-  /** maintainer 2026-09-27 (review round, F4): a blank rectangle read as nothing was there —
-   * carry the box's own title so the ghost still names what is gathering. */
+  /** A blank rectangle would read as nothing was there — carry the box's own title so the
+   * ghost still names what is gathering. */
   title: string;
   from: Rect;
   to: Rect;
@@ -168,22 +171,23 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
     const to = visRect.get(box.id);
     if (!to) continue;
     const memberRects: Rect[] = [];
-    box.members.forEach((member, index) => {
+    box.members.forEach((member) => {
       const from = techRect.get(member.id);
       if (!from) return;
       memberRects.push(from);
-      // The box's own member-icon row sits low in the box (`capability-box-node.tsx`'s
-      // title-then-marks layout) — an approximate slot, not that row's real measured
-      // position (findings doc: no per-member sub-layout is computed for this).
+      // The member's real, laid-out row inside the visual box (`capability-box-node.tsx`'s own
+      // `data-member-id`, its header row for a `soleMember` box, its member-list row
+      // otherwise) — never a synthetic estimate of where that row might sit.
+      const row = container.querySelector<HTMLElement>(
+        `[data-lens-pane="visual"] [data-member-id="${CSS.escape(member.id)}"]`,
+      );
+      if (!row) return;
       members.push({
         id: member.id,
+        title: member.title,
+        icon: member.icon,
         from,
-        to: {
-          left: to.left + 8 + index * 26,
-          top: to.top + Math.max(to.height - 30, 24),
-          width: 22,
-          height: 22,
-        },
+        to: rectFrom(row, containerRect),
       });
     });
     if (memberRects.length === 0) continue;
@@ -213,10 +217,10 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
     zonedLanes.add(lane);
     zones.push({ id: zone.id, fromTitle: zone.title, toTitle: LANE_TITLE[lane], from, to });
   }
-  // maintainer 2026-09-27 (review round, F4): a lane with no matching top-level zone (e.g.
-  // "Sources" built only from actors/network nodes) had no ghost at all, so it just popped in
-  // at the very end. It gets one too, growing from the union of ITS boxes' own technical rects
-  // instead of a zone's — same gather/dress timeline, no zone title to cross-fade from.
+  // A lane with no matching top-level zone (e.g. "Sources" built only from actors/network
+  // nodes) would have no ghost at all and just pop in at the very end. It gets one too, growing
+  // from the union of ITS boxes' own technical rects instead of a zone's — same gather/dress
+  // timeline, no zone title to cross-fade from.
   for (const lane of lens.lanes) {
     if (zonedLanes.has(lane.role)) continue;
     const to = visRect.get(`lane:${lane.role}`);
@@ -282,8 +286,7 @@ export function subProgress(position: number, start: number, end: number): numbe
 
 /** The scale factor a FLIP tween (`flipStyle`) is actually rendering at time `t` along one
  * axis — the inverse of this, applied to a child, cancels the parent's non-uniform scale so
- * text inside a ghost stays legible instead of stretching (review round, F4: "zone title text
- * is stretched by non-uniform scaling"). `to` is never 0 in practice (a box/lane ghost's
+ * text inside a ghost stays legible instead of stretching. `to` is never 0 in practice (a box/lane ghost's
  * target rect is real, measured geometry). */
 function scaleAt(from: number, to: number, t: number): number {
   if (to === 0) return 1;
@@ -332,8 +335,8 @@ function flipStyle(from: Rect, to: Rect, t: number): CSSProperties {
 export const GATHER_START = 120 / 700;
 const GATHER_END = 450 / 700;
 /** §7's "dress" phase: the visual pane's own real content fades IN over the transition's last
- * 200 ms (`canvas-pane.tsx` reads this — review round, F4: real content must be the first and
- * last frame, never a blank ghost-only interval at either end). */
+ * 200 ms (`canvas-pane.tsx` reads this: real content must be the first and last frame, never
+ * a blank ghost-only interval at either end). */
 export const DRESS_START = 500 / 700;
 
 export function LensMorphOverlay({
@@ -369,19 +372,18 @@ export function LensMorphOverlay({
   const edgeOut = 1 - smoothstep(position / 0.5);
   const edgeIn = smoothstep((position - 0.5) / 0.5);
   const zoneT = smoothstep(position);
-  // maintainer 2026-09-27 (review round 1, M2/MF-3): the overlay itself used to sit at a flat,
-  // fully-opaque weight for its whole "gather" span (`gather` reaches 1 at `GATHER_END` and
-  // holds there) while `canvas-pane.tsx`'s two real panes were already both fully transparent
-  // — an opaque ghost layer popping in over blank panes, and popping back out in one frame
-  // the instant this component unmounts at a settled `position`, is exactly the "swap" S10 §7
-  // rules out. The whole overlay now ramps in lock-step with the SOURCE pane's own fade-out
-  // (0 → 1 over the same `[0, GATHER_START]` window `technicalOpacity` fades 1 → 0 over) and
-  // ramps back out in lock-step with the TARGET pane's fade-in (1 → 0 over the same
-  // `[DRESS_START, 1]` window `visualOpacity` fades 0 → 1 over) — direction-agnostic (a pure
-  // function of `position`), so a mid-flight reverse crosses the same curve backwards with no
-  // discontinuity. Applied to the outer container below, it multiplies every ghost's own
-  // opacity (CSS `opacity` compounds on nested elements), so this is the one place that needs
-  // to change, not each ghost kind's own timing.
+  // The overlay itself would otherwise sit at a flat, fully-opaque weight for its whole "gather"
+  // span (`gather` reaches 1 at `GATHER_END` and holds there) while `canvas-pane.tsx`'s two real
+  // panes are already both fully transparent — an opaque ghost layer popping in over blank
+  // panes, and popping back out in one frame the instant this component unmounts at a settled
+  // `position`, is exactly the "swap" S10 §7 rules out. The whole overlay instead ramps in
+  // lock-step with the SOURCE pane's own fade-out (0 → 1 over the same `[0, GATHER_START]`
+  // window `technicalOpacity` fades 1 → 0 over) and ramps back out in lock-step with the TARGET
+  // pane's fade-in (1 → 0 over the same `[DRESS_START, 1]` window `visualOpacity` fades 0 → 1
+  // over) — direction-agnostic (a pure function of `position`), so a mid-flight reverse crosses
+  // the same curve backwards with no discontinuity. Applied to the outer container below, it
+  // multiplies every ghost's own opacity (CSS `opacity` compounds on nested elements), so this
+  // is the one place that needs to change, not each ghost kind's own timing.
   const overlayOpacity =
     position <= GATHER_START
       ? subProgress(position, 0, GATHER_START)
@@ -428,10 +430,9 @@ export function LensMorphOverlay({
           style={flipStyle(zone.from, zone.to, zoneT)}
           className="relative overflow-hidden rounded-lg border border-border bg-surface-muted"
         >
-          {/* maintainer 2026-09-27 (review round, F4): the frame above scales non-uniformly
-              (a zone's aspect ratio rarely matches its lane's) — this layer counter-scales by
-              the inverse from the same origin so the title renders at 1:1 the whole time
-              instead of stretching with it. */}
+          {/* The frame above scales non-uniformly (a zone's aspect ratio rarely matches its
+              lane's) — this layer counter-scales by the inverse from the same origin so the
+              title renders at 1:1 the whole time instead of stretching with it. */}
           <div style={unscaledLabelStyle(zone.from, zone.to, zoneT)}>
             {zone.fromTitle ? (
               <div
@@ -454,10 +455,18 @@ export function LensMorphOverlay({
         <div
           key={box.id}
           style={{ ...flipStyle(box.from, box.to, gather), opacity: gather }}
-          className="relative overflow-hidden rounded-lg border border-border bg-card shadow-xs"
+          className="relative overflow-hidden rounded-lg border-2 border-border bg-card shadow-xs"
         >
+          {/* `p-3`, `text-caption`/`font-medium`: the real box header's own button padding and
+              type role (`capability-box-node.tsx`'s `data-slot="capability-box-title"`) — this
+              ghost and the real title cross-fade over the exact same `[DRESS_START, 1]` window
+              (`overlayOpacity` here sums to 1 with `canvas-pane.tsx`'s `visualOpacity` the whole
+              time), so any padding or type mismatch reads as two separate texts rather than one
+              smoothly taking over from the other. */}
           <div style={unscaledLabelStyle(box.from, box.to, gather)}>
-            <div className="text-caption truncate px-2 py-1 font-medium">{box.title}</div>
+            <div className="text-caption flex items-center truncate p-3 font-medium">
+              {box.title}
+            </div>
           </div>
         </div>
       ))}
@@ -465,8 +474,22 @@ export function LensMorphOverlay({
         <div
           key={member.id}
           style={{ ...flipStyle(member.from, member.to, gather), opacity: memberOpacity }}
-          className="rounded-sm bg-foreground/25"
-        />
+          className="overflow-hidden"
+        >
+          {/* The same `flex items-center gap-1.5` + `ArchMark`/`text-meta` shape
+              `capability-box-node.tsx`'s own member row renders — an anonymous grey square read
+              as nothing was there; this ghost carries the member's own icon and name gathering
+              into place, same as the box ghost above carries its title. Counter-scaled by the
+              parent's own FLIP tween (`unscaledLabelStyle`) for the same reason a zone/box
+              ghost's title is: the icon and text must not stretch with the frame around them. */}
+          <div
+            style={unscaledLabelStyle(member.from, member.to, gather)}
+            className="flex min-w-0 items-center gap-1.5"
+          >
+            <ArchMark icon={member.icon} size={16} variant="mono" className="shrink-0" />
+            <span className="text-meta min-w-0 truncate">{member.title}</span>
+          </div>
+        </div>
       ))}
     </div>
   );

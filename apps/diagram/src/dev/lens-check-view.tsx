@@ -19,9 +19,8 @@ import type { VisualLens } from "../visual/visual-model";
  * test runner in this app (`package.json` has neither vitest nor jest — `spec-check-view.tsx`'s
  * own header note), so `deriveVisualLens` gets the same treatment as the dialect: every shipped
  * example AND template, compiled, derived twice, and checked here instead of in a `*.test.ts`
- * file (F17, review round 1: the first version of this page only globbed `examples/`, so a
- * template-only regression, such as the M3 skip-lane routing this same round added, had no
- * fixture at all here).
+ * file — every shipped EXAMPLE and TEMPLATE gets checked here, not just examples, so a
+ * template-only regression (e.g. in skip-lane routing) has a fixture too.
  *
  * Two things this page checks, per document:
  * - **it derives at all** — a clean compile with an AST produces a lens with at least one box;
@@ -50,6 +49,9 @@ interface ExampleRow {
   deterministic: boolean;
   lens: VisualLens | null;
   actorIds: ReadonlySet<string> | null;
+  /** Every real (non-`note`) node id in the compiled AST — `structuralIssues` uses this to
+   * check that derivation places each node in exactly one box, never zero or two. */
+  nodeIds: ReadonlySet<string> | null;
   error: string | null;
 }
 
@@ -66,6 +68,7 @@ function checkExample(name: string, text: string): ExampleRow {
       deterministic: false,
       lens: null,
       actorIds: null,
+      nodeIds: null,
       error: "did not compile",
     };
   }
@@ -76,7 +79,18 @@ function checkExample(name: string, text: string): ExampleRow {
     const actorIds = new Set(
       compiled.ast.nodes.filter((node) => node.type === "actor").map((node) => node.id),
     );
-    return { name, ok: once.boxes.length > 0, deterministic, lens: once, actorIds, error: null };
+    const nodeIds = new Set(
+      compiled.ast.nodes.filter((node) => node.type !== "note").map((node) => node.id),
+    );
+    return {
+      name,
+      ok: once.boxes.length > 0,
+      deterministic,
+      lens: once,
+      actorIds,
+      nodeIds,
+      error: null,
+    };
   } catch (error) {
     return {
       name,
@@ -84,6 +98,7 @@ function checkExample(name: string, text: string): ExampleRow {
       deterministic: false,
       lens: null,
       actorIds: null,
+      nodeIds: null,
       error: error instanceof Error ? error.message : String(error),
     };
   }
@@ -94,29 +109,47 @@ const ROWS: ExampleRow[] = [...Object.entries(EXAMPLES), ...Object.entries(TEMPL
   .sort((a, b) => a.name.localeCompare(b.name));
 
 /**
- * F17 (review round 1): `ROWS` above proves every shipped document derives at all — it says
- * nothing about whether the derivation is CORRECT. `DERIVE_CASES` below only exercises rules
- * F6–F9 on small synthetic fixtures, never on the real files. These are the same rules
- * (referential integrity, F7's kind-scoped merge, F9's actor exemption, the "a collapsed pair
- * is dropped" rule) restated as invariants any correctly-derived lens must satisfy, run
- * against every shipped example AND template so a regression in real content — not just the
- * six hand-written cases — fails here too.
+ * `ROWS` above only proves a lens is non-empty and repeatable, not that any one derivation
+ * rule is correct. `DERIVE_CASES` below covers a handful of rules on small synthetic
+ * fixtures, never on the real files. This function restates the rules that generalize
+ * (referential integrity, node coverage, the same-kind bidirectional flow merge, the actor
+ * exemption from the network/access aside rule) as invariants any correctly-derived lens must
+ * satisfy, run against every shipped example AND template so a regression in real content —
+ * not just the hand-written cases — fails here too.
  */
-function structuralIssues(lens: VisualLens, actorIds: ReadonlySet<string>): string[] {
+function structuralIssues(
+  lens: VisualLens,
+  actorIds: ReadonlySet<string>,
+  nodeIds: ReadonlySet<string>,
+): string[] {
   const issues: string[] = [];
   const laneIds = new Set(lens.lanes.map((l) => l.id));
   const boxIds = new Set(lens.boxes.map((b) => b.id));
+  // Every real node must land in exactly one box, once — never dropped, never duplicated
+  // into two boxes by an overlapping grouping rule.
+  const memberCounts = new Map<string, number>();
   for (const box of lens.boxes) {
     if (!laneIds.has(box.lane)) issues.push(`box "${box.id}" has unknown lane "${box.lane}"`);
     if (box.members.length === 0) issues.push(`box "${box.id}" has no members`);
+    for (const member of box.members) {
+      memberCounts.set(member.id, (memberCounts.get(member.id) ?? 0) + 1);
+    }
     if (box.aside) {
       const actor = box.members.find((m) => actorIds.has(m.id));
-      if (actor) issues.push(`aside box "${box.id}" contains actor "${actor.id}" (F9)`);
+      if (actor) issues.push(`aside box "${box.id}" contains actor "${actor.id}"`);
     }
   }
-  // F6/F7: two raw flows between the same box pair, opposite direction, of the SAME kind must
-  // merge into the one bidirectional flow `derive-visual.ts` rule 3 describes — seeing both
-  // directions as separate rows here means that merge did not happen.
+  for (const id of nodeIds) {
+    const count = memberCounts.get(id) ?? 0;
+    if (count === 0) issues.push(`node "${id}" appears in no box`);
+    else if (count > 1) issues.push(`node "${id}" appears in ${count} boxes`);
+  }
+  for (const id of memberCounts.keys()) {
+    if (!nodeIds.has(id)) issues.push(`box member "${id}" is not a node in the document`);
+  }
+  // Two raw flows between the same box pair, opposite direction, of the SAME kind must merge
+  // into one bidirectional flow (rule 3) — seeing both directions as separate rows here means
+  // that merge did not happen.
   const pairDirections = new Map<string, { forward: boolean; back: boolean; kind: string }>();
   for (const flow of lens.flows) {
     if (!boxIds.has(flow.from)) issues.push(`flow "${flow.id}" has unknown source "${flow.from}"`);
@@ -131,9 +164,7 @@ function structuralIssues(lens: VisualLens, actorIds: ReadonlySet<string>): stri
   }
   for (const [key, entry] of pairDirections) {
     if (entry.forward && entry.back) {
-      issues.push(
-        `box pair "${key}" has an opposite same-kind pair not merged bidirectional (F6/F7)`,
-      );
+      issues.push(`box pair "${key}" has an opposite same-kind pair not merged bidirectional`);
     }
   }
   return issues;
@@ -146,13 +177,16 @@ interface StructuralRow {
 
 const STRUCTURAL_ROWS: StructuralRow[] = ROWS.map((row) => ({
   name: row.name,
-  issues: row.lens && row.actorIds ? structuralIssues(row.lens, row.actorIds) : ["did not derive"],
+  issues:
+    row.lens && row.actorIds && row.nodeIds
+      ? structuralIssues(row.lens, row.actorIds, row.nodeIds)
+      : ["did not derive"],
 }));
 
 /**
- * maintainer 2026-09-27 (review round, F17): `ROWS` above only proves a lens is non-empty and
- * repeatable — every derivation rule bug the review round found (F6–F9) passed it. These are
- * small, inline fixtures with an EXPECTED shape, one per rule this slice actually changed.
+ * `ROWS` above only proves a lens is non-empty and repeatable, not that any one derivation
+ * rule is correct. These are small, inline fixtures with an EXPECTED shape, one per
+ * derivation rule this slice actually changed.
  */
 interface DeriveCase {
   name: string;
@@ -175,7 +209,7 @@ const DERIVE_CASES: DeriveCase[] = [
     },
   },
   {
-    name: "opposite pair, different kind → two one-way flows (F7)",
+    name: "opposite pair, different kind → two one-way flows",
     text: `diagram: "0"\nnodes:\n  - { id: a, type: service }\n  - { id: b, type: datastore }\nflows:\n  - a -> b: { kind: control }\n  - b -> a: { kind: data }\n`,
     check: (lens) => {
       if (lens.flows.length !== 2) return `expected 2 flows, got ${lens.flows.length}`;
@@ -191,7 +225,7 @@ const DERIVE_CASES: DeriveCase[] = [
     check: (lens) => (lens.flows.length !== 1 ? `expected 1 flow, got ${lens.flows.length}` : null),
   },
   {
-    name: "network-only node → aside; an actor's access flow does not (F9)",
+    name: "network-only node → aside; an actor's access flow does not",
     text: `diagram: "0"\nnodes:\n  - { id: net, type: service }\n  - { id: person, type: actor }\n  - { id: target, type: service }\nflows:\n  - net -> target: { kind: network }\n  - person -> target: { kind: access }\n`,
     check: (lens) => {
       const aside = lens.boxes.find((b) => b.aside);
@@ -203,7 +237,7 @@ const DERIVE_CASES: DeriveCase[] = [
     },
   },
   {
-    name: "bare actor with only an outgoing flow → sources (F6)",
+    name: "bare actor with only an outgoing flow → sources",
     text: `diagram: "0"\nnodes:\n  - { id: person, type: actor }\n  - { id: target, type: service }\nflows:\n  - person -> target: { kind: access }\n`,
     check: (lens) => {
       const box = lens.boxes.find((b) => b.members.some((m) => m.id === "person"));
@@ -213,7 +247,7 @@ const DERIVE_CASES: DeriveCase[] = [
     },
   },
   {
-    name: "mixed-type vendor group → the vendor's name, not the kind (F8)",
+    name: "mixed-type vendor group → the vendor's name, not the kind",
     text: [
       'diagram: "0"',
       "zones:",
@@ -267,13 +301,13 @@ const LENS_CHECK_LABELS = {
   error: (message: string) => `Error: ${message}`,
   casesTitle: "Derivation cases",
   casesSummary: (passed: number, total: number) => `${passed} of ${total} cases match.`,
-  casesCaption: "One small fixture per rule this slice fixed (F6–F9)",
+  casesCaption: "One small fixture per derivation rule",
   case: "Case",
   structuralTitle: "Structural rules",
   structuralSummary: (passed: number, total: number) =>
     `${passed} of ${total} documents satisfy every structural invariant.`,
   structuralCaption:
-    "F6/F7/F9, restated as invariants and run on real content (examples + templates)",
+    "Referential integrity, node coverage and the same-kind flow merge, run on real content",
   document: "Document",
   issues: "Issues",
   none: "None",

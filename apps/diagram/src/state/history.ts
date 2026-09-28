@@ -155,13 +155,12 @@ function fromCanvas(target: EventTarget | null): boolean {
 
 /**
  * Never while presenting (DG-18), outside edit mode (view mode is read-only, maintainer
- * 2026-09-27), or while the visual lens is showing or mid-transition (review round, F23): its
- * pane never mounts an undo of its own, but this listener is document-level (`main.tsx`) and
- * the top-bar's Undo/Redo buttons call `historyActions` directly (SF-1, review round 1) — with
- * no shared gate, either path would silently undo/redo the TECHNICAL text the person cannot
- * see, the same write-leak shape F1's delete-key fix closed for drag/delete. Gated on the
- * lens's `target`, not the settled `lens`, so it stops the instant a switch to visual starts,
- * not only once the transition lands.
+ * 2026-09-27), or while the visual lens is showing or mid-transition: its pane never mounts an
+ * undo of its own, but this listener is document-level (`main.tsx`) and the top-bar's Undo/Redo
+ * buttons call `historyActions` directly — with no shared gate, either path would silently
+ * undo/redo the TECHNICAL text the person cannot see. Gated on the lens's `target`, not the
+ * settled `lens`, so it stops the instant a switch to visual starts, not only once the
+ * transition lands.
  */
 export function canUseHistory(): boolean {
   return (
