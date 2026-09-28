@@ -24,7 +24,7 @@ import { toHash, useRoute, type Route } from "../routes/use-hash";
 import { TREE_PATH_ATTR } from "./focus";
 import { WorkspaceRootMenu, WorkspaceTree } from "./workspace-tree";
 import { WorkspaceSearch } from "./workspace-search";
-import { useSearchQuery } from "./search-store";
+import { isFiltering, useSearchQuery } from "./search-store";
 
 /** The rail's strings, in one place (`conventions/i18n-strings`). */
 const RAIL_LABELS = {
@@ -68,9 +68,9 @@ export function RailNav() {
   // A search in progress needs the Workspace tree on screen to filter (Radix unmounts a
   // closed CollapsibleContent) — derived, not synced: a query forces it open without touching
   // `treeOpen` itself, so clearing the query falls straight back to whatever the person had it
-  // at, collapsed included (F3/s4; no `useEffect`-to-sync of store state).
+  // at, collapsed included (no `useEffect`-to-sync of store state).
   const query = useSearchQuery();
-  const filtering = query !== "";
+  const filtering = isFiltering(query);
   const open = treeOpen || filtering;
 
   return (
@@ -84,7 +84,17 @@ export function RailNav() {
             icon={<House aria-hidden="true" />}
           />
           <WorkspaceSearch />
-          <Collapsible asChild open={open} onOpenChange={setTreeOpen}>
+          <Collapsible
+            asChild
+            open={open}
+            // Ignore a toggle while filtering, matching the tree's own folder guard
+            // (`workspace-tree.tsx`'s `onToggle`) — otherwise a click on this row while a query
+            // forces it open would silently flip `treeOpen`, and clearing the query would then
+            // collapse a section that was open before the search ever started.
+            onOpenChange={(next) => {
+              if (!filtering) setTreeOpen(next);
+            }}
+          >
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
                 <SidebarMenuButton
