@@ -24,7 +24,6 @@ import {
   type DragEvent,
   type MouseEvent,
   type ReactNode,
-  type RefObject,
 } from "react";
 import {
   ChevronRight,
@@ -76,7 +75,9 @@ import {
   indexStore,
   matchEntry,
   queryWords,
+  normalizeText,
   type EntryMatch,
+  type FieldMatch,
   type MatchField,
   type MatchRange,
 } from "../workspace/search-index";
@@ -98,7 +99,7 @@ const TREE_LABELS = {
   loadFailed: "Could not load the workspace",
   // n7: a plain sentence first — "Failed to fetch" alone named a browser API, not a cause a
   // person here can act on. The raw message stays, but as secondary detail.
-  loadFailedHint: "The dev server did not answer.",
+  loadFailedHint: "The workspace could not be read from the dev server.",
   loadFailedAttempt: (n: number) => `Attempt ${n}.`,
   retry: "Retry",
   retrying: "Retrying…",
@@ -247,17 +248,7 @@ function filterEntries(
 }
 
 /** Where the query's words sit in `text`, bold + underlined (never colour alone — WCAG 1.4.1). */
-function HighlightedText({
-  text,
-  ranges,
-  firstMatchRef,
-}: {
-  text: string;
-  ranges: readonly MatchRange[];
-  /** A ref onto the FIRST range's own `<strong>` — `useTitleMatchHidden` below reads its
-   * rendered position; every other caller leaves this unset. */
-  firstMatchRef?: RefObject<HTMLElement | null>;
-}) {
+function HighlightedText({ text, ranges }: { text: string; ranges: readonly MatchRange[] }) {
   if (ranges.length === 0) return <>{text}</>;
   const parts: ReactNode[] = [];
   let cursor = 0;
@@ -266,7 +257,7 @@ function HighlightedText({
     parts.push(
       <strong
         key={index}
-        ref={index === 0 ? firstMatchRef : undefined}
+        data-match-range={index}
         className="font-semibold text-sidebar-foreground underline decoration-2 underline-offset-2"
       >
         {text.slice(range.start, range.end)}
@@ -279,165 +270,104 @@ function HighlightedText({
 }
 
 /**
- * `text` split at its first match: `lead` (everything before it, never shown highlighted) and
- * `rest` (the match itself plus everything after — re-based ranges for `HighlightedText`).
- * `MatchText` below gives the two pieces different CSS truncation instead of windowing the
- * string to a fixed lead: a long `lead` must never cost the match its own visibility, but a
- * `lead` that already fits must never be chopped either.
+ * Keep the matched portion intact. The prefix gives up space first, at its START; the
+ * suffix may lose its END. The matched portion wraps when even the word itself is wider
+ * than a deeply nested row. Whitespace belongs to the LTR content, never the RTL prefix.
  */
-function splitAtMatch(
-  text: string,
-  ranges: readonly MatchRange[],
-): { lead: string; rest: string; restRanges: MatchRange[] } {
-  const at = ranges[0]?.start ?? 0;
-  return {
-    lead: text.slice(0, at),
-    rest: text.slice(at),
-    restRanges: ranges.map((range) => ({ start: range.start - at, end: range.end - at })),
-  };
-}
-
-/**
- * A matched field's second-line text, laid out (not windowed to a fixed lead) so the match is
- * always visible and nothing that fits is ever cut: `rest` (the match and everything after it)
- * keeps its own start and only ever loses its END, same as any other `truncate`; `lead`
- * (everything before the match) shrinks FIRST and loses its own START instead, so what survives
- * of it sits right next to the match. `shrink-[9999]` on `lead` against `rest`'s plain `shrink`
- * starves `lead` of space before `rest` in the flexbox shrink algorithm — only once `lead` has
- * hit its `min-w-0` floor does any further shortage fall onto `rest`. `lead` losing its START
- * (rather than its end, which `text-overflow: ellipsis` does by default) uses the classic
- * flipped-direction trick: `text-overflow: ellipsis` always trims the END of a box in the box's
- * OWN direction, so wrapping the still-LTR text in a `dir="rtl"` box moves that trimmed end to
- * the visual left; the nested `<bdi dir="ltr">` keeps the characters themselves in reading order.
- * The full, un-windowed text sits in `title=` for a hover reveal.
- */
-function MatchText({
-  text,
-  ranges,
-  className,
-}: {
-  text: string;
-  ranges: readonly MatchRange[];
-  className?: string;
-}) {
-  const { lead, rest, restRanges } = splitAtMatch(text, ranges);
+function MatchText({ text, ranges }: { text: string; ranges: readonly MatchRange[] }) {
+  const first = ranges[0]?.start ?? 0;
+  const last = ranges.at(-1)?.end ?? text.length;
+  const prefix = text.slice(0, first);
+  const space = prefix.match(/\s+$/)?.[0] ?? "";
+  const lead = prefix.slice(0, prefix.length - space.length);
+  const core = space + text.slice(first, last);
+  const coreRanges = ranges.map((range) => ({
+    start: range.start - first + space.length,
+    end: range.end - first + space.length,
+  }));
   return (
-    <span className={cn("flex min-w-0", className)} title={text}>
-      {lead !== "" ? (
-        <span dir="rtl" className="min-w-0 shrink-[9999] truncate">
+    <span className="flex min-w-0 max-w-full" title={text} data-search-evidence>
+      {lead ? (
+        <span dir="rtl" className="min-w-3 shrink-[9999] truncate">
           <bdi dir="ltr">{lead}</bdi>
         </span>
       ) : null}
-      <span className="min-w-0 shrink truncate">
-        <HighlightedText text={rest} ranges={restRanges} />
+      <span className="min-w-0 whitespace-pre-wrap break-all">
+        <HighlightedText text={core} ranges={coreRanges} />
       </span>
+      <span className="min-w-0 shrink-[9999] truncate whitespace-pre">{text.slice(last)}</span>
     </span>
   );
 }
 
-/**
- * A matching file's second line: what matched, when the title alone does not already show it
- * (either a different field, or the title's own match sitting past what its truncated first line
- * can display — the file row below builds that case as a `reason`-shaped value too). A second,
- * different-field `reason2` (a multi-word query whose words land in two different fields, e.g.
- * "grafana okta") joins the same line, separated by "·", so neither word's match goes unexplained.
- * The field label(s) get their own `shrink-0` span so the value's own truncation never eats into
- * them. The visible line can still end up windowed by space and so is `aria-hidden`; an
- * `sr-only` span carries every field, in full, so the row's accessible name never starts mid-word
- * on a windowed fragment's own leading "…" — skipped for a title match, whose full text is
- * already the row's own first line.
- */
-function MatchLine({
-  reason,
-  reason2,
-}: {
-  reason: EntryMatch["reason"];
-  reason2?: EntryMatch["reason2"];
-}) {
-  if (!reason) return null;
+/** Each field gets the full available width; long labels cannot crowd out its match. */
+function MatchLine({ reason }: { reason: FieldMatch }) {
   const label = TREE_LABELS.matchField[reason.field];
-  const label2 = reason2 ? TREE_LABELS.matchField[reason2.field] : undefined;
+  // One snippet per distinct matching term. Distant matches never expand the intervening
+  // description, and repeated occurrences of the same word do not repeat the explanation.
+  const seen = new Set<string>();
+  const snippets = reason.ranges.filter((range) => {
+    const term = normalizeText(reason.text.slice(range.start, range.end));
+    if (seen.has(term)) return false;
+    seen.add(term);
+    return true;
+  });
   return (
     <>
       <span
         aria-hidden="true"
-        className="flex min-w-0 gap-1 text-meta text-sidebar-muted-foreground"
+        className="flex min-w-0 flex-col text-meta text-sidebar-muted-foreground"
       >
-        <span className="shrink-0">{label}:</span>
-        <MatchText text={reason.text} ranges={reason.ranges} className="flex-1" />
-        {reason2 ? (
-          <>
-            <span className="shrink-0">·</span>
-            <span className="shrink-0">{label2}:</span>
-            <MatchText text={reason2.text} ranges={reason2.ranges} className="flex-1" />
-          </>
-        ) : null}
+        <span>{label}:</span>
+        {snippets.map((range) => (
+          <MatchText key={range.start} text={reason.text} ranges={[range]} />
+        ))}
       </span>
       {reason.field === "title" ? null : (
         <span className="sr-only">
           {label}: {reason.text}
-          {reason2 ? `; ${label2}: ${reason2.text}` : ""}
         </span>
       )}
     </>
   );
 }
 
-/**
- * Whether a title's own first match sits past what the row's truncated title line can still
- * show, measured from the rendered DOM rather than guessed from a character count — a nested
- * row's usable width differs by rail width, sheet width and folder depth, none of them a fixed
- * number of characters. `titleRef` goes on the title's own `truncate` span, `matchRef` on the
- * first highlighted range inside it (`HighlightedText`'s `firstMatchRef`); a `ResizeObserver` on
- * the title re-measures on every rail resize, sheet width or density change. Falls back to the
- * width-independent rule "the match does not start at the very first character" only when no
- * width can be read at all (not yet laid out, or a DOM without real layout, e.g. tests) — still
- * never a character count, just index 0 or not.
- */
-function useTitleMatchHidden(
-  active: boolean,
-  matchStart: number | undefined,
-): {
-  titleRef: RefObject<HTMLSpanElement | null>;
-  matchRef: RefObject<HTMLElement | null>;
-  hidden: boolean;
-} {
+/** DOM measurement runs after match ranges change, including each keystroke, and on rail resize. */
+function useHiddenTitleRanges(ranges: readonly MatchRange[] | undefined) {
   const titleRef = useRef<HTMLSpanElement>(null);
-  const matchRef = useRef<HTMLElement>(null);
-  const fallback = matchStart !== undefined && matchStart > 0;
-  const [hidden, setHidden] = useState(fallback);
-
+  const [hiddenKey, setHiddenKey] = useState("");
   useLayoutEffect(() => {
-    if (!active) {
-      setHidden(false);
-      return;
-    }
     const title = titleRef.current;
-    const match = matchRef.current;
-    if (!title || !match) {
-      setHidden(fallback);
+    if (!title || !ranges?.length) {
+      setHiddenKey("");
       return;
     }
     const measure = () => {
-      const width = title.clientWidth;
-      if (width === 0) {
-        // No real layout box to read (a collapsed ancestor, or a DOM with no layout at all —
-        // jsdom in tests never reports a size): trust the width-independent rule instead of a 0.
-        setHidden(fallback);
+      if (title.scrollWidth <= title.clientWidth) {
+        setHiddenKey("");
         return;
       }
-      // `truncate`'s ellipsis itself still covers roughly one glyph's worth of the box's end;
-      // a match ending past that point would have the ellipsis drawn over it either way.
-      const ellipsisAllowance = parseFloat(getComputedStyle(title).fontSize) || 0;
-      setHidden(match.offsetLeft + match.offsetWidth > width - ellipsisAllowance);
+      const style = getComputedStyle(title);
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      if (context) context.font = style.font;
+      const ellipsisWidth = context?.measureText("…").width ?? parseFloat(style.fontSize);
+      const edge = title.getBoundingClientRect().right - ellipsisWidth;
+      const hidden = [...title.querySelectorAll<HTMLElement>("[data-match-range]")]
+        .filter((match) => match.getBoundingClientRect().right > edge)
+        .map((match) => match.dataset.matchRange);
+      setHiddenKey(hidden.join(","));
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(title);
     return () => observer.disconnect();
-  }, [active, fallback]);
-
-  return { titleRef, matchRef, hidden };
+  }, [ranges]);
+  return {
+    titleRef,
+    hiddenRanges:
+      hiddenKey === "" ? [] : hiddenKey.split(",").flatMap((key) => ranges?.[Number(key)] ?? []),
+  };
 }
 
 // ── Dialog state, shared by every row and the root menu ───────────────────────────────
@@ -639,17 +569,7 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
   // The title itself is highlighted too when it is where the query matched. Only while
   // filtering: an empty query never touches the plain title.
   const titleRanges = filtering ? match?.titleRanges : undefined;
-  const firstTitleRange = titleRanges?.[0];
-  // A `reason` (another field explains the match) always wins the second line regardless of the
-  // title, so only a title-only match ever needs the DOM measured (`useTitleMatchHidden` is a
-  // hook and so, same as `useState` above, runs on every render of this row — harmless for a
-  // folder row or a file row with a `reason`, since `active` below is `false` for both).
-  const checkTitleHidden = !match?.reason && firstTitleRange !== undefined;
-  const {
-    titleRef,
-    matchRef,
-    hidden: titleHidden,
-  } = useTitleMatchHidden(checkTitleHidden, firstTitleRange?.start);
+  const { titleRef, hiddenRanges } = useHiddenTitleRanges(titleRanges);
   const onContextMenu = (event: MouseEvent) => {
     event.preventDefault();
     setMenuOpen(true);
@@ -660,25 +580,16 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
 
   if (entry.kind === "file") {
     const active = entry.path === shown;
-    // What explains the match, on a second line: another field's `reason` (paired with a second
-    // `reason2` when a multi-word query's words land in two different fields — "grafana okta"),
-    // or — when the title is the whole match but its own highlight sits past what the truncated
-    // first line can show — the title itself, laid out the same way any other field's match is
-    // (`MatchLine`, `useTitleMatchHidden`). A title match that IS fully visible needs no second
-    // line: the highlighted title above already shows it.
-    const secondLine =
-      match?.reason ??
-      (checkTitleHidden && titleHidden
-        ? { field: "title" as const, text: entry.title, ranges: titleRanges! }
-        : undefined);
-    const secondLine2 = match?.reason ? match.reason2 : undefined;
+    const reasons = [...(match?.reasons ?? [])];
+    if (hiddenRanges.length > 0)
+      reasons.unshift({ field: "title", text: entry.title, ranges: hiddenRanges });
     return (
       <SidebarMenuSubItem>
         <div className="group/tree-row relative">
           <SidebarMenuSubButton
             asChild
             isActive={active}
-            className={cn("pe-7", secondLine && "h-auto min-h-7 py-1.5")}
+            className={cn("pe-7", reasons.length > 0 && "h-auto min-h-7 py-1.5")}
           >
             <a
               href={toHash({ kind: "doc", path: entry.path })}
@@ -698,15 +609,13 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
                 {/* The row's own name never loses its start: `truncate` trims only the END, and
                     the full title stays in this link's own `title=` above (a hover reveal) and
                     in its accessible name (the link's visible text). The match evidence lives on
-                    the second line instead, where it is windowed around the match (`MatchLine`). */}
+                    the second line instead, where matching text can wrap (`MatchLine`). */}
                 <span ref={titleRef} className="truncate">
-                  <HighlightedText
-                    text={entry.title}
-                    ranges={titleRanges ?? []}
-                    firstMatchRef={checkTitleHidden ? matchRef : undefined}
-                  />
+                  <HighlightedText text={entry.title} ranges={titleRanges ?? []} />
                 </span>
-                <MatchLine reason={secondLine} reason2={secondLine2} />
+                {reasons.map((reason) => (
+                  <MatchLine key={`${reason.field}:${reason.text}`} reason={reason} />
+                ))}
               </span>
             </a>
           </SidebarMenuSubButton>
@@ -981,7 +890,7 @@ export function WorkspaceRootMenu() {
 function TreeLoadError({ message }: { message: string }) {
   const [retrying, setRetrying] = useState(false);
   // n7: bumped on every failed retry, so the alert's own text differs each time (an unchanged
-  // "The dev server did not answer." would otherwise sit through a same-error retry with no
+  // "The workspace could not be read from the dev server." would otherwise sit through a same-error retry with no
   // DOM change, and some assistive tech only re-announces `role="alert"` on one) — without
   // remounting the panel, which would take the Retry button's focus with it.
   const [attempt, setAttempt] = useState(1);

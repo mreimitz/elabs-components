@@ -22,8 +22,7 @@ interface SearchState {
   query: string;
   /** Bumped to ask for the sidebar/sheet to open (if it is not already) and the input to focus.
    * A counter, not a boolean, so asking twice in a row still re-triggers the effect that serves
-   * it even if nothing else about the state changed. The always-mounted
-   * `SearchSidebarBridge` (`workspace-search.tsx`) reacts to every bump; `WorkspaceSearch`
+   * it even if nothing else about the state changed. The registered opener opens the sidebar immediately; `WorkspaceSearch`
    * itself only ever acts on a token NEWER than the one it last saw (a ref set at mount), so a
    * remount (the mobile sheet does this on every close) never replays a request from before it
    * mounted. */

@@ -218,13 +218,8 @@ export interface EntryMatch {
   /** Where the query's words sit in the row's own title, when any do (even a partial cover,
    * shown alongside `reason`) — `TreeItem` highlights the title with these. */
   titleRanges?: MatchRange[];
-  /** The best other field to show as "what matched", when `titleMatch` is false. */
-  reason?: FieldMatch;
-  /** A SECOND field, when `reason` alone still does not cover every query word — a multi-word
-   * query whose words land in two different fields ("grafana okta": `Box: Grafana` alone would
-   * leave "okta" unexplained). `undefined` whenever `reason` already covers every word the title
-   * itself does not. */
-  reason2?: FieldMatch;
+  /** Fields that together explain every query word not already present in the title. */
+  reasons?: FieldMatch[];
 }
 
 /** Every occurrence of the (already-normalized) `word` in `haystack`, as original indices. */
@@ -357,18 +352,7 @@ function uncoveredByTitle(hit: FieldHit, titleWords: ReadonlySet<number>): numbe
   return count;
 }
 
-/**
- * Does `entry` match every word in `words`? (`ancestorFolders`: the names of every folder from
- * its own parent up to the workspace root — a folder whose name alone covers every word makes
- * every file under it match, the same as a title or file-name match would.) `null`: no match,
- * some word matches nowhere. Otherwise: `titleMatch` (no second line needed) or `reason`, the
- * single best other field to show ("Box: Snowflake"), picked by how many words it covers that
- * the title itself does NOT already show, then by how many words it covers, then by weight —
- * so a two-word query is explained by the word the title does not already reveal, and a
- * box's own title is shown over its id when both match it. When `reason` still leaves a word
- * neither it nor the title covers (two words landing in two different fields — "grafana okta"),
- * `reason2` is the best field for the leftover word(s), by the same ranking.
- */
+/** Match every query word and retain enough field explanations to cover the whole query. */
 export function matchEntry(
   entry: IndexEntry,
   ancestorFolders: readonly string[],
@@ -377,57 +361,37 @@ export function matchEntry(
   if (words.length === 0) return { titleMatch: false };
   const titleHit = scoreField({ field: "title", text: entry.title }, words);
   const covered = new Set<number>(titleHit?.words ?? []);
-  const hits: FieldHit[] = [];
-  for (const candidate of candidatesOf(entry, ancestorFolders)) {
-    const hit = scoreField(candidate, words);
-    if (!hit) continue;
-    hits.push(hit);
-    hit.words.forEach((word) => covered.add(word));
-  }
-  if (covered.size < words.length) return null;
-  const titleRanges = titleHit?.ranges;
-  if (titleHit && titleHit.words.size === words.length) return { titleMatch: true, titleRanges };
-  if (hits.length === 0) return { titleMatch: false, titleRanges };
-  const titleWords = titleHit?.words ?? new Set<number>();
-  hits.sort(
-    (a, b) =>
-      uncoveredByTitle(b, titleWords) - uncoveredByTitle(a, titleWords) ||
-      b.words.size - a.words.size ||
-      b.weight - a.weight,
-  );
-  let best = hits[0]!;
-  if (best.field === "id" || best.field === "ref") {
-    const nicer = hits.find(
-      (hit) =>
-        hit.boxIndex === best.boxIndex &&
-        (hit.field === "boxTitle" || hit.field === "subtitle") &&
-        hit.words.size >= best.words.size,
-    );
-    if (nicer) best = nicer;
-  }
-  // Words `best` and the title between them still leave uncovered: a second word landed in a
-  // different field entirely, so `best` alone would silently drop it from the "what matched" line.
-  const stillUncovered = words
-    .map((_, index) => index)
-    .filter((index) => !titleWords.has(index) && !best.words.has(index));
-  let reason2: FieldMatch | undefined;
-  if (stillUncovered.length > 0) {
-    const runnersUp = hits
-      .filter((hit) => hit !== best && stillUncovered.some((index) => hit.words.has(index)))
+  const hits = candidatesOf(entry, ancestorFolders)
+    .map((candidate) => scoreField(candidate, words))
+    .filter((hit): hit is FieldHit => hit !== undefined);
+  const allWords = new Set(covered);
+  for (const hit of hits) for (const word of hit.words) allWords.add(word);
+  if (allWords.size < words.length) return null;
+  const reasons: FieldMatch[] = [];
+  while (covered.size < words.length) {
+    const ranked = hits
+      .filter((hit) => uncoveredByTitle(hit, covered) > 0)
       .sort(
         (a, b) =>
-          stillUncovered.filter((index) => b.words.has(index)).length -
-            stillUncovered.filter((index) => a.words.has(index)).length || b.weight - a.weight,
+          uncoveredByTitle(b, covered) - uncoveredByTitle(a, covered) ||
+          b.words.size - a.words.size ||
+          b.weight - a.weight,
       );
-    const second = runnersUp[0];
-    if (second) reason2 = { field: second.field, text: second.text, ranges: second.ranges };
+    let best = ranked[0]!;
+    if (best.field === "id" || best.field === "ref") {
+      // Only prefer a readable label when it explains the SAME words, not just as many.
+      best =
+        ranked.find(
+          (hit) =>
+            hit.boxIndex === best.boxIndex &&
+            (hit.field === "boxTitle" || hit.field === "subtitle") &&
+            [...best.words].every((word) => hit.words.has(word)),
+        ) ?? best;
+    }
+    reasons.push({ field: best.field, text: best.text, ranges: best.ranges });
+    for (const word of best.words) covered.add(word);
   }
-  return {
-    titleMatch: false,
-    titleRanges,
-    reason: { field: best.field, text: best.text, ranges: best.ranges },
-    reason2,
-  };
+  return { titleMatch: reasons.length === 0, titleRanges: titleHit?.ranges, reasons };
 }
 
 // ── The index for the live workspace tree ────────────────────────────────────────────────
