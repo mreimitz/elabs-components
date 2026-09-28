@@ -15,6 +15,7 @@ import {
   unpaintedCategoryLabels,
 } from "./category-axis-plan";
 import { thinToDensity, useChartConfig } from "./chart-config-context";
+import { useBarChartContext } from "./bar-chart-context";
 import { useChart, useChartStable } from "./chart-context";
 import { useChartFrameSeriesBridge } from "../chart-frame/inline-chip";
 import { useTextMeasurer } from "./use-text-measurer";
@@ -145,7 +146,6 @@ const BarYAxisInner = memo(function BarYAxisInner({
     barScale,
     bandWidth,
     barXAccessor,
-    categoryAxisPlan,
     data,
     height,
     hoveredBarIndex,
@@ -154,6 +154,7 @@ const BarYAxisInner = memo(function BarYAxisInner({
     margin,
     width,
   } = useChart();
+  const { categoryAxisPlan } = useBarChartContext();
   const { measure, lineHeightPx } = useTextMeasurer();
   const { density } = useChartConfig();
 

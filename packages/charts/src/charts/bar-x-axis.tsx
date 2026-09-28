@@ -14,6 +14,7 @@ import {
   unpaintedCategoryLabels,
 } from "./category-axis-plan";
 import { thinToDensity, useChartConfig } from "./chart-config-context";
+import { useBarChartContext } from "./bar-chart-context";
 import { useChart, useChartStable } from "./chart-context";
 import { useChartFrameSeriesBridge } from "../chart-frame/inline-chip";
 import { datePillFits } from "./tooltip/date-pill";
@@ -177,7 +178,6 @@ const BarXAxisInner = memo(function BarXAxisInner({
     barScale,
     bandWidth,
     barXAccessor,
-    categoryAxisPlan,
     data,
     height,
     innerHeight,
@@ -186,6 +186,7 @@ const BarXAxisInner = memo(function BarXAxisInner({
     tooltipData,
     width,
   } = useChart();
+  const { categoryAxisPlan } = useBarChartContext();
   const { measure, lineHeightPx } = useTextMeasurer();
   const { density } = useChartConfig();
 

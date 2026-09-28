@@ -1,16 +1,28 @@
 /** Plain YAML value → normalized ArchDiagram + structural issues. Sugar is expanded here. React-free. */
 import { validateProps, type SpecIssue } from "@elabs-ai/components-ui/definition";
 import { FLOW_DEF, NODE_DEF, ROOT_DEF, STYLE_DEF, ZONE_DEF } from "./definitions";
-import { ARROW_DIRECTION, ARROW_RE, ID_RE } from "./ids";
+import {
+  ARROW_DIRECTION,
+  ARROW_RE,
+  CATALOG_REF_ROOT,
+  ID_RE,
+  REF_RE,
+  WORKSPACE_REF_ROOT,
+  refForm,
+} from "./ids";
 import { isArchIssueCode, issue, type ArchIssue } from "./issues";
 import { aliasPaths, indexPath, joinPath, type SourceMap } from "./source-map";
 import {
   DIALECT_VERSION,
+  READ_VERSIONS,
+  SUPPLIED_KEYS,
   type ArchDiagram,
   type ArchFlowSpec,
   type ArchNodeSpec,
   type ArchStyleSpec,
   type ArchZoneSpec,
+  type DialectVersion,
+  type NodeStatus,
 } from "./types";
 
 type Rec = Record<string, unknown>;
@@ -56,6 +68,65 @@ function pick<T>(rec: Rec, key: string, bad: Set<string>): T | undefined {
   return bad.has(key) || rec[key] === undefined || rec[key] === null ? undefined : (rec[key] as T);
 }
 
+/** The old shelf-only root (`workspace/README.md` rule 1, before the amendment). */
+const COMPONENTS_ROOT = "components";
+/** `<vendor>/<name>`, lowercase-kebab both sides — the shape of a catalog ref missing its root. */
+const VENDOR_NAME_RE = /^[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/;
+
+// DG-26 — why a `ref:` is not a reference path; null when it is one (ids.ts REF_RE). Each wrong
+// shape gets its own reason, and a suggestion where the fix is unambiguous (maintainer ruling
+// 2026-09-27).
+function badRef(ref: string): { message: string; suggestion?: string } | null {
+  if (REF_RE.test(ref)) return null;
+
+  const form = refForm(ref);
+  if (form === "diagram") {
+    // The root is right ("ws"); a segment, or the lack of one, is not.
+    const rest = ref === WORKSPACE_REF_ROOT ? "" : ref.slice(WORKSPACE_REF_ROOT.length + 1);
+    return rest === ""
+      ? {
+          message: `"${ref}" needs at least one folder or file after "ws": ws/<folder>/…/<file name>.`,
+        }
+      : {
+          message:
+            `"${ref}" names a folder or file the workspace itself would refuse: a name cannot ` +
+            `be empty or blank, be "." or "..", or start with "_" or ".".`,
+        };
+  }
+  if (form === "catalog") {
+    return {
+      message: `"${ref}" is not a valid catalog reference: write catalog/<pack>/<entry>, lowercase (catalog/aws/rds).`,
+    };
+  }
+
+  // No recognized root. The common old and mistaken forms get their own hint.
+  if (ref === "workspace" || ref.startsWith("workspace/")) {
+    const suggestion = `${WORKSPACE_REF_ROOT}${ref.slice("workspace".length)}`;
+    return {
+      message: `"workspace" is not a reference root; the diagram form starts with "ws": write "${suggestion}".`,
+      suggestion,
+    };
+  }
+  if (ref === COMPONENTS_ROOT || ref.startsWith(`${COMPONENTS_ROOT}/`)) {
+    const suggestion = `${WORKSPACE_REF_ROOT}/${ref}`;
+    return {
+      message: `"${ref}" needs a root: write "${suggestion}" for a diagram, or "${CATALOG_REF_ROOT}/<pack>/<entry>" for a catalog item.`,
+      suggestion,
+    };
+  }
+  if (VENDOR_NAME_RE.test(ref)) {
+    const suggestion = `${CATALOG_REF_ROOT}/${ref}`;
+    return {
+      message: `"${ref}" needs a root: write "${suggestion}" for a catalog item, or "${WORKSPACE_REF_ROOT}/${ref}" for a diagram.`,
+      suggestion,
+    };
+  }
+  return {
+    message: `"${ref}" needs a root: catalog/<pack>/<entry> for a catalog item, or ws/<folder>/…/<file name> for another diagram.`,
+  };
+}
+// end DG-26
+
 export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
   if (!isRecord(raw) || !("diagram" in raw)) {
     return {
@@ -64,27 +135,43 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         issue(
           "not-a-diagram",
           "",
-          'This is not an architecture diagram: the file needs a top-level "diagram" key set to "0".',
+          'This is not an architecture diagram: the file needs a top-level "diagram" key set to "1".',
         ),
       ],
     };
   }
-  if (String(raw.diagram) !== DIALECT_VERSION) {
+  const version = String(raw.diagram); // DG-26
+  if (!(READ_VERSIONS as readonly string[]).includes(version)) {
     return {
       ast: null,
       issues: [
         issue(
           "unsupported-version",
           "diagram",
-          `Dialect ${JSON.stringify(String(raw.diagram))} is not supported; this app reads dialect "0".`,
+          `Dialect ${JSON.stringify(version)} is not supported; this app reads dialects "0" and "1".`,
         ),
       ],
     };
   }
 
   const issues: ArchIssue[] = [];
+  // DG-26 — a leftover `use:` key (the pre-amendment draft's key) is not just "not a prop":
+  // point straight at `ref:` and, when the old value looks like a workspace path, suggest it.
+  const useHint = (rec: unknown, path: string, i: ArchIssue): ArchIssue => {
+    if (i.code !== "unknown-prop" || !isRecord(rec) || i.path !== joinPath(path, "use")) return i;
+    const old = rec.use;
+    return {
+      ...i,
+      message:
+        '"use" is now "ref": write ref: ws/<folder>/…/<file name> for another diagram, or ' +
+        "ref: catalog/<pack>/<entry> for a catalog item.",
+      ...(typeof old === "string" ? { suggestion: `${WORKSPACE_REF_ROOT}/${old}` } : {}),
+    };
+  };
   const check = (def: Parameters<typeof validateProps>[0], rec: unknown, path: string) => {
-    const found = fromDefinition(validateProps(def, rec, { path }).issues);
+    const found = fromDefinition(validateProps(def, rec, { path }).issues).map((i) =>
+      useHint(rec, path, i),
+    );
     issues.push(...found);
     return badKeys(found, path);
   };
@@ -122,6 +209,18 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
       }
       kind = z.length > 0 ? "zone" : "node";
     }
+    // DG-26 — `ref` is a node key; a forced zone (top-level `zones:`) cannot carry one.
+    if (kind === "zone" && "ref" in entry) {
+      issues.push(
+        issue(
+          "ambiguous-entry",
+          path,
+          '"ref" makes this entry a node; move it to "nodes:" or into a zone\'s "children".',
+        ),
+      );
+      return;
+    }
+    // end DG-26
     const bad = check(kind === "zone" ? ZONE_DEF : NODE_DEF, entry, path);
     const id = pick<string>(entry, "id", bad);
     if (id === undefined) return;
@@ -155,6 +254,8 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
       icon: pick<string>(entry, "icon", bad),
       class: pick<readonly string[]>(entry, "class", bad),
       position: pick<{ x: number; y: number }>(entry, "position", bad),
+      docs: pick<string>(entry, "docs", bad), // DG-26
+      status: pick<NodeStatus>(entry, "status", bad), // DG-26
     };
     if (kind === "zone") {
       zones.push({
@@ -170,6 +271,16 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         readEntry(child, indexPath(joinPath(path, "children"), j), undefined, id),
       );
     } else {
+      // DG-26
+      const ref = pick<string>(entry, "ref", bad);
+      const refProblem = ref !== undefined ? badRef(ref) : null;
+      if (refProblem) {
+        const found = issue("bad-ref", joinPath(path, "ref"), refProblem.message);
+        issues.push(
+          refProblem.suggestion ? { ...found, suggestion: refProblem.suggestion } : found,
+        );
+      }
+      // end DG-26
       nodes.push({
         ...common,
         type: pick(entry, "type", bad) ?? "service",
@@ -178,6 +289,13 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         tone: pick(entry, "tone", bad),
         href: pick(entry, "href", bad),
         text: pick(entry, "text", bad),
+        // DG-26
+        ...(ref !== undefined && {
+          ref,
+          unwritten: SUPPLIED_KEYS.filter((k) => !(k in entry)),
+        }),
+        expand: pick<boolean>(entry, "expand", bad),
+        // end DG-26
       });
     }
   };
@@ -213,7 +331,9 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
     if (typeof item === "string") {
       const ends = endsFrom(item, path, false);
       if (!ends)
-        return badFlow(`Flow "${item}" is not "a -> b"; ids use letters, digits, "_" and "-".`);
+        return badFlow(
+          `Flow "${item}" is not "a -> b"; ids use letters, digits, "_" and "-", and "." only after the id of a node whose ref is a diagram.`,
+        );
       rec = ends;
       form = "string";
     } else if (isRecord(item)) {
@@ -223,7 +343,9 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         const keyPath = joinPath(path, only);
         const ends = endsFrom(only, keyPath, true);
         if (!ends)
-          return badFlow(`Flow "${only}" is not "a -> b"; ids use letters, digits, "_" and "-".`);
+          return badFlow(
+            `Flow "${only}" is not "a -> b"; ids use letters, digits, "_" and "-", and "." only after the id of a node whose ref is a diagram.`,
+          );
         const value = item[only];
         if (isRecord(value)) {
           if ("from" in value || "to" in value || "direction" in value) {
@@ -297,6 +419,7 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
   return {
     ast: {
       version: DIALECT_VERSION,
+      sourceVersion: version as DialectVersion, // DG-26
       title: pick(raw, "title", rootBad),
       description: pick(raw, "description", rootBad), // DG-68
       direction: pick(raw, "direction", rootBad) ?? "LR",
@@ -309,6 +432,11 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
       flows,
       styles,
       notes,
+      // DG-26
+      component: pick(raw, "component", rootBad),
+      story: pick(raw, "story", rootBad),
+      visual: pick(raw, "visual", rootBad),
+      // end DG-26
     },
     issues,
   };

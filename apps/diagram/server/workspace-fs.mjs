@@ -25,7 +25,7 @@ const run = promisify(execFile);
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../workspace");
 /** Where `trash` moves things. Git-ignored (`apps/diagram/.gitignore`). */
 export const TRASH = "_trash";
-/** The only root `use:` resolves from (plan V1, V5); it cannot be moved or trashed. */
+/** Where a reusable diagram naturally lives (`ref: ws/components/…`); it cannot be moved or trashed. */
 export const COMPONENTS = "components";
 /** A diagram's text; the same cap as the app's share links (`io/share-url.ts`). */
 export const MAX_TEXT_BYTES = 1_000_000;

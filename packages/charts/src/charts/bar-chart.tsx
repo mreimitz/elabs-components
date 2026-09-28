@@ -58,11 +58,10 @@ import {
   type TooltipData,
 } from "./chart-context";
 import { arrangeBarGroups, BarGroupLayer, isBarGroupHeaderRow } from "./bar-groups";
-import { ChartLegendHoverProvider } from "./chart-legend-hover";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { findAxisValueFormat, legendWantsValues, sumLegendValue } from "./legend/legend-values";
-import { useSharedLegendHoveredKey } from "./legend/shared-legend-hover";
+import { ChartLegendHoverProvider, useSharedLegendHoveredKey } from "./legend/legend-hover";
 import {
   type BarComparison,
   type BarComparisonLabel,

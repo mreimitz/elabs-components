@@ -1,7 +1,7 @@
 "use client";
 
 import { getChartChildComponentName } from "./chart-defs";
-import { ChartLegendHoverProvider } from "./chart-legend-hover";
+import { ChartLegendHoverProvider } from "./legend/legend-hover";
 import { ChartParentSize } from "./chart-parent-size";
 import { useChartConfig } from "./chart-config-context";
 import type { GridProps } from "./grid";

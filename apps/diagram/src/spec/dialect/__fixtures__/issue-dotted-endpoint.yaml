@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v1.schema.json
+diagram: "1"
+nodes:
+  - id: a
+  - id: r
+    ref: catalog/aws/rds
+  - id: c
+flows:
+  - a.b -> c
+  - r.x -> c
+# expect: unknown-endpoint @ 9:5
+# expect: unknown-endpoint @ 10:5
