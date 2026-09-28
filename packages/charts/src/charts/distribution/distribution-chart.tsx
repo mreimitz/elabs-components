@@ -70,7 +70,7 @@ import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from 
 import { resolvePalette, type ChartPalette } from "../chart-context";
 import type { ChartInteractionProps } from "../chart-datapoint";
 import { ChartSelectionMark, type ChartSelectionProps, resolveMarkPaint } from "../chart-selection";
-import { ChartDatapointLayer, ChartDatapointProvider } from "../chart-datapoint-layer";
+import { AutoChartDatapointProvider, ChartDatapointLayer } from "../chart-datapoint-layer";
 import { useChartValueFormatter, useChartValueSetFormatterFactory } from "../chart-formatters";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "../series-pattern";
 import { ChartTooltipBox } from "../tooltip/tooltip-box";
@@ -539,14 +539,14 @@ const DistributionChartUnscoped = forwardRef<HTMLDivElement, DistributionChartPr
     // prop, so an ordinary chart's DOM is byte-identical to a non-interactive
     // one (#349).
     return containerSelection.wrap(
-      <ChartDatapointProvider
+      <AutoChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}
         datapointLabel={datapointLabel}
         maxInteractiveDatapoints={maxInteractiveDatapoints}
         onDatapointClick={onDatapointClick}
       >
         {scoped}
-      </ChartDatapointProvider>,
+      </AutoChartDatapointProvider>,
     );
   },
 );

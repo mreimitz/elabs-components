@@ -18,11 +18,11 @@ import {
   useState,
 } from "react";
 import { useSvgId } from "./svg-id";
-import { cn, mergeRefs, StatePanel } from "@elabs-ai/components-ui";
+import { mergeRefs, StatePanel } from "@elabs-ai/components-ui";
 import { useArcChartLoaded } from "./use-arc-chart-loaded";
 import { generateArcPath, isNamedChartChild } from "./pie-ring-engine";
 import { RadialChartSizing } from "./radial-chart-sizing";
-import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
+import { type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
 import type { ChartStateGroupProps } from "./props/chart-state";
 import type { FrameSizeGroupProps } from "./props/frame-size";
@@ -45,7 +45,7 @@ import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-da
 import {
   ChartDatapointLayer,
   type ChartDatapointTarget,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
@@ -66,7 +66,6 @@ import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-patt
 import { useHighDecorationOf } from "./use-high-decoration";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 import {
-  ChartPlotRoot,
   type ChartPlotHeight,
   type Responsive,
   type ResponsiveByBreakpoint,
@@ -1130,14 +1129,14 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
   // drill-down activator and the core can register slice targets (#349). Its
   // own `disabled` default makes it a no-op with neither prop set.
   const withInteraction = (chart: ReactNode) => (
-    <ChartDatapointProvider
+    <AutoChartDatapointProvider
       datapointLabel={datapointLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       copyValueOnActivate={copyValueOnActivate}
       onDatapointClick={onDatapointClick}
     >
       {chart}
-    </ChartDatapointProvider>
+    </AutoChartDatapointProvider>
   );
 
   // frame-size group (RM-183): `margin` shrinks the plot's content box —
@@ -1148,55 +1147,22 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
   const marginStyle = marginPaddingStyle(marginBox);
 
   // chart-state group (RM-183): `status`/`empty`. Neither family had a
-  // loading/empty vocabulary before (F11) — both branches below reuse the
-  // SAME `ChartPlotRoot` sizing as the real chart so the box never jumps
-  // size when data arrives.
+  // loading/empty vocabulary before (F11) — loading/empty and the real chart
+  // route through the SAME `RadialChartSizing` call (`statePanel` swaps in
+  // for the chart body) so the box never jumps size AND the root never
+  // remounts when `status` flips to `"ready"` (a focused root would lose
+  // focus, and every ref callback would fire `null` then a new node).
   const isLoading = status === "loading";
   const isEmptyState = Boolean(empty) && groupedData.length === 0;
-  if (isLoading || isEmptyState) {
-    const statePanel = (
+  const statePanel =
+    isLoading || isEmptyState ? (
       <StatePanel
         kind={isLoading ? "loading" : "empty"}
         title={empty?.title}
         description={empty?.message}
         actions={empty?.action}
       />
-    );
-    // RM-183 review (minor): wrapped in `containerLegend.wrap` — Pie's ready
-    // branch mounts the legend, so loading/empty must too, or the layout
-    // jumps (and the legend's height is un-reserved) the moment `status`
-    // flips to `"ready"`.
-    return fixedSize
-      ? containerLegend.wrap(
-          <ChartPlotRoot
-            aria-describedby={ariaDescribedby}
-            aria-label={ariaLabel}
-            className={cn("relative flex items-center justify-center", className)}
-            ref={mergedRef}
-            role={role}
-            style={{ width: fixedSize, height: fixedSize, ...marginStyle }}
-            tabIndex={tabIndex}
-          >
-            <ChartA11yLabel descId={descId} description={description} />
-            {statePanel}
-          </ChartPlotRoot>,
-        )
-      : containerLegend.wrap(
-          <ChartPlotRoot
-            plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
-            aria-describedby={ariaDescribedby}
-            aria-label={ariaLabel}
-            className={cn("relative w-full", className)}
-            ref={mergedRef}
-            role={role}
-            style={marginStyle}
-            tabIndex={tabIndex}
-          >
-            <ChartA11yLabel descId={descId} description={description} />
-            {statePanel}
-          </ChartPlotRoot>,
-        );
-  }
+    ) : undefined;
 
   // Explicit `fixedSize`: `PieChartInner` sizes its own SVG from JS numbers
   // shrunk by margin by hand. No `fixedSize`: `ChartParentSize` measures the
@@ -1216,6 +1182,7 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
       marginStyle={marginStyle}
       plotHeight={plotHeight}
       role={role}
+      statePanel={statePanel}
       tabIndex={tabIndex}
     >
       {({ width, height }) =>

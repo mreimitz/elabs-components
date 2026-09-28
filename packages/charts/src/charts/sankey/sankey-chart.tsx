@@ -25,7 +25,7 @@ import {
 } from "../chart-a11y";
 import {
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   useChartDatapointsEnabled,
 } from "../chart-datapoint-layer";
 import type { ChartDatapointClickHandler } from "../chart-datapoint";
@@ -499,12 +499,12 @@ const SankeyChartCore = memo(function SankeyChartCore({
 
   return (
     <SankeyProvider value={contextValue}>
-      <ChartDatapointProvider
+      <AutoChartDatapointProvider
         datapointLabel={threadDatapointLabel}
         onDatapointClick={handleThreadActivate}
       >
         <SankeyThreadsBody containerRef={containerRef} onKeyDown={handleKeyDown} svg={svg} />
-      </ChartDatapointProvider>
+      </AutoChartDatapointProvider>
     </SankeyProvider>
   );
 });

@@ -81,7 +81,7 @@ import type {
 } from "../chart-datapoint";
 import {
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useActivateDatapoint,
@@ -806,14 +806,14 @@ function ParallelCoordinatesBody({
   const defaultDatapointLabel = useDefaultParallelDatapointLabel(plotProps.rows, plotProps.axes);
   const core = <ParallelCoordinatesPlot {...plotProps} />;
   return (
-    <ChartDatapointProvider
+    <AutoChartDatapointProvider
       copyValueOnActivate={copyValueOnActivate}
       datapointLabel={datapointLabel ?? defaultDatapointLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       onDatapointClick={onDatapointClick}
     >
       {core}
-    </ChartDatapointProvider>
+    </AutoChartDatapointProvider>
   );
 }
 

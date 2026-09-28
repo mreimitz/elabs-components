@@ -18,7 +18,7 @@ import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from 
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useActivateDatapoint,
@@ -1457,14 +1457,14 @@ export const FunnelChart = forwardRef<HTMLDivElement, FunnelChartProps>(
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
     return (
-      <ChartDatapointProvider
+      <AutoChartDatapointProvider
         datapointLabel={datapointLabel}
         maxInteractiveDatapoints={maxInteractiveDatapoints}
         copyValueOnActivate={copyValueOnActivate}
         onDatapointClick={onDatapointClick}
       >
         <FunnelChartBody {...props} ref={ref} />
-      </ChartDatapointProvider>
+      </AutoChartDatapointProvider>
     );
   },
 );

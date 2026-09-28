@@ -49,8 +49,9 @@ import type { ChartEmptyState } from "../props/chart-state";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
 import { NETWORK_CHART } from "../../definitions/network-chart.definition";
 import {
+  AutoChartDatapointProvider,
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  type ChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useChartDatapointsEnabled,
@@ -597,7 +598,7 @@ const NetworkChartUnscoped = forwardRef<HTMLDivElement, NetworkChartProps>(
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       resolved;
     return (
-      <ChartDatapointProvider
+      <AutoChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}
         datapointLabel={
           (datapointLabel ?? defaultNetworkDatapointLabel) as unknown as ChartDatapointProviderLabel
@@ -606,7 +607,7 @@ const NetworkChartUnscoped = forwardRef<HTMLDivElement, NetworkChartProps>(
         onDatapointClick={onDatapointClick as unknown as ChartDatapointProviderHandler}
       >
         <NetworkChartBody {...resolved} ref={ref} />
-      </ChartDatapointProvider>
+      </AutoChartDatapointProvider>
     );
   },
 );

@@ -47,6 +47,7 @@ import {
   type ChartInteractions,
 } from "./chart-config-context";
 import {
+  AutoChartDatapointProvider,
   ChartDatapointProvider,
   clampDatapointRectToPlot,
   MIN_DATAPOINT_TARGET_SIZE,
@@ -113,48 +114,78 @@ function EnabledProbe({ onEnabled }: { onEnabled: (enabled: boolean) => void }) 
   return null;
 }
 
-function renderProvider(props: {
-  onDatapointClick?: () => void;
-  copyValueOnActivate?: boolean;
-  disabled?: boolean;
-}) {
+function renderProvider(
+  Provider: typeof ChartDatapointProvider | typeof AutoChartDatapointProvider,
+  props: {
+    onDatapointClick?: () => void;
+    copyValueOnActivate?: boolean;
+    disabled?: boolean;
+  },
+) {
   let enabled: boolean | undefined;
   render(
-    <ChartDatapointProvider {...props}>
+    <Provider {...props}>
       <EnabledProbe onEnabled={(value) => (enabled = value)} />
-    </ChartDatapointProvider>,
+    </Provider>,
   );
   return enabled;
 }
 
-describe("ChartDatapointProvider — self-computed `disabled` (RM-204)", () => {
-  // Every family used to gate mounting the provider itself on this same
-  // expression (`if (!onDatapointClick && !copyValueOnActivate) return core;`,
-  // or the equivalent ternary) before always rendering it. The provider now
-  // computes the identical default itself, so every family can mount it
-  // unconditionally — this is the one seam all of them share.
+describe("ChartDatapointProvider — the public provider's own default", () => {
+  // The exported `ChartDatapointProvider` has no handler props of its own to
+  // gate on: with no props at all, it stays enabled, exactly like every other
+  // provider in this package — a consumer composing a custom chart from
+  // primitives gets a working `useChartDatapointsEnabled()`/keyboard-target
+  // registry the moment they mount it, with no extra prop required.
+  it("stays enabled with no props at all", () => {
+    expect(renderProvider(ChartDatapointProvider, {})).toBe(true);
+  });
+
+  it("stays enabled with onDatapointClick unset", () => {
+    expect(renderProvider(ChartDatapointProvider, { onDatapointClick: undefined })).toBe(true);
+  });
+
+  it("an explicit disabled={true} still opts out", () => {
+    expect(renderProvider(ChartDatapointProvider, { disabled: true })).toBe(false);
+  });
+});
+
+describe("AutoChartDatapointProvider — the internal self-gating wrapper (RM-204)", () => {
+  // Every family used to gate mounting the (public) provider itself on this
+  // same expression (`if (!onDatapointClick && !copyValueOnActivate) return
+  // core;`, or the equivalent ternary) before always rendering it.
+  // `AutoChartDatapointProvider` — not part of the public API — computes the
+  // identical default itself, so every family can mount IT unconditionally
+  // instead: the one seam all of them share.
   it("is disabled with neither onDatapointClick nor copyValueOnActivate", () => {
-    expect(renderProvider({})).toBe(false);
+    expect(renderProvider(AutoChartDatapointProvider, {})).toBe(false);
   });
 
   it("is enabled with only onDatapointClick", () => {
-    expect(renderProvider({ onDatapointClick: () => {} })).toBe(true);
+    expect(renderProvider(AutoChartDatapointProvider, { onDatapointClick: () => {} })).toBe(true);
   });
 
   it("is enabled with only copyValueOnActivate", () => {
-    expect(renderProvider({ copyValueOnActivate: true })).toBe(true);
+    expect(renderProvider(AutoChartDatapointProvider, { copyValueOnActivate: true })).toBe(true);
   });
 
   it("is enabled with both onDatapointClick and copyValueOnActivate", () => {
-    expect(renderProvider({ onDatapointClick: () => {}, copyValueOnActivate: true })).toBe(true);
+    expect(
+      renderProvider(AutoChartDatapointProvider, {
+        onDatapointClick: () => {},
+        copyValueOnActivate: true,
+      }),
+    ).toBe(true);
   });
 
   it("an explicit disabled={true} wins over an active handler (Tree's own-tree-shape case)", () => {
-    expect(renderProvider({ onDatapointClick: () => {}, disabled: true })).toBe(false);
+    expect(
+      renderProvider(AutoChartDatapointProvider, { onDatapointClick: () => {}, disabled: true }),
+    ).toBe(false);
   });
 
   it("an explicit disabled={false} wins with neither prop set", () => {
-    expect(renderProvider({ disabled: false })).toBe(true);
+    expect(renderProvider(AutoChartDatapointProvider, { disabled: false })).toBe(true);
   });
 });
 

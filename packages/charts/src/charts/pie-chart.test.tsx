@@ -821,6 +821,55 @@ describe("PieChart re-renders after status flips from loading to ready", () => {
     );
     expect(container.querySelectorAll('path[fill="transparent"]')).toHaveLength(sampleData.length);
   });
+
+  it.each([
+    ["responsive", undefined],
+    ["fixedSize", 240],
+  ] as const)("keeps the same root element and DOM focus across the flip (%s)", (_label, size) => {
+    const refCalls: (HTMLDivElement | null)[] = [];
+    // A STABLE callback (not recreated per render) — its own identity never
+    // changes across the rerender below, so any extra call it receives can
+    // only mean React tore the node down and mounted a new one.
+    const refSpy = (node: HTMLDivElement | null) => {
+      refCalls.push(node);
+    };
+    const { container, rerender } = render(
+      <PieChart
+        ref={refSpy}
+        data={sampleData}
+        size={size}
+        status="loading"
+        accessibleLabel="Revenue share"
+      >
+        {sampleData.map((item, i) => (
+          <PieSlice index={i} key={item.label} />
+        ))}
+      </PieChart>,
+    );
+    const root = container.querySelector('[aria-label="Revenue share"]') as HTMLElement;
+    root.focus();
+    expect(document.activeElement).toBe(root);
+    const callsBeforeFlip = refCalls.length;
+
+    rerender(
+      <PieChart
+        ref={refSpy}
+        data={sampleData}
+        size={size}
+        status="ready"
+        accessibleLabel="Revenue share"
+      >
+        {sampleData.map((item, i) => (
+          <PieSlice index={i} key={item.label} />
+        ))}
+      </PieChart>,
+    );
+
+    const rootAfter = container.querySelector('[aria-label="Revenue share"]');
+    expect(rootAfter).toBe(root);
+    expect(document.activeElement).toBe(root);
+    expect(refCalls.length).toBe(callsBeforeFlip);
+  });
 });
 
 // RM-183 review: thin-tests minor — `margin` (frame-size group) had no

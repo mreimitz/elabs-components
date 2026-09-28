@@ -78,8 +78,9 @@ import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from 
 import { useChartInteractionPolicy } from "./chart-config-context";
 import type { ChartDatapoint, ChartInteractionProps } from "./chart-datapoint";
 import {
+  AutoChartDatapointProvider,
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  type ChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useActivateDatapoint,
@@ -1928,11 +1929,11 @@ const TreeChartUnscoped = forwardRef<HTMLDivElement, TreeChartProps>(
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       resolved;
     // ALWAYS the same element tree: adding or dropping a handler must not
-    // remount the body (and lose its open branches, focus and flight). The
-    // provider's own `disabled` default covers this: without a handler, no
-    // context, no layer, no extra DOM.
+    // remount the body (and lose its open branches, focus and flight).
+    // `AutoChartDatapointProvider`'s own `disabled` default covers this:
+    // without a handler, no context, no layer, no extra DOM.
     return (
-      <ChartDatapointProvider
+      <AutoChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}
         datapointLabel={
           (datapointLabel ?? defaultTreeDatapointLabel) as unknown as ChartDatapointProviderLabel
@@ -1941,7 +1942,7 @@ const TreeChartUnscoped = forwardRef<HTMLDivElement, TreeChartProps>(
         onDatapointClick={onDatapointClick}
       >
         <TreeChartBody {...resolved} ref={ref} />
-      </ChartDatapointProvider>
+      </AutoChartDatapointProvider>
     );
   },
 ) as (<TData = unknown>(

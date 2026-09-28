@@ -25,7 +25,7 @@ import { isDataLabelsOn, type ChartDataLabelsConfig } from "../props/data-labels
 import { TREEMAP_CHART } from "../../definitions/treemap-chart.definition";
 import {
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useActivateDatapoint,
@@ -868,14 +868,14 @@ export const TreemapChartBase = forwardRef<HTMLDivElement, TreemapChartProps>(
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
     return (
-      <ChartDatapointProvider
+      <AutoChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}
         datapointLabel={datapointLabel}
         maxInteractiveDatapoints={maxInteractiveDatapoints}
         onDatapointClick={onDatapointClick}
       >
         <TreemapChartBody {...props} ref={ref} />
-      </ChartDatapointProvider>
+      </AutoChartDatapointProvider>
     );
   },
 );

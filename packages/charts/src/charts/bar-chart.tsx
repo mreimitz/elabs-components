@@ -95,7 +95,7 @@ import {
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   useChartDatapointsEnabled,
 } from "./chart-datapoint-layer";
 import {
@@ -712,14 +712,14 @@ function ChartInner(props: ChartInnerProps) {
   // geometry as keyboard targets (#349). Its own `disabled` default makes it
   // a no-op with neither `onDatapointClick` nor `copyValueOnActivate` set.
   return (
-    <ChartDatapointProvider
+    <AutoChartDatapointProvider
       datapointLabel={datapointLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       copyValueOnActivate={copyValueOnActivate}
       onDatapointClick={onDatapointClick}
     >
       {core}
-    </ChartDatapointProvider>
+    </AutoChartDatapointProvider>
   );
 }
 

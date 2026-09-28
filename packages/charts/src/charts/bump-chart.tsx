@@ -57,7 +57,7 @@ import type {
 } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useActivateDatapoint,
@@ -1040,14 +1040,14 @@ function BumpBody({
   );
 
   return (
-    <ChartDatapointProvider
+    <AutoChartDatapointProvider
       copyValueOnActivate={copyValueOnActivate}
       datapointLabel={datapointLabel ?? defaultLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       onDatapointClick={onDatapointClick}
     >
       {core}
-    </ChartDatapointProvider>
+    </AutoChartDatapointProvider>
   );
 }
 

@@ -287,23 +287,19 @@ export interface ChartDatapointProviderProps {
   datapointLabel?: ChartDatapointLabel;
   maxInteractiveDatapoints?: number;
   /**
-   * Defaults to `!onDatapointClick && !copyValueOnActivate` — the provider is
-   * its own gate, so every family can mount it unconditionally: descendants
-   * see no provider (`useChartDatapointsEnabled()` is `false`, no layer, no
-   * copy live region), exactly as if it were absent, whenever neither prop is
-   * set. Keeping ONE element tree whether or not a handler is set also means
-   * adding a handler later does not remount the chart body and lose its state.
-   * Pass it explicitly only to override that default.
+   * Provide nothing: descendants see no provider (`useChartDatapointsEnabled()`
+   * is `false`, no layer, no copy live region), exactly as if it were absent.
+   * For a chart that must keep ONE element tree whether or not a handler is
+   * set, so adding a handler later does not remount its body and lose state.
    */
   disabled?: boolean;
   children: ReactNode;
 }
 
 /**
- * Wraps a chart's body so it can read the drill-down registry from context.
- * Self-gating (`disabled`'s default) means every family can mount this
- * unconditionally — with neither `onDatapointClick` nor `copyValueOnActivate`,
- * it adds no context value, no layer and no DOM, same as not rendering it.
+ * Wraps a chart whose consumer passed `onDatapointClick` — or asked for
+ * `copyValueOnActivate`. Charts render this ONLY in those cases (or render it
+ * `disabled` otherwise), so the opt-out path adds no context, no layer and no DOM.
  */
 export function ChartDatapointProvider({
   children,
@@ -311,7 +307,7 @@ export function ChartDatapointProvider({
   datapointLabel,
   maxInteractiveDatapoints = DEFAULT_MAX_INTERACTIVE_DATAPOINTS,
   onDatapointClick,
-  disabled = !onDatapointClick && !copyValueOnActivate,
+  disabled = false,
 }: ChartDatapointProviderProps) {
   const { locale } = useLocale();
   const t = useChartTranslate();
@@ -417,6 +413,35 @@ export function ChartDatapointProvider({
         </span>
       ) : null}
     </ChartDatapointContext>
+  );
+}
+
+/**
+ * The internal self-gating wrapper every chart family mounts UNCONDITIONALLY
+ * around its body: `disabled` defaults to `!onDatapointClick &&
+ * !copyValueOnActivate`, so with neither prop set it renders exactly like
+ * `<ChartDatapointProvider disabled>` — no context value, no layer, no DOM —
+ * and adding a handler later never remounts the body (ONE element tree either
+ * way). Not part of the package's public API: a consumer composing a custom
+ * chart from primitives gets the real `ChartDatapointProvider`, whose own
+ * `disabled` default is `false` (it has no handler props of its own to gate
+ * on, and disabling by default would silently drop keyboard datapoint targets
+ * and selection-session activation the moment someone mounts it with no
+ * props).
+ */
+export function AutoChartDatapointProvider({
+  onDatapointClick,
+  copyValueOnActivate,
+  disabled,
+  ...rest
+}: ChartDatapointProviderProps) {
+  return (
+    <ChartDatapointProvider
+      onDatapointClick={onDatapointClick}
+      copyValueOnActivate={copyValueOnActivate}
+      disabled={disabled ?? (!onDatapointClick && !copyValueOnActivate)}
+      {...rest}
+    />
   );
 }
 

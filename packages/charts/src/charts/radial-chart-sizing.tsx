@@ -32,6 +32,19 @@ export interface RadialChartSizingProps {
   innerRef: Ref<HTMLDivElement>;
   role?: string;
   tabIndex?: number;
+  /**
+   * Loading/empty UI (`StatePanel`) — when set, it replaces `children(size)`
+   * in the fixed branch and `<ChartParentSize>` entirely in the responsive
+   * branch, so a `status` flip between `"loading"`/empty and `"ready"` keeps
+   * rendering through this SAME `<ChartPlotRoot>` call site instead of two
+   * different element trees. Reconciliation keys a child by type+position:
+   * a caller that returns `<ChartPlotRoot>{statePanel}</ChartPlotRoot>` on
+   * one render and a *different* `<ChartPlotRoot>` element (its own JSX call
+   * site, own child shape) on the next forces React to unmount the first and
+   * mount the second — a focused root loses focus, and every ref callback
+   * fires `null` then the new node instead of never firing at all.
+   */
+  statePanel?: ReactNode;
   /** Renders the family's own `*ChartInner` at the resolved `width`/`height`. */
   children: (size: { width: number; height: number }) => ReactNode;
 }
@@ -49,6 +62,7 @@ export function RadialChartSizing({
   innerRef,
   role,
   tabIndex,
+  statePanel,
   children,
 }: RadialChartSizingProps): ReactElement {
   if (fixedSize) {
@@ -65,7 +79,7 @@ export function RadialChartSizing({
         tabIndex={tabIndex}
       >
         <ChartA11yLabel descId={descId} description={description} />
-        {children({ width: plotWidth, height: plotHeightPx })}
+        {statePanel ?? children({ width: plotWidth, height: plotHeightPx })}
       </ChartPlotRoot>
     );
   }
@@ -82,7 +96,9 @@ export function RadialChartSizing({
       tabIndex={tabIndex}
     >
       <ChartA11yLabel descId={descId} description={description} />
-      <ChartParentSize>{({ width, height }) => children({ width, height })}</ChartParentSize>
+      {statePanel ?? (
+        <ChartParentSize>{({ width, height }) => children({ width, height })}</ChartParentSize>
+      )}
     </ChartPlotRoot>
   );
 }

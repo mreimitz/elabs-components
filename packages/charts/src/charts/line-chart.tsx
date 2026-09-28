@@ -33,7 +33,7 @@ import {
   type SeriesPaletteSlots,
 } from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
-import { ChartDatapointProvider } from "./chart-datapoint-layer";
+import { AutoChartDatapointProvider } from "./chart-datapoint-layer";
 import {
   type ChartHoverLinkProps,
   ChartHoverLinkIndicator,
@@ -425,14 +425,14 @@ function ChartInner({
   // primitive under it) can read the drill-down registry from context. Its
   // own `disabled` default makes it a no-op with neither prop set.
   return (
-    <ChartDatapointProvider
+    <AutoChartDatapointProvider
       datapointLabel={datapointLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       copyValueOnActivate={copyValueOnActivate}
       onDatapointClick={onDatapointClick}
     >
       {chart}
-    </ChartDatapointProvider>
+    </AutoChartDatapointProvider>
   );
 }
 

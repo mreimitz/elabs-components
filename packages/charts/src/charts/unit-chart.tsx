@@ -46,7 +46,7 @@ import { type ChartPalette, resolvePalette } from "./chart-context";
 import type { ChartInteractionProps } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useActivateDatapoint,
@@ -807,14 +807,14 @@ UnitChartBody.displayName = "UnitChartBody";
 const UnitChartBase = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChart(props, ref) {
   const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } = props;
   return (
-    <ChartDatapointProvider
+    <AutoChartDatapointProvider
       copyValueOnActivate={copyValueOnActivate}
       datapointLabel={datapointLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       onDatapointClick={onDatapointClick}
     >
       <UnitChartBody {...props} ref={ref} />
-    </ChartDatapointProvider>
+    </AutoChartDatapointProvider>
   );
 });
 UnitChartBase.displayName = "UnitChartBase";
