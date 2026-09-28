@@ -1,16 +1,17 @@
 /**
  * DG-23 — which diagrams use a component (`ref: ws/components/<file name>`), and the small pure
- * reads the components panel needs. React-free (`conventions/logic-modules`); `component-panel.tsx`
+ * reads the components panel needs. React-free (`conventions/logic-modules`); `components-panel.tsx`
  * turns this into UI.
  *
  * Usage comes from a TEXT scan across every diagram file (dialect v1's reference form; the
- * retired `use:` key is not scanned for). This is independent of whether the file compiles —
- * dialect v1 does not compile until DG-26, so `component.description` is also read as plain YAML
- * (`yaml`'s `parseDocument`), not through the app's dialect-versioned compiler.
+ * retired `use:` key is not scanned for), independent of whether the file compiles.
+ * `component.description` is read as plain YAML (`yaml-field.ts`), not through the app's
+ * dialect-versioned compiler — a description renders even for a file the compiler rejects.
  */
-import { parseDocument } from "yaml";
 import { fileTitle } from "../shell/mode-store";
 import { readFile, type WorkspaceTree } from "../workspace/client";
+import { folderOf } from "../workspace/workspace-store";
+import { topLevelDescription } from "./yaml-field";
 
 /**
  * A `ref:` naming a component (dialect v1, `ws/components/<name>[.yaml|.yml]`), matched at line
@@ -38,19 +39,15 @@ export function refTargets(text: string): Set<string> {
 
 /** The top-level `component.description`, read as plain YAML (no dialect-version check). */
 export function componentDescription(text: string): string {
-  try {
-    const raw = parseDocument(text).toJS() as { component?: { description?: unknown } } | null;
-    const description = raw?.component?.description;
-    return typeof description === "string" ? description.trim() : "";
-  } catch {
-    return "";
-  }
+  return topLevelDescription(text, ["component", "description"]);
 }
 
 /** One diagram that a component's `ref:` line names. */
 export interface ComponentUsage {
   path: string;
   title: string;
+  /** `folderOf(path)`; "" at the workspace root (the "Used in" list shows "Workspace" for it). */
+  folder: string;
 }
 
 export interface ComponentEntry {
@@ -83,8 +80,9 @@ export async function buildComponentEntries(tree: WorkspaceTree): Promise<Compon
   const usedIn = new Map<string, ComponentUsage[]>();
   diagramFiles.forEach((file, i) => {
     const title = file.title?.trim() || fileTitle(file.path);
+    const usage: ComponentUsage = { path: file.path, title, folder: folderOf(file.path) };
     for (const target of refTargets(diagramTexts[i] ?? "")) {
-      usedIn.set(target, [...(usedIn.get(target) ?? []), { path: file.path, title }]);
+      usedIn.set(target, [...(usedIn.get(target) ?? []), usage]);
     }
   });
   return componentFiles.map((file, i) => ({

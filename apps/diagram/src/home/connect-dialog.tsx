@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
   Text,
+  cn,
   useCopyToClipboard,
 } from "@elabs-ai/components-ui";
 import { Check, Copy, Plug } from "lucide-react";
@@ -49,6 +50,10 @@ interface SnippetBlockProps {
   text: string;
   label: string;
   copyLabel: string;
+  /** A one-line command: wrap it instead of scrolling, so the whole thing is readable without
+   *  a horizontal scrollbar most platforms hide (R1 review). The JSON block stays unwrapped —
+   *  wrapping would fight its own indentation. */
+  wrap?: boolean;
 }
 
 /**
@@ -56,7 +61,7 @@ interface SnippetBlockProps {
  * the clipboard is unavailable, it selects its own text instead — a manual copy takes one
  * keystroke — the same fallback `CommandChip` offers.
  */
-function SnippetBlock({ text, label, copyLabel }: SnippetBlockProps) {
+function SnippetBlock({ text, label, copyLabel, wrap = false }: SnippetBlockProps) {
   const { copied, copy } = useCopyToClipboard();
   // `Text`'s ref types to its default element; it renders a <div> here (`as="div"`).
   const textRef = useRef<HTMLParagraphElement>(null);
@@ -80,7 +85,10 @@ function SnippetBlock({ text, label, copyLabel }: SnippetBlockProps) {
           aria-label={label}
           tabIndex={0}
           translate="no"
-          className="min-w-0 flex-1 overflow-x-auto whitespace-pre focus-ring-inset"
+          className={cn(
+            "min-w-0 flex-1 focus-ring-inset",
+            wrap ? "whitespace-pre-wrap break-all" : "overflow-x-auto whitespace-pre",
+          )}
         >
           {text}
         </Text>
@@ -131,12 +139,14 @@ export function ConnectDialog() {
             description={CONNECT_LABELS.claudeCodeDescription}
           >
             {/* SnippetBlock, not CommandChip: the command is longer than the dialog is wide, and
-                CommandChip always truncates it (no way to read what is about to run). SnippetBlock
-                scrolls instead. */}
+                CommandChip always truncates it (no way to read what is about to run). `wrap`:
+                a scrollbar most platforms hide left the rest of the command unreadable (R1
+                review) — this one line wraps instead. */}
             <SnippetBlock
               text={CLAUDE_CODE_COMMAND}
               label={CONNECT_LABELS.claudeCode}
               copyLabel={CONNECT_LABELS.copyClaudeCode}
+              wrap
             />
           </DialogSection>
           <DialogSection

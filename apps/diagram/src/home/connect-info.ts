@@ -17,17 +17,22 @@ export const CLAUDE_CODE_COMMAND = `claude mcp add --transport http ${ATLAS_MCP_
 /**
  * Claude Desktop: the `mcpServers` entry for `claude_desktop_config.json`. Claude Desktop only
  * starts local commands, so this is the `mcp-remote` bridge form (`mcp/README.md`), not a bare
- * `url` entry.
+ * `url` entry. A literal string, not `JSON.stringify(…, null, 2)` (R1 review): `stringify` also
+ * breaks the `args` array over several lines, so the displayed/copied text no longer matched
+ * `mcp/README.md` character for character. Kept in sync with the README's fenced block by eye;
+ * `JSON.parse` below only checks it stays valid JSON.
  */
-export const CLAUDE_DESKTOP_CONFIG = JSON.stringify(
-  {
-    mcpServers: {
-      [ATLAS_MCP_NAME]: { command: "npx", args: ["-y", "mcp-remote", ATLAS_MCP_URL] },
-    },
-  },
-  null,
-  2,
-);
+export const CLAUDE_DESKTOP_CONFIG = `{
+  "mcpServers": {
+    "${ATLAS_MCP_NAME}": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "${ATLAS_MCP_URL}"]
+    }
+  }
+}`;
+
+// Never shown; an import-time guard that a future hand-edit of the literal above stays valid JSON.
+JSON.parse(CLAUDE_DESKTOP_CONFIG);
 
 export interface AtlasPromptArgument {
   name: string;

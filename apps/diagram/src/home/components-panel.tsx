@@ -3,7 +3,7 @@
  * its thumbnail, its `component.description` when the file has one, and "Used in N diagrams".
  * The usage scan itself is `component-usage.ts` (React-free); this file is the view on top of it.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
   Image,
   Popover,
@@ -15,8 +15,8 @@ import {
 import { Boxes } from "lucide-react";
 import { buildComponentEntries, type ComponentEntry } from "./component-usage";
 import { NoPreview } from "./no-preview";
+import { RECENT_LABELS } from "./recent-card";
 import { thumbSrc } from "./thumbnail";
-import { TreeErrorPanel } from "./tree-error-panel";
 import { toHash } from "../routes/use-hash";
 import type { WorkspaceTree } from "../workspace/client";
 
@@ -52,6 +52,7 @@ function useComponentEntries(tree: WorkspaceTree | null): {
 }
 
 function UsedIn({ entry }: { entry: ComponentEntry }) {
+  const headingId = useId();
   const count = entry.usedIn.length;
   if (count === 0) {
     return (
@@ -70,8 +71,8 @@ function UsedIn({ entry }: { entry: ComponentEntry }) {
           {COMPONENTS_LABELS.usedIn(count)}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-64">
-        <Text variant="caption" tone="muted" className="mb-2">
+      <PopoverContent align="start" aria-labelledby={headingId} className="w-64">
+        <Text id={headingId} variant="caption" tone="muted" className="mb-2">
           {COMPONENTS_LABELS.usedInHeading(entry.title)}
         </Text>
         <ul className="flex flex-col gap-1">
@@ -79,9 +80,14 @@ function UsedIn({ entry }: { entry: ComponentEntry }) {
             <li key={usage.path}>
               <a
                 href={toHash({ kind: "doc", path: usage.path })}
-                className="rounded-sm text-body text-foreground hover:text-primary-text focus-ring"
+                className="block max-w-full truncate rounded-sm text-body text-foreground hover:text-primary-text focus-ring"
               >
                 {usage.title}
+                {/* The folder tells apart two same-titled diagrams (e.g. a template and its
+                    copy) — the same "Workspace" root wording as `RecentCard`. */}
+                <Text as="span" variant="meta" tone="muted" className="block truncate">
+                  {usage.folder === "" ? RECENT_LABELS.root : usage.folder}
+                </Text>
               </a>
             </li>
           ))}
@@ -93,11 +99,14 @@ function UsedIn({ entry }: { entry: ComponentEntry }) {
 
 function ComponentThumb({ entry }: { entry: ComponentEntry }) {
   return (
-    <div className="size-24 shrink-0 overflow-hidden rounded-md bg-surface-muted">
+    <div
+      aria-hidden="true"
+      className="aspect-video w-24 shrink-0 overflow-hidden rounded-md bg-surface-muted"
+    >
       <Image
         src={thumbSrc(entry.path, entry.hasThumb, entry.mtime)}
         alt=""
-        aspectRatio={1}
+        aspectRatio={16 / 9}
         fit="contain"
         loading="lazy"
         decoding="async"
@@ -112,10 +121,14 @@ export interface ComponentsPanelProps {
   treeError: string | null;
 }
 
-/** `StatePanel kind="empty"` with no components; else a list — thumbnail, name, "Used in N". */
+/**
+ * `StatePanel kind="empty"` with no components; else a list — thumbnail, name, "Used in N".
+ * When the tree failed to load, this renders nothing: Home shows the one `TreeErrorPanel` for
+ * the whole page once, not a second one per section (R1 review).
+ */
 export function ComponentsPanel({ tree, treeError }: ComponentsPanelProps) {
   const { loading, entries } = useComponentEntries(tree);
-  if (tree === null && treeError !== null) return <TreeErrorPanel message={treeError} />;
+  if (tree === null && treeError !== null) return null;
   if (tree === null || loading) return <StatePanel kind="loading" titleAs="h3" />;
   if (entries.length === 0) {
     return (
@@ -136,7 +149,7 @@ export function ComponentsPanel({ tree, treeError }: ComponentsPanelProps) {
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <a
               href={toHash({ kind: "doc", path: entry.path })}
-              className="w-fit truncate rounded-sm text-body font-medium text-foreground focus-ring"
+              className="w-fit max-w-full truncate rounded-sm text-body font-medium text-foreground focus-ring"
             >
               {entry.title}
             </a>

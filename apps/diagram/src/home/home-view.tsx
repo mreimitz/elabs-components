@@ -35,6 +35,10 @@ export function HomeView() {
   const recent = recentFiles(recents, tree?.files);
   // The shell's own live reload (`useLiveReload`, mounted once above Home) already fetches the
   // tree on load; Home only ever reads it, it never re-triggers a fetch of its own.
+  // Recent, Folders and Components all read the same tree, so a failed fetch gets exactly one
+  // alert and one Retry here, not one per section (R1 review) — the sections themselves render
+  // quietly (no heading-less gap, but no repeated alert either) while it is showing.
+  const treeFailed = tree === null && treeError !== null;
 
   return (
     // The shell's own workspace region does not scroll (`diagram-shell.tsx`); Home's content
@@ -43,17 +47,17 @@ export function HomeView() {
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 py-8">
         <div className="flex flex-wrap items-center gap-3">
           <NewDiagramButton />
-          <TemplatePicker files={tree?.files} />
+          <TemplatePicker tree={tree} treeError={treeError} />
           <ConnectDialog />
         </div>
+
+        {treeFailed ? <TreeErrorPanel message={treeError} /> : null}
 
         <section aria-labelledby="home-recent" className="flex flex-col gap-4">
           <Heading id="home-recent" level={2} size="subtitle">
             {HOME_LABELS.recent}
           </Heading>
-          {tree === null && treeError !== null ? (
-            <TreeErrorPanel message={treeError} />
-          ) : tree === null ? (
+          {treeFailed ? null : tree === null ? (
             <StatePanel kind="loading" titleAs="h3" />
           ) : recent.length === 0 ? (
             <StatePanel
@@ -83,9 +87,7 @@ export function HomeView() {
             <Heading id="home-folders" level={2} size="subtitle">
               {HOME_LABELS.folders}
             </Heading>
-            {tree === null && treeError !== null ? (
-              <TreeErrorPanel message={treeError} />
-            ) : tree === null ? (
+            {treeFailed ? null : tree === null ? (
               <StatePanel kind="loading" titleAs="h3" />
             ) : (
               <FolderList tree={tree} />

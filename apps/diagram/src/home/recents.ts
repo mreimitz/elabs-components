@@ -3,13 +3,14 @@
  * `home-view.tsx` turns this into UI.
  */
 import type { WorkspaceFile } from "../workspace/client";
+import { TEMPLATES_FOLDER } from "./templates";
 
 /** Up to 8 recent diagrams shown; the store keeps more (`RECENTS_LIMIT`, 12) for its own use. */
 export const RECENTS_SHOWN = 8;
 
 /** A template is a starting point, not something the user "opened"; never counts as a recent. */
 function isTemplate(file: WorkspaceFile): boolean {
-  return file.path.startsWith("templates/");
+  return file.path.startsWith(`${TEMPLATES_FOLDER}/`);
 }
 
 /**
