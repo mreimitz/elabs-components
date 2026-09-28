@@ -14,6 +14,8 @@ export type ArchNodeKind = "service" | "actor" | "datastore" | "queue" | "extern
 /** The D5 node look. */
 export type ArchNodeVariant = "icon" | "card";
 
+export type ArchNodeStatus = "ok" | "degraded" | "down" | "planned";
+
 export interface ArchNodeData extends Record<string, unknown> {
   title: string;
   subtitle?: string;
@@ -28,6 +30,14 @@ export interface ArchNodeData extends Record<string, unknown> {
   /** Hover / inspector only — never drawn on the node. */
   description?: string;
   href?: string;
+  docs?: string;
+  status?: ArchNodeStatus;
+  /** Resolved catalog identity; independent of an overridden display icon. */
+  catalogEntry?: string;
+  /** Normalized workspace file for a diagram-reference node. */
+  component?: string;
+  broken?: true;
+  pending?: true;
   classes?: string[];
   /** Note only: the note's body. Falls back to `title`. */
   text?: string;
