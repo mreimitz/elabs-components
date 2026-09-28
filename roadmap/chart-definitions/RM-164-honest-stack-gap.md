@@ -1,7 +1,7 @@
 ---
 id: RM-164
 title: "Honest `stackGap`: symmetric inset at internal stack boundaries in `Bar` and `SeriesBar`"
-status: in-progress
+status: done
 priority: P0
 effort: S–M (1.5 days)
 wave: 1

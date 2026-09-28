@@ -208,7 +208,7 @@ export function AiAssistantSurface() {
                     <ArtifactTitle>{CHART_PART.data.title}</ArtifactTitle>
                   </ArtifactHeader>
                   <ArtifactContent>
-                    <AutoChart spec={CHART_PART.data} height={200} />
+                    <AutoChart spec={CHART_PART.data} plotHeight={200} />
                   </ArtifactContent>
                 </Artifact>
                 <MessageResponse>{streamedText}</MessageResponse>

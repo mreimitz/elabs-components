@@ -5,7 +5,7 @@ description: Author architecture diagrams in Atlas through its MCP server — th
 
 # Atlas
 
-Atlas draws architecture diagrams from YAML files (dialect v0) in a local workspace. Its dev
+Atlas draws architecture diagrams from YAML files (dialect v1) in a local workspace. Its dev
 server is an MCP server named `atlas` (`http://localhost:5180/mcp`); the tools below appear as
 `mcp__atlas__<tool>`. Atlas lays the diagram out and draws it in the browser tab.
 
@@ -30,7 +30,7 @@ server is an MCP server named `atlas` (`http://localhost:5180/mcp`); the tools b
 - `diagram_trash` — move a diagram or folder to `_trash/` (recoverable).
 - `spec_validate` — check YAML without writing: `{ ok, issues }` with line and col.
 - `spec_compile` — the resolved model (zones, nodes with `parent`, flows) to find ids.
-- `spec_schema` — the dialect v0 JSON Schema, when unsure of a key.
+- `spec_schema` — the dialect v1 JSON Schema, when unsure of a key.
 - `compose_set` — set or remove (`null`) keys on a node/zone id, `flow:<from>-><to>` or `""`.
 - `compose_add_nodes` — append nodes to a zone (`into`) or to the top-level `nodes:`.
 - `compose_add_flows` — append flows to `flows:` in the shortest form.

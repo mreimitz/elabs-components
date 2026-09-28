@@ -45,3 +45,7 @@ export {
   readsAsBeforeAfterPair,
   STRIP_MAX_ROWS_PER_GROUP,
 } from "./infer-chart-type";
+
+// Spec validation — never throws; see `../test/contract.ts`'s
+// `assertChartSpecContract` for the throwing wrapper the test double uses.
+export { validateChartSpec } from "./validate-chart-spec";

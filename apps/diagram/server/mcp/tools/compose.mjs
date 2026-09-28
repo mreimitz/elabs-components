@@ -41,8 +41,17 @@ const FLOW_FIELDS = {
 async function editFile(path, ctx, edit) {
   const file = await readDiagram(path);
   const surface = await ctx.bridge.load();
-  const { ast } = surface.checkDiagram(file.text);
-  if (!ast) throw new Error(`${path} does not parse as a diagram; fix it with diagram_write.`);
+  const checked = surface.checkDiagram(file.text);
+  if (!checked.ast) {
+    // DG-26 — a file in a newer dialect than this Atlas reads is left alone, never rewritten.
+    const newer = checked.issues.find((i) => i.code === "unsupported-version");
+    throw new Error(
+      newer
+        ? `${path} is written in a newer dialect than this Atlas reads (${newer.message}) Leave the file alone: do not change its version or rewrite it.`
+        : `${path} does not parse as a diagram; fix it with diagram_write.`,
+    );
+  }
+  const { ast } = checked;
   const next = edit(file.text, ast, surface);
   if (next === null) {
     throw new Error("This edit cannot be made exactly in the file's text; use diagram_write.");

@@ -17,11 +17,13 @@ import {
   seedFormSpec,
   type EntryFormOptions,
 } from "../spec/dialect/form-spec";
+import { refForm } from "../spec/dialect/ids"; // DG-26
 import { parseArchYaml } from "../spec/dialect/parse";
 import { valueAt } from "../spec/dialect/write-back";
 import { diagramStore, editActions, useDiagram } from "../state/diagram-store";
 import { entryOf, type DiagramEntry } from "../state/entries";
 import { focusCanvasElement } from "./focus-canvas";
+import { useLens } from "../shell/lens-store"; // maintainer 2026-09-27 (lens switch)
 
 /** The inspector's strings, in one place (`conventions/i18n-strings`). */
 const INSPECTOR_LABELS = {
@@ -31,8 +33,19 @@ const INSPECTOR_LABELS = {
   showInYaml: "Show in YAML",
   advanced: "Advanced",
   unset: "Not set",
-  kind: { zone: "Zone", node: "Node", flow: "Flow", note: "Note" },
+  kind: { zone: "Zone", node: "Node", flow: "Flow", note: "Note", component: "Component" },
 } as const;
+
+// DG-26 — a node whose ref names a diagram is labelled "Component"; its form is the node form
+// (Ref under the essential fields, Expand, Docs and Status under Advanced).
+function kindLabel(entry: DiagramEntry): string {
+  return INSPECTOR_LABELS.kind[
+    entry.kind === "node" && entry.node.ref !== undefined && refForm(entry.node.ref) === "diagram"
+      ? "component"
+      : entry.kind
+  ];
+}
+// end DG-26
 
 const COMMON: Pick<EntryFormOptions, "advancedLabel" | "unsetLabel"> = {
   advancedLabel: INSPECTOR_LABELS.advanced,
@@ -90,6 +103,12 @@ interface EntryFormProps {
   onWrote: (text: string) => void;
   /** The edit could not be written exactly: re-seed from the text. */
   onRejected: () => void;
+  /** maintainer 2026-09-27 (review round, SF-5): the visual lens is showing or mid-transition
+   * — the technical selection this form edits is hidden, so it is a durable, natively
+   * disabled read-only surface (every control disabled, not just visually dimmed) for exactly
+   * as long as `lensTarget !== "technical"`, the same window `canvas-pane.tsx`'s `lensLocked`
+   * closes every other technical write path for. */
+  disabled: boolean;
 }
 
 /**
@@ -100,7 +119,7 @@ interface EntryFormProps {
  * docs/findings/DG-14-inspector-write-back.md. The inspector re-mounts this form (a new
  * `key`) whenever the text changes from anywhere else.
  */
-function EntryForm({ entry, written, onWrote, onRejected }: EntryFormProps) {
+function EntryForm({ entry, written, onWrote, onRejected, disabled }: EntryFormProps) {
   const { def, spec } = FORMS[entry.kind];
   const [seeded] = useState(() => {
     const values = entryFormValues(spec, def, written);
@@ -109,6 +128,10 @@ function EntryForm({ entry, written, onWrote, onRejected }: EntryFormProps) {
   const last = useRef<FormValues>(seeded.values);
 
   const onChange = (next: FormValues) => {
+    // SF-5: a belt-and-braces guard beside `disabled` above — the same shape as
+    // `document-controls.tsx`'s `canUseHistory()` re-check in its own onClick, in case
+    // anything ever calls this handler directly instead of through the disabled controls.
+    if (disabled) return;
     const patch = entryFormPatch(def, last.current, next);
     last.current = next;
     if (Object.keys(patch).length === 0) return;
@@ -117,8 +140,8 @@ function EntryForm({ entry, written, onWrote, onRejected }: EntryFormProps) {
   };
 
   return (
-    <SchemaFormProvider spec={seeded.spec} onChange={onChange}>
-      <SchemaFormRoot aria-label={INSPECTOR_LABELS.kind[entry.kind]}>
+    <SchemaFormProvider spec={seeded.spec} onChange={onChange} disabled={disabled}>
+      <SchemaFormRoot aria-label={kindLabel(entry)}>
         <SchemaFormFields />
       </SchemaFormRoot>
     </SchemaFormProvider>
@@ -146,6 +169,11 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
   const selectedId = useDiagram((s) => s.selectedId);
   const compiled = useDiagram((s) => s.compiled);
   const compiledText = useDiagram((s) => s.compiledText);
+  // maintainer 2026-09-27 (review round, SF-5): the same `target !== "technical"` window
+  // `canvas-pane.tsx`'s `lensLocked` closes every technical write path for — the inspector
+  // edits the TECHNICAL selection, which is hidden while the visual lens shows or is
+  // mid-transition, so its form goes read-only for exactly as long.
+  const lensLocked = useLens((s) => s.target !== "technical");
   const raw = useMemo(() => parseArchYaml(compiledText).raw, [compiledText]);
   const entry = selectedId === null ? null : entryOf(compiled, selectedId);
 
@@ -170,7 +198,7 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
       open={open}
       onOpenChange={editActions.setInspectorOpen}
       onClose={() => editActions.setInspectorOpen(false)}
-      title={entry ? `${INSPECTOR_LABELS.kind[entry.kind]} · ${entry.id}` : INSPECTOR_LABELS.title}
+      title={entry ? `${kindLabel(entry)} · ${entry.id}` : INSPECTOR_LABELS.title}
       hasSelection={entry !== null}
       selectionKey={selectedId ?? undefined}
       // P4: library gap — the empty message renders inside a <p>, so it takes text, not a
@@ -196,6 +224,7 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
             written={writtenKeys(entry, raw)}
             onWrote={(text) => setSeed((s) => ({ n: s.n, text }))}
             onRejected={() => setSeed((s) => ({ n: s.n + 1, text: s.text }))}
+            disabled={lensLocked}
           />
         ) : (
           <Text tone="muted">{INSPECTOR_LABELS.note}</Text>

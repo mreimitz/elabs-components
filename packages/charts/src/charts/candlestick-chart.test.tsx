@@ -23,6 +23,7 @@ vi.mock("./chart-parent-size", () => {
   };
 });
 
+import { PatternCircles } from "@visx/pattern";
 import { CandlestickChart } from "./candlestick-chart";
 import { Candlestick } from "./candlestick";
 import { seriesPatternFills, seriesPatterns, stubHighDecoration } from "./high-decoration-fixture";
@@ -108,6 +109,19 @@ describe("CandlestickChart", () => {
     const root = container.firstChild as HTMLElement;
     expect(root.getAttribute("role")).toBeNull();
     expect(root.getAttribute("aria-label")).toBeNull();
+  });
+
+  it("puts a raw @visx/pattern child into the chart's <defs>, as the other charts do", () => {
+    const { container } = render(
+      <CandlestickChart data={minimalData} animationDuration={0}>
+        <PatternCircles height={6} id="candle-dots" width={6} />
+        <Candlestick animate={false} />
+      </CandlestickChart>,
+    );
+    const pattern = container.querySelector("pattern#candle-dots");
+    expect(pattern).not.toBeNull();
+    // Inside the svg-root <defs>, not painted in the plot group.
+    expect(pattern!.closest("svg > defs")).not.toBeNull();
   });
 });
 

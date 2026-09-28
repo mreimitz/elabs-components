@@ -6,7 +6,7 @@
  */
 import { toJsonSchema, type JsonSchema } from "@elabs-ai/components-ui/definition";
 import { FLOW_DEF, NODE_DEF, ROOT_DEF, STYLE_DEF, ZONE_DEF } from "./definitions";
-import { ARROW_PATTERN, ID_SOURCE } from "./ids";
+import { ARROW_PATTERN, CATALOG_REF_SOURCE, DIAGRAM_REF_SOURCE, ID_SOURCE } from "./ids";
 
 type Def = Parameters<typeof toJsonSchema>[0];
 
@@ -32,8 +32,21 @@ function withoutPosition(schema: JsonSchema): JsonSchema {
   return { ...schema, properties: rest };
 }
 
+// DG-26 — P4: library gap — field.string has no pattern; the ref grammar is added here.
+// No new $defs: a reference node is a node.
+function withRefPattern(schema: JsonSchema): JsonSchema {
+  const all = props(schema);
+  return {
+    ...schema,
+    properties: {
+      ...all,
+      ref: { ...all.ref, pattern: `^(?:${CATALOG_REF_SOURCE}|${DIAGRAM_REF_SOURCE})$` },
+    },
+  };
+}
+
 export function buildArchSchema(): JsonSchema {
-  const node = withIdPattern(fragment(NODE_DEF));
+  const node = withRefPattern(withIdPattern(fragment(NODE_DEF)));
   const zone = withIdPattern(fragment(ZONE_DEF));
   const flowObject = fragment(FLOW_DEF);
 
@@ -86,7 +99,7 @@ export function buildArchSchema(): JsonSchema {
 
   return {
     ...root,
-    title: "brand-ui architecture diagram (dialect v0)",
+    title: "brand-ui architecture diagram (dialect v1)",
     properties: {
       ...rootProps,
       zones: zonesBase,

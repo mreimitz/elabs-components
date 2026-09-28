@@ -25,7 +25,7 @@ import {
 import { WithTooltip } from "../shell/with-tooltip";
 import { compileText } from "../state/compile-text";
 import { diagramActions, diagramStore, fileActions } from "../state/diagram-store";
-import { historyActions, useHistoryCounts } from "../state/history";
+import { canUseHistory, historyActions, useHistoryCounts } from "../state/history";
 import { exportYaml, importYamlFile, YAML_ACCEPT } from "./files";
 import { currentFolder, workspaceActions } from "../workspace/workspace-store";
 import { openDoc } from "../shell/mode-store";
@@ -147,13 +147,23 @@ export interface DocumentControlsProps {
   compact: boolean;
   /** Undo and Redo show (edit mode). */
   showHistory?: boolean;
+  /** maintainer 2026-09-27 (review round, SF-1): the visual lens is showing or mid-transition
+   * — Undo/Redo would otherwise rewrite the hidden technical text. `TopBar` computes this once
+   * (the same `lensTarget !== "technical"` its own direction/node-style/layout controls use,
+   * F5) and passes it down, so the button and the document-level ⌘Z shortcut (`history.ts`'s
+   * `canUseHistory`) never disagree. */
+  historyDisabled?: boolean;
 }
 
 /**
  * Always mounted: it owns the file input, the replace dialog and the share-link listener,
  * whichever bar is showing.
  */
-export function DocumentControls({ compact, showHistory = true }: DocumentControlsProps) {
+export function DocumentControls({
+  compact,
+  showHistory = true,
+  historyDisabled = false,
+}: DocumentControlsProps) {
   const { undo, redo } = useHistoryCounts();
   const [pending, setPending] = useState<IncomingDoc | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -235,20 +245,20 @@ export function DocumentControls({ compact, showHistory = true }: DocumentContro
             icon={<Undo2 />}
             variant="ghost"
             size="icon-sm"
-            aria-disabled={undo === 0}
+            aria-disabled={undo === 0 || historyDisabled}
             className="aria-disabled:opacity-50"
             aria-keyshortcuts="Control+Z Meta+Z"
-            onClick={() => historyActions.undo()}
+            onClick={() => canUseHistory() && historyActions.undo()}
           />
           <IconButton
             label={DOCUMENT_LABELS.redo}
             icon={<Redo2 />}
             variant="ghost"
             size="icon-sm"
-            aria-disabled={redo === 0}
+            aria-disabled={redo === 0 || historyDisabled}
             className="aria-disabled:opacity-50"
             aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y"
-            onClick={() => historyActions.redo()}
+            onClick={() => canUseHistory() && historyActions.redo()}
           />
         </>
       ) : null}

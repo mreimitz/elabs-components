@@ -2,8 +2,7 @@
  * DG-13 — the example gallery (plan D13 + §11 "Fourth example"). DG-21 moved the YAML files
  * into the workspace (`apps/diagram/workspace/examples/`), where they are ordinary documents:
  * opened, autosaved and versioned like any diagram. This is now a thin list of their workspace
- * paths (the "New from template" flow, DG-23). The `description` is the sidebar's tooltip; the
- * dialect has no diagram-level `description` key yet (DG-13 findings: dialect v0.1 input).
+ * paths (the "New from template" flow, DG-23). The `description` is the sidebar's tooltip.
  */
 
 export interface DiagramExample {

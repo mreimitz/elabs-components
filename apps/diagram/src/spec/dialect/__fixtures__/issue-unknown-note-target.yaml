@@ -5,4 +5,9 @@ nodes:
 notes:
   - at: ghost
     text: Hello
+  # DG-26 — "a" is a plain node, not a diagram reference (F9): says "No node or zone…", not
+  # "inside a referenced diagram".
+  - at: a.x
+    text: World
 # expect: unknown-note-target @ 6:9
+# expect: unknown-note-target @ 10:9

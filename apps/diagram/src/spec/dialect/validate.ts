@@ -1,4 +1,5 @@
 /** Cross-reference checks on the normalized AST. Pure: no DOM, no fetch, no JSON imports. React-free. */
+import { endHead, refForm } from "./ids";
 import { issue, type ArchIssue } from "./issues";
 import { nearestName } from "./nearest-name";
 import { joinPath } from "./source-map";
@@ -99,10 +100,38 @@ export function validateArch(ast: ArchDiagram, iconNames: ReadonlySet<string>): 
     }
   }
 
+  // DG-26 — nodes whose ref is a diagram: the only heads a dotted flow end may have (V4).
+  const diagramRefOf = new Map(
+    ast.nodes.flatMap((n) =>
+      n.ref !== undefined && refForm(n.ref) === "diagram" ? [[n.id, n.ref] as const] : [],
+    ),
+  );
+  // A node whose ref does not parse as a catalog reference either draws collapsed (a diagram
+  // ref) or is already flagged by `bad-ref`; either way a dotted flow end or `expand:` through
+  // it should not also cascade a second, redundant issue.
+  const dottableOf = new Set(
+    ast.nodes.flatMap((n) => (n.ref !== undefined && refForm(n.ref) !== "catalog" ? [n.id] : [])),
+  );
+
   const steps = new Map<number, string>();
   for (const f of ast.flows) {
     for (const end of ["from", "to"] as const) {
       const id = f[end];
+      const head = endHead(id); // DG-26
+      if (head !== id) {
+        if (!dottableOf.has(head)) {
+          out.push(
+            issue(
+              "unknown-endpoint",
+              joinPath(f.path, end),
+              zones.has(head) || nodes.has(head)
+                ? `"${head}" does not reference a diagram, so "${id}" cannot point inside it.`
+                : `No node or zone has the id "${head}".`,
+            ),
+          );
+        }
+        continue; // Part 2 checks the part after the dot against the referenced diagram
+      }
       if (zones.has(id)) {
         out.push(
           issue(
@@ -117,6 +146,23 @@ export function validateArch(ast: ArchDiagram, iconNames: ReadonlySet<string>): 
         );
       }
     }
+    // DG-26 — both ends inside one referenced diagram: a loop on the collapsed node; it belongs there.
+    const fromHead = endHead(f.from);
+    const inside = diagramRefOf.get(fromHead);
+    if (
+      inside !== undefined &&
+      fromHead === endHead(f.to) &&
+      (f.from !== fromHead || f.to !== fromHead)
+    ) {
+      out.push(
+        issue(
+          "inner-flow",
+          f.path,
+          `Both ends are inside "${fromHead}"; draw this flow in ${inside} instead.`,
+        ),
+      );
+    }
+    // end DG-26
     if (f.step !== undefined) {
       const first = steps.get(f.step);
       if (first !== undefined) {
@@ -164,6 +210,33 @@ export function validateArch(ast: ArchDiagram, iconNames: ReadonlySet<string>): 
     }
   }
 
+  // DG-26 — `expand` means something only on a diagram reference. A node whose ref is already
+  // `bad-ref` is skipped too (dottableOf), so this warning does not cascade a second issue.
+  for (const n of ast.nodes) {
+    if (n.expand === undefined || dottableOf.has(n.id)) continue;
+    out.push(
+      issue(
+        "expand-not-diagram",
+        joinPath(n.path, "expand"),
+        '"expand" applies only to a node whose ref names a diagram (ws/…); here it does nothing.',
+      ),
+    );
+  }
+  // A `type:` written on a diagram reference overrides what the reference supplies (maintainer
+  // ruling), but nothing draws that override before Part 2 (the composite renderer is DG-27's).
+  // "service" is the normalizer's default, so a value other than "service" can only be written.
+  for (const n of ast.nodes) {
+    if (n.type === "service" || n.ref === undefined || refForm(n.ref) !== "diagram") continue;
+    out.push(
+      issue(
+        "ref-type-not-drawn",
+        joinPath(n.path, "type"),
+        `"type: ${n.type}" is kept but not drawn until Part 2; the reference still draws as a component.`,
+      ),
+    );
+  }
+  // end DG-26
+
   const providers = new Set([...iconNames].map((name) => name.split("/")[0]));
   for (const z of ast.zones) {
     if (z.provider !== undefined && !providers.has(z.provider)) {
@@ -179,11 +252,14 @@ export function validateArch(ast: ArchDiagram, iconNames: ReadonlySet<string>): 
 
   ast.notes.forEach((n) => {
     if (!zones.has(n.at) && !nodes.has(n.at)) {
+      const head = endHead(n.at); // DG-26
       out.push(
         issue(
           "unknown-note-target",
           joinPath(n.path, "at"),
-          `No node or zone has the id "${n.at}".`,
+          head !== n.at && diagramRefOf.has(head)
+            ? `A note attaches to an id in this file; "${n.at}" is inside a referenced diagram.`
+            : `No node or zone has the id "${n.at}".`,
         ),
       );
     }

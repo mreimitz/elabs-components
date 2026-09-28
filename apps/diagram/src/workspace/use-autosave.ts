@@ -17,7 +17,9 @@ import { toast } from "@elabs-ai/components-ui";
 import { resolveThemeIsDark } from "@elabs-ai/components-tokens";
 import { pictureOfCanvas, pngBlob, type Picture, type PictureScale } from "../io/export";
 import { lensStore } from "../shell/lens-store";
+import { currentMode } from "../shell/mode-store"; // fix-r0 F2/F3: gate the override check on mode
 import { diagramStore } from "../state/diagram-store";
+import { viewOverrideActions } from "../shell/view-overrides-store"; // view mode overrides (maintainer 2026-09-27)
 import { writeThumb } from "./client";
 import { askAboutDiskChange, tellFileGone } from "./live-reload";
 import { workspaceActions, workspaceStore } from "./workspace-store";
@@ -84,18 +86,27 @@ export function installAutosave(): () => void {
     // Plan §9.2: thumbnails are light. The exporter paints in the page's theme
     // (io/export.ts has no theme option), so a dark page skips the thumbnail.
     if (resolveThemeIsDark()) return;
+    // view mode overrides (maintainer 2026-09-27, fix-r0 F2/F3): never a viewer's own choice.
+    // A save can only land while editing, when the canvas already shows the file's own values
+    // regardless of any override recorded earlier for this document — gate on mode, not just
+    // presence, or an override set once in the session (from an earlier view-mode visit to this
+    // doc) silently suppresses every later edit-mode thumbnail refresh (review-r0 F3, measured:
+    // 2 s to a thumbnail with no override, none within 25 s with one still on record).
+    if (currentMode() !== "edit" && viewOverrideActions.hasOverride(path)) return;
     // Lens switch (maintainer 2026-09-27): the thumbnail is always the technical lens, never
-    // the derived visual one — a previous feature leaked a viewer-only view into the saved
-    // file via a drag and via the thumbnail, and this is that same failure mode's thumbnail
-    // half, so it is refused outright rather than repeated. `position < 1` is `lensStore`'s
-    // settled `lens` field staying `"technical"` for any position short of a fully settled
-    // visual lens (`lens-store.ts`'s `tick`), which is exactly what `pictureOfCanvas`'s
-    // `liveCanvas()` now reads to pick a pane (F2/F3: it used to just take the first
-    // `.react-flow` in the DOM, which happened to be technical — both panes stay mounted,
-    // cross-faded via opacity/`inert`, never unmounted); only at `position === 1` (settled
-    // visual) is there nothing honest to capture, so the thumbnail is skipped for that save
-    // rather than switching the lens back.
-    if (lensStore.get().position >= 1) return;
+    // the derived visual one, and never a frame mid-transition — a previous feature leaked a
+    // viewer-only view into the saved file via a drag and via the thumbnail, and this is that
+    // same failure mode's thumbnail half, so it is refused outright rather than repeated.
+    //
+    // MF-1 (review round 1): a settled `lens === "technical"` alone is not enough — a save can
+    // land while a visual→technical switch is still in flight, where `lens` already reads
+    // "technical" (`lens-store.ts`'s `tick` only flips it once `position` truly reaches its
+    // target) but `position` has not, so `pictureOfCanvas`'s `liveCanvas()` (which is
+    // `data-lens-pane`-aware, F2/F3) could still capture a cross-faded frame. Both the settled
+    // lens AND `position === 0` (fully at the technical end) must hold, or the thumbnail is
+    // skipped for that save rather than capturing something in between.
+    const lens = lensStore.get();
+    if (lens.lens !== "technical" || lens.position !== 0) return;
     lastThumbAt = Date.now();
     try {
       await writeThumb(path, await thumbnailPng(await pictureOfCanvas(compiled.ast?.title)));

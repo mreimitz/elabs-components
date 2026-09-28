@@ -1,15 +1,15 @@
-# yaml-language-server: $schema=../../schema/arch-diagram.v0.schema.json
+# yaml-language-server: $schema=../../schema/arch-diagram.v1.schema.json
 #
 # Qlik Sense Enterprise on Windows, fully on premises. Browser and mobile users reach the
 # site through a WAF and reverse proxy in the DMZ; a central node and two rim nodes share
 # one repository database and one file share; Active Directory provides the users;
 # the signed license key is checked against Qlik's license backend; a Qlik partner
 # supports the site over a site-to-site VPN.
-diagram: "0"
+diagram: "1"
 title: Qlik Sense Enterprise on Windows, on premises with a DMZ
 description: How users reach a three-node Qlik Sense site through the DMZ, and the storage, directory and license check it depends on.
 direction: TB
-nodeStyle: card
+nodeStyle: icon
 legend: auto
 
 styles:

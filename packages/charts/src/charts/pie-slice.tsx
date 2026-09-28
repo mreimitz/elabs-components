@@ -1,6 +1,5 @@
 "use client";
 
-import { arc as arcGenerator } from "@visx/shape";
 import { motion, type Transition, useSpring, useTransform } from "motion/react";
 import { REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
 import { useStillEntrance } from "./use-still-entrance";
@@ -10,24 +9,7 @@ import { pieCssVars, pieDatapointTarget, usePieHover, usePieStable } from "./pie
 import { useEnterComplete } from "./use-enter-complete";
 import { useMountProgress } from "./use-mount-progress";
 import { ChartSelectionMark, resolveMarkPaint, useChartSelection } from "./chart-selection";
-
-// Helper to generate arc path using d3 arc generator
-function generateArcPath(
-  innerRadius: number,
-  outerRadius: number,
-  startAngle: number,
-  endAngle: number,
-  cornerRadius: number,
-  padAngle: number,
-): string {
-  const generator = arcGenerator<unknown>({
-    innerRadius,
-    outerRadius,
-    cornerRadius,
-    padAngle,
-  });
-  return generator({ startAngle, endAngle } as unknown as null) || "";
-}
+import { generateArcPath } from "./pie-ring-engine";
 
 // Calculate the translation offset for a slice to "pop out" along its radial axis
 function getSliceOffset(

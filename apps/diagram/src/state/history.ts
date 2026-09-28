@@ -14,6 +14,7 @@ import { isPresenting } from "../interaction/presentation-mode";
 import { focusCanvasElement, focusedCanvasId } from "../panes/focus-canvas";
 import { WORKSPACE_ID } from "../shell/diagram-shell";
 import { lensStore } from "../shell/lens-store";
+import { currentMode } from "../shell/mode-store"; // view mode is read-only (maintainer 2026-09-27)
 import { createStore } from "./create-store";
 import type { CompiledDiagram } from "./compile-text";
 import { diagramStore, editActions } from "./diagram-store";
@@ -153,20 +154,30 @@ function fromCanvas(target: EventTarget | null): boolean {
 }
 
 /**
+ * Never while presenting (DG-18), outside edit mode (view mode is read-only, maintainer
+ * 2026-09-27), or while the visual lens is showing or mid-transition (review round, F23): its
+ * pane never mounts an undo of its own, but this listener is document-level (`main.tsx`) and
+ * the top-bar's Undo/Redo buttons call `historyActions` directly (SF-1, review round 1) — with
+ * no shared gate, either path would silently undo/redo the TECHNICAL text the person cannot
+ * see, the same write-leak shape F1's delete-key fix closed for drag/delete. Gated on the
+ * lens's `target`, not the settled `lens`, so it stops the instant a switch to visual starts,
+ * not only once the transition lands.
+ */
+export function canUseHistory(): boolean {
+  return (
+    !isPresenting(window.location.hash) &&
+    currentMode() === "edit" &&
+    lensStore.get().target === "technical"
+  );
+}
+
+/**
  * ⌘/Ctrl+Z undoes, ⇧⌘/Ctrl+Z and Ctrl+Y redo, anywhere but in Monaco, a form field or a
- * dialog. Focus follows the change only when the key came from the canvas. Never while
- * presenting (DG-18): presentation is view-only and has no Undo button to show the change.
+ * dialog. Focus follows the change only when the key came from the canvas.
  */
 export function onHistoryKeyDown(event: KeyboardEvent): void {
   if (event.defaultPrevented || event.altKey || !(event.metaKey || event.ctrlKey)) return;
-  if (isPresenting(window.location.hash)) return;
-  // maintainer 2026-09-27 (review round, F23): the visual lens is view-only and its pane
-  // never mounts an undo of its own, but this listener is document-level (`main.tsx`) — with
-  // no gate, ⌘Z while looking at the visual lens silently undid/redid the TECHNICAL text the
-  // person cannot see, the same write-leak shape F1's delete-key fix closed for drag/delete.
-  // Gated on `target`, not the settled `lens`, so it stops the instant a switch to visual
-  // starts, not only once the cross-fade lands.
-  if (lensStore.get().target !== "technical") return;
+  if (!canUseHistory()) return;
   const key = event.key.toLowerCase();
   const redo = (key === "z" && event.shiftKey) || (key === "y" && event.ctrlKey);
   if ((key !== "z" && !redo) || ownsUndo(event.target)) return;

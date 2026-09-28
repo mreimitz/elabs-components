@@ -3,6 +3,7 @@
  * Reads DG-10's `origin` (FlowSpec path → dialect path) and DG-09's AST. React-free.
  */
 import type { ArchFlowSpec, ArchNodeSpec, ArchZoneSpec } from "../spec/dialect";
+import { endHead } from "../spec/dialect/ids"; // DG-26
 import type { CompiledDiagram } from "./compile-text";
 
 export type DiagramEntry =
@@ -64,7 +65,7 @@ export function pathsToDelete(
     }
   }
   for (const flow of ast.flows) {
-    if (gone.has(flow.from) || gone.has(flow.to)) paths.add(flow.path);
+    if (gone.has(endHead(flow.from)) || gone.has(endHead(flow.to))) paths.add(flow.path); // DG-26: dotted ends
   }
   for (const note of ast.notes) if (gone.has(note.at)) paths.add(note.path);
   for (const id of edgeIds) {

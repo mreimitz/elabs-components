@@ -1,8 +1,9 @@
 "use client";
 
 import { ChartParentSize } from "./chart-parent-size";
+import { useChartEnterReveal, useDateBisector } from "./cartesian-shell-hooks";
+import { isChartDefsComponent } from "./chart-defs";
 import { scaleLinear, scaleTime } from "@visx/scale";
-import { bisector } from "d3-array";
 import type { Transition } from "motion/react";
 import {
   Children,
@@ -13,11 +14,9 @@ import {
   type ReactElement,
   type ReactNode,
   useCallback,
-  useEffect,
   useId,
   useMemo,
   useRef,
-  useState,
 } from "react";
 import { cn } from "@elabs-ai/components-ui";
 // Analytics — RM-138 / RM-139
@@ -186,9 +185,6 @@ const ChartCore = memo(function ChartCore({
   children,
   containerRef,
 }: ChartInnerProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [revealEpoch, setRevealEpoch] = useState(0);
-
   const innerWidth = Math.max(0, width - margin.left - margin.right);
   const innerHeight = Math.max(0, height - margin.top - margin.bottom);
 
@@ -200,10 +196,7 @@ const ChartCore = memo(function ChartCore({
     [xDataKey],
   );
 
-  const bisectDate = useMemo(
-    () => bisector<Record<string, unknown>, Date>((d) => xAccessor(d)).left,
-    [xAccessor],
-  );
+  const bisectDate = useDateBisector(xAccessor);
 
   const slotCount = xDomain && xDomainSlotCount != null ? xDomainSlotCount : data.length;
   const slotWidth = innerWidth / Math.max(slotCount, 1);
@@ -284,12 +277,7 @@ const ChartCore = memo(function ChartCore({
   );
 
   // revealSignature replays enter.
-  useEffect(() => {
-    setRevealEpoch((n) => n + 1);
-    setIsLoaded(false);
-    const timer = setTimeout(() => setIsLoaded(true), animationDuration);
-    return () => clearTimeout(timer);
-  }, [animationDuration, revealSignature]);
+  const { isLoaded, revealEpoch } = useChartEnterReveal({ animationDuration, revealSignature });
 
   const { tooltipData, setTooltipData, interactionHandlers, interactionStyle } =
     useChartInteraction({
@@ -305,21 +293,6 @@ const ChartCore = memo(function ChartCore({
     });
 
   const hoveredCandleIndex = tooltipData?.index ?? null;
-
-  const isDefsComponent = (child: ReactElement): boolean => {
-    const displayName =
-      (child.type as { displayName?: string })?.displayName ||
-      (child.type as { name?: string })?.name ||
-      "";
-    return (
-      displayName.includes("Gradient") ||
-      displayName.includes("Pattern") ||
-      displayName === "LinearGradient" ||
-      displayName === "RadialGradient" ||
-      displayName === "Lines" ||
-      displayName === "PatternLines"
-    );
-  };
 
   // Under a window (`xDomain`, the navigator's or the caller's) rows outside
   // the domain still map through `xScale` — to the left of the plot, over the
@@ -339,7 +312,7 @@ const ChartCore = memo(function ChartCore({
     if (!isValidElement(child)) {
       return;
     }
-    if (isDefsComponent(child)) {
+    if (isChartDefsComponent(child)) {
       defsChildren.push(child);
     } else if (clipMarks && isMarkComponent(child)) {
       // Wrapped in place so the caller's paint order (grid, candles, axes) holds.

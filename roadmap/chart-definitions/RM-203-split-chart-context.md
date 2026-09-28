@@ -14,7 +14,8 @@ touches:
   - packages/charts/src/charts/series-bar.tsx, series-bar-layout.ts, composed-chart.tsx, time-series-chart-shell.tsx, bar-chart.tsx (read the sub-providers)
   - packages/charts/src/charts/chart-legend.tsx, legend/legend-context.tsx, pie-grouping.ts, scatter-encodings.ts (one legend item type; the old names stay as type aliases)
   - packages/charts/src/charts/chart-legend-hover.tsx, legend/shared-legend-hover.tsx, profit-loss-legend-hover.tsx (one hover context)
-  - .changeset/*.md (minor — internal; public type names kept as aliases)
+  - packages/charts/src/charts/pie-chart.tsx, ring-chart.tsx (their two contexts, each carrying a 12-colour list; handed on from RM-202)
+  - .changeset/*.md (patch — internal; public type names kept as aliases)
 source: docs/review/2026-09-25-charts-unification-review.md F38, F04
 ---
 
@@ -29,6 +30,7 @@ source: docs/review/2026-09-25-charts-unification-review.md F38, F04
 
 - Composed-only fields move to a Composed sub-provider; bar-private state (`barColorOf`, `barCrossInset`, `categoryAxisPlan`) to a Bar sub-provider; the band fields stay in the commons as a typed x-scale variant.
 - One legend item type and one hover context; old type names remain exported as aliases.
+- PieChart and RingChart contexts converge on one shape, with one colour list (the part of F28 RM-202 left out).
 
 ## Acceptance
 

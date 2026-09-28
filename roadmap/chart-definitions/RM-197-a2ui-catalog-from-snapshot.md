@@ -1,7 +1,7 @@
 ---
 id: RM-197
 title: "A2UI catalog from the snapshot (deprecated names kept and flagged; `Responsive` schema; choropleth prose)"
-status: planned
+status: done
 priority: P1
 effort: M (2 days)
 wave: 5
