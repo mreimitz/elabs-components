@@ -51,8 +51,8 @@ The roadmap item's own body carries reference code from a branch that was never 
 re-checked against the current tree. Concretely, real `origin/main` was **better** than the
 roadmap assumed in two places:
 
-- `openDoc(path, options)` (`shell/mode-store.ts:307`) already takes a `{ mode?: DocMode }`
-  option — the roadmap's plan called for adding one. Home just passes `{ mode: "edit" }`.
+- `openDoc` (`shell/mode-store.ts`) already takes a `{ mode?: DocMode }` option — the
+  roadmap's plan called for adding one. Home just passes `{ mode: "edit" }`.
 - `src/catalog/catalog-service.ts` already exists (DG-24 merged after the roadmap item was
   written) — nothing to stub.
 
@@ -249,7 +249,8 @@ screenshot of the failure state, the same limitation the round-0 verify pass alr
 `empty-workspace-state`. (Correction, round 2: the failure state can in fact be driven live, without
 server-side fault injection, by setting the store directly — `await
 import("/src/workspace/workspace-store.ts")` then `workspaceStore.set({ tree: null, treeError:
-"…" })` — and round 2's own verify pass did exactly that.)
+"…" })` — and round 2's own review pass did exactly that; its verify pass instead drove the
+failure state live through a full-URL route.)
 
 ## Review round 2 — fixes
 
@@ -294,8 +295,41 @@ in scope; addressed on `diagram/home-followups` (branched from `diagram/home` af
   (`min-h-6`).
 - **Not fixed / accepted as-is:** moving keyboard focus to the Recent heading when a failed tree
   load recovers (today it drops to `<body>`) was left for a later pass — it needs its own
-  imperative focus wiring between `TreeErrorPanel` and `HomeView`, not a one-line fix. Running the
-  `ref:` scan's captured text through the dialect's own `refFileOf` (so a match inside a quoted
-  string or block scalar cannot resolve to a component that does not exist) and copying a
-  template's thumbnail alongside a fresh copy were both left as-is; neither is a defect users can
-  see today.
+  imperative focus wiring between `TreeErrorPanel` and `HomeView`, not a one-line fix (done in
+  "Home follow-ups, second pass" below). Running the `ref:` scan's captured text through the
+  dialect's own `refFileOf` (so a match inside a quoted string or block scalar cannot resolve to a
+  component that does not exist) and copying a template's thumbnail alongside a fresh copy were
+  both left as-is; neither is a defect users can see today.
+
+## Home follow-ups, second pass
+
+A follow-up pass on `diagram/home-copies` (branched from `origin/main` after the round-2 fixes
+above had landed), evidence in `.evidence/home-copies/fix-r0/`.
+
+- **`titleWithCopySuffix` now edits only the title's own CST token**, via `yaml`'s `Parser` +
+  `CST.resolveAsScalar`/`CST.setScalarValue` (`src/home/templates.ts`), instead of a single-line
+  string replace. The replace missed several forms a hand-authored template can legally use: a
+  single-quoted title with an `''` escape, a double-quoted title with a `\"` escape, and a `|`/`>-`
+  block-scalar title all produced either the wrong text or invalid YAML; a trailing `# comment`
+  had the suffix land inside the comment instead of the title. Editing the CST token directly
+  keeps every other byte of the file untouched (checked against both shipped templates: exactly
+  one line changes) and lets `yaml` re-escape the new value correctly for whichever quoting style
+  the title already used.
+- **The copy marker survives truncation.** `splitCopySuffix` (`src/home/templates.ts`) splits a
+  title into its base text and a trailing `(copy)`/`(copy N)` marker; `RecentCard`, `FolderList`,
+  the Used-in popover and the open-document tab strip all render the marker as its own
+  non-shrinking part instead of letting `line-clamp`/`truncate` cut it off along with the rest of
+  a long title.
+- **Focus after a Retry recovers.** `TreeErrorPanel` takes an optional `onRecovered` callback,
+  called once `workspaceActions.refreshTree()` resolves; `HomeView` uses it to move focus to the
+  Recent heading (`tabIndex={-1}`) instead of leaving it to drop to `<body>` when the panel
+  unmounts. `TreeErrorPanel` also takes `titleAs` (default `h3`, kept in the template picker
+  dialog); at Home's page level, where the sections' own `h2`s are hidden while it shows, it is
+  now `h2` so it sits directly under the page's `h1`.
+- **Nits fixed alongside the above:** `copyTemplate` now calls `createUniqueFile` (extended to take
+  a name-and-attempt-number function, not just a fixed string) instead of re-implementing its
+  numbering loop; the Connect dialog's "Selected — press Ctrl+C or ⌘C to copy" status now clears
+  itself a few seconds after a fallback copy, rather than staying on screen indefinitely once a
+  later copy (from either snippet) has moved on; `tree-error-panel.tsx`'s header comment now
+  describes the one page-level panel Home actually renders, not one per section; `templateFiles`'s
+  doc comment now says it also matches a diagram nested under a `templates/` subfolder.
