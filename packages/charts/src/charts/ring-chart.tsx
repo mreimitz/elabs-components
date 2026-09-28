@@ -491,6 +491,7 @@ function ringChartCorePropsEqual(prev: RingChartInnerProps, next: RingChartInner
 // Exported (RM-183 review fix3, `defaults reality` in `definitions.test.ts`
 // only) so that suite can compare its OWN destructuring defaults — never
 // `CHART_DEFINITIONS.RingChart.defaults` — against the public component's DOM.
+// charts-responsive-exempt: renders through RadialChartSizing, which renders <ChartPlotRoot> itself — not a *-chart.tsx file, so the static scan below can't see it
 export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingChart(
   {
     data,
@@ -642,6 +643,7 @@ RingChartBase.displayName = "RingChartBase";
  * @dataShape one proportion against its maximum, read as a single ring
  * @avoidWhen several categories matter — use a pie or unit chart
  */
+// charts-responsive-exempt: renders RingChartBase, which is itself exempt (renders through RadialChartSizing)
 export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(
   function RingChart(rawProps, ref) {
     // RM-183: every default comes from the definition (`RING_CHART`).

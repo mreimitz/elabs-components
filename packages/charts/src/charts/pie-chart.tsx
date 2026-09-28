@@ -958,6 +958,7 @@ function pieChartCorePropsEqual(prev: PieChartInnerProps, next: PieChartInnerPro
 // Exported (RM-183 review fix3, `defaults reality` in `definitions.test.ts`
 // only) so that suite can compare its OWN destructuring defaults — never
 // `CHART_DEFINITIONS.PieChart.defaults` — against the public component's DOM.
+// charts-responsive-exempt: renders through RadialChartSizing, which renders <ChartPlotRoot> itself — not a *-chart.tsx file, so the static scan below can't see it
 export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart(
   {
     data,
@@ -1232,6 +1233,7 @@ PieChartBase.displayName = "PieChartBase";
  * @dataShape parts of a whole across a few categories, read as proportions of the total
  * @avoidWhen more than 5 slices — use a bar or unit chart
  */
+// charts-responsive-exempt: renders PieChartBase, which is itself exempt (renders through RadialChartSizing)
 export const PieChart = forwardRef<HTMLDivElement, PieChartProps>(function PieChart(rawProps, ref) {
   // RM-183: every default comes from the definition (`PIE_CHART`).
   const props = useResolvedChartProps(PIE_CHART, rawProps);
