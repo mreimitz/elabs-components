@@ -173,7 +173,7 @@ export function validateArch(
             break;
           }
           ref = "ref" in target ? target.ref : undefined;
-          if (!ref && index < parts.length - 1) {
+          if (!(ref && refFileOf(ref)) && index < parts.length - 1) {
             out.push(
               issue(
                 "unknown-endpoint",
