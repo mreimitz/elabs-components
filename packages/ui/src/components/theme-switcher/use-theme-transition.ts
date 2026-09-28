@@ -10,6 +10,9 @@ type ViewTransitionDocument = Document & {
   startViewTransition?: (callback: () => void | Promise<void>) => { finished: Promise<void> };
 };
 
+// Shared across hook instances: a finishing reveal only owns its own attributes.
+const activeTransitions = new WeakMap<HTMLElement, object>();
+
 /**
  * Returns a theme setter that animates the whole-screen switch via the View
  * Transitions API (the chanhdai.com "theme toggle effect", adapted to brand-ui).
@@ -51,11 +54,22 @@ export function useThemeTransition(effect: ThemeTransitionEffect = "polygon") {
         ? "to-dark"
         : "to-light";
       root.dataset.vtEffect = effect;
-      const transition = doc.startViewTransition(() => setTheme(next));
-      transition.finished.finally(() => {
+      const owner = {};
+      activeTransitions.set(root, owner);
+      const cleanup = () => {
+        if (activeTransitions.get(root) !== owner) return;
+        activeTransitions.delete(root);
         delete root.dataset.vt;
         delete root.dataset.vtEffect;
-      });
+      };
+      try {
+        const transition = doc.startViewTransition(() => setTheme(next));
+        // Both outcomes are handled; finally would create another rejected promise.
+        void transition.finished.then(cleanup, cleanup);
+      } catch {
+        cleanup();
+        setTheme(next);
+      }
     },
     [theme, setTheme, reduced, effect, themeDefinitions],
   );

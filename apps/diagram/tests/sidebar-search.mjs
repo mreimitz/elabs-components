@@ -72,7 +72,10 @@ try {
       await page.route("**/api/workspace/file?*", (route) => {
         const path = new URL(route.request().url()).searchParams.get("path");
         return fixtures[path]
-          ? route.fulfill({ body: fixtures[path], headers: { "X-Workspace-Mtime": "1" } })
+          ? route.fulfill({
+              body: fixtures[path],
+              headers: { "X-Workspace-Mtime": "1", "Content-Type": "text/yaml" },
+            })
           : route.continue();
       });
       await page.goto(`${baseURL}/#home`);

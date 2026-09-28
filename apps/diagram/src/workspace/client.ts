@@ -120,10 +120,21 @@ export function thumbPathOf(path: string): string {
 /** `GET /file`: the text and the mtime it was read at. */
 export async function readFile(path: string): Promise<{ text: string; mtime: number }> {
   const response = await check(await fetch(fileUrl(path), { cache: "no-store" }));
-  return {
-    text: await response.text(),
-    mtime: Number(response.headers.get("X-Workspace-Mtime")),
-  };
+  const stamp = response.headers.get("X-Workspace-Mtime");
+  const mtime = stamp === null ? NaN : Number(stamp);
+  const type = response.headers.get("Content-Type")?.split(";", 1)[0]?.trim();
+  if (
+    !Number.isFinite(mtime) ||
+    mtime <= 0 ||
+    !["text/yaml", "application/yaml", "text/plain"].includes(type ?? "")
+  ) {
+    throw new WorkspaceApiError(
+      503,
+      "The workspace service is unavailable. Open this diagram in the running local app.",
+      "workspace-unavailable",
+    );
+  }
+  return { text: await response.text(), mtime };
 }
 
 export interface WriteOptions {
