@@ -17,6 +17,7 @@ import { diagramStore, editActions } from "../state/diagram-store";
 import { navigate, parseRoute } from "../routes/use-hash";
 import { lensActions } from "./lens-store";
 import { currentMode, modeActions, modeStore } from "./mode-store";
+import { searchActions } from "./search-store";
 
 // ── The list (Settings, docs/keyboard.md) ─────────────────────────────────────────────
 
@@ -49,6 +50,11 @@ export const SHORTCUTS: readonly Shortcut[] = [
     label: "Back out: close the inspector, then leave edit mode, then leave presenting",
   },
   { id: "sidebar", keys: ["Mod", "B"], label: "Show or hide the sidebar" },
+  {
+    id: "search",
+    keys: ["/"],
+    label: "Focus the workspace search (opens the sidebar first if it is collapsed)",
+  },
   { id: "undo", keys: ["Mod", "Z"], label: "Undo (edit mode)" },
   { id: "redo", keys: ["Mod", "Shift", "Z"], label: "Redo (edit mode)" },
 ];
@@ -93,6 +99,10 @@ export function useStoryKeys(keys: StoryKeys): void {
 const TEXT_ENTRY =
   "input, textarea, select, [contenteditable]:not([contenteditable='false']), .monaco-editor";
 const OVERLAY = "[role=dialog], [role=alertdialog], [role=menu], [role=listbox]";
+/** The sidebar's own mobile sheet (`data-mobile="true"`, `packages/ui` `Sidebar`) — "/" reaches
+ * the search box from inside it exactly as it does from the desktop's persistent sidebar; every
+ * OTHER `role=dialog` (rename, trash-confirm, the palette) still blocks it. */
+const MOBILE_SIDEBAR_SHEET = '[data-mobile="true"]';
 /** Arrow keys already mean something here (moving nodes, roving focus, sliders). */
 const ARROW_OWNERS =
   ".react-flow, [role=tablist], [role=radiogroup], [role=toolbar], [role=slider], [role=menu]";
@@ -150,6 +160,16 @@ export function onShellKeyDown(event: KeyboardEvent): void {
     event.preventDefault();
     if (event.key === "ArrowLeft") storyKeys.previous();
     else storyKeys.next();
+    return;
+  }
+  // Checked ahead of the `shiftKey` guard below: `event.key` is already layout-resolved, so
+  // this is the one binding that must fire on a layout where "/" needs Shift (German, Swiss,
+  // Nordic: Shift+7) — the letter shortcuts below stay Shift-free. No `doc` requirement: the
+  // search box lives in the rail, shown on every route.
+  if (event.key === "/") {
+    if (closestOf(event.target, OVERLAY) && !closestOf(event.target, MOBILE_SIDEBAR_SHEET)) return;
+    event.preventDefault();
+    searchActions.requestFocus();
     return;
   }
   if (event.shiftKey || closestOf(event.target, OVERLAY)) return;

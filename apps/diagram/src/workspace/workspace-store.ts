@@ -168,6 +168,16 @@ export type SaveOutcome =
   | { kind: "gone" }
   | { kind: "failed"; error: unknown };
 
+/** Successful local writes let view state acknowledge revisions it has already observed. */
+const fileSaveListeners = new Set<(path: string, mtime: number) => void>();
+
+export function onWorkspaceFileSaved(listener: (path: string, mtime: number) => void): () => void {
+  fileSaveListeners.add(listener);
+  return () => {
+    fileSaveListeners.delete(listener);
+  };
+}
+
 async function writeCurrent(force: boolean): Promise<SaveOutcome> {
   const { path, text, loadedText } = diagramStore.get();
   const { current, conflict } = workspaceStore.get();
@@ -194,6 +204,7 @@ async function writeCurrent(force: boolean): Promise<SaveOutcome> {
         conflict: false,
       });
     }
+    for (const listener of fileSaveListeners) listener(path, written.mtime);
     return { kind: "saved", path, text };
   } catch (error) {
     workspaceStore.set({ save: "error" });

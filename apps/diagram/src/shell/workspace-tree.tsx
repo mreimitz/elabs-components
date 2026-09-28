@@ -15,12 +15,15 @@
  * DG-22-shell-v2.md §19.
  */
 import {
+  useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
   type DragEvent,
   type MouseEvent,
+  type ReactNode,
 } from "react";
 import {
   ChevronRight,
@@ -68,6 +71,16 @@ import {
 import { createStore } from "../state/create-store";
 import { toHash, useRoute } from "../routes/use-hash";
 import type { WorkspaceFile, WorkspaceTree as WorkspaceTreeData } from "../workspace/client";
+import {
+  indexStore,
+  matchEntry,
+  queryWords,
+  normalizeText,
+  type EntryMatch,
+  type FieldMatch,
+  type MatchField,
+  type MatchRange,
+} from "../workspace/search-index";
 import { folderOf, useWorkspace, workspaceActions } from "../workspace/workspace-store";
 import {
   activeElement,
@@ -78,6 +91,7 @@ import {
   treeRowElement,
 } from "./focus";
 import { fileTitle, modeActions, openDoc } from "./mode-store";
+import { isFiltering, useSearchQuery } from "./search-store";
 
 /** The tree's strings, in one place (`conventions/i18n-strings`). */
 const TREE_LABELS = {
@@ -85,7 +99,7 @@ const TREE_LABELS = {
   loadFailed: "Could not load the workspace",
   // n7: a plain sentence first — "Failed to fetch" alone named a browser API, not a cause a
   // person here can act on. The raw message stays, but as secondary detail.
-  loadFailedHint: "The dev server did not answer.",
+  loadFailedHint: "The workspace could not be read from the dev server.",
   loadFailedAttempt: (n: number) => `Attempt ${n}.`,
   retry: "Retry",
   retrying: "Retrying…",
@@ -124,6 +138,22 @@ const TREE_LABELS = {
   trashConfirm: "Move to trash",
   keep: "Keep it",
   failed: (action: string, path: string) => `Could not ${action} “${path}”`,
+  // Sidebar search (maintainer 2026-09-28): filtering the tree by name and content.
+  noMatches: (query: string) => `No diagrams match “${query}”.`,
+  matchCount: (n: number) => (n === 1 ? "1 diagram found" : `${n} diagrams found`),
+  searching: "Searching…",
+  /** A matched field's second-line prefix ("Box: Snowflake", "File: lakehouse-aws.yaml"). */
+  matchField: {
+    title: "Title",
+    fileName: "File",
+    folder: "Folder",
+    id: "ID",
+    ref: "Ref",
+    boxTitle: "Box",
+    subtitle: "Box",
+    icon: "Icon",
+    description: "Description",
+  } satisfies Record<MatchField, string>,
 } as const;
 
 /** `dataTransfer` type of a dragged tree file. */
@@ -183,6 +213,161 @@ export function buildTree(tree: WorkspaceTreeData): TreeEntry[] {
   };
   sort(root.children);
   return root.children;
+}
+
+// ── Search (maintainer 2026-09-28: a search box "below the home button", filtering the
+// whole workspace by name and content) ─────────────────────────────────────────────────
+
+/** `entry`'s folder, then its folder's folder, up to the workspace root — for `matchEntry`'s
+ * "a folder whose name matches shows all its files" (`search-index.ts`). */
+function ancestorFolderNames(folder: string): string[] {
+  const names: string[] = [];
+  for (let at = folder; at !== ""; at = folderOf(at)) names.push(baseName(at));
+  return names;
+}
+
+/**
+ * `entries`, kept to only the files in `matches` and the folders that lead to one — in tree
+ * order, at every depth (a collapsed folder's matches still show: the maintainer asked to search
+ * "the entire workspace", collapsed folders included).
+ */
+function filterEntries(
+  entries: readonly TreeEntry[],
+  matches: ReadonlyMap<string, EntryMatch>,
+): TreeEntry[] {
+  const kept: TreeEntry[] = [];
+  for (const entry of entries) {
+    if (entry.kind === "file") {
+      if (matches.has(entry.path)) kept.push(entry);
+      continue;
+    }
+    const children = filterEntries(entry.children, matches);
+    if (children.length > 0) kept.push({ ...entry, children });
+  }
+  return kept;
+}
+
+/** Where the query's words sit in `text`, bold + underlined (never colour alone — WCAG 1.4.1). */
+function HighlightedText({ text, ranges }: { text: string; ranges: readonly MatchRange[] }) {
+  if (ranges.length === 0) return <>{text}</>;
+  const parts: ReactNode[] = [];
+  let cursor = 0;
+  ranges.forEach((range, index) => {
+    if (range.start > cursor) parts.push(text.slice(cursor, range.start));
+    parts.push(
+      <strong
+        key={index}
+        data-match-range={index}
+        className="font-semibold text-sidebar-foreground underline decoration-2 underline-offset-2"
+      >
+        {text.slice(range.start, range.end)}
+      </strong>,
+    );
+    cursor = range.end;
+  });
+  if (cursor < text.length) parts.push(text.slice(cursor));
+  return <>{parts}</>;
+}
+
+/**
+ * Keep the matched portion intact. The prefix gives up space first, at its START; the
+ * suffix may lose its END. The matched portion wraps when even the word itself is wider
+ * than a deeply nested row. Whitespace belongs to the LTR content, never the RTL prefix.
+ */
+function MatchText({ text, ranges }: { text: string; ranges: readonly MatchRange[] }) {
+  const first = ranges[0]?.start ?? 0;
+  const last = ranges.at(-1)?.end ?? text.length;
+  const prefix = text.slice(0, first);
+  const space = prefix.match(/\s+$/)?.[0] ?? "";
+  const lead = prefix.slice(0, prefix.length - space.length);
+  const core = space + text.slice(first, last);
+  const coreRanges = ranges.map((range) => ({
+    start: range.start - first + space.length,
+    end: range.end - first + space.length,
+  }));
+  return (
+    <span className="flex min-w-0 max-w-full" title={text} data-search-evidence>
+      {lead ? (
+        <span dir="rtl" className="min-w-3 shrink-[9999] truncate">
+          <bdi dir="ltr">{lead}</bdi>
+        </span>
+      ) : null}
+      <span className="min-w-0 whitespace-pre-wrap break-all">
+        <HighlightedText text={core} ranges={coreRanges} />
+      </span>
+      <span className="min-w-0 shrink-[9999] truncate whitespace-pre">{text.slice(last)}</span>
+    </span>
+  );
+}
+
+/** Each field gets the full available width; long labels cannot crowd out its match. */
+function MatchLine({ reason }: { reason: FieldMatch }) {
+  const label = TREE_LABELS.matchField[reason.field];
+  // One snippet per distinct matching term. Distant matches never expand the intervening
+  // description, and repeated occurrences of the same word do not repeat the explanation.
+  const seen = new Set<string>();
+  const snippets = reason.ranges.filter((range) => {
+    const term = normalizeText(reason.text.slice(range.start, range.end));
+    if (seen.has(term)) return false;
+    seen.add(term);
+    return true;
+  });
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className="flex min-w-0 flex-col text-meta text-sidebar-muted-foreground"
+      >
+        <span>{label}:</span>
+        {snippets.map((range) => (
+          <MatchText key={range.start} text={reason.text} ranges={[range]} />
+        ))}
+      </span>
+      {reason.field === "title" ? null : (
+        <span className="sr-only">
+          {label}: {reason.text}
+        </span>
+      )}
+    </>
+  );
+}
+
+/** DOM measurement runs after match ranges change, including each keystroke, and on rail resize. */
+function useHiddenTitleRanges(ranges: readonly MatchRange[] | undefined) {
+  const titleRef = useRef<HTMLSpanElement>(null);
+  const [hiddenKey, setHiddenKey] = useState("");
+  useLayoutEffect(() => {
+    const title = titleRef.current;
+    if (!title || !ranges?.length) {
+      setHiddenKey("");
+      return;
+    }
+    const measure = () => {
+      if (title.scrollWidth <= title.clientWidth) {
+        setHiddenKey("");
+        return;
+      }
+      const style = getComputedStyle(title);
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      if (context) context.font = style.font;
+      const ellipsisWidth = context?.measureText("…").width ?? parseFloat(style.fontSize);
+      const edge = title.getBoundingClientRect().right - ellipsisWidth;
+      const hidden = [...title.querySelectorAll<HTMLElement>("[data-match-range]")]
+        .filter((match) => match.getBoundingClientRect().right > edge)
+        .map((match) => match.dataset.matchRange);
+      setHiddenKey(hidden.join(","));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(title);
+    return () => observer.disconnect();
+  }, [ranges]);
+  return {
+    titleRef,
+    hiddenRanges:
+      hiddenKey === "" ? [] : hiddenKey.split(",").flatMap((key) => ranges?.[Number(key)] ?? []),
+  };
 }
 
 // ── Dialog state, shared by every row and the root menu ───────────────────────────────
@@ -341,13 +526,26 @@ interface TreeRowsProps {
   collapsed: ReadonlySet<string>;
   onToggle: (path: string, open: boolean) => void;
   onOpenFile: (event: MouseEvent<HTMLAnchorElement>, path: string) => void;
+  /** A non-empty search query: every folder renders expanded regardless of `collapsed`, and
+   * `matches` holds what to show on a matching file's second line. */
+  filtering: boolean;
+  matches: ReadonlyMap<string, EntryMatch>;
 }
 
 function hasTreeDrag(event: DragEvent) {
   return event.dataTransfer.types.includes(TREE_DRAG_TYPE);
 }
 
-function TreeRows({ entries, folders, shown, collapsed, onToggle, onOpenFile }: TreeRowsProps) {
+function TreeRows({
+  entries,
+  folders,
+  shown,
+  collapsed,
+  onToggle,
+  onOpenFile,
+  filtering,
+  matches,
+}: TreeRowsProps) {
   return entries.map((entry) => (
     <TreeItem
       key={entry.path}
@@ -357,14 +555,21 @@ function TreeRows({ entries, folders, shown, collapsed, onToggle, onOpenFile }: 
       collapsed={collapsed}
       onToggle={onToggle}
       onOpenFile={onOpenFile}
+      filtering={filtering}
+      matches={matches}
     />
   ));
 }
 
 function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: TreeEntry }) {
-  const { folders, shown, collapsed, onToggle, onOpenFile } = rest;
+  const { folders, shown, collapsed, onToggle, onOpenFile, filtering, matches } = rest;
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropping, setDropping] = useState(false);
+  const match = matches.get(entry.path);
+  // The title itself is highlighted too when it is where the query matched. Only while
+  // filtering: an empty query never touches the plain title.
+  const titleRanges = filtering ? match?.titleRanges : undefined;
+  const { titleRef, hiddenRanges } = useHiddenTitleRanges(titleRanges);
   const onContextMenu = (event: MouseEvent) => {
     event.preventDefault();
     setMenuOpen(true);
@@ -375,10 +580,17 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
 
   if (entry.kind === "file") {
     const active = entry.path === shown;
+    const reasons = [...(match?.reasons ?? [])];
+    if (hiddenRanges.length > 0)
+      reasons.unshift({ field: "title", text: entry.title, ranges: hiddenRanges });
     return (
       <SidebarMenuSubItem>
         <div className="group/tree-row relative">
-          <SidebarMenuSubButton asChild isActive={active} className="pe-7">
+          <SidebarMenuSubButton
+            asChild
+            isActive={active}
+            className={cn("pe-7", reasons.length > 0 && "h-auto min-h-7 py-1.5")}
+          >
             <a
               href={toHash({ kind: "doc", path: entry.path })}
               aria-current={active ? "page" : undefined}
@@ -393,7 +605,18 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
               onContextMenu={onContextMenu}
             >
               <FileText aria-hidden="true" />
-              <span>{entry.title}</span>
+              <span className="flex min-w-0 flex-col">
+                {/* The row's own name never loses its start: `truncate` trims only the END, and
+                    the full title stays in this link's own `title=` above (a hover reveal) and
+                    in its accessible name (the link's visible text). The match evidence lives on
+                    the second line instead, where matching text can wrap (`MatchLine`). */}
+                <span ref={titleRef} className="truncate">
+                  <HighlightedText text={entry.title} ranges={titleRanges ?? []} />
+                </span>
+                {reasons.map((reason) => (
+                  <MatchLine key={`${reason.field}:${reason.text}`} reason={reason} />
+                ))}
+              </span>
             </a>
           </SidebarMenuSubButton>
           {menu}
@@ -402,7 +625,7 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
     );
   }
 
-  const open = !collapsed.has(entry.path);
+  const open = filtering || !collapsed.has(entry.path);
   return (
     <SidebarMenuSubItem>
       <Collapsible open={open} onOpenChange={(next) => onToggle(entry.path, next)}>
@@ -418,6 +641,11 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
               <button
                 type="button"
                 {...{ [TREE_PATH_ATTR]: entry.path }}
+                // While filtering, every folder renders forced open and this toggle is a no-op
+                // (`onToggle` above) so the pre-search expand state survives clearing. Not
+                // `aria-disabled`: the row's own "…" menu and file drops onto it both stay live
+                // during a search, same as the rail's own Workspace row (`rail-nav.tsx`), which
+                // ignores its toggle the same way without marking itself disabled either.
                 onContextMenu={onContextMenu}
                 onDragOver={(event) => {
                   if (!hasTreeDrag(event)) return;
@@ -662,7 +890,7 @@ export function WorkspaceRootMenu() {
 function TreeLoadError({ message }: { message: string }) {
   const [retrying, setRetrying] = useState(false);
   // n7: bumped on every failed retry, so the alert's own text differs each time (an unchanged
-  // "The dev server did not answer." would otherwise sit through a same-error retry with no
+  // "The workspace could not be read from the dev server." would otherwise sit through a same-error retry with no
   // DOM change, and some assistive tech only re-announces `role="alert"` on one) — without
   // remounting the panel, which would take the Retry button's focus with it.
   const [attempt, setAttempt] = useState(1);
@@ -715,13 +943,62 @@ export function WorkspaceTree() {
   // On a phone the sidebar is a sheet over the page: close it once a file opens.
   const { isMobile, setOpenMobile } = useSidebar();
 
-  const onToggle = (path: string, open: boolean) =>
+  const query = useSearchQuery();
+  const words = useMemo(() => queryWords(query), [query]);
+  // Shared with `rail-nav.tsx` (`isFiltering`), so a whitespace-only query never disagrees about
+  // whether a search is in progress between the rail and the tree.
+  const filtering = isFiltering(query);
+  // `indexStore` is a plain vanilla store (`search-index.ts` stays React-free); `ready` is
+  // `false` until the first build lands, and `search-store.ts` only starts one on the first real
+  // query, so an early query never falsely reads as "no matches".
+  const { entries: indexEntries, ready: indexReady } = useSyncExternalStore(
+    indexStore.subscribe,
+    indexStore.get,
+  );
+  const matches = useMemo(() => {
+    const result = new Map<string, EntryMatch>();
+    if (!filtering) return result;
+    for (const indexed of indexEntries) {
+      const match = matchEntry(indexed, ancestorFolderNames(indexed.folder), words);
+      if (match) result.set(indexed.path, match);
+    }
+    return result;
+  }, [filtering, indexEntries, words]);
+  const filteredEntries = useMemo(
+    () => (filtering ? filterEntries(entries, matches) : entries),
+    [filtering, entries, matches],
+  );
+
+  // While filtering every folder renders forced open regardless of `collapsed` (`TreeItem`), so
+  // a click on a folder's own chevron would otherwise mutate `collapsed` invisibly; ignoring it
+  // keeps `collapsed` exactly as the person left it, and clearing the query needs no restore
+  // step of its own — no `useEffect`-to-sync of the pre-search expand state. The rail's own
+  // Workspace toggle guards the same way (`rail-nav.tsx`).
+  const onToggle = (path: string, open: boolean) => {
+    if (filtering) return;
     setCollapsed((prev) => {
       const next = new Set(prev);
       if (open) next.delete(path);
       else next.add(path);
       return next;
     });
+  };
+
+  // A polite, debounced count — announced once typing (and the first index build) settles, not
+  // on every keystroke, and never while the index has nothing to report yet.
+  const [announced, setAnnounced] = useState("");
+  useEffect(() => {
+    if (!filtering || !indexReady) {
+      setAnnounced("");
+      return;
+    }
+    const id = setTimeout(() => {
+      setAnnounced(
+        matches.size === 0 ? TREE_LABELS.noMatches(query) : TREE_LABELS.matchCount(matches.size),
+      );
+    }, 300);
+    return () => clearTimeout(id);
+  }, [filtering, indexReady, matches.size, query]);
 
   const onOpenFile = (event: MouseEvent<HTMLAnchorElement>, path: string) => {
     // A modified click (new browser tab, …) is the browser's.
@@ -735,6 +1012,9 @@ export function WorkspaceTree() {
 
   return (
     <>
+      <div role="status" aria-live="polite" className="sr-only">
+        {announced}
+      </div>
       <SidebarMenuSub className="me-0 pe-0">
         {tree === null && treeError !== null ? (
           <SidebarMenuSubItem>
@@ -748,14 +1028,29 @@ export function WorkspaceTree() {
               <SidebarMenuSkeleton aria-hidden="true" />
             </div>
           </SidebarMenuSubItem>
+        ) : filtering && !indexReady ? (
+          <SidebarMenuSubItem>
+            <div role="status" aria-live="polite">
+              <span className="sr-only">{TREE_LABELS.searching}</span>
+              <SidebarMenuSkeleton aria-hidden="true" />
+            </div>
+          </SidebarMenuSubItem>
+        ) : filtering && filteredEntries.length === 0 ? (
+          <SidebarMenuSubItem>
+            <div className="px-2 py-1.5 text-meta text-sidebar-muted-foreground">
+              {TREE_LABELS.noMatches(query)}
+            </div>
+          </SidebarMenuSubItem>
         ) : (
           <TreeRows
-            entries={entries}
+            entries={filteredEntries}
             folders={tree.folders}
             shown={shown}
             collapsed={collapsed}
             onToggle={onToggle}
             onOpenFile={onOpenFile}
+            filtering={filtering}
+            matches={matches}
           />
         )}
       </SidebarMenuSub>
