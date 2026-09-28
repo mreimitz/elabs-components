@@ -214,6 +214,20 @@ try {
       `${theme}: endpoint suggestions and rendered hover inherit catalog metadata; explicit overrides and icon previews win`,
     );
 
+    await prepare(overridden.replace("title: Customer queue", 'title: ""'));
+    await page.evaluate(() =>
+      window.__completionEditor.trigger("test", "editor.action.showHover", {}),
+    );
+    const emptyTitleHover = page
+      .locator(".monaco-hover")
+      .filter({ hasText: "Current description" });
+    await expect(emptyTitleHover).toBeVisible();
+    await expect(emptyTitleHover).toContainText("queue");
+    await expect(emptyTitleHover.locator('img[src$="/icons/aws/lambda.svg"]')).toBeVisible();
+    await expect(emptyTitleHover).not.toContainText("Rds");
+    await expect(emptyTitleHover).not.toContainText("****");
+    results.push(`${theme}: an explicitly empty title keeps the remaining hover metadata`);
+
     await prepare('diagram: "1"\nnodes:\n  - comp');
     await page.keyboard.press("Control+Space");
     await accept(

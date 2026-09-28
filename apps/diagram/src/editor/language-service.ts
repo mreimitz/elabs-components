@@ -43,8 +43,14 @@ function endpoints(text: string): EndpointMetadata[] {
 }
 function endpointDocumentation(endpoint: EndpointMetadata) {
   const icon = endpoint.icon ? catalogService.get(endpoint.icon)?.iconPath : undefined;
+  const heading = [
+    endpoint.title ? `**${escapeMarkdown(endpoint.title)}**` : "",
+    endpoint.kind ? escapeMarkdown(endpoint.kind) : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return {
-    value: `${iconMarkdown(icon, endpoint.title)}**${escapeMarkdown(endpoint.title)}**${endpoint.kind ? ` · ${escapeMarkdown(endpoint.kind)}` : ""}${endpoint.description ? `\n\n${escapeMarkdown(endpoint.description)}` : ""}`,
+    value: `${iconMarkdown(icon, endpoint.title)}${heading}${endpoint.description ? `\n\n${escapeMarkdown(endpoint.description)}` : ""}`,
     isTrusted: false,
     supportHtml: false,
   };
@@ -307,7 +313,7 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
       const prose = file
         ? `${file.title ?? file.path}\n\n${file.path}`
         : (endpoint?.title ?? schema.map(schemaHelp).find(Boolean));
-      if (!entry && !prose) return null;
+      if (!entry && !endpoint && !prose) return null;
       const from = candidate.getPositionAt(context.from),
         to = candidate.getPositionAt(context.to);
       return {
