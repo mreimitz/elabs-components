@@ -7,12 +7,33 @@
  */
 import { Folder, FileText } from "lucide-react";
 import { toHash } from "../routes/use-hash";
-import { buildTree, type TreeEntry } from "../shell/workspace-tree";
+import { buildTree, type TreeEntry, type TreeFile } from "../shell/workspace-tree";
+import { splitCopySuffix } from "./templates";
 import type { WorkspaceTree } from "../workspace/client";
 
 interface FolderRowsProps {
   entries: readonly TreeEntry[];
   level: number;
+}
+
+/** A diagram row: the name, clamped to two lines, with its "(copy N)" marker (if any, see
+ *  `splitCopySuffix`) on its own non-clamped line below so a long, clamped title never hides it. */
+function FileRow({ entry }: { entry: TreeFile }) {
+  const { base, marker } = splitCopySuffix(entry.title);
+  return (
+    <a
+      href={toHash({ kind: "doc", path: entry.path })}
+      className="flex items-start gap-2 rounded-md py-1 text-body text-foreground hover:text-primary-text focus-ring"
+    >
+      <FileText aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="line-clamp-2 break-words">{base}</span>
+        {marker !== null ? (
+          <span className="shrink-0 text-meta text-muted-foreground">{marker}</span>
+        ) : null}
+      </span>
+    </a>
+  );
 }
 
 function FolderRows({ entries, level }: FolderRowsProps) {
@@ -36,16 +57,7 @@ function FolderRows({ entries, level }: FolderRowsProps) {
           </li>
         ) : (
           <li key={entry.path}>
-            <a
-              href={toHash({ kind: "doc", path: entry.path })}
-              className="flex items-start gap-2 rounded-md py-1 text-body text-foreground hover:text-primary-text focus-ring"
-            >
-              <FileText
-                aria-hidden="true"
-                className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-              />
-              <span className="min-w-0 line-clamp-2 break-words">{entry.title}</span>
-            </a>
+            <FileRow entry={entry} />
           </li>
         ),
       )}

@@ -10,6 +10,7 @@ import {
 import { toHash } from "../routes/use-hash";
 import { folderOf } from "../workspace/workspace-store";
 import { NoPreview } from "./no-preview";
+import { splitCopySuffix } from "./templates";
 import { thumbSrc } from "./thumbnail";
 
 /** The card's strings, in one place (`conventions/i18n-strings`). */
@@ -39,11 +40,15 @@ export function RecentCard({ path, title, mtime, hasThumb, level = 3 }: RecentCa
   const { locale } = useLocale();
   const folder = folderOf(path);
   const thumb = thumbSrc(path, hasThumb, mtime);
+  // A copy's "(copy N)" marker is rendered on its own line below the (possibly clamped) title,
+  // not appended inside it — `line-clamp-2` on a long title would otherwise cut the marker off
+  // along with the rest of the text, and the two copies would read identically again.
+  const { base, marker } = splitCopySuffix(title);
   return (
     <Card
       interactive
       // No overflow clip on the card: it would cut the focus ring drawn outside the ::after.
-      // w-full: the card fills its grid cell instead of shrinking to its content (review F1).
+      // w-full: the card fills its grid cell instead of shrinking to its content.
       className="relative flex min-w-0 w-full flex-col"
     >
       <CardMedia
@@ -67,9 +72,14 @@ export function RecentCard({ path, title, mtime, hasThumb, level = 3 }: RecentCa
             // Stretched link: the ::after covers the card, and the ring is drawn on it.
             className="after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none focus-visible:after:focus-ring-static"
           >
-            {title}
+            {base}
           </a>
         </Heading>
+        {marker !== null ? (
+          <Text variant="meta" tone="muted" className="shrink-0">
+            {marker}
+          </Text>
+        ) : null}
         <Text variant="meta" tone="muted" className="truncate" translate="no">
           {folder === "" ? RECENT_LABELS.root : folder}
         </Text>
