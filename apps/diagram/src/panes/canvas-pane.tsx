@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   CanvasShell,
   FlowMiniMap,
@@ -219,6 +219,7 @@ function applyViewNodeStyle(
 export function CanvasPane(props: CanvasPaneProps) {
   const position = useLens((s) => s.position);
   const target = useLens((s) => s.target);
+  const viewing = useDocMode() === "view";
   const [chromeTarget, setChromeTarget] = useState<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const technicalRef = useRef<HTMLDivElement>(null);
@@ -272,7 +273,7 @@ export function CanvasPane(props: CanvasPaneProps) {
   const technicalLensLocked = position !== 0 || target !== "technical";
   return (
     <LensChromeTarget.Provider value={chromeTarget}>
-      <div ref={containerRef} data-lens-root className="relative h-full w-full">
+      <div ref={containerRef} data-lens-root className="@container relative h-full w-full">
         <div
           ref={technicalRef}
           data-lens-pane="technical"
@@ -281,13 +282,14 @@ export function CanvasPane(props: CanvasPaneProps) {
           style={
             {
               "--pane-opacity": technicalOpacity,
+              visibility: atVisual ? "hidden" : "visible",
               "--pane-chrome-opacity": 1 - position,
             } as CSSProperties
           }
           aria-hidden={atVisual || undefined}
           inert={atVisual || undefined}
         >
-          <TechnicalCanvasPane {...props} lensLocked={technicalLensLocked} />
+          <TechnicalCanvasPane {...props} lensLocked={technicalLensLocked && !viewing} />
         </div>
         <div
           ref={visualRef}
@@ -297,6 +299,7 @@ export function CanvasPane(props: CanvasPaneProps) {
           style={
             {
               "--pane-opacity": visualOpacity,
+              visibility: atTechnical ? "hidden" : "visible",
               "--pane-chrome-opacity": position,
             } as CSSProperties
           }
@@ -305,7 +308,7 @@ export function CanvasPane(props: CanvasPaneProps) {
         >
           <VisualCanvasPane />
         </div>
-        {morphing ? <LensMorphOverlay containerRef={containerRef} position={position} /> : null}
+        <LensMorphOverlay containerRef={containerRef} position={position} active={morphing} />
         <div ref={setChromeTarget} className="pointer-events-none absolute inset-0 z-20" />
       </div>
     </LensChromeTarget.Provider>
@@ -316,7 +319,10 @@ export function CanvasPane(props: CanvasPaneProps) {
  * The technical canvas: the last compile with a graph (DG-12 store), laid out once (DG-11),
  * then patched in place while only words change.
  */
-function TechnicalCanvasPane({ presenting = false, lensLocked = false }: TechnicalPaneProps) {
+const TechnicalCanvasPane = memo(function TechnicalCanvasPane({
+  presenting = false,
+  lensLocked = false,
+}: TechnicalPaneProps) {
   const drawn = useDiagram((s) => s.drawn);
   const structure = useDiagram((s) => s.structure);
   const stale = useDiagram((s) => s.compiled !== s.drawn);
@@ -435,7 +441,7 @@ function TechnicalCanvasPane({ presenting = false, lensLocked = false }: Technic
       />
     </ReactFlowProvider>
   );
-}
+});
 
 interface DiagramCanvasProps {
   /** For `layout-ready-store.ts`: which document's layout this pane's `status` answers for. */
@@ -637,8 +643,12 @@ function DiagramCanvas({
   // same box re-frames even if the id list is unchanged.
   const frameNodeIds = useLens((s) => s.frameNodeIds);
   const frameKey = useLens((s) => s.frameKey);
+  const technicalSettled = useLens(
+    (s) => s.position === 0 && s.target === "technical" && !s.animating,
+  );
   useEffect(() => {
-    if (status !== "ready" || !frameNodeIds || frameNodeIds.length === 0) return;
+    if (!technicalSettled || status !== "ready" || !frameNodeIds || frameNodeIds.length === 0)
+      return;
     const ids = new Set(frameNodeIds);
     const all = getNodes();
     const targets = all.filter((n) => ids.has(n.id));
@@ -672,7 +682,7 @@ function DiagramCanvas({
       focusCanvasElement(target);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once per `frameKey`, not on every node/edge change
-  }, [frameKey, status]);
+  }, [frameKey, status, technicalSettled]);
 
   // Wave 3: each item's hook returns a slice of CanvasShell props (canvas-props.ts). One
   // line per item, blank lines between, so DG-15 and DG-18 each replace only their own slot.

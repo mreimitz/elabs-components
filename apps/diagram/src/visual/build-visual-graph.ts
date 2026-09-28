@@ -3,6 +3,7 @@ import {
   LANE_HEADER_HEIGHT,
   LANE_PADDING,
   laneGap,
+  skipLaneFlowIds,
   type Rect,
   type VisualLayout,
 } from "./lane-layout";
@@ -17,7 +18,14 @@ import {
 } from "./visual-node-data";
 
 /** Each flow owns its ports and bend column. No two flows share a run or an arrowhead. */
-function routedPath(from: Rect, to: Rect, index: number, count: number, gap: number): string {
+function routedPath(
+  from: Rect,
+  to: Rect,
+  index: number,
+  count: number,
+  gap: number,
+  skipIndex: number,
+): string {
   const fraction = (index + 1) / (count + 1);
   const sourceY = from.y + 12 + fraction * (from.height - 24);
   const targetY = to.y + 12 + fraction * (to.height - 24);
@@ -26,8 +34,10 @@ function routedPath(from: Rect, to: Rect, index: number, count: number, gap: num
   const sourceX = sameLane || forward ? from.x + from.width : from.x;
   const targetX = sameLane || !forward ? to.x + to.width : to.x;
   const offset = LANE_PADDING + 4 + fraction * (gap - 8);
-  const sourceColumn = sourceX + (sameLane || forward ? offset : -offset);
-  const targetColumn = targetX + (sameLane || !forward ? offset : -offset);
+  const sourceColumn =
+    sameLane || forward ? sourceX + offset : sourceX - gap - 2 * LANE_PADDING + offset;
+  const targetColumn =
+    sameLane || !forward ? targetX + offset : targetX - gap - 2 * LANE_PADDING + offset;
   let points: [number, number][];
   if (sameLane || Math.abs(to.x - from.x) <= from.width + 2 * LANE_PADDING + gap + 1) {
     points = [
@@ -37,7 +47,7 @@ function routedPath(from: Rect, to: Rect, index: number, count: number, gap: num
       [targetX, targetY],
     ];
   } else {
-    const channelY = LANE_HEADER_HEIGHT + 8 + index * 8;
+    const channelY = LANE_HEADER_HEIGHT + 8 + skipIndex * 8;
     points = [
       [sourceX, sourceY],
       [sourceColumn, sourceY],
@@ -118,7 +128,14 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
         // order, but a virtual cursor can still land on the `role="img"` group RF renders.
         ariaLabel: `${flow.kind === "data" ? "Data flow" : "Flow"} ${flow.bidirectional ? "between" : "from"} ${fromTitle}${flow.bidirectional ? " and " : " to "}${toTitle}`,
         data: {
-          path: routedPath(from, to, index, lens.flows.length, laneGap(lens)),
+          path: routedPath(
+            from,
+            to,
+            index,
+            lens.flows.length,
+            laneGap(lens),
+            skipLaneFlowIds(lens).indexOf(flow.id),
+          ),
           solid: flow.kind === "data",
           bidirectional: flow.bidirectional,
         },

@@ -95,10 +95,34 @@ function tick(now: number, last: number) {
   rafId = requestAnimationFrame((t) => tick(t, now));
 }
 
+let preparing = false;
+let prepareTransition: (() => Promise<boolean>) | null = null;
+
+/** The mounted canvas prepares both current layouts before the animation clock starts. */
+export function registerLensPreparation(prepare: () => Promise<boolean>): () => void {
+  prepareTransition = prepare;
+  return () => {
+    if (prepareTransition === prepare) prepareTransition = null;
+  };
+}
+
 function ensureAnimating() {
-  if (rafId) return;
+  if (rafId || preparing) return;
+  preparing = true;
   lensStore.set({ animating: true });
-  rafId = requestAnimationFrame((t) => tick(t, t));
+  const prepared = prepareTransition?.() ?? Promise.resolve(false);
+  void prepared
+    .catch(() => false)
+    .then((ready) => {
+      preparing = false;
+      const state = lensStore.get();
+      const endpoint = state.target === "visual" ? 1 : 0;
+      if (!ready || state.position === endpoint) {
+        lensStore.set({ position: endpoint, lens: state.target, animating: false });
+        return;
+      }
+      rafId = requestAnimationFrame((time) => tick(time, time));
+    });
 }
 
 export const lensActions = {

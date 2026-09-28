@@ -10,6 +10,7 @@ import {
   TableRow,
   Text,
 } from "@elabs-ai/components-ui";
+import { visualGeometryIssues } from "../visual/check-visual-geometry";
 import { compileText } from "../state/compile-text";
 import { deriveVisualLens } from "../visual/derive-visual";
 import type { VisualLens } from "../visual/visual-model";
@@ -104,7 +105,17 @@ function checkExample(name: string, text: string): ExampleRow {
   }
 }
 
-const ROWS: ExampleRow[] = [...Object.entries(EXAMPLES), ...Object.entries(TEMPLATES)]
+const COMPONENTS = import.meta.glob<string>("../../workspace/components/*.yaml", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+
+const ROWS: ExampleRow[] = [
+  ...Object.entries(EXAMPLES),
+  ...Object.entries(TEMPLATES),
+  ...Object.entries(COMPONENTS),
+]
   .map(([path, text]) => checkExample(displayName(path), text))
   .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -122,7 +133,7 @@ function structuralIssues(
   actorIds: ReadonlySet<string>,
   nodeIds: ReadonlySet<string>,
 ): string[] {
-  const issues: string[] = [];
+  const issues: string[] = visualGeometryIssues(lens);
   const laneIds = new Set(lens.lanes.map((l) => l.id));
   const boxIds = new Set(lens.boxes.map((b) => b.id));
   // Every real node must land in exactly one box, once — never dropped, never duplicated
@@ -247,6 +258,15 @@ const DERIVE_CASES: DeriveCase[] = [
     },
   },
   {
+    name: "balanced control plane precedes its downstream service",
+    text: `diagram: "0"\nnodes:\n  - { id: ingress, type: actor }\n  - { id: control, type: service }\n  - { id: jobs, type: datastore }\nflows:\n  - ingress -> control: { kind: network }\n  - control -> jobs: { kind: control }\n`,
+    check: (lens) =>
+      lens.boxes.find((box) => box.members.some((member) => member.id === "control"))?.lane ===
+      "sources"
+        ? null
+        : "control plane must be upstream",
+  },
+  {
     name: "mixed-type vendor group → the vendor's name, not the kind",
     text: [
       'diagram: "0"',
@@ -307,7 +327,7 @@ const LENS_CHECK_LABELS = {
   structuralSummary: (passed: number, total: number) =>
     `${passed} of ${total} documents satisfy every structural invariant.`,
   structuralCaption:
-    "Referential integrity, node coverage and the same-kind flow merge, run on real content",
+    "Node coverage, flow direction, distinct routes and box clearance on real content",
   document: "Document",
   issues: "Issues",
   none: "None",

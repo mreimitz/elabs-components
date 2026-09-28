@@ -1,7 +1,9 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { ArchMark } from "../nodes/arch-mark";
 import type { ArchDiagram } from "../spec/dialect";
-import { useDiagram } from "../state/diagram-store";
+import { lensStore, registerLensPreparation } from "../shell/lens-store";
+import { isLayoutReady } from "./layout-ready-store";
+import { diagramStore, useDiagram } from "../state/diagram-store";
 import { deriveVisualLens } from "../visual/derive-visual";
 import { LANE_TITLE, type LaneRole, type VisualBox, type VisualLens } from "../visual/visual-model";
 
@@ -107,6 +109,7 @@ interface MemberGhost {
 
 interface BoxGhost {
   id: string;
+  content: HTMLElement;
   /** A blank rectangle would read as nothing was there — carry the box's own title so the
    * ghost still names what is gathering. */
   title: string;
@@ -210,8 +213,13 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
     const cy = union.top + union.height / 2;
     const fromW = to.width * 0.6;
     const fromH = to.height * 0.6;
+    const content = container.querySelector<HTMLElement>(
+      `[data-lens-pane="visual"] .react-flow__node[data-id="${CSS.escape(box.id)}"] [data-slot="capability-box"]`,
+    );
+    if (!content) continue;
     boxes.push({
       id: box.id,
+      content: content.cloneNode(true) as HTMLElement,
       title: box.title,
       from: { left: cx - fromW / 2, top: cy - fromH / 2, width: fromW, height: fromH },
       to,
@@ -353,32 +361,116 @@ const GATHER_END = 450 / 700;
  * a blank ghost-only interval at either end). */
 export const DRESS_START = 500 / 700;
 
+function BoxContent({ element, textOpacity }: { element: HTMLElement; textOpacity: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const target = ref.current;
+    if (!target) return;
+    const copy = element.cloneNode(true) as HTMLElement;
+    copy.tabIndex = -1;
+    target.replaceChildren(copy);
+    return () => target.replaceChildren();
+  }, [element]);
+  useLayoutEffect(() => {
+    for (const child of ref.current?.firstElementChild?.children ?? [])
+      (child as HTMLElement).style.opacity = String(textOpacity);
+  }, [element, textOpacity]);
+  return <div ref={ref} className="absolute inset-0" />;
+}
+
 export function LensMorphOverlay({
   containerRef,
   position,
+  active,
 }: {
   containerRef: RefObject<HTMLDivElement | null>;
   position: number;
+  active: boolean;
 }) {
   const ast = useDiagram((s) => s.drawn.ast);
   const astRef = useRef(ast);
   astRef.current = ast;
   const [plan, setPlan] = useState<MorphPlan | null>(null);
 
-  // Mount-only capture: `canvas-pane.tsx` renders this component for exactly one transition's
-  // lifetime (mounts when it starts, unmounts once `position` settles at 0 or 1), so "on
-  // mount" already is "before the tween starts" — see `capturePlan`'s own doc comment.
+  // Prepare geometry while idle, after either graph lays out. Starting a transition only
+  // changes compositor transforms; it never synchronously walks and clones both live graphs.
   useLayoutEffect(() => {
     const container = containerRef.current;
-    const currentAst = astRef.current;
-    if (!container || !currentAst) return;
-    setPlan(capturePlan(container, currentAst));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- deliberately mount-only, see above
-  }, []);
+    if (!container) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      clearTimeout(timer);
+      if (lensStore.get().animating) return;
+      timer = setTimeout(() => {
+        if (!lensStore.get().animating && astRef.current)
+          setPlan(capturePlan(container, astRef.current));
+      }, 80);
+    };
+    const observer = new MutationObserver(schedule);
+    for (const pane of container.querySelectorAll("[data-lens-pane]"))
+      observer.observe(pane, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["style"],
+      });
+    const resize = new ResizeObserver(schedule);
+    resize.observe(container);
+    schedule();
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+      resize.disconnect();
+    };
+  }, [containerRef, ast]);
+  useLayoutEffect(() => {
+    let mounted = true;
+    const unregister = registerLensPreparation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          let previous = "";
+          let stableFrames = 0;
+          let attempts = 0;
+          const prepare = () => {
+            const container = containerRef.current;
+            if (!mounted || !container || !astRef.current) {
+              resolve(false);
+              return;
+            }
+            const panes = container.querySelectorAll<HTMLElement>(
+              "[data-lens-pane] .react-flow__viewport",
+            );
+            if (panes.length !== 2) {
+              resolve(false);
+              return;
+            }
+            const signature = [...panes].map((pane) => pane.style.transform).join("|");
+            stableFrames = signature === previous ? stableFrames + 1 : 0;
+            previous = signature;
+            const ready =
+              isLayoutReady(diagramStore.get().path) &&
+              container.querySelector('[data-lens-pane="visual"] [data-visual-ready="true"]');
+            if (ready && stableFrames >= 2) {
+              const next = capturePlan(container, astRef.current);
+              setPlan(next);
+              // Commit the prepared overlay before publishing its first moving frame.
+              requestAnimationFrame(() => resolve(mounted && next !== null));
+            } else if (++attempts < 120) requestAnimationFrame(prepare);
+            else resolve(false);
+          };
+          requestAnimationFrame(prepare);
+        }),
+    );
+    return () => {
+      mounted = false;
+      unregister();
+    };
+  }, [containerRef]);
 
   // The real source/target content participates in exactly the same camera while fading.
   // The stores retain their settled viewports; restore their DOM transform when the tween ends.
   useLayoutEffect(() => {
+    if (!active) return;
     const viewports = [
       ...(containerRef.current?.querySelectorAll<HTMLElement>(".react-flow__viewport") ?? []),
     ];
@@ -387,7 +479,7 @@ export function LensMorphOverlay({
       viewports.forEach((viewport, index) => {
         viewport.style.transform = original[index]!;
       });
-  }, [containerRef]);
+  }, [containerRef, active]);
   const cameraProgress = smoothstep(position);
   const camera = plan
     ? {
@@ -400,19 +492,20 @@ export function LensMorphOverlay({
     ? `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`
     : "";
   useLayoutEffect(() => {
-    if (!cameraTransform) return;
+    if (!active || !cameraTransform) return;
     for (const viewport of containerRef.current?.querySelectorAll<HTMLElement>(
       ".react-flow__viewport",
     ) ?? [])
       viewport.style.transform = cameraTransform;
-  }, [cameraTransform, containerRef]);
+  }, [cameraTransform, containerRef, active]);
   if (!plan) return null;
 
   const gather = subProgress(position, GATHER_START, GATHER_END);
   // "opacity → 0 in the last 30 %" of the gather phase (§7); scale/position keep tweening
   // with `gather` the whole time, so a member ghost is still exactly at its slot in the box
   // when it finishes fading, not left short.
-  const memberOpacity = gather < 0.7 ? 1 : 1 - (gather - 0.7) / 0.3;
+  const textHandoff = subProgress(position, GATHER_END - 0.04, DRESS_START);
+  const memberOpacity = 1 - textHandoff;
   const edgeOut = 1 - smoothstep(position / 0.5);
   const edgeIn = smoothstep((position - 0.5) / 0.5);
   const zoneT = smoothstep(position);
@@ -438,8 +531,9 @@ export function LensMorphOverlay({
   return (
     <div
       className="pointer-events-none absolute inset-0 overflow-hidden"
-      style={{ opacity: overlayOpacity }}
+      style={{ opacity: active ? overlayOpacity : 0, visibility: active ? "visible" : "hidden" }}
       aria-hidden="true"
+      inert
     >
       <div
         data-morph-camera
@@ -486,14 +580,14 @@ export function LensMorphOverlay({
               {zone.fromTitle ? (
                 <div
                   className="text-meta absolute inset-x-0 top-0 truncate px-3 py-2 font-medium tracking-wide text-muted-foreground uppercase"
-                  style={{ opacity: 1 - zoneT }}
+                  style={{ opacity: 1 - subProgress(position, 0, 0.4) }}
                 >
                   {zone.fromTitle}
                 </div>
               ) : null}
               <div
                 className="text-meta absolute inset-x-0 top-0 truncate px-3 py-2 font-medium tracking-wide text-muted-foreground uppercase"
-                style={{ opacity: zoneT }}
+                style={{ opacity: subProgress(position, 0.6, 1) }}
               >
                 {zone.toTitle}
               </div>
@@ -501,22 +595,8 @@ export function LensMorphOverlay({
           </div>
         ))}
         {plan.boxes.map((box) => (
-          <div
-            key={box.id}
-            style={{ ...flipStyle(box.from, box.to, gather), opacity: gather }}
-            className="relative overflow-hidden rounded-lg border-2 border-border bg-card shadow-xs"
-          >
-            {/* `p-3`, `text-caption`/`font-medium`: the real box header's own button padding and
-              type role (`capability-box-node.tsx`'s `data-slot="capability-box-title"`) — this
-              ghost and the real title cross-fade over the exact same `[DRESS_START, 1]` window
-              (`overlayOpacity` here sums to 1 with `canvas-pane.tsx`'s `visualOpacity` the whole
-              time), so any padding or type mismatch reads as two separate texts rather than one
-              smoothly taking over from the other. */}
-            <div style={unscaledLabelStyle(box.from, box.to, gather)}>
-              <div className="text-caption flex items-center truncate p-3 font-medium">
-                {box.title}
-              </div>
-            </div>
+          <div key={box.id} style={{ ...flipStyle(box.from, box.to, gather), opacity: gather }}>
+            <BoxContent element={box.content} textOpacity={textHandoff} />
           </div>
         ))}
         {plan.members.map((member) => (

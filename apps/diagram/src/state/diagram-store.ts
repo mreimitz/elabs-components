@@ -3,6 +3,7 @@
  * every keystroke; the compile runs 150 ms after the last one. The canvas draws the last
  * compile that produced a graph, so a half-typed line never blanks it.
  */
+import { lensStore } from "../shell/lens-store";
 import { useSyncExternalStore } from "react";
 // DG-21: the seed is a workspace document (its `?raw` import does not hot-reload the page:
 // server/workspace-plugin.mjs `hotUpdate`).
@@ -100,6 +101,7 @@ function compileNow() {
 export const diagramActions = {
   /** Every keystroke. The compile follows `COMPILE_DEBOUNCE_MS` after the last one. */
   setText(text: string) {
+    if (lensStore.get().target !== "technical" || lensStore.get().position !== 0) return;
     if (text === diagramStore.get().text) return;
     diagramStore.set({ text });
     clearTimeout(pending);
@@ -134,6 +136,7 @@ export const diagramActions = {
   },
   /** A top-bar toggle: rewrite one top-level key in the text, then compile now. */
   setTopLevel(key: TopLevelScalarKey, value: string) {
+    if (lensStore.get().target !== "technical" || lensStore.get().position !== 0) return;
     const next = setTopLevelScalar(diagramStore.get().text, key, value);
     if (next === null) return;
     clearTimeout(pending);
@@ -181,6 +184,7 @@ export const editActions = {
    * `null`) or changed nothing: the text is left alone.
    */
   applyEdit(edit: TextEditFn): boolean {
+    if (lensStore.get().target !== "technical" || lensStore.get().position !== 0) return false;
     if (pending !== undefined || diagramStore.get().compiledText !== diagramStore.get().text) {
       clearTimeout(pending);
       compileNow();

@@ -10,7 +10,7 @@ import type { CapabilityBoxNodeType } from "./visual-node-data";
 /** The box's strings, in one place (`conventions/i18n-strings`). */
 const BOX_LABELS = {
   contains: (titles: string[]) => `Contains: ${titles.join(", ")}`,
-  drillHint: "Option/Alt-click: show in the technical view",
+  drillHint: "Option/Alt-click or Alt+Enter: show in the technical view",
   aside: "Network & Access",
   /** A box outside every zone (a bare SaaS/actor node, e.g. Salesforce or Okta) is not
    * "Customer managed" — mapping it there was the bug this word replaces. It borrows `hosted`'s
@@ -18,7 +18,7 @@ const BOX_LABELS = {
    * sighted user cannot tell it from a real hosted box by the border alone (both dotted), and a
    * screen reader must not say "Hosted" for a box that is not, nor stay silent where a hosted
    * box would speak. */
-  unowned: "Unowned",
+  unowned: "Owner not set",
 };
 
 const UNOWNED_STYLE_AS: ZoneOwner = "hosted";
@@ -88,7 +88,8 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
       <HoverCardTrigger asChild>
         <button
           type="button"
-          aria-label={`${accessibleName} ${BOX_LABELS.drillHint}`}
+          aria-label={accessibleName}
+          aria-description={BOX_LABELS.drillHint}
           aria-keyshortcuts="Alt+Enter Alt+Space"
           onKeyDown={(event) => {
             if (event.altKey && (event.key === "Enter" || event.key === " ")) {
@@ -143,6 +144,9 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
             ) : null}
             <span className="min-w-0 truncate">{data.title}</span>
           </span>
+          {data.owner === "unowned" ? (
+            <span className="text-meta text-muted-foreground">{BOX_LABELS.unowned}</span>
+          ) : null}
           {/* One row per member — `lane-layout.ts` reserves `BOX_MEMBER_ROW_HEIGHT` per member
               so each is named without a hover, not folded into a single wrapped row of icons.
               A `soleMember` box already named and iconed itself in the header above; the list

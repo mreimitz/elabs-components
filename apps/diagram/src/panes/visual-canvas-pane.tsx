@@ -1,4 +1,5 @@
 import {
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -107,8 +108,10 @@ function VisualFlow({ paneRef, ast, built, source }: VisualFlowProps) {
   const fit = useCallback(() => {
     const pane = paneRef.current?.querySelector<HTMLElement>(".react-flow");
     if (!pane) return;
+    pane.dataset.visualReady = "false";
     void fitView({ padding: chromeFitPadding(pane, getNodes()), duration: 0 }).then(() => {
       userMoved.current = false;
+      pane.dataset.visualReady = "true";
     });
   }, [paneRef, getNodes, fitView]);
 
@@ -176,7 +179,7 @@ function VisualFlow({ paneRef, ast, built, source }: VisualFlowProps) {
   );
 }
 
-export function VisualCanvasPane() {
+export const VisualCanvasPane = memo(function VisualCanvasPane() {
   const blank = useDiagram((s) => s.text.trim() === "");
   const ast = useDiagram((s) => s.drawn.ast);
   const issues = useDiagram((s) => s.drawn.issues);
@@ -264,4 +267,4 @@ export function VisualCanvasPane() {
       </div>
     </ReactFlowProvider>
   );
-}
+});

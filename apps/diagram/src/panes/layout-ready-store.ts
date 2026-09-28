@@ -24,6 +24,11 @@ export const layoutReadyActions = {
   },
 };
 
+export function isLayoutReady(path: string | null): boolean {
+  const state = layoutReadyStore.get();
+  return state.path === path && state.ready;
+}
+
 /** How long to wait for `path`'s layout before giving up without capturing. */
 const LAYOUT_READY_TIMEOUT_MS = 4000;
 
