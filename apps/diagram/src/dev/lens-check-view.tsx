@@ -18,9 +18,12 @@ import type { VisualLens } from "../visual/visual-model";
  * `#dev/lens-check` (maintainer 2026-09-27, "the switch from technical to visual"): there is no
  * test runner in this app (`package.json` has neither vitest nor jest — `spec-check-view.tsx`'s
  * own header note), so `deriveVisualLens` gets the same treatment as the dialect: every shipped
- * example, compiled, derived twice, and checked here instead of in a `*.test.ts` file.
+ * example AND template, compiled, derived twice, and checked here instead of in a `*.test.ts`
+ * file (F17, review round 1: the first version of this page only globbed `examples/`, so a
+ * template-only regression — e.g. the M3 skip-lane routing this same round added — had no
+ * fixture at all here).
  *
- * Two things this page checks, per example:
+ * Two things this page checks, per document:
  * - **it derives at all** — a clean compile with an AST produces a lens with at least one box;
  * - **it is deterministic** — deriving the same AST twice gives byte-identical JSON, since nothing
  *   in `derive-visual.ts` may depend on `Set`/`Object.keys` order, `Date.now()` or any other
@@ -31,12 +34,22 @@ const EXAMPLES = import.meta.glob<string>("../../workspace/examples/*.yaml", {
   import: "default",
   eager: true,
 });
+const TEMPLATES = import.meta.glob<string>("../../workspace/templates/*.yaml", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+
+function displayName(path: string): string {
+  return path.split("/").slice(-2).join("/");
+}
 
 interface ExampleRow {
   name: string;
   ok: boolean;
   deterministic: boolean;
   lens: VisualLens | null;
+  actorIds: ReadonlySet<string> | null;
   error: string | null;
 }
 
@@ -47,27 +60,94 @@ function canonical(lens: VisualLens): string {
 function checkExample(name: string, text: string): ExampleRow {
   const compiled = compileText(text);
   if (!compiled.ast) {
-    return { name, ok: false, deterministic: false, lens: null, error: "did not compile" };
+    return {
+      name,
+      ok: false,
+      deterministic: false,
+      lens: null,
+      actorIds: null,
+      error: "did not compile",
+    };
   }
   try {
     const once = deriveVisualLens(compiled.ast);
     const twice = deriveVisualLens(compiled.ast);
     const deterministic = canonical(once) === canonical(twice);
-    return { name, ok: once.boxes.length > 0, deterministic, lens: once, error: null };
+    const actorIds = new Set(
+      compiled.ast.nodes.filter((node) => node.type === "actor").map((node) => node.id),
+    );
+    return { name, ok: once.boxes.length > 0, deterministic, lens: once, actorIds, error: null };
   } catch (error) {
     return {
       name,
       ok: false,
       deterministic: false,
       lens: null,
+      actorIds: null,
       error: error instanceof Error ? error.message : String(error),
     };
   }
 }
 
-const ROWS: ExampleRow[] = Object.entries(EXAMPLES)
-  .map(([path, text]) => checkExample(path.split("/").pop() ?? path, text))
+const ROWS: ExampleRow[] = [...Object.entries(EXAMPLES), ...Object.entries(TEMPLATES)]
+  .map(([path, text]) => checkExample(displayName(path), text))
   .sort((a, b) => a.name.localeCompare(b.name));
+
+/**
+ * F17 (review round 1): `ROWS` above proves every shipped document derives at all — it says
+ * nothing about whether the derivation is CORRECT. `DERIVE_CASES` below only exercises rules
+ * F6–F9 on small synthetic fixtures, never on the real files. These are the same rules
+ * (referential integrity, F7's kind-scoped merge, F9's actor exemption, the "a collapsed pair
+ * is dropped" rule) restated as invariants any correctly-derived lens must satisfy, run
+ * against every shipped example AND template so a regression in real content — not just the
+ * six hand-written cases — fails here too.
+ */
+function structuralIssues(lens: VisualLens, actorIds: ReadonlySet<string>): string[] {
+  const issues: string[] = [];
+  const laneIds = new Set(lens.lanes.map((l) => l.id));
+  const boxIds = new Set(lens.boxes.map((b) => b.id));
+  for (const box of lens.boxes) {
+    if (!laneIds.has(box.lane)) issues.push(`box "${box.id}" has unknown lane "${box.lane}"`);
+    if (box.members.length === 0) issues.push(`box "${box.id}" has no members`);
+    if (box.aside) {
+      const actor = box.members.find((m) => actorIds.has(m.id));
+      if (actor) issues.push(`aside box "${box.id}" contains actor "${actor.id}" (F9)`);
+    }
+  }
+  // F6/F7: two raw flows between the same box pair, opposite direction, of the SAME kind must
+  // merge into the one bidirectional flow `derive-visual.ts` rule 3 describes — seeing both
+  // directions as separate rows here means that merge did not happen.
+  const pairDirections = new Map<string, { forward: boolean; back: boolean; kind: string }>();
+  for (const flow of lens.flows) {
+    if (!boxIds.has(flow.from)) issues.push(`flow "${flow.id}" has unknown source "${flow.from}"`);
+    if (!boxIds.has(flow.to)) issues.push(`flow "${flow.id}" has unknown target "${flow.to}"`);
+    if (flow.from === flow.to) issues.push(`flow "${flow.id}" is a self-loop (should be dropped)`);
+    const [a, b] = [flow.from, flow.to].sort();
+    const key = `${a}~${b}~${flow.kind}`;
+    const entry = pairDirections.get(key) ?? { forward: false, back: false, kind: flow.kind };
+    if (flow.from === a) entry.forward = true;
+    else entry.back = true;
+    pairDirections.set(key, entry);
+  }
+  for (const [key, entry] of pairDirections) {
+    if (entry.forward && entry.back) {
+      issues.push(
+        `box pair "${key}" has an opposite same-kind pair not merged bidirectional (F6/F7)`,
+      );
+    }
+  }
+  return issues;
+}
+
+interface StructuralRow {
+  name: string;
+  issues: string[];
+}
+
+const STRUCTURAL_ROWS: StructuralRow[] = ROWS.map((row) => ({
+  name: row.name,
+  issues: row.lens && row.actorIds ? structuralIssues(row.lens, row.actorIds) : ["did not derive"],
+}));
 
 /**
  * maintainer 2026-09-27 (review round, F17): `ROWS` above only proves a lens is non-empty and
@@ -174,9 +254,9 @@ const DERIVE_ROWS: DeriveCaseRow[] = DERIVE_CASES.map(({ name, text, check }) =>
 const LENS_CHECK_LABELS = {
   title: "Lens check",
   summary: (passed: number, total: number) =>
-    `${passed} of ${total} examples derive a non-empty, deterministic visual lens.`,
-  caption: "Every shipped example, twice",
-  example: "Example",
+    `${passed} of ${total} documents derive a non-empty, deterministic visual lens.`,
+  caption: "Every shipped example and template, twice",
+  example: "Document",
   result: "Result",
   lanes: "Lanes",
   boxes: "Boxes",
@@ -189,6 +269,14 @@ const LENS_CHECK_LABELS = {
   casesSummary: (passed: number, total: number) => `${passed} of ${total} cases match.`,
   casesCaption: "One small fixture per rule this slice fixed (F6–F9)",
   case: "Case",
+  structuralTitle: "Structural rules",
+  structuralSummary: (passed: number, total: number) =>
+    `${passed} of ${total} documents satisfy every structural invariant.`,
+  structuralCaption:
+    "F6/F7/F9, restated as invariants and run on real content (examples + templates)",
+  document: "Document",
+  issues: "Issues",
+  none: "None",
 } as const;
 
 export function LensCheckView() {
@@ -284,6 +372,47 @@ export function LensCheckView() {
                     {LENS_CHECK_LABELS.error(row.detail)}
                   </Text>
                 ) : null}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <Heading level={2} className="mt-10">
+        {LENS_CHECK_LABELS.structuralTitle}
+      </Heading>
+      <Text className="mt-2" tone="muted">
+        {LENS_CHECK_LABELS.structuralSummary(
+          STRUCTURAL_ROWS.filter((r) => r.issues.length === 0).length,
+          STRUCTURAL_ROWS.length,
+        )}
+      </Text>
+      <Table className="mt-6">
+        <TableCaption>{LENS_CHECK_LABELS.structuralCaption}</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{LENS_CHECK_LABELS.document}</TableHead>
+            <TableHead>{LENS_CHECK_LABELS.result}</TableHead>
+            <TableHead>{LENS_CHECK_LABELS.issues}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {STRUCTURAL_ROWS.map((row) => (
+            <TableRow key={row.name} data-pass={row.issues.length === 0}>
+              <TableCell>
+                <Text as="span" variant="code">
+                  {row.name}
+                </Text>
+              </TableCell>
+              <TableCell>
+                <StatusBadge status={row.issues.length === 0 ? "complete" : "failed"}>
+                  {row.issues.length === 0 ? LENS_CHECK_LABELS.pass : LENS_CHECK_LABELS.fail}
+                </StatusBadge>
+              </TableCell>
+              <TableCell>
+                <Text as="span" variant="caption" tone="muted">
+                  {row.issues.length === 0 ? LENS_CHECK_LABELS.none : row.issues.join("; ")}
+                </Text>
               </TableCell>
             </TableRow>
           ))}
