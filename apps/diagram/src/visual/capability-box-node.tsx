@@ -38,14 +38,34 @@ const UNOWNED_STYLE_AS: ZoneOwner = "hosted";
  */
 export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
   const owner = data.owner === "unowned" ? UNOWNED_STYLE_AS : data.owner;
-  const fill = data.aside ? "muted" : zoneFill(0, owner).fill;
+  // S5 (review round 1): a box sits INSIDE its lane panel, which is itself `bg-surface-muted`
+  // (`lane-panel-node.tsx`) — `zoneFill(0, owner)` treated the box as if it sat directly on
+  // `--canvas`, the same root a top-level ZONE nests into, so a customer box (whose root rung
+  // is "muted") landed on the exact same fill as its lane: 1.00:1, no cue but a `border-border`
+  // hairline (1.15–1.28:1), short of the conventions' "sole cue → border-strong" rule. Depth 1,
+  // not 0, prices the lane panel itself in as the implicit root the box nests one level below —
+  // customer now raises to `bg-card` (a real fill step), and `capped` (past the fill ladder's
+  // last rung) comes from the SAME function that already exists for exactly this case, instead
+  // of the hardcoded `data.aside`-only flag below.
+  const { fill: ownedFill, capped: ownedCapped } = zoneFill(1, owner);
+  const fill = data.aside ? "muted" : ownedFill;
+  const capped = data.aside || ownedCapped;
   const ownerLabel = data.owner === "unowned" ? null : OWNER_LABEL[data.owner];
   const titles = data.members.map((m) => m.title);
   const contains = BOX_LABELS.contains(titles);
+  // S7 (review round 1): a single-member box whose title IS that member's title (derive-visual's
+  // rule 2: a group of exactly one node keeps its own title) printed that title twice — once in
+  // the header, once again as the lone row in the member list below. The header carries the
+  // member's own icon instead, and the (otherwise identical) member-list row is skipped.
+  const onlyMember = data.members.length === 1 ? data.members[0] : undefined;
+  const soleMember =
+    !data.aside && onlyMember !== undefined && onlyMember.title === data.title ? onlyMember : null;
   const label = data.aside
     ? `${data.title} — ${contains}`
     : `${data.title}${titles.length > 1 || titles[0] !== data.title ? ` — ${contains}` : ""}`;
-  const accessibleName = ownerLabel ? `${label}. ${ownerLabel}.` : label;
+  // S6 (review round 1): the lane joins the name — a screen-reader user has no other way to
+  // tell a box's lane, since lane panels are not tab stops (`visual-canvas-pane.tsx`).
+  const accessibleName = `${label}${ownerLabel ? `. ${ownerLabel}` : ""}. ${data.laneTitle}.`;
 
   // React Flow's own edge-position lookup needs a handle on both ends to place an edge at
   // all (its internal `getEdgePosition`, xyflow error #008) even though `VisualFlowEdge`
@@ -77,7 +97,7 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
             // class is `shadow-none` (a zone is a region, not a raised card), so it must lose
             // to this button's own resting `shadow-xs` (a box IS a raised card) when `cn()`
             // (tailwind-merge) resolves the conflict by keeping whichever comes LAST.
-            zoneVariants({ owner, kind: "generic", fill, capped: data.aside }),
+            zoneVariants({ owner, kind: "generic", fill, capped }),
             zoneBodyVariants({ owner }),
             // maintainer 2026-09-27 (review round, F4): the node is deliberately not
             // selectable/draggable/connectable, so React Flow's own node wrapper
@@ -93,19 +113,26 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
             className="text-caption flex min-w-0 items-center gap-1.5 truncate font-medium"
           >
             {data.aside ? <Network aria-hidden="true" className="size-3.5 shrink-0" /> : null}
+            {soleMember ? (
+              <ArchMark icon={soleMember.icon} size={14} variant="mono" className="shrink-0" />
+            ) : null}
             <span className="min-w-0 truncate">{data.title}</span>
           </span>
           {/* maintainer 2026-09-27 (review round, F12): one row per member — `lane-layout.ts`
               already reserves `BOX_MEMBER_ROW_HEIGHT` per member; a single wrapped row of
-              icons left the box half-empty and the members unnamed without a hover. */}
-          <span aria-hidden="true" className="flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
-            {data.members.map((member) => (
-              <span key={member.id} className="flex min-w-0 items-center gap-1.5">
-                <ArchMark icon={member.icon} size={16} variant="mono" className="shrink-0" />
-                <span className="text-meta min-w-0 truncate">{member.title}</span>
-              </span>
-            ))}
-          </span>
+              icons left the box half-empty and the members unnamed without a hover. S7: a
+              `soleMember` box already named and iconed itself in the header above; the list
+              would only repeat it. */}
+          {soleMember ? null : (
+            <span aria-hidden="true" className="flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
+              {data.members.map((member) => (
+                <span key={member.id} className="flex min-w-0 items-center gap-1.5">
+                  <ArchMark icon={member.icon} size={16} variant="mono" className="shrink-0" />
+                  <span className="text-meta min-w-0 truncate">{member.title}</span>
+                </span>
+              ))}
+            </span>
+          )}
         </button>
       </HoverCardTrigger>
       <HoverCardContent aria-hidden="true" className="w-64 text-caption">

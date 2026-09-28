@@ -12,6 +12,19 @@
 @import "./themes/snowflake/snowflake-light.css";
 @import "./themes/snowflake/snowflake-dark.css";
 @import "@xyflow/react/dist/style.css";
+
+/* maintainer 2026-09-27 (review round, MF-4): a capability box's "Contains: …" HoverCardContent
+   renders inside its own React Flow node — every node is its own stacking context, each with an
+   inline `z-index` React Flow sets itself, so a later box in lane order painted over an earlier
+   box's open card. `packages/ui`'s HoverCardContent has no portal (a documented library gap,
+   see docs/findings/lens-switch-slice.md; this app cannot edit packages/), so the workaround is
+   here: raise the hovered/focused node's own stacking context above its siblings. `!important`
+   is required — it must beat React Flow's own inline `style="z-index: …"`, which no ordinary
+   selector specificity can. */
+.react-flow__node:has([data-slot="capability-box"]:hover),
+.react-flow__node:has([data-slot="capability-box"]:focus-visible) {
+  z-index: 20 !important;
+}
 @source "../../../packages/ui/src";
 @source "../../../packages/icons/src";
 @source "../../../packages/flow/src";

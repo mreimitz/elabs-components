@@ -1,6 +1,6 @@
 import { MarkerType, Position, getSmoothStepPath } from "@elabs-ai/components-flow";
 import { LANE_PADDING, type Rect, type VisualLayout } from "./lane-layout";
-import type { VisualFlow, VisualLens } from "./visual-model";
+import { LANE_TITLE, type VisualFlow, type VisualLens } from "./visual-model";
 import {
   VISUAL_BOX_TYPE,
   VISUAL_FLOW_EDGE_TYPE,
@@ -26,6 +26,19 @@ const SAME_LANE_EDGE_OFFSET = LANE_PADDING - 4;
  */
 const SAME_LANE_EDGE_STEP = 10;
 
+/**
+ * S2 (review round 1): F7 already stops an opposite-kind pair (a dashed control flow one way,
+ * a solid data flow the other) from merging into one bidirectional edge — `derive-visual.ts`'s
+ * `pairs` map keys on kind, so they stay two separate `VisualFlow`s. But two flows between the
+ * SAME pair of boxes, in opposite directions, anchor at the same two points either way — swap
+ * `from`/`to` and `anchors()` returns the mirror image of the same line, so the two edges drew
+ * on the exact same path, and a solid line drawn over a dashed one at identical coordinates
+ * reads as one bidirectional data line, the exact false direction F7 set out to remove. Each
+ * flow in such a pair gets a small perpendicular nudge (this constant, ± an index) so the two
+ * render as visibly separate parallel lines instead of one shared path.
+ */
+const CROSS_KIND_PAIR_NUDGE = 6;
+
 interface EdgeAnchor {
   sourceX: number;
   sourceY: number;
@@ -38,10 +51,13 @@ interface EdgeAnchor {
   offset?: number;
 }
 
-/** Where two rects sit relative to each other, for the edge's anchor points and directions. */
-function anchors(from: Rect, to: Rect): EdgeAnchor {
-  const fromMidY = from.y + from.height / 2;
-  const toMidY = to.y + to.height / 2;
+/** Where two rects sit relative to each other, for the edge's anchor points and directions.
+ * `yNudge` (S2, review round 1) shifts both ends by the same amount, straight up or down —
+ * a plain parallel offset that keeps a pair of opposite-direction, different-kind flows
+ * (`CROSS_KIND_PAIR_NUDGE`) from drawing on the exact same line. */
+function anchors(from: Rect, to: Rect, yNudge = 0): EdgeAnchor {
+  const fromMidY = from.y + from.height / 2 + yNudge;
+  const toMidY = to.y + to.height / 2 + yNudge;
   if (to.x >= from.x + from.width) {
     return {
       sourceX: from.x + from.width,
@@ -80,8 +96,8 @@ function anchors(from: Rect, to: Rect): EdgeAnchor {
   };
 }
 
-function edgePath(from: Rect, to: Rect, offsetOverride?: number): string {
-  const anchor = anchors(from, to);
+function edgePath(from: Rect, to: Rect, offsetOverride?: number, yNudge = 0): string {
+  const anchor = anchors(from, to, yNudge);
   const [path] = getSmoothStepPath({
     ...anchor,
     ...(offsetOverride !== undefined ? { offset: offsetOverride } : {}),
@@ -124,7 +140,13 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
       type: VISUAL_BOX_TYPE,
       position: { x: rect.x, y: rect.y },
       style: { width: rect.width, height: rect.height },
-      data: { title: box.title, members: box.members, aside: box.aside ?? false, owner: box.owner },
+      data: {
+        title: box.title,
+        members: box.members,
+        aside: box.aside ?? false,
+        owner: box.owner,
+        laneTitle: LANE_TITLE[box.lane],
+      },
       draggable: false,
       selectable: false,
       connectable: false,
@@ -156,6 +178,30 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
       });
   }
 
+  // S2 (review round 1): a box pair with more than one flow between it (an opposite-kind pair
+  // F7 deliberately keeps as two one-way edges, e.g. dashed control one way, solid data the
+  // other) anchors both edges at the same two points either way — swapping `from`/`to` mirrors
+  // the SAME line, not a different one. Skip the same-lane case: those pairs already fan out
+  // via `sameLaneOffset`'s own X step, and stacking a Y-nudge on top would misalign the dogleg.
+  const crossPairGroup = new Map<string, VisualFlow[]>();
+  for (const flow of lens.flows) {
+    const from = rectOf.get(flow.from);
+    const to = rectOf.get(flow.to);
+    if (!from || !to || anchors(from, to).offset !== undefined) continue;
+    const key = [flow.from, flow.to].sort().join("\u0000");
+    crossPairGroup.set(key, [...(crossPairGroup.get(key) ?? []), flow]);
+  }
+  const crossPairNudge = new Map<string, number>();
+  for (const group of crossPairGroup.values()) {
+    if (group.length < 2) continue;
+    const n = group.length;
+    [...group]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .forEach((flow, index) => {
+        crossPairNudge.set(flow.id, (index - (n - 1) / 2) * CROSS_KIND_PAIR_NUDGE);
+      });
+  }
+
   const edges: VisualFlowEdgeType[] = lens.flows
     .map((flow: VisualFlow) => {
       const from = rectOf.get(flow.from);
@@ -167,14 +213,29 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
         target: flow.to,
         type: VISUAL_FLOW_EDGE_TYPE,
         data: {
-          path: edgePath(from, to, sameLaneOffset.get(flow.id)),
+          path: edgePath(from, to, sameLaneOffset.get(flow.id), crossPairNudge.get(flow.id)),
           solid: flow.kind === "data",
           bidirectional: flow.bidirectional,
         },
         selectable: false,
-        markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
+        // M4 (review round 1): with no `color`, React Flow falls back to its own
+        // `defaultMarkerColor` — a literal grey (rgb(177,177,183), ~1.9:1 on the lane panel)
+        // that follows no theme, exactly the gap `edge-style.ts`'s own `edgeMarkers` doc
+        // comment warns about. The arrowhead is the only direction cue on these edges, so it
+        // takes the same token `VisualFlowEdge` already paints its stroke with.
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 16,
+          height: 16,
+          color: "var(--muted-foreground)",
+        },
         markerStart: flow.bidirectional
-          ? { type: MarkerType.ArrowClosed, width: 16, height: 16 }
+          ? {
+              type: MarkerType.ArrowClosed,
+              width: 16,
+              height: 16,
+              color: "var(--muted-foreground)",
+            }
           : undefined,
         zIndex: 2,
       };
