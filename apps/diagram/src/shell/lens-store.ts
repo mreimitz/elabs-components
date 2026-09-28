@@ -92,7 +92,6 @@ export const lensActions = {
    * node ids `canvas-pane.tsx` frames once its pane shows again.
    */
   setLens(next: Lens, options: { frameNodeIds?: string[] } = {}) {
-    window.location.hash = hashWithLens(window.location.hash, next === "visual");
     const { frameKey } = lensStore.get();
     lensStore.set({
       target: next,
@@ -100,6 +99,20 @@ export const lensActions = {
       frameKey: options.frameNodeIds ? frameKey + 1 : frameKey,
     });
     ensureAnimating();
+    // M-hitch (review round 1, item 2): writing the hash synchronously here put its OWN
+    // listeners (`use-hash.ts`'s router state, `document-controls.tsx`) in the same
+    // render/commit pass as `lensStore.set()` above mounting `LensMorphOverlay` — one fewer
+    // synchronous re-render sharing the main thread with the overlay's `useLayoutEffect`
+    // (`capturePlan`'s `getBoundingClientRect` reads) before the first tween frame paints.
+    // The hash is cosmetic here (`lensStore.target`, not the URL, drives the tween), so one
+    // `requestAnimationFrame` of delay is imperceptible. Measured before/after: this alone did
+    // NOT remove the ~80–130 ms first-frame stall (`docs/findings/lens-switch-slice.md`) — the
+    // dominant cost is `capturePlan`'s own DOM reads, not the hash write. Left in as a real,
+    // if small, reduction in what shares the critical first frame; the stall itself is
+    // unresolved this pass (documented, not re-claimed as fixed).
+    requestAnimationFrame(() => {
+      window.location.hash = hashWithLens(window.location.hash, next === "visual");
+    });
   },
   toggle() {
     lensActions.setLens(lensStore.get().target === "visual" ? "technical" : "visual");
