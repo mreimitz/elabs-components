@@ -9,14 +9,23 @@ import { isZoneNode } from "../nodes/zone-data";
 import { fitZones } from "../nodes/use-zone-autofit";
 import { ARCH_DEFINITIONS } from "../spec/compile/arch-definitions";
 import { pickPort } from "../spec/flow-spec";
+import { compositeHandle } from "../spec/compose/ports";
 import { noteLayoutEdges, placeNotesBeside } from "./place-notes";
-import { runElk, type DiagramDirection, type ElkRouting, type HandleSide } from "./run-elk";
+import {
+  runElk,
+  type DiagramDirection,
+  type ElkRouting,
+  type RoutingHandle,
+  type HandleAnchors,
+} from "./run-elk";
 import { showsOwner, zoneHeaderMinWidth } from "./zone-header-width";
 
 export interface DiagramLayoutOptions {
   direction: DiagramDirection;
   /** Note id → the node or zone it annotates (DG-10 `view.noteAnchors`). */
   noteAnchors: Readonly<Record<string, string>>;
+  /** Actual React Flow handle centers; named composite rows are not side midpoints. */
+  handleAnchors?: HandleAnchors;
 }
 
 export interface DiagramLayoutResult {
@@ -70,8 +79,8 @@ export function followZoneDirection(
     const out = pickPort(ARCH_DEFINITIONS.get(source.type), "output", direction);
     const inn = pickPort(ARCH_DEFINITIONS.get(target.type), "input", direction);
     if (out === undefined || inn === undefined) return edge;
-    const sourceHandle = `out:${out}`;
-    const targetHandle = `in:${inn}`;
+    const sourceHandle = compositeHandle(source, edge.data?.innerSource, "out") ?? `out:${out}`;
+    const targetHandle = compositeHandle(target, edge.data?.innerTarget, "in") ?? `in:${inn}`;
     return sourceHandle === edge.sourceHandle && targetHandle === edge.targetHandle
       ? edge
       : { ...edge, sourceHandle, targetHandle };
@@ -87,7 +96,16 @@ function handleSide(
   node: Node | undefined,
   handle: string | null | undefined,
   want: "input" | "output",
-): HandleSide | undefined {
+  anchors?: HandleAnchors,
+): RoutingHandle | undefined {
+  const measured = node && handle ? anchors?.get(node.id)?.get(handle) : undefined;
+  if (measured) return measured;
+  // Named rows remain on their labeled left/right sides in either layout direction.
+  if (
+    node?.type === "arch/composite" &&
+    handle?.startsWith(`${want === "input" ? "in" : "out"}:inner:`)
+  )
+    return want === "input" ? "left" : "right";
   const ports = Object.entries(ARCH_DEFINITIONS.get(node?.type ?? "")?.targets ?? {}).filter(
     ([, port]) => port.direction === want,
   );
@@ -105,10 +123,11 @@ function edgeRouting(
   shown: readonly Node[],
   edges: readonly Edge[],
   direction: DiagramDirection,
+  anchors?: HandleAnchors,
 ): Pick<ElkRouting, "labels" | "handles"> {
   const byId = new Map(shown.map((node) => [node.id, node]));
   const labels = new Map<string, { width: number; height: number }>();
-  const handles = new Map<string, { source?: HandleSide; target?: HandleSide }>();
+  const handles = new Map<string, { source?: RoutingHandle; target?: RoutingHandle }>();
   for (const edge of followZoneDirection(shown, [...edges], direction)) {
     if (edge.type !== FLOW_EDGE_TYPE_KEY) continue;
     const data = (edge.data ?? {}) as DataFlowEdgeData;
@@ -119,8 +138,8 @@ function edgeRouting(
     const floats = (node: Node | undefined) =>
       Boolean(data.floating) && node !== undefined && isZoneNode(node);
     handles.set(edge.id, {
-      source: floats(source) ? undefined : handleSide(source, edge.sourceHandle, "output"),
-      target: floats(target) ? undefined : handleSide(target, edge.targetHandle, "input"),
+      source: floats(source) ? undefined : handleSide(source, edge.sourceHandle, "output", anchors),
+      target: floats(target) ? undefined : handleSide(target, edge.targetHandle, "input", anchors),
     });
   }
   return { labels, handles };
@@ -201,7 +220,10 @@ async function layoutVisible(
     direction: options.direction,
     zoneDirection: zoneDirections(shown),
     groups,
-    routing: { ...edgeRouting(shown, shownEdges, options.direction), zoneMinWidth },
+    routing: {
+      ...edgeRouting(shown, shownEdges, options.direction, options.handleAnchors),
+      zoneMinWidth,
+    },
   });
   const groupIds = new Set(groups.map((group) => group.id));
   const placed = new Map(result.nodes.map((node) => [node.id, node]));
