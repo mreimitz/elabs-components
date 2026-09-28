@@ -8,6 +8,7 @@
  */
 
 import { type ChartTranslate, defaultChartTranslate } from "../chart-formatters";
+import { areaRadius } from "../../marks/area-radius";
 
 /** One countable step of the legend ramp. */
 export interface HeatmapBucket {
@@ -95,8 +96,7 @@ export function bucketIndexOf(buckets: readonly HeatmapBucket[], value: number):
  */
 export function dotRadius(value: number, maxAbs: number, maxRadius: number): number {
   if (maxAbs <= 0 || maxRadius <= 0) return 0;
-  const ratio = Math.min(1, Math.abs(value) / maxAbs);
-  return Math.sqrt(ratio) * maxRadius;
+  return areaRadius(Math.min(Math.abs(value), maxAbs), maxAbs, maxRadius);
 }
 
 /** The facts a heatmap's accessible summary is built from. */
