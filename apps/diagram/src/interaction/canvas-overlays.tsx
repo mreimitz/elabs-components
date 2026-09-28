@@ -29,11 +29,12 @@ function ExitButton() {
 
 /**
  * DG-18 — everything the interactive layer draws over the canvas: the details card, the step
- * player (bottom-centre) and, while presenting, the way out (top-centre, clear of the title
- * block and the minimap). On a narrow pane (under `@2xl`) the title card spans the top, so the
- * way out sits bottom-centre, between the legend and the zoom controls, and the step player
- * rises above that row (review-wave3 F2). Each is marked `data-diagram-export="exclude"` or
- * portaled, so a DG-17 export never contains it.
+ * player and, while presenting, the way out — both bottom-centre, between the legend and the
+ * zoom controls, with the step player rising above that row. The title block is top-left and
+ * only ever reserves the top-right corner for the minimap, but its own width is the title
+ * text's, not a fixed cap, so a top-centre button has no width it is guaranteed clear of; the
+ * bottom row is the one spot on the pane the title block never reaches. Each is marked
+ * `data-diagram-export="exclude"` or portaled, so a DG-17 export never contains it.
  */
 export function InteractionOverlays({ nodes }: InteractionOverlaysProps) {
   const presenting = isPresenting(useHash());
@@ -42,18 +43,9 @@ export function InteractionOverlays({ nodes }: InteractionOverlaysProps) {
       <DetailsCard nodes={nodes} />
       <StepPlayer />
       {presenting ? (
-        <>
-          <Panel position="top-center" className="@max-2xl:hidden" data-diagram-export="exclude">
-            <ExitButton />
-          </Panel>
-          <Panel
-            position="bottom-center"
-            className="hidden @max-2xl:block"
-            data-diagram-export="exclude"
-          >
-            <ExitButton />
-          </Panel>
-        </>
+        <Panel position="bottom-center" data-diagram-export="exclude">
+          <ExitButton />
+        </Panel>
       ) : null}
     </>
   );

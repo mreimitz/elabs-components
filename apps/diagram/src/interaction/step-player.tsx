@@ -169,20 +169,23 @@ export function StepPlayer() {
         move(delta);
       }}
     >
-      {/* Review-wave3 F2: on a narrow pane (under `@2xl`, 672 px) the player cannot sit between
-          the legend (bottom-left) and the zoom controls (bottom-right), so it rises above that
-          row: 13 = the collapsed legend's 11 plus a 2 gap, over the panel's own 15 px margin.
-          The margin is on the surface, not the panel: flow's unlayered `margin: 15px` wins over a
-          utility there (docs/findings/DG-18-interactive-layer.md §7). The panel itself lets the
-          pointer through, so its empty margin never covers the controls beside it.
-          Review-wave3 N2: flow centres the panel with `left: 50%` and a translate, so a
-          shrink-to-fit surface got at most half of a narrow pane (the counter wrapped, the
-          caption was cut). Under `@2xl` the surface takes the pane's width less the panel's
-          margins, and the words take the room between the buttons. */}
+      {/* While presenting, the way out (`InteractionOverlays`) sits bottom-centre too, so the
+          player rises above it: 13 = its button's height plus a 2 gap, over the panel's own
+          15 px margin. The margin is on the surface, not the panel: flow's unlayered
+          `margin: 15px` wins over a utility there (docs/findings/DG-18-interactive-layer.md
+          §7). The panel itself lets the pointer through, so its empty margin never covers the
+          controls beside it.
+          On a narrow pane (under `@2xl`, 672 px) the player also cannot sit between the legend
+          (bottom-left) and the zoom controls (bottom-right); flow centres the panel with
+          `left: 50%` and a translate, so a shrink-to-fit surface there got at most half of the
+          pane (the counter wrapped, the caption was cut). Under `@2xl` the surface instead
+          takes the pane's width less the panel's margins, and the words take the room between
+          the buttons. */}
       <div
         ref={surfaceRef}
         className={cn(
-          "pointer-events-auto flex max-w-[min(36rem,calc(100vw-2rem),var(--step-player-room,36rem))] items-center gap-1 p-1 @max-2xl:mb-13 @max-2xl:w-[calc(100cqw-2rem)] @max-2xl:max-w-none",
+          "pointer-events-auto flex max-w-[min(36rem,calc(100vw-2rem),var(--step-player-room,36rem))] items-center gap-1 p-1 @max-2xl:w-[calc(100cqw-2rem)] @max-2xl:max-w-none",
+          presenting && "mb-13",
           SURFACE,
         )}
       >
