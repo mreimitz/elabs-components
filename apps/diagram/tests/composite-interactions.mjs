@@ -47,17 +47,25 @@ try {
     writeFile(new URL("child.yaml", dir), child),
     writeFile(new URL("nested.yaml", dir), nested),
   ]);
-  for (const [theme, width] of [
-    ["light", 1440],
-    ["dark", 1440],
-    ["light", 390],
-    ["dark", 390],
-  ]) {
+  const cases = process.env.COMPOSITE_MOTION
+    ? [["light", 1440]]
+    : process.env.COMPOSITE_PHONE_ONLY
+      ? [["light", 390]]
+      : [
+          ["light", 1440],
+          ["dark", 1440],
+          ["light", 390],
+          ["dark", 390],
+        ];
+  for (const [theme, width] of cases) {
     const path = `${folder}/${theme}-${width}.yaml`;
     await writeFile(new URL(`${theme}-${width}.yaml`, dir), parent);
     const context = await browser.newContext({
       viewport: { width, height: 900 },
-      reducedMotion: "reduce",
+      reducedMotion: process.env.COMPOSITE_MOTION ? "no-preference" : "reduce",
+      ...(process.env.COMPOSITE_MOTION && evidence
+        ? { recordVideo: { dir: evidence, size: { width: 1440, height: 900 } } }
+        : {}),
     });
     page = await context.newPage();
     const writes = [];
@@ -104,12 +112,34 @@ try {
     await poll(async () => !(await rootNode("tenant.leaf").count()), "viewer collapse");
     assert.equal((await state()).text, parent);
     assert.equal(writes.length, 0);
+    await poll(
+      async () => rootNode("tenant").evaluate((el) => !el.closest("[inert]")),
+      "parent canvas interaction ready",
+    );
+    await rootNode("tenant").waitFor({ state: "visible" });
     await rootNode("tenant").focus();
-    await page.keyboard.press("Enter");
+    assert.equal(
+      await rootNode("tenant").evaluate((el) => document.activeElement === el),
+      true,
+      "root node receives keyboard focus",
+    );
+    if (process.env.COMPOSITE_MOTION) await rootNode("tenant").dblclick();
+    else await page.keyboard.press("Enter");
     await page.locator('[data-slot="drill-canvas"][data-ready="true"]').waitFor();
     assert.match(page.url(), /into=tenant/);
     assert.equal((await state()).load, before.load);
+    await poll(
+      async () => drillNode("nested").evaluate((el) => !el.closest("[inert]")),
+      "child canvas interaction ready",
+    );
+    await drillNode("nested").waitFor({ state: "visible" });
     await drillNode("nested").focus();
+    assert.equal(
+      await drillNode("nested").evaluate((el) => document.activeElement === el),
+      true,
+      "child node receives keyboard focus",
+    );
+
     await page.keyboard.press("Enter");
     await drillNode("service").waitFor();
     assert.match(page.url(), /into=tenant.nested/);
@@ -144,16 +174,37 @@ try {
     await page.getByRole("button", { name: /^Edit/ }).click();
     const editor = page.locator(".monaco-editor textarea").first();
     if (width < 768) await page.getByRole("tab", { name: "Editor", exact: true }).click();
-    await editor.focus();
-    await page.keyboard.press("Meta+End");
+    await editor.waitFor({ state: "visible" });
+    await page.evaluate(async () => {
+      const url = performance
+        .getEntriesByType("resource")
+        .findLast((e) => new URL(e.name).pathname.endsWith("/monaco-editor.js"))?.name;
+      const monaco = await import(url);
+      const editor = monaco.editor
+        .getEditors()
+        .find((e) => e.getModel()?.getLanguageId() === "yaml");
+      editor.setPosition(editor.getModel().getPositionAt(editor.getModel().getValueLength()));
+      editor.focus();
+    });
     await page.keyboard.type("\n# parent undo proof");
     await poll(async () => (await state()).text.includes("# parent undo proof"), "Monaco edit");
     const editedBeforeDrill = await state();
     if (width < 768) await page.getByRole("tab", { name: "Canvas", exact: true }).click();
+    await poll(
+      async () => rootNode("tenant").evaluate((el) => !el.closest("[inert]")),
+      "parent canvas interaction ready",
+    );
+    await rootNode("tenant").waitFor({ state: "visible" });
+    await rootNode("tenant").focus();
+    assert.equal(
+      await rootNode("tenant").evaluate((el) => document.activeElement === el),
+      true,
+      "root node receives keyboard focus",
+    );
+
     const viewportBefore = await page
       .locator('[data-lens-pane="technical"] .react-flow__viewport')
       .getAttribute("style");
-    await rootNode("tenant").focus();
     await page.keyboard.press("Enter");
     await drillNode("nested").waitFor();
     await page.keyboard.press("Escape");
@@ -188,6 +239,9 @@ try {
     if (evidence) await page.screenshot({ path: `${evidence}/${theme}-${width}.png` });
     assert.equal(await readFile(new URL("child.yaml", dir), "utf8"), child);
     assert.equal(await readFile(new URL("nested.yaml", dir), "utf8"), nested);
+    console.log(
+      `PASS ${theme} ${width}${process.env.COMPOSITE_MOTION ? " normal motion" : " reduced motion"}`,
+    );
     results.push({
       theme,
       width,

@@ -10,6 +10,7 @@ import {
 } from "@elabs-ai/components-flow";
 import { Button, Text, cn } from "@elabs-ai/components-ui";
 import { useDiagram } from "../state/diagram-store";
+import type { ComponentFiles } from "../spec/compose/resolver";
 import { currentComponentFiles } from "../state/component-files";
 import { currentCatalog } from "../catalog/catalog-bundle";
 import { ICON_NAMES } from "../icons/icon-names";
@@ -42,23 +43,27 @@ export function DrillDownView({ chain }: { chain: readonly string[] }) {
   const drawn = useDiagram((s) => s.drawn);
   const root = useDiagram((s) => s.path);
   const key = chain.join(".");
-  const target = useMemo(
+  const fileSnapshot = JSON.stringify([...currentComponentFiles()]);
+  const files = useMemo(() => new Map(JSON.parse(fileSnapshot)) as ComponentFiles, [fileSnapshot]);
+  const catalog = currentCatalog();
+  const resolved = useMemo(
     () =>
       drawn.ast
-        ? resolveDrillTarget(
-            drawn.ast,
-            currentComponentFiles(),
-            currentCatalog(),
-            ICON_NAMES,
-            chain,
-          )
+        ? resolveDrillTarget(drawn.ast, files, catalog, ICON_NAMES, chain)
         : { crumbs: [], error: "The parent diagram is not available." },
-    [drawn, chain],
+    [drawn, chain, files, catalog],
   );
+  // Hash navigation refreshes the parent's references even when their contents are identical.
+  // Retain the child compilation and focus for that no-op refresh.
+  const [target, setTarget] = useState(resolved);
+  if (JSON.stringify(target) !== JSON.stringify(resolved)) setTarget(resolved);
   const [overrides, setOverrides] = useState<ReadonlyMap<string, boolean>>(new Map());
+  const previousTarget = useRef(target);
   useEffect(() => {
+    if (previousTarget.current === target) return;
+    previousTarget.current = target;
     setOverrides(new Map());
-  }, [key, drawn]);
+  }, [target]);
   useEffect(() => {
     drillView.set({
       root,
@@ -73,13 +78,13 @@ export function DrillDownView({ chain }: { chain: readonly string[] }) {
     () =>
       "text" in target
         ? compileText(target.text, {
-            catalog: currentCatalog(),
-            files: currentComponentFiles(),
+            catalog,
+            files,
             expand: new Set([...overrides].filter(([, value]) => value).map(([id]) => id)),
             collapse: new Set([...overrides].filter(([, value]) => !value).map(([id]) => id)),
           })
         : null,
-    [target, overrides],
+    [target, overrides, files, catalog],
   );
   useEffect(() => {
     const escape = (event: KeyboardEvent) => {
@@ -206,7 +211,8 @@ function DrillCanvas({
   const detail = nodes.find((node) => node.id === selected);
   const empty = graph.nodes.length === 0;
   useEffect(() => {
-    if (status === "ready") pane.current?.focus({ preventScroll: true });
+    if (status === "ready" && !pane.current?.contains(document.activeElement))
+      pane.current?.focus({ preventScroll: true });
   }, [status]);
   return (
     <CompositeActionContext.Provider value={actions}>
