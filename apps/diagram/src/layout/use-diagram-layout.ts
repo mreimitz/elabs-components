@@ -65,6 +65,13 @@ export interface UseDiagramLayoutOptions {
    * zoom limits. Default 10 %.
    */
   fitPadding?: (nodes: Node[], limits: FitZoomLimits) => FitViewOptions["padding"];
+  /**
+   * Called at every point `status` settles to a new value for the run in flight — "pending" the
+   * moment a fresh `layoutKey` starts, then "ready" or "error" once it lands. The caller writes
+   * this straight to whatever it needs to track readiness by (`canvas-pane.tsx` →
+   * `layout-ready-store.ts`) instead of watching the returned `status` in its own effect.
+   */
+  onSettled?: (status: LayoutStatus) => void;
 }
 
 export interface DiagramLayout {
@@ -146,6 +153,7 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
     setNodes,
     setEdges,
     fitPadding,
+    onSettled,
   } = options;
   const { setViewport, getNodes, getEdges } = useReactFlow();
   const flowStore = useStoreApi(); // DG-12: the fit
@@ -173,6 +181,14 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
   const lastFit = useRef<{ laid: Node[]; viewport: Viewport } | null>(null);
   const fitPaddingRef = useRef(fitPadding);
   fitPaddingRef.current = fitPadding;
+  const onSettledRef = useRef(onSettled);
+  onSettledRef.current = onSettled;
+
+  /** `setSettled`, plus the caller's own notification — the one place `status` actually settles. */
+  const settle = useCallback((next: { key: string | number; status: LayoutStatus }) => {
+    setSettled(next);
+    onSettledRef.current?.(next.status);
+  }, []);
 
   // The chrome-aware fit of one layout; every fit goes through here.
   // P4: library gap — `fitView` reads React Flow's node sizes, and CanvasShell merges each
@@ -238,6 +254,7 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
     const key = layoutKey;
     busy.current = true;
     laidOutKey.current = key;
+    onSettledRef.current?.("pending");
     const layoutOptions = { direction, noteAnchors, collapse };
     const run = manual
       ? Promise.resolve(layoutManual(current, layoutEdges, layoutOptions))
@@ -246,16 +263,16 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
       .then((result) => {
         if (key !== latestKey.current) {
           // Stale: a newer graph arrived mid-run. Re-render so this effect runs for it.
-          setSettled({ key, status: "pending" });
+          settle({ key, status: "pending" });
           return;
         }
         if (result.engine === "dagre") throw new Error("ELK failed; flow fell back to dagre");
         apply(result);
-        setSettled({ key, status: "ready" });
+        settle({ key, status: "ready" });
       })
       .catch((error: unknown) => {
         console.error("[DG-11] layout failed", error);
-        setSettled({ key, status: "error" });
+        settle({ key, status: "error" });
       })
       .finally(() => {
         busy.current = false;

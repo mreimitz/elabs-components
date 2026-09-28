@@ -8,6 +8,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   RectangleHorizontal,
+  RotateCcw,
   Shapes,
 } from "lucide-react";
 import {
@@ -21,11 +22,13 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  IconButton,
   Kbd,
   SidebarTrigger,
   StatusBadge,
@@ -38,12 +41,18 @@ import {
 import { SEVERITY_STATUS } from "../panes/issues-panel";
 import { toHash, useRoute, type Route } from "../routes/use-hash"; // catalog crumbs (maintainer 2026-09-27)
 import { diagramActions, editActions, useDiagram } from "../state/diagram-store";
+import { overrideDocKey } from "../state/override-key";
 import { folderOf, useWorkspace } from "../workspace/workspace-store";
 import { lensActions, useLens, type Lens } from "./lens-store"; // maintainer 2026-09-27 (lens switch)
-import { modeActions, overrideDocKey, useDocMode } from "./mode-store";
+import { modeActions, useDocMode } from "./mode-store";
 import { WithTooltip } from "./with-tooltip";
 // view mode overrides (maintainer 2026-09-27)
-import { effectiveViewValue, useViewOverrides, viewOverrideActions } from "./view-overrides-store";
+import {
+  effectiveViewValue,
+  useViewOverrides,
+  viewOverrideActions,
+  type ViewOverrides,
+} from "./view-overrides-store";
 import type { DiagramDirection } from "../layout/run-elk";
 import type { NodeStyle } from "../spec/dialect";
 // Wave 3: one import line per item under its marker; blank lines keep parallel merges clean.
@@ -72,13 +81,28 @@ const TOP_BAR_LABELS = {
   topToBottom: "TB, top to bottom",
   topToBottomTip: "Top to bottom (TB)",
   // view mode overrides (maintainer 2026-09-27): each control's own copy says its scope, since
-  // changing it here never touches the file. The hint is one shared string, never in an item's
-  // own accessible name (review-r0: that used to repeat on every radio); it is tied instead
-  // via `aria-describedby` on the group (`ViewToggleGroup` below), and short enough to wrap
-  // instead of overflowing the compact menu at 390 px (review-r0).
-  directionViewLabel: "Direction (this view)",
-  nodeStyleViewLabel: "Node style (this view)",
-  viewScopeHint: "This view only. Edit sets the default for everyone.",
+  // changing it here never touches the file. Never "view" (the word) in any of this — it reads
+  // as the app's View/Edit mode name, not "your own copy of this setting", which is what these
+  // controls actually mean. The scope note is one shared string, never in an item's own
+  // accessible name; it is tied instead via `aria-describedby` on the group (`ViewToggleGroup`
+  // below), and short enough to wrap instead of overflowing the compact menu at 390 px. It is
+  // VISIBLE on the wide bar too, not `sr-only` — a sighted person gets the same "only for you"
+  // cue a screen reader already does.
+  directionViewLabel: "Direction (only for you)",
+  nodeStyleViewLabel: "Node style (only for you)",
+  viewScopeHint: "Direction and node style are only for you, not saved, and forgotten on reload.",
+  // A viewer's own direction/node-style choice otherwise has no visible sign beyond the
+  // pressed toggle itself, which looks the same whether it is the file's own value or a
+  // personal override. `viewOverrideBadge` is a short, textual marker (never colour alone)
+  // next to the controls while either is overridden — never itself the reset control's name,
+  // which needs its own verb (`viewOverrideReset`) so it reads as an action, not a state.
+  viewOverrideBadge: "Your view",
+  viewOverrideReset: "Reset to the diagram’s own setting",
+  viewOverrideResetHint: "Not saved, forgotten on reload.",
+  viewOverrideUnavailable: "No valid diagram is loaded.",
+  // Neither control draws anything different while the visual lens shows (`VisualCanvasPane`
+  // never reads either) — disabled there, with why, rather than doing nothing when touched.
+  lensDisabledReason: "Direction and node style apply to the technical diagram.",
   nodeStyle: "Node style",
   icons: "Icons",
   iconsTip: "Icon nodes",
@@ -113,22 +137,40 @@ const TOP_BAR_LABELS = {
  */
 const COMPACT_BELOW = 1052;
 
-/** True while the element is narrower than `COMPACT_BELOW` (measured before the first paint). */
-function useCompact(ref: RefObject<HTMLElement | null>): boolean {
-  const [compact, setCompact] = useState(false);
+/** True while the element is narrower than `threshold` (measured before the first paint). */
+function useNarrowerThan(ref: RefObject<HTMLElement | null>, threshold: number): boolean {
+  const [narrow, setNarrow] = useState(false);
   useLayoutEffect(() => {
     const element = ref.current;
     if (!element) return;
-    const measure = () => setCompact(element.getBoundingClientRect().width < COMPACT_BELOW);
+    const measure = () => setNarrow(element.getBoundingClientRect().width < threshold);
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
-  }, [ref]);
-  return compact;
+  }, [ref, threshold]);
+  return narrow;
+}
+
+/** True while the element is narrower than `COMPACT_BELOW`. */
+function useCompact(ref: RefObject<HTMLElement | null>): boolean {
+  return useNarrowerThan(ref, COMPACT_BELOW);
 }
 
 const TIME = new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" });
+
+/**
+ * Shared by `TopBar`'s two view-mode change handlers (direction, node style): a no-op while
+ * the field has no file value yet (no AST), otherwise `viewOverrideActions.setOverride`.
+ */
+function setViewOverride<K extends "direction" | "nodeStyle">(
+  key: string,
+  field: K,
+  value: NonNullable<ViewOverrides[K]>,
+  fileValue: ViewOverrides[K],
+) {
+  if (fileValue !== undefined) viewOverrideActions.setOverride(key, field, value, fileValue);
+}
 
 /**
  * The Atlas top bar (plan §3.3–3.4). Left: the sidebar trigger and the breadcrumb (folder ›
@@ -159,13 +201,24 @@ export function TopBar() {
   // view mode overrides (maintainer 2026-09-27): this viewer's own choices for the shown
   // document, kept only for this tab — `viewOverrideActions.setOverride` never touches the
   // file. `effectiveViewValue` is the one place both this bar and the canvas
-  // (`canvas-pane.tsx`) derive what view mode shows, so the two can never disagree
-  // (review-r0: they used to, one gated on `viewing` and the other not).
+  // (`canvas-pane.tsx`) derive what view mode shows, so the two can never disagree.
   const docPath = useDiagram((s) => s.path);
   const overrideKey = overrideDocKey(docPath, route.kind === "doc" ? route.share : undefined);
   const overrides = useViewOverrides(overrideKey);
   const viewDirection = effectiveViewValue(viewing, overrides.direction, direction);
   const viewNodeStyle = effectiveViewValue(viewing, overrides.nodeStyle, nodeStyle);
+  const hasOverride = overrides.direction !== undefined || overrides.nodeStyle !== undefined;
+  const resetOverride = () => viewOverrideActions.clear(overrideKey);
+  // Shared by the wide bar's `ViewControls` and the compact `DiagramOptionsMenu` below — both
+  // set the same override, on the same key, for the same reason (a matching choice reads as
+  // "no override" rather than a redundant one).
+  const onViewDirectionChange = (value: DiagramDirection) =>
+    setViewOverride(overrideKey, "direction", value, direction);
+  const onViewNodeStyleChange = (value: NodeStyle) =>
+    setViewOverride(overrideKey, "nodeStyle", value, nodeStyle);
+  // The visual lens draws neither the direction nor the card/icon choice (`VisualCanvasPane`
+  // never reads either) — both controls are disabled while it shows, technical or not.
+  const lensDisabled = useLens((s) => s.target) === "visual";
 
   const counts = edit ? (
     <>
@@ -211,19 +264,11 @@ export function TopBar() {
               direction={viewDirection}
               nodeStyle={viewNodeStyle}
               disabled={disabled}
-              onDirectionChange={(value) => {
-                // fix-r0 F5: the file's own value at the moment this viewer chose theirs — the
-                // basis `effectiveViewValue` compares against on every read, so the override
-                // drops itself the moment the file's real value moves on (derived, not synced).
-                if (direction !== undefined) {
-                  viewOverrideActions.setOverride(overrideKey, "direction", value, direction);
-                }
-              }}
-              onNodeStyleChange={(value) => {
-                if (nodeStyle !== undefined) {
-                  viewOverrideActions.setOverride(overrideKey, "nodeStyle", value, nodeStyle);
-                }
-              }}
+              lensDisabled={lensDisabled}
+              hasOverride={hasOverride}
+              onDirectionChange={onViewDirectionChange}
+              onNodeStyleChange={onViewNodeStyleChange}
+              onReset={resetOverride}
             />
           ) : null}
         </div>
@@ -245,18 +290,13 @@ export function TopBar() {
               nodeStyle={nodeStyle}
               disabled={disabled}
               edit={edit}
+              lensDisabled={lensDisabled}
+              hasOverride={hasOverride}
               viewDirection={viewDirection}
               viewNodeStyle={viewNodeStyle}
-              onViewDirectionChange={(value) => {
-                if (direction !== undefined) {
-                  viewOverrideActions.setOverride(overrideKey, "direction", value, direction);
-                }
-              }}
-              onViewNodeStyleChange={(value) => {
-                if (nodeStyle !== undefined) {
-                  viewOverrideActions.setOverride(overrideKey, "nodeStyle", value, nodeStyle);
-                }
-              }}
+              onViewDirectionChange={onViewDirectionChange}
+              onViewNodeStyleChange={onViewNodeStyleChange}
+              onReset={resetOverride}
             />
           </>
         ) : null}
@@ -266,6 +306,15 @@ export function TopBar() {
           <ThemeSwitcher variant="ghost" size="sm" />
         </WithTooltip>
       </header>
+      {viewing ? (
+        <div
+          data-slot="view-mode-hint"
+          className="flex shrink-0 flex-wrap gap-x-2 border-b px-4 py-1 text-caption text-muted-foreground"
+        >
+          <span>{TOP_BAR_LABELS.viewScopeHint}</span>
+          {lensDisabled ? <span>{TOP_BAR_LABELS.lensDisabledReason}</span> : null}
+        </div>
+      ) : null}
     </TooltipProvider>
   );
 }
@@ -519,22 +568,27 @@ interface ViewToggleOption<T extends string> {
 
 interface ViewToggleGroupProps<T extends string> {
   groupLabel: string;
-  /** The id of the shared, `sr-only` scope note (`ViewControls`' own `useId()`, below). */
+  /** The id of the shared scope note (`ViewControls`' own `useId()`, below). */
   hintId: string;
   value: T | undefined;
   disabled: boolean;
   onChange: (value: T) => void;
   options: readonly [ViewToggleOption<T>, ViewToggleOption<T>];
+  /** `ViewControls`' own ref to the direction group, so it can move focus there after a reset
+   * (the reset control unmounts the moment the override it named clears). */
+  groupRef?: RefObject<HTMLDivElement | null>;
 }
 
 /**
  * view mode overrides (maintainer 2026-09-27): the wide bar's view-mode controls (direction,
  * node style), same look as `DiagramToggles`' groups, but each sets this viewer's own choice
- * (`viewOverrideActions.setOverride`) instead of rewriting the file. review-r0: an item's
- * accessible name is the option alone (`WithTooltip`'s label, reusing the same tip strings
- * edit mode's group uses, so a viewer sees exactly what the option is called). The "this view
- * only" scope is a group-level fact, tied on via `aria-describedby` rather than repeated on
- * every item.
+ * (`viewOverrideActions.setOverride`) instead of rewriting the file. An item's accessible name
+ * is the option alone (`WithTooltip`'s label, reusing the same tip strings edit mode's group
+ * uses, so a viewer sees exactly what the option is called); the "only for you" scope, and why
+ * it is disabled under the visual lens, are both group-level facts, tied on via
+ * `aria-describedby` to the one visible caption below (`ViewControls`) rather than repeated on
+ * every item — a disabled `ToggleGroupItem` carries `pointer-events-none`, so a tooltip on the
+ * item itself would never open to say why.
  */
 function ViewToggleGroup<T extends string>({
   groupLabel,
@@ -543,9 +597,11 @@ function ViewToggleGroup<T extends string>({
   disabled,
   onChange,
   options,
+  groupRef,
 }: ViewToggleGroupProps<T>) {
   return (
     <ToggleGroup
+      ref={groupRef}
       type="single"
       variant="segmented"
       size="sm"
@@ -581,43 +637,92 @@ interface ViewControlsProps {
   direction: DiagramDirection | undefined;
   nodeStyle: NodeStyle | undefined;
   disabled: boolean;
+  /** The visual lens shows: both controls are disabled, with why (`lensDisabledReason`). */
+  lensDisabled: boolean;
+  /** This document has an override on record for direction, node style, or both. */
+  hasOverride: boolean;
   onDirectionChange: (direction: DiagramDirection) => void;
   onNodeStyleChange: (nodeStyle: NodeStyle) => void;
+  /** Back to the diagram's own setting for both fields at once. */
+  onReset: () => void;
 }
 
-/** The wide bar's view-mode slot: direction and node style, one shared `sr-only` scope note. */
+/**
+ * The wide bar's view-mode slot: direction and node style, a shared scope note (visible, and
+ * `aria-describedby` on both groups), and — while either is overridden — a reset control.
+ */
 function ViewControls({
   direction,
   nodeStyle,
   disabled,
+  lensDisabled,
+  hasOverride,
   onDirectionChange,
   onNodeStyleChange,
+  onReset,
 }: ViewControlsProps) {
-  // fix-r0 F8: a real id (not a fixed string) — two `ViewControls` could otherwise collide if
-  // this slot is ever shown twice on one page.
+  // A real id (not a fixed string): two `ViewControls` could otherwise collide if this slot is
+  // ever shown twice on one page.
   const scopeHintId = useId();
+  const effectiveDisabled = disabled || lensDisabled;
+  const directionGroupRef = useRef<HTMLDivElement>(null);
+  // The reset control unmounts the instant `hasOverride` goes false (the render right after
+  // `onReset` runs), which would otherwise drop focus to the page body — send it to the first
+  // direction option instead, the wide bar's other view-mode control.
+  const handleReset = () => {
+    onReset();
+    requestAnimationFrame(() => {
+      const directionButton =
+        directionGroupRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)");
+      const lensButton = document.querySelector<HTMLButtonElement>(
+        '[aria-label="Lens"] button[aria-checked="true"]',
+      );
+      (directionButton ?? lensButton)?.focus();
+    });
+  };
   return (
-    <>
-      <span id={scopeHintId} className="sr-only">
-        {TOP_BAR_LABELS.viewScopeHint}
-      </span>
+    <div className="flex items-center gap-2">
       <ViewToggleGroup
         groupLabel={TOP_BAR_LABELS.directionViewLabel}
         hintId={scopeHintId}
         value={direction}
-        disabled={disabled}
+        disabled={effectiveDisabled}
         onChange={onDirectionChange}
         options={DIRECTION_OPTIONS}
+        groupRef={directionGroupRef}
       />
       <ViewToggleGroup
         groupLabel={TOP_BAR_LABELS.nodeStyleViewLabel}
         hintId={scopeHintId}
         value={nodeStyle}
-        disabled={disabled}
+        disabled={effectiveDisabled}
         onChange={onNodeStyleChange}
         options={NODE_STYLE_OPTIONS}
       />
-    </>
+      {/* A short, textual marker (never colour alone, WCAG 1.4.1) that either control holds
+          this viewer's own choice, not the diagram's — separate from the reset control beside
+          it, which is named for what it DOES (never disabled by the lens: resetting an
+          override it shows regardless is always a harmless, useful action). */}
+      {hasOverride ? (
+        <div className="flex items-center gap-1">
+          <span className="text-caption font-medium text-foreground">
+            {TOP_BAR_LABELS.viewOverrideBadge}
+          </span>
+          <IconButton
+            icon={<RotateCcw aria-hidden="true" />}
+            label={TOP_BAR_LABELS.viewOverrideReset}
+            disabledReason={disabled ? TOP_BAR_LABELS.viewOverrideUnavailable : undefined}
+            variant="ghost"
+            size="icon-sm"
+            disabled={disabled}
+            onClick={handleReset}
+          />
+        </div>
+      ) : null}
+      <span id={scopeHintId} className="sr-only">
+        {lensDisabled ? TOP_BAR_LABELS.lensDisabledReason : TOP_BAR_LABELS.viewScopeHint}
+      </span>
+    </div>
   );
 }
 
@@ -701,10 +806,15 @@ interface DiagramOptionsMenuProps extends DiagramTogglesProps {
   /** Edit mode: the editing entries (inspector, layout) show too, and both radio groups write
    * the file. View mode: both groups set this viewer's own choice instead (below). */
   edit: boolean;
+  /** The visual lens shows: both view-mode radio groups are disabled, with why. */
+  lensDisabled: boolean;
+  /** This document has an override on record for direction, node style, or both. */
+  hasOverride: boolean;
   viewDirection: DiagramDirection | undefined;
   viewNodeStyle: NodeStyle | undefined;
   onViewDirectionChange: (direction: DiagramDirection) => void;
   onViewNodeStyleChange: (nodeStyle: NodeStyle) => void;
+  onReset: () => void;
 }
 
 interface OptionsRadioOption<T extends string> {
@@ -718,10 +828,10 @@ interface OptionsRadioSectionProps<T extends string> {
   disabled: boolean;
   onValueChange: (value: T) => void;
   options: readonly [OptionsRadioOption<T>, OptionsRadioOption<T>];
-  /** view mode overrides (maintainer 2026-09-27, fix-r0 F4/F8): the id of the ONE shared scope
-   * note both view-mode sections describe themselves with (`DiagramOptionsMenu` renders the
-   * text itself, once, after both groups — review-r0 found it repeated under each). Unset in
-   * edit mode — there is nothing to qualify, the group just rewrites the file. */
+  /** view mode overrides (maintainer 2026-09-27): the id of the ONE shared scope note both
+   * view-mode sections describe themselves with (`DiagramOptionsMenu` renders the text itself,
+   * once, after both groups). Unset in edit mode — there is nothing to qualify, the group just
+   * rewrites the file. */
   hintId?: string;
 }
 
@@ -744,7 +854,12 @@ function OptionsRadioSection<T extends string>({
         onValueChange={(next) => next && onValueChange(next as T)}
       >
         {options.map((option) => (
-          <DropdownMenuRadioItem key={option.value} value={option.value} disabled={disabled}>
+          <DropdownMenuRadioItem
+            key={option.value}
+            value={option.value}
+            disabled={disabled}
+            className="data-disabled:pointer-events-none data-disabled:opacity-50"
+          >
             {option.label}
           </DropdownMenuRadioItem>
         ))}
@@ -773,15 +888,18 @@ function DiagramOptionsMenu({
   nodeStyle,
   disabled,
   edit,
+  lensDisabled,
+  hasOverride,
   viewDirection,
   viewNodeStyle,
   onViewDirectionChange,
   onViewNodeStyleChange,
+  onReset,
 }: DiagramOptionsMenuProps) {
   const inspectorOpen = useDiagram((s) => s.inspectorOpen); // DG-14
-  // fix-r0 F4/F8: one shared id for both view-mode sections' scope note, rendered once below
-  // (review-r0 found the same sentence repeated once per group).
+  // One shared id for both view-mode sections' scope note, rendered once below.
   const viewScopeHintId = useId();
+  const viewDisabled = disabled || lensDisabled;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -806,9 +924,8 @@ function DiagramOptionsMenu({
 
         {/* view mode overrides (maintainer 2026-09-27): both groups show in both modes now —
             edit mode rewrites the file's own default, view mode sets this viewer's own choice,
-            and the shared hint under both radios says so, once (fix-r0 F4/F8: review-r0 found
-            it repeated under each group; never only in a tooltip, since the compact menu has
-            no hover tooltip on a touch device). */}
+            and the shared hint under both radios says so, once — never only in a tooltip,
+            since the compact menu has no hover tooltip on a touch device. */}
         {edit ? (
           <OptionsRadioSection
             label={TOP_BAR_LABELS.direction}
@@ -821,7 +938,7 @@ function DiagramOptionsMenu({
           <OptionsRadioSection
             label={TOP_BAR_LABELS.directionViewLabel}
             value={viewDirection}
-            disabled={disabled}
+            disabled={viewDisabled}
             onValueChange={onViewDirectionChange}
             options={DIRECTION_LABEL_OPTIONS}
             hintId={viewScopeHintId}
@@ -854,24 +971,30 @@ function DiagramOptionsMenu({
             <OptionsRadioSection
               label={TOP_BAR_LABELS.nodeStyleViewLabel}
               value={viewNodeStyle}
-              disabled={disabled}
+              disabled={viewDisabled}
               onValueChange={onViewNodeStyleChange}
               options={NODE_STYLE_LABEL_OPTIONS}
               hintId={viewScopeHintId}
             />
-            {/* `max-w-56`: wraps instead of forcing the menu past the viewport at 390 px
-                (review-r0). Rendered once, after both view-mode groups, not per group. */}
+            {/* `max-w-56`: wraps instead of forcing the menu past the viewport at 390 px.
+                Rendered once, after both view-mode groups, not per group. */}
             <DropdownMenuLabel
               id={viewScopeHintId}
               className="max-w-56 pt-0 text-caption font-normal"
             >
-              {TOP_BAR_LABELS.viewScopeHint}
+              {lensDisabled ? TOP_BAR_LABELS.lensDisabledReason : TOP_BAR_LABELS.viewScopeHint}
             </DropdownMenuLabel>
+            {hasOverride ? (
+              <DropdownMenuItem onSelect={onReset}>
+                <RotateCcw aria-hidden="true" />
+                {TOP_BAR_LABELS.viewOverrideReset}
+              </DropdownMenuItem>
+            ) : null}
           </>
         )}
 
         {/* ExportMenuItems/InteractionMenuItems each open with their own separator — no
-            separator here in view mode (review-r0: doubled up, right above Export). */}
+            separator here in view mode (doubled up, right above Export, otherwise). */}
         <ExportMenuItems />
 
         <InteractionMenuItems />
