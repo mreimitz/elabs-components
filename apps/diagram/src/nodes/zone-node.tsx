@@ -136,11 +136,11 @@ function useZoneNesting(parentId: string | undefined, owner: ZoneOwner): ZoneNes
  */
 export function ZoneNode({ id, data, selected, parentId, isConnectable }: NodeProps<ZoneNodeType>) {
   const { getNodes, getEdges, setNodes, setEdges, updateNodeData } = useReactFlow();
-  // fix-r0 F1 (verify-r0, must-fix): the same signal `canvas-pane.tsx`'s `READ_ONLY_PROPS` sets
-  // `nodesDraggable` false from — selecting a zone in view mode showed resize handles and
-  // dragging a corner resized it on screen (in-memory only, but a visible change outside the
-  // maintainer's three allowed ones). Read straight from the React Flow store rather than
-  // threading a prop through `NodeProps`, same pattern `useZoneNesting` above already uses.
+  // The same signal `canvas-pane.tsx`'s `READ_ONLY_PROPS` sets `nodesDraggable` false from, so
+  // a zone's resize handles never show and a corner drag never resizes it in view mode — the
+  // maintainer's three allowed view-mode changes are direction, node style and lens, nothing on
+  // the canvas itself. Read straight from the React Flow store rather than threading a prop
+  // through `NodeProps`, same pattern `useZoneNesting` above already uses.
   const resizable = useStore((state: ReactFlowState) => state.nodesDraggable);
   // What `useFlowGroups().toggleCollapse` did, through the app's fold (zone-folds.ts).
   const toggle = useCallback(() => {
@@ -165,7 +165,7 @@ export function ZoneNode({ id, data, selected, parentId, isConnectable }: NodePr
   const connected = useConnectedPorts();
 
   // Resizing by hand means "keep this size": the zone leaves auto-fit, so the next
-  // drag inside it does not snap it back. fix-r0 F1: a no-op when not `resizable` — defence in
+  // drag inside it does not snap it back. A no-op when not `resizable` — defence in
   // depth alongside `NodeResizer`'s own `isVisible` below, which already hides the handles.
   const onResizeEnd = useCallback(() => {
     if (!resizable) return;

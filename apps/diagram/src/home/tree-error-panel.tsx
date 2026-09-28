@@ -1,7 +1,7 @@
 /**
- * DG-23 review (F4) — the workspace tree failed to load. Recent, Folders and Components all read
- * from the same tree, so each shows this instead of spinning forever; the sidebar's own tree
- * shows the same failure the same way (`shell/workspace-tree.tsx`'s `TreeLoadError`).
+ * DG-23 — the workspace tree failed to load. Recent, Folders and Components all read from the
+ * same tree, so each shows this instead of spinning forever; the sidebar's own tree shows the
+ * same failure the same way (`shell/workspace-tree.tsx`'s `TreeLoadError`).
  */
 import { useState } from "react";
 import { Button, StatePanel } from "@elabs-ai/components-ui";

@@ -189,10 +189,17 @@ function useDocumentTitle(route: Route): void {
 /**
  * DG-14: the inspector sits beside the canvas and collapses to zero width; on a phone it
  * covers the canvas while open.
+ *
+ * `w-full`: on the desktop split (`SplitWorkspace`) and the phone's edit-mode `TabsContent`
+ * this already got a definite width from its parent (a `ResizablePanel`'s own flex-basis, or a
+ * `flex-col` container's cross-axis stretch); phone VIEW mode renders this alone, as the only
+ * child of `#diagram-workspace`'s row-flex — with no width of its own a plain flex item there
+ * has no content to size itself from and computes to 0, and React Flow (`error#004`) draws
+ * nothing into a 0-width container.
  */
 function CanvasWithInspector({ phone }: { phone: boolean }) {
   return (
-    <div className="relative flex h-full min-w-0">
+    <div className="relative flex h-full w-full min-w-0">
       <div className="min-w-0 flex-1">
         <CanvasPane />
       </div>
