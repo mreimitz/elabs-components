@@ -88,7 +88,7 @@ export function installAutosave(): () => void {
   // Bumped by every `scheduleThumb`: a `makeThumb` run already past its `clearTimeout`-proof
   // window (waiting on the layout, or the two frames after it) checks this after each `await`
   // and drops itself once a newer run has superseded it, so two captures never race the same
-  // `<name>.thumb.png` (the loser's write used to 404 on the exporter's own temp-file name).
+  // `<name>.thumb.png` or compete for the exporter's temporary file.
   let thumbGeneration = 0;
   let failed = false;
   let { text: lastText, path: lastPath } = diagramStore.get();

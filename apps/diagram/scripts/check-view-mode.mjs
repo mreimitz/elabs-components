@@ -165,7 +165,7 @@ try {
       await expect(hint).toContainText("forgotten on reload");
       assert.ok((await page.locator("header h1").boundingBox()).width > 30);
       await setLens("visual");
-      await expect(hint).toContainText("Applies to the technical diagram");
+      await expect(hint).toContainText("Direction and node style apply to the technical diagram");
       await expect(
         page.getByRole("radio", { name: "Top to bottom (TB)", exact: true }),
       ).toBeDisabled();

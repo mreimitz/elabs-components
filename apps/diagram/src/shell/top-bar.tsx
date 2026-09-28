@@ -90,18 +90,19 @@ const TOP_BAR_LABELS = {
   // cue a screen reader already does.
   directionViewLabel: "Direction (only for you)",
   nodeStyleViewLabel: "Node style (only for you)",
-  viewScopeHint: "Only for you here — not saved, forgotten on reload.",
+  viewScopeHint: "Direction and node style are only for you, not saved, and forgotten on reload.",
   // A viewer's own direction/node-style choice otherwise has no visible sign beyond the
   // pressed toggle itself, which looks the same whether it is the file's own value or a
   // personal override. `viewOverrideBadge` is a short, textual marker (never colour alone)
   // next to the controls while either is overridden — never itself the reset control's name,
   // which needs its own verb (`viewOverrideReset`) so it reads as an action, not a state.
-  viewOverrideBadge: "Custom",
+  viewOverrideBadge: "Your view",
   viewOverrideReset: "Reset to the diagram’s own setting",
   viewOverrideResetHint: "Not saved, forgotten on reload.",
+  viewOverrideUnavailable: "No valid diagram is loaded.",
   // Neither control draws anything different while the visual lens shows (`VisualCanvasPane`
   // never reads either) — disabled there, with why, rather than doing nothing when touched.
-  lensDisabledReason: "Applies to the technical diagram.",
+  lensDisabledReason: "Direction and node style apply to the technical diagram.",
   nodeStyle: "Node style",
   icons: "Icons",
   iconsTip: "Icon nodes",
@@ -710,7 +711,7 @@ function ViewControls({
           <IconButton
             icon={<RotateCcw aria-hidden="true" />}
             label={TOP_BAR_LABELS.viewOverrideReset}
-            disabledReason={TOP_BAR_LABELS.viewOverrideResetHint}
+            disabledReason={disabled ? TOP_BAR_LABELS.viewOverrideUnavailable : undefined}
             variant="ghost"
             size="icon-sm"
             disabled={disabled}

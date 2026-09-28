@@ -170,7 +170,7 @@ export function StepPlayer() {
       }}
     >
       {/* While presenting, the way out (`InteractionOverlays`) sits bottom-centre too, so the
-          player rises above it: 13 = its button's height plus a 2 gap, over the panel's own
+          player rises above it: the 13-unit margin clears its 8-unit height, over the panel's own
           15 px margin. The margin is on the surface, not the panel: flow's unlayered
           `margin: 15px` wins over a utility there (docs/findings/DG-18-interactive-layer.md
           §7). The panel itself lets the pointer through, so its empty margin never covers the
