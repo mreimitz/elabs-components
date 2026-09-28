@@ -1,6 +1,6 @@
 /**
- * DG-23 — which diagrams Home's Recent section shows. React-free (`conventions/logic-modules`);
- * `home-view.tsx` turns this into UI.
+ * DG-23 — which diagrams Home's Recent section shows. No React import; `home-view.tsx` turns this
+ * into UI.
  */
 import type { WorkspaceFile } from "../workspace/client";
 import { TEMPLATES_FOLDER } from "./templates";

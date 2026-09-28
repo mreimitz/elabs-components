@@ -36,8 +36,8 @@ export function HomeView() {
   // The shell's own live reload (`useLiveReload`, mounted once above Home) already fetches the
   // tree on load; Home only ever reads it, it never re-triggers a fetch of its own.
   // Recent, Folders and Components all read the same tree, so a failed fetch gets exactly one
-  // alert and one Retry here, not one per section (R1 review) — the sections themselves render
-  // quietly (no heading-less gap, but no repeated alert either) while it is showing.
+  // alert and one Retry here, not one per section (review round 1) — the sections themselves are
+  // hidden entirely while it is showing, instead of leaving three headings over nothing.
   const treeFailed = tree === null && treeError !== null;
 
   return (
@@ -51,55 +51,59 @@ export function HomeView() {
           <ConnectDialog />
         </div>
 
-        {treeFailed ? <TreeErrorPanel message={treeError} /> : null}
+        {treeFailed ? (
+          <TreeErrorPanel message={treeError} />
+        ) : (
+          <>
+            <section aria-labelledby="home-recent" className="flex flex-col gap-4">
+              <Heading id="home-recent" level={2}>
+                {HOME_LABELS.recent}
+              </Heading>
+              {tree === null ? (
+                <StatePanel kind="loading" titleAs="h3" />
+              ) : recent.length === 0 ? (
+                <StatePanel
+                  kind="empty"
+                  titleAs="h3"
+                  title={HOME_LABELS.recentEmpty}
+                  description={HOME_LABELS.recentEmptyHint}
+                />
+              ) : (
+                <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+                  {recent.map((file) => (
+                    <li key={file.path} className="flex">
+                      <RecentCard
+                        path={file.path}
+                        title={file.title?.trim() || fileTitle(file.path)}
+                        mtime={file.mtime}
+                        hasThumb={file.hasThumb}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
 
-        <section aria-labelledby="home-recent" className="flex flex-col gap-4">
-          <Heading id="home-recent" level={2} size="subtitle">
-            {HOME_LABELS.recent}
-          </Heading>
-          {treeFailed ? null : tree === null ? (
-            <StatePanel kind="loading" titleAs="h3" />
-          ) : recent.length === 0 ? (
-            <StatePanel
-              kind="empty"
-              titleAs="h3"
-              title={HOME_LABELS.recentEmpty}
-              description={HOME_LABELS.recentEmptyHint}
-            />
-          ) : (
-            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-              {recent.map((file) => (
-                <li key={file.path} className="flex">
-                  <RecentCard
-                    path={file.path}
-                    title={file.title?.trim() || fileTitle(file.path)}
-                    mtime={file.mtime}
-                    hasThumb={file.hasThumb}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
-          <section aria-labelledby="home-folders" className="flex min-w-0 flex-col gap-4">
-            <Heading id="home-folders" level={2} size="subtitle">
-              {HOME_LABELS.folders}
-            </Heading>
-            {treeFailed ? null : tree === null ? (
-              <StatePanel kind="loading" titleAs="h3" />
-            ) : (
-              <FolderList tree={tree} />
-            )}
-          </section>
-          <section aria-labelledby="home-components" className="flex min-w-0 flex-col gap-4">
-            <Heading id="home-components" level={2} size="subtitle">
-              {HOME_LABELS.components}
-            </Heading>
-            <ComponentsPanel tree={tree} treeError={treeError} />
-          </section>
-        </div>
+            <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
+              <section aria-labelledby="home-folders" className="flex min-w-0 flex-col gap-4">
+                <Heading id="home-folders" level={2}>
+                  {HOME_LABELS.folders}
+                </Heading>
+                {tree === null ? (
+                  <StatePanel kind="loading" titleAs="h3" />
+                ) : (
+                  <FolderList tree={tree} />
+                )}
+              </section>
+              <section aria-labelledby="home-components" className="flex min-w-0 flex-col gap-4">
+                <Heading id="home-components" level={2}>
+                  {HOME_LABELS.components}
+                </Heading>
+                <ComponentsPanel tree={tree} treeError={treeError} />
+              </section>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
