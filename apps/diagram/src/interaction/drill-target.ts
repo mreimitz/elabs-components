@@ -41,7 +41,7 @@ export function resolveDrillTarget(
         error: `The referenced diagram “${path}” is unavailable${entry && entry.status !== "ok" ? ` (${entry.status})` : ""}.`,
       };
     seen.add(path);
-    crumbs.push({ id, title: node.title ?? entry.title, path });
+    crumbs.push({ id, title: node.unwritten?.includes("title") ? entry.title : node.title, path });
     scope = entry.ast;
   }
   const path = crumbs.at(-1)!.path;

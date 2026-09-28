@@ -546,8 +546,10 @@ function DiagramCanvas({
     null,
   );
   const [changingComposite, setChangingComposite] = useState(false);
+  const compositeFocus = useRef<{ graph: ReactFlowGraph; id: string } | null>(null);
   const captureComposite = useCallback(
     (id: string) => {
+      compositeFocus.current = { graph, id };
       const pane = paneRef.current,
         host = transitionHost.current;
       if (!pane || !host || motionMs("base") === 0) return;
@@ -669,6 +671,15 @@ function DiagramCanvas({
   });
   useZoneAutofit(nodes, setNodes);
   const enterComposite = useDrillCamera([], status === "ready", paneRef);
+  useEffect(() => {
+    const pending = compositeFocus.current;
+    if (!pending || pending.graph === graph || status !== "ready" || snapshot.current) return;
+    compositeFocus.current = null;
+    if (document.activeElement === document.body)
+      paneRef.current
+        ?.querySelector<HTMLElement>(`.react-flow__node[data-id="${CSS.escape(pending.id)}"]`)
+        ?.focus({ preventScroll: true });
+  }, [graph, status]);
   useEffect(() => {
     const previous = snapshot.current;
     if (!previous || previous.graph === graph || status !== "ready") return;

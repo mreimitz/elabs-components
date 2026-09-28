@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useUpdateNodeInternals } from "@xyflow/react";
 import {
   FlowNodeCard,
   FlowPort,
@@ -38,6 +40,11 @@ export function CompositeNode({
   isConnectable,
 }: NodeProps<Node<CompositeNodeData>>) {
   const actions = useCompositeActions();
+  const updateInternals = useUpdateNodeInternals();
+  const portKey = data.ports?.join("|") ?? "";
+  useEffect(() => {
+    updateInternals(id);
+  }, [id, portKey, updateInternals]);
   const kind: ArchMarkedKind =
     data.overrideType && data.overrideType !== "note" ? data.overrideType : "service";
   const fallback = data.overrideType === "note" ? "lucide/file" : ARCH_KIND_DEFAULT_ICON[kind];
@@ -105,21 +112,21 @@ export function CompositeNode({
               data-slot="composite-port"
             >
               <FlowPort
-                port={port}
+                port={`inner:${port}`}
                 type="target"
                 position={Position.Left}
-                isConnectable={isConnectable}
-                className={!connected.has(`in:${port}`) ? IDLE_PORT_CLASS : undefined}
+                isConnectable={false}
+                className={!connected.has(`in:inner:${port}`) ? IDLE_PORT_CLASS : undefined}
               />
               <span className="block truncate" title={port}>
                 {port}
               </span>
               <FlowPort
-                port={port}
+                port={`inner:${port}`}
                 type="source"
                 position={Position.Right}
-                isConnectable={isConnectable}
-                className={!connected.has(`out:${port}`) ? IDLE_PORT_CLASS : undefined}
+                isConnectable={false}
+                className={!connected.has(`out:inner:${port}`) ? IDLE_PORT_CLASS : undefined}
               />
             </div>
           ))}

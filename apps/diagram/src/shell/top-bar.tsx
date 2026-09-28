@@ -1,13 +1,5 @@
-import { backFromDrill, useDrillView } from "../interaction/drill-down";
-import {
-  Fragment,
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-  type RefObject,
-} from "react";
+import { DrillBreadcrumb } from "../interaction/drill-breadcrumb";
+import { useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
   ArrowDown,
   ArrowRight,
@@ -53,7 +45,7 @@ import { diagramActions, editActions, useDiagram } from "../state/diagram-store"
 import { overrideDocKey } from "../state/override-key";
 import { folderOf, useWorkspace } from "../workspace/workspace-store";
 import { lensActions, useLens, type Lens } from "./lens-store"; // maintainer 2026-09-27 (lens switch)
-import { fileTitle, modeActions, openDoc, useDocMode, useMode } from "./mode-store";
+import { fileTitle, modeActions, useDocMode, useMode } from "./mode-store";
 import { WithTooltip } from "./with-tooltip";
 // view mode overrides (maintainer 2026-09-27)
 import {
@@ -1029,67 +1021,5 @@ function DiagramOptionsMenu({
         <InteractionMenuItems />
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-}
-
-const DRILL_LABELS = {
-  location: "Diagram inspection",
-  readonly: "Read-only",
-  open: "Open diagram",
-  parent: "Parent diagram",
-};
-function DrillBreadcrumb({ route }: { route: Extract<Route, { kind: "doc" }> }) {
-  const state = useDrillView();
-  const rootTitle = useDiagram((s) => s.drawn.spec?.title ?? DRILL_LABELS.parent);
-  const crumbs = state.root === route.path ? state.crumbs : [];
-  const chain = route.into ?? [];
-  const leaf = crumbs.length === chain.length ? crumbs.at(-1) : undefined;
-  return (
-    <>
-      <Breadcrumb aria-label={DRILL_LABELS.location} className="min-w-0 flex-1 overflow-x-auto">
-        <BreadcrumbList className="flex-nowrap">
-          <BreadcrumbItem className="min-w-0">
-            <BreadcrumbLink asChild>
-              <button
-                type="button"
-                className="focus-ring max-w-40 truncate rounded-sm"
-                onClick={() => backFromDrill(0)}
-                title={rootTitle}
-              >
-                {rootTitle}
-              </button>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          {chain.map((id, index) => (
-            <Fragment key={`${index}:${id}`}>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem className="min-w-0">
-                {index === chain.length - 1 ? (
-                  <BreadcrumbPage className="max-w-48 truncate" title={crumbs[index]?.title ?? id}>
-                    {crumbs[index]?.title ?? id}
-                  </BreadcrumbPage>
-                ) : (
-                  <BreadcrumbLink asChild>
-                    <button
-                      type="button"
-                      className="focus-ring max-w-32 truncate rounded-sm"
-                      onClick={() => backFromDrill(index + 1)}
-                      title={crumbs[index]?.title ?? id}
-                    >
-                      {crumbs[index]?.title ?? id}
-                    </button>
-                  </BreadcrumbLink>
-                )}
-              </BreadcrumbItem>
-            </Fragment>
-          ))}
-        </BreadcrumbList>
-      </Breadcrumb>
-      {leaf ? (
-        <Button size="sm" variant="outline" onClick={() => openDoc(leaf.path, { mode: "edit" })}>
-          {DRILL_LABELS.open}
-        </Button>
-      ) : null}
-    </>
   );
 }

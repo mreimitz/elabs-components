@@ -1,3 +1,6 @@
+import { currentComponentFiles } from "../state/component-files";
+import type { ReactFlowGraph } from "../spec/flow-spec";
+import type { ArchCompileView } from "../spec/compile/compile-arch";
 import { useSyncExternalStore } from "react";
 import { createStore } from "../state/create-store";
 import { diagramStore } from "../state/diagram-store";
@@ -7,18 +10,23 @@ const state = createStore<{ byPath: ReadonlyMap<string, ReadonlyMap<string, bool
   byPath: new Map(),
 });
 let previous = diagramStore.get();
+const projectionOf = (spec: unknown) =>
+  JSON.stringify([spec, [...currentComponentFiles()].sort(([a], [b]) => a.localeCompare(b))]);
+let projection = projectionOf(previous.drawn.spec);
 // Observe every authored change, not only mounted renders: A→B→A must not revive old choices.
 diagramStore.subscribe(() => {
   const next = diagramStore.get();
+  const nextProjection = next.drawn === previous.drawn ? projection : projectionOf(next.drawn.spec);
   if (
-    (previous.text !== next.text || previous.drawn !== next.drawn) &&
-    previous.path === next.path
+    previous.loadCount !== next.loadCount ||
+    ((previous.text !== next.text || projection !== nextProjection) && previous.path === next.path)
   ) {
     const byPath = new Map(state.get().byPath);
     byPath.delete(next.path ?? "shared");
     state.set({ byPath });
   }
   previous = next;
+  projection = nextProjection;
 });
 export const compositeOverrides = {
   get: (path: string | null) => state.get().byPath.get(path ?? "shared") ?? EMPTY,
@@ -44,8 +52,8 @@ export function useCompositeOverrides(path: string | null) {
 
 export const compositePreview = createStore<{
   path: string | null;
-  graph: import("../spec/flow-spec").ReactFlowGraph | null;
-  view: import("../spec/compile/compile-arch").ArchCompileView | null;
+  graph: ReactFlowGraph | null;
+  view: ArchCompileView | null;
   toggle?: (id: string) => void;
 }>({ path: null, graph: null, view: null });
 export function useCompositePreview() {

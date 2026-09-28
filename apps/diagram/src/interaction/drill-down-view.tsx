@@ -24,9 +24,13 @@ import { CompositeActionContext, COMPOSITE_UI, isComposite } from "./composite-a
 import { resolveDrillTarget } from "./drill-target";
 import { backFromDrill, drillView, useDrillCamera } from "./drill-down";
 import { ReadonlyNodeDetails } from "./readonly-node-details";
+import { DrillBreadcrumb } from "./drill-breadcrumb";
+import { useRoute } from "../routes/use-hash";
 import { MOTION_CLASS } from "../motion";
 
 const LABELS = {
+  region: "Referenced diagram",
+  details: "Node details",
   readOnly: "Inspecting a referenced diagram · read-only",
   back: "Back to parent",
   loading: "Laying out the referenced diagram…",
@@ -34,6 +38,7 @@ const LABELS = {
   close: "Close node details",
 };
 export function DrillDownView({ chain }: { chain: readonly string[] }) {
+  const route = useRoute();
   const drawn = useDiagram((s) => s.drawn);
   const root = useDiagram((s) => s.path);
   const key = chain.join(".");
@@ -48,7 +53,7 @@ export function DrillDownView({ chain }: { chain: readonly string[] }) {
             chain,
           )
         : { crumbs: [], error: "The parent diagram is not available." },
-    [drawn, key, chain],
+    [drawn, chain],
   );
   const [overrides, setOverrides] = useState<ReadonlyMap<string, boolean>>(new Map());
   useEffect(() => {
@@ -94,10 +99,15 @@ export function DrillDownView({ chain }: { chain: readonly string[] }) {
   }, []);
   return (
     <section
-      aria-label="Referenced diagram"
+      aria-label={LABELS.region}
       data-slot="drill-down"
       className="absolute inset-0 flex min-h-0 flex-col bg-background"
     >
+      {route.kind === "doc" && route.present ? (
+        <header className="flex min-w-0 items-center gap-2 border-b border-border px-4 py-2">
+          <DrillBreadcrumb route={route} />
+        </header>
+      ) : null}
       <Text className="px-4 py-2" variant="meta" tone="muted">
         {LABELS.readOnly}
       </Text>
@@ -255,7 +265,7 @@ function DrillCanvas({
       ) : null}
       {detail ? (
         <aside
-          aria-label="Node details"
+          aria-label={LABELS.details}
           className="absolute end-2 top-2 z-10 flex max-h-[calc(100%-1rem)] w-72 max-w-[calc(100%-1rem)] flex-col gap-3 overflow-y-auto rounded-md bg-popover p-4 shadow-ring-md"
         >
           <Button

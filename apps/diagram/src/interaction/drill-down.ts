@@ -1,3 +1,4 @@
+import { currentComponentFiles } from "../state/component-files";
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import { useReactFlow } from "@elabs-ai/components-flow";
 import type { Viewport } from "@xyflow/react";
@@ -19,19 +20,24 @@ let generation = 0;
 // Any source/dependency/layout revision invalidates both pending camera animations and
 // saved coordinates; a same-path reload is a new document session too.
 let revision = diagramStore.get();
+const projectionOf = (spec: unknown) =>
+  JSON.stringify([spec, [...currentComponentFiles()].sort(([a], [b]) => a.localeCompare(b))]);
+let projection = projectionOf(revision.drawn.spec);
 diagramStore.subscribe(() => {
   const next = diagramStore.get();
+  const nextProjection = next.drawn === revision.drawn ? projection : projectionOf(next.drawn.spec);
   if (
     next.path !== revision.path ||
     next.loadCount !== revision.loadCount ||
     next.text !== revision.text ||
-    next.drawn !== revision.drawn ||
+    nextProjection !== projection ||
     next.layoutRequest !== revision.layoutRequest
   ) {
     frames.clear();
     generation++;
   }
   revision = next;
+  projection = nextProjection;
 });
 if (typeof window !== "undefined")
   window.addEventListener("hashchange", () => {
