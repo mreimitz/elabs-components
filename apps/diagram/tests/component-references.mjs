@@ -261,6 +261,16 @@ try {
     clientInfo: { name: "component-reference-test", version: "1" },
   });
   assert.equal(parsed(await tool("spec_validate", { text: parentText })).ok, true);
+  const inventedPort = parentText.replace("child.inside -> out", "child.inside.invented -> out");
+  const inventedCheck = parsed(await tool("spec_validate", { text: inventedPort }));
+  assert.equal(inventedCheck.ok, false);
+  assert.ok(inventedCheck.issues.some((issue) => issue.code === "unknown-endpoint"));
+  const inventedCreate = await tool("diagram_create", {
+    path: `${folder}/invented-port.yaml`,
+    text: inventedPort,
+  });
+  assert.equal(inventedCreate.isError, true);
+  await assert.rejects(readFile(new URL("invented-port.yaml", root)));
   const missing = doc([ref("absent")]);
   assert.equal(
     parsed(await tool("spec_validate", { text: missing })).issues[0].code,

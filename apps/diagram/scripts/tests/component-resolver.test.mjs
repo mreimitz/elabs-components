@@ -150,3 +150,15 @@ test("invalid inner endpoints inside a referenced file are invalid diagrams", as
     result.issues.some((i) => i.code === "ref-invalid" && i.message.includes('no id "nope"')),
   );
 });
+
+test("dotted endpoints cannot descend into catalog items", async () => {
+  const files = new Map([["leaf.yaml", file(leaf)]]);
+  const checked = await check(
+    doc([ref("leaf"), { id: "out" }], 'flows: ["child.inside.invented -> out"]'),
+    files,
+  );
+  assert.equal(checked.ok, false);
+  const issue = checked.issues.find((issue) => issue.code === "unknown-endpoint");
+  assert.ok(issue?.range);
+  assert.match(issue.message, /does not reference a diagram/);
+});
