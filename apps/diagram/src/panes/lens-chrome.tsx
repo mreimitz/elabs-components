@@ -13,7 +13,7 @@ export function LensChrome({ lens, children }: { lens: Lens; children: ReactNode
   return createPortal(
     <div
       data-lens-chrome={lens}
-      className="react-flow pointer-events-none absolute inset-0"
+      className="react-flow pointer-events-none absolute inset-0 [&_.react-flow\_\_panel:not(.pointer-events-none)]:pointer-events-auto"
       style={{ visibility: visual === (lens === "visual") ? "visible" : "hidden" }}
       inert={moving || visual !== (lens === "visual") || undefined}
     >
