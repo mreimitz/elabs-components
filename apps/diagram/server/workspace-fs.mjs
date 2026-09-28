@@ -17,7 +17,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import process from "node:process";
-import { parseDocument } from "yaml";
+import { isAlias, isScalar, parseDocument } from "yaml";
 
 const run = promisify(execFile);
 
@@ -66,8 +66,11 @@ export function titleOf(text) {
   try {
     const doc = parseDocument(text);
     if (doc.errors.length > 0) return null;
-    const title = doc.get("title");
-    return typeof title === "string" ? title.trim() || null : null;
+    const node = doc.get("title", true);
+    // Resolve a single scalar alias without expanding collections. Cycles, unresolved aliases
+    // and alias-heavy collections cannot trigger recursive expansion in this metadata read.
+    const title = isAlias(node) ? node.resolve(doc) : node;
+    return isScalar(title) && typeof title.value === "string" ? title.value.trim() || null : null;
   } catch {
     return null;
   }

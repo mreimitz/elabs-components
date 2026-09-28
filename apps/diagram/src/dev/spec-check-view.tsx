@@ -10,7 +10,7 @@ import {
   TableRow,
   Text,
 } from "@elabs-ai/components-ui";
-import { parseDocument } from "yaml";
+import { isAlias, isScalar, parseDocument } from "yaml";
 import { BUNDLED_CATALOG, bundledCatalog } from "../catalog/catalog-bundle"; // DG-26 (1b.12)
 import { titleWithCopySuffix } from "../home/templates"; // DG-23 follow-up
 import { ICON_NAMES } from "../icons/icon-names"; // DG-10
@@ -260,7 +260,10 @@ function runTitleSuffixCases(): TitleSuffixRow[] {
   }));
   return [...TITLE_SUFFIX_CASES, ...shipped].map(({ name, before, n, mustContain }) => {
     const after = titleWithCopySuffix(before, n);
-    const beforeTitle = parseDocument(before).get("title");
+    const beforeDoc = parseDocument(before);
+    const beforeNode = beforeDoc.get("title", true);
+    const resolved = isAlias(beforeNode) ? beforeNode.resolve(beforeDoc) : beforeNode;
+    const beforeTitle = isScalar(resolved) ? resolved.value : undefined;
     const hasTitle = typeof beforeTitle === "string";
     if (!hasTitle) {
       // Nothing to suffix: the text must come back unchanged.

@@ -307,17 +307,21 @@ in scope; addressed on `diagram/home-followups` (branched from `diagram/home` af
 A follow-up pass on `diagram/home-copies` (branched from `origin/main` after the round-2 fixes
 above had landed), evidence in `.evidence/home-copies/fix-r0/`.
 
-- **`titleWithCopySuffix` now edits only the title's own CST token**, via `yaml`'s `Parser` +
+- **`titleWithCopySuffix` writes through YAML CST tokens**, via `yaml`'s `Parser` +
   `CST.resolveAsScalar`/`CST.setScalarValue` (`src/home/templates.ts`), instead of a single-line
   string replace. The replace missed several forms a hand-authored template can legally use: a
   single-quoted title with an `''` escape, a double-quoted title with a `\"` escape, and a `|`/`>-`
   block-scalar title all produced either the wrong text or invalid YAML; a trailing `# comment`
   had the suffix land inside the comment instead of the title. Editing the CST token directly
-  keeps every other byte of the file untouched (checked against both shipped templates: exactly
-  one line changes) and lets `yaml` re-escape the new value correctly for whichever quoting style
+  keeps unrelated bytes untouched (both shipped templates change exactly one line) and lets `yaml` re-escape the new value correctly for whichever quoting style
   the title already used. The server reads titles with the YAML parser too, so block scalars
   and escaped quotes have the same labels in the picker and the workspace. Trailing block-scalar
   newlines are removed before appending the marker; null and non-string titles stay unchanged.
+  Flow-map roots and alias titles are supported. If the title defines an anchor, its alias
+  consumers are materialized with the original string so every non-title value and mapping
+  key remains the same; those necessary token replacements also preserve their comments.
+  Server metadata resolves only a scalar alias, without recursive collection expansion.
+  Copies whose alias expansion would exceed the document limit fail before writing a file.
 - **The copy marker survives truncation.** `splitCopySuffix` (`src/home/templates.ts`) splits a
   title into its base text and a trailing `(copy)`/`(copy N)` marker; `RecentCard`, `FolderList`,
   the Used-in popover and the open-document tab strip all render the marker as its own

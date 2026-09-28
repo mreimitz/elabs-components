@@ -100,3 +100,55 @@ for (const file of ["qlik-cloud-customer-landscape.yaml", "qlik-talend-cloud-pip
     assert.deepEqual(next, first);
   });
 }
+
+const referencedTitles = {
+  anchored:
+    'diagram: "1"\ntitle: &name Original title # keep title\ndescription: *name # keep alias\nnodes:\n  - id: a\n    title: *name\nx-values: [*name, *name]\n',
+  aliased:
+    'diagram: "1"\nx-title: &name Original title\ntitle: *name # keep title alias\ndescription: *name\nnodes: [{id: a}]\n',
+  flow: '{diagram: "1", title: Original title, nodes: [{id: a, title: Inner}]} # keep root\n',
+  flowAnchor:
+    '{diagram: "1", title: &name "null", description: *name, x-map: {*name : preserved}, nodes: [{id: a, title: *name}]}\n',
+  mappingKey:
+    'diagram: "1"\ntitle: &name Original title\nx-map:\n  ? *name # keep key\n  : unchanged\nnodes: [{id: a}]\n',
+  shadowedAnchor:
+    'diagram: "1"\ntitle: &name Original title\ndescription: *name\nx-other: &name Other title\nx-alias: *name\nnodes: [{id: a}]\n',
+};
+for (const [name, source] of Object.entries(referencedTitles)) {
+  for (const n of [1, 2]) {
+    for (const ending of ["\n", "\r\n"]) {
+      test(`${name} copy ${n} preserves every non-title semantic value (${JSON.stringify(ending)})`, () => {
+        const before = source.replaceAll("\n", ending);
+        const original = parseDocument(before).toJS();
+        assert.equal(titleOf(before), original.title.trim());
+        const after = titleWithCopySuffix(before, n);
+        const parsed = parseDocument(after);
+        assert.deepEqual(parsed.errors, []);
+        const result = parsed.toJS();
+        const expected = `${original.title}${n === 1 ? " (copy)" : " (copy 2)"}`;
+        assert.equal(result.title, expected);
+        assert.equal(titleOf(after), expected);
+        delete original.title;
+        delete result.title;
+        assert.deepEqual(result, original);
+        assert.deepEqual(comments(after), comments(before));
+        if (ending === "\r\n") assert.equal(/(?<!\r)\n/.test(after), false);
+      });
+    }
+  }
+}
+for (const source of [
+  "title: *missing\n",
+  "x: &x [*x]\ntitle: *x\n",
+  "x: &x [a, b]\ntitle: *x\n",
+]) {
+  test(`metadata refuses unresolved or collection aliases: ${JSON.stringify(source)}`, () => {
+    assert.equal(titleOf(source), null);
+    assert.equal(titleWithCopySuffix(source, 1), source);
+  });
+}
+test("oversized alias materialization is refused before allocating a copy", () => {
+  const source = `title: &name ${"a".repeat(10000)}\nx: [${Array(101).fill("*name").join(",")} ]\n`;
+  assert.throws(() => titleWithCopySuffix(source, 1), /copy too large/);
+  assert.equal(titleOf(source), "a".repeat(10000));
+});

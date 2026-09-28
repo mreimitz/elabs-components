@@ -12,7 +12,16 @@ const template = `templates/${stem}.yaml`;
 const copies = [`customers/${stem}.yaml`, `customers/${stem}-2.yaml`];
 const title =
   "Customer architecture with a very long title covering cloud systems data gateways and all downstream consumers";
-const source = `# Keep this template\ndiagram: "1"\ntitle: > # preserve title comment\n  ${title}\ndescription: Copy proof\nnodes:\n  - id: tenant\n    ref: ws/components/qlik-cloud-tenant\n`;
+const form = process.env.ATLAS_TITLE_FORM ?? "block";
+const sources = {
+  block: `# Keep this template\ndiagram: "1"\ntitle: > # preserve title comment\n  ${title}\ndescription: Copy proof\nnodes:\n  - id: tenant\n    ref: ws/components/qlik-cloud-tenant\n`,
+  anchored: `# Keep this template\ndiagram: "1"\ntitle: &name ${title} # preserve title comment\ndescription: *name\nx-values: [*name, *name]\nx-map: {*name : unchanged}\nnodes:\n  - id: tenant\n    title: *name\n    ref: ws/components/qlik-cloud-tenant\n`,
+  aliased: `# Keep this template\ndiagram: "1"\nx-title: &name ${title}\ntitle: *name # preserve title comment\ndescription: *name\nnodes:\n  - id: tenant\n    title: *name\n    ref: ws/components/qlik-cloud-tenant\n`,
+  flow: `{diagram: "1", title: "${title}", description: Copy proof, nodes: [{id: tenant, ref: ws/components/qlik-cloud-tenant}]} # preserve title comment\n`,
+};
+const source = sources[form];
+assert.ok(source, "ATLAS_TITLE_FORM must be block, anchored, aliased or flow");
+
 const get = async (path) =>
   (await fetch(`${base}/api/workspace/file?path=${encodeURIComponent(path)}`)).text();
 const hash = (text) => createHash("sha256").update(text).digest("hex");
@@ -163,6 +172,7 @@ try {
   console.log(
     JSON.stringify({
       result: "pass",
+      titleForm: form,
       originalHash,
       copies,
       desktopPhoneLightDark: true,
