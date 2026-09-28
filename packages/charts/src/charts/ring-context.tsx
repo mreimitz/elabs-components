@@ -1,9 +1,17 @@
 "use client";
 
-import type { Transition } from "motion/react";
-import { createContext, type ReactNode, type RefObject, useContext, useMemo } from "react";
+import type { ReactNode } from "react";
+import {
+  type ArcChartHoverContextValue,
+  type ArcChartStableContextValue,
+  arcChartStableKeys,
+  createArcChartContexts,
+  defaultArcChartColors,
+  useArcChartHover,
+  useArcChartSlices,
+  useArcChartStable,
+} from "./arc-chart-context";
 import { type ChartDatapointTarget, padDatapointRect } from "./chart-datapoint-layer";
-import { resolvePalette } from "./chart-context";
 
 // CSS variable references for ring chart theming
 export const ringCssVars = {
@@ -28,11 +36,11 @@ export const ringCssVars = {
 };
 
 /**
- * Default ring colours: the categorical palette through `resolvePalette`
- * (RM-186), uncapped — the family has always cycled all twelve series colours
- * (`--chart-1` … `--chart-12`), so it asks for them `explicit`ly.
+ * Default ring colours: the categorical palette, uncapped — all twelve
+ * series colours (`--chart-1` … `--chart-12`). Same contents as
+ * `defaultPieColors`, in its own array.
  */
-export const defaultRingColors: string[] = resolvePalette("categorical", 12, { explicit: true });
+export const defaultRingColors: string[] = [...defaultArcChartColors];
 
 /**
  * A ring's drill-down target (#349). The hit box sits on the ring's arc at its
@@ -76,36 +84,13 @@ export interface RingData {
   color?: string;
 }
 
-export interface RingHoverContextValue {
-  hoveredIndex: number | null;
-  setHoveredIndex: (index: number | null) => void;
-}
+export type RingHoverContextValue = ArcChartHoverContextValue;
 
-export interface RingStableContextValue {
-  // Data
-  data: RingData[];
-
+export interface RingStableContextValue extends ArcChartStableContextValue<RingData> {
   // Dimensions
-  size: number;
-  center: number;
   strokeWidth: number;
   ringGap: number;
   baseInnerRadius: number;
-
-  // Animation state
-  animationKey: number;
-  isLoaded: boolean;
-  enterTransition?: Transition;
-  enterStaggerScale: number;
-
-  // Container ref for portals
-  containerRef: RefObject<HTMLDivElement | null>;
-
-  // Computed values
-  totalValue: number;
-
-  // Get color for a ring index
-  getColor: (index: number) => string;
 
   // Get ring radii for an index
   getRingRadii: (index: number) => { innerRadius: number; outerRadius: number };
@@ -113,18 +98,32 @@ export interface RingStableContextValue {
   // Arc angle range
   startAngle: number;
   endAngle: number;
-
-  /**
-   * Studio geometry scrub — skip Motion path morphing and use plain SVG paths.
-   * @default false
-   */
-  geometryScrubbing: boolean;
 }
 
 export type RingContextValue = RingStableContextValue & RingHoverContextValue;
 
-const RingStableContext = createContext<RingStableContextValue | null>(null);
-const RingHoverContext = createContext<RingHoverContextValue | null>(null);
+const RING_CONTEXTS = createArcChartContexts<RingStableContextValue>(
+  "Ring",
+  arcChartStableKeys<RingStableContextValue>()(
+    "data",
+    "size",
+    "center",
+    "strokeWidth",
+    "ringGap",
+    "baseInnerRadius",
+    "animationKey",
+    "isLoaded",
+    "enterTransition",
+    "enterStaggerScale",
+    "containerRef",
+    "totalValue",
+    "getColor",
+    "getRingRadii",
+    "startAngle",
+    "endAngle",
+    "geometryScrubbing",
+  ),
+);
 
 export function RingProvider({
   children,
@@ -133,86 +132,24 @@ export function RingProvider({
   children: ReactNode;
   value: RingContextValue;
 }) {
-  const stable = useMemo<RingStableContextValue>(
-    () => ({
-      data: value.data,
-      size: value.size,
-      center: value.center,
-      strokeWidth: value.strokeWidth,
-      ringGap: value.ringGap,
-      baseInnerRadius: value.baseInnerRadius,
-      animationKey: value.animationKey,
-      isLoaded: value.isLoaded,
-      enterTransition: value.enterTransition,
-      enterStaggerScale: value.enterStaggerScale,
-      containerRef: value.containerRef,
-      totalValue: value.totalValue,
-      getColor: value.getColor,
-      getRingRadii: value.getRingRadii,
-      startAngle: value.startAngle,
-      endAngle: value.endAngle,
-      geometryScrubbing: value.geometryScrubbing,
-    }),
-    [
-      value.data,
-      value.size,
-      value.center,
-      value.strokeWidth,
-      value.ringGap,
-      value.baseInnerRadius,
-      value.animationKey,
-      value.isLoaded,
-      value.enterTransition,
-      value.enterStaggerScale,
-      value.containerRef,
-      value.totalValue,
-      value.getColor,
-      value.getRingRadii,
-      value.startAngle,
-      value.endAngle,
-      value.geometryScrubbing,
-    ],
-  );
-
-  const hover = useMemo<RingHoverContextValue>(
-    () => ({
-      hoveredIndex: value.hoveredIndex,
-      setHoveredIndex: value.setHoveredIndex,
-    }),
-    [value.hoveredIndex, value.setHoveredIndex],
-  );
-
+  const { stable, hover } = useArcChartSlices(RING_CONTEXTS, value);
   return (
-    <RingStableContext.Provider value={stable}>
-      <RingHoverContext.Provider value={hover}>{children}</RingHoverContext.Provider>
-    </RingStableContext.Provider>
+    <RING_CONTEXTS.stable.Provider value={stable}>
+      <RING_CONTEXTS.hover.Provider value={hover}>{children}</RING_CONTEXTS.hover.Provider>
+    </RING_CONTEXTS.stable.Provider>
   );
 }
 
 export function useRingStable(): RingStableContextValue {
-  const context = useContext(RingStableContext);
-  if (!context) {
-    throw new Error(
-      "useRingStable must be used within a RingProvider. " +
-        "Make sure your component is wrapped in <RingChart>.",
-    );
-  }
-  return context;
+  return useArcChartStable(RING_CONTEXTS);
 }
 
 export function useRingHover(): RingHoverContextValue {
-  const context = useContext(RingHoverContext);
-  if (!context) {
-    throw new Error(
-      "useRingHover must be used within a RingProvider. " +
-        "Make sure your component is wrapped in <RingChart>.",
-    );
-  }
-  return context;
+  return useArcChartHover(RING_CONTEXTS);
 }
 
 export function useRing(): RingContextValue {
   return { ...useRingStable(), ...useRingHover() };
 }
 
-export default RingStableContext;
+export default RING_CONTEXTS.stable;

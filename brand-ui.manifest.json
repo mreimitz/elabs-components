@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-27T20:18:32.906Z",
+  "generatedAt": "2026-09-27T23:32:20.926Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -15216,7 +15216,7 @@
         {
           "name": "ChartLegendHoverProvider",
           "kind": "value",
-          "module": "packages/charts/src/charts/chart-legend-hover.tsx"
+          "module": "packages/charts/src/charts/legend/legend-hover.tsx"
         },
         {
           "name": "ChartLoadingLabel",
@@ -16006,7 +16006,7 @@
         {
           "name": "ProfitLossLegendHoverProvider",
           "kind": "value",
-          "module": "packages/charts/src/charts/profit-loss-legend-hover.tsx"
+          "module": "packages/charts/src/charts/legend/legend-hover.tsx"
         },
         {
           "name": "ProfitLossLine",
@@ -16393,7 +16393,7 @@
         {
           "name": "useChartLegendHover",
           "kind": "value",
-          "module": "packages/charts/src/charts/chart-legend-hover.tsx"
+          "module": "packages/charts/src/charts/legend/legend-hover.tsx"
         },
         {
           "name": "useChartSelectionGestureScope",
@@ -16518,7 +16518,7 @@
         {
           "name": "useProfitLossLegendHover",
           "kind": "value",
-          "module": "packages/charts/src/charts/profit-loss-legend-hover.tsx"
+          "module": "packages/charts/src/charts/legend/legend-hover.tsx"
         },
         {
           "name": "useRadar",
