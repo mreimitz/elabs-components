@@ -30,6 +30,13 @@ const REFRESH_DELAY_MS = 50;
 export type WorkspaceEventListener = (event: WorkspaceEvent) => void;
 
 const listeners = new Set<WorkspaceEventListener>();
+const reopenListeners = new Set<() => void>();
+export function onWorkspaceReopen(listener: () => void): () => void {
+  reopenListeners.add(listener);
+  return () => {
+    reopenListeners.delete(listener);
+  };
+}
 
 /** Every workspace event, after the open file and the tree have been handled (DG-26). */
 export function onWorkspaceEvent(listener: WorkspaceEventListener): () => void {
@@ -138,6 +145,7 @@ export function startLiveReload(): () => void {
   source.onopen = () => {
     // A reconnect (the dev server restarted) may have missed events: catch up once.
     if (opened) {
+      reopenListeners.forEach((listener) => listener());
       const path = workspaceStore.get().current?.path;
       if (path) void checkOpenFile(path, undefined);
     }

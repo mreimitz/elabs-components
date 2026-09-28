@@ -20,6 +20,7 @@ import {
 } from "@elabs-ai/components-ui";
 import { useCatalogSync } from "../catalog/catalog-sync"; // DG-26
 import { navigate, useRoute, type Route } from "../routes/use-hash";
+import { useComponentSync } from "../workspace/component-sync";
 import { useLiveReload } from "../workspace/live-reload";
 import { useAutosave } from "../workspace/use-autosave";
 import { useWorkspace } from "../workspace/workspace-store";
@@ -76,6 +77,7 @@ const SHELL_LABELS = {
 export function ShellServices() {
   useAutosave();
   useLiveReload();
+  useComponentSync();
   useCatalogSync(); // DG-26
   return null;
 }

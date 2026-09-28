@@ -36,6 +36,9 @@ export const ISSUE_SEVERITY = {
   // DG-26
   "bad-ref": "error",
   "ref-missing": "error",
+  "ref-invalid": "error",
+  "ref-cycle": "error",
+  "ref-depth": "error",
   "inner-flow": "warning",
   "expand-not-diagram": "warning",
   "ref-type-not-drawn": "info",

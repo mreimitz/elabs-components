@@ -1,12 +1,18 @@
 /** Cross-reference checks on the normalized AST. Pure: no DOM, no fetch, no JSON imports. React-free. */
-import { endHead, refForm } from "./ids";
+import type { ComponentTable } from "../compose/resolver";
+import { MAX_COMPONENT_DEPTH } from "../compose/resolver";
+import { endHead, refFileOf, refForm } from "./ids";
 import { issue, type ArchIssue } from "./issues";
 import { nearestName } from "./nearest-name";
 import { joinPath } from "./source-map";
 import type { ArchDiagram } from "./types";
 
 /** `iconNames`: every icon the app can draw ("aws/lambda", "lucide/user"); the caller builds it (no JSON import here). */
-export function validateArch(ast: ArchDiagram, iconNames: ReadonlySet<string>): ArchIssue[] {
+export function validateArch(
+  ast: ArchDiagram,
+  iconNames: ReadonlySet<string>,
+  components?: ComponentTable,
+): ArchIssue[] {
   const out: ArchIssue[] = [];
   const zones = new Map<string, (typeof ast.zones)[number]>();
   const nodes = new Map<string, (typeof ast.nodes)[number]>();
@@ -113,6 +119,29 @@ export function validateArch(ast: ArchDiagram, iconNames: ReadonlySet<string>): 
     ast.nodes.flatMap((n) => (n.ref !== undefined && refForm(n.ref) !== "catalog" ? [n.id] : [])),
   );
 
+  for (const node of ast.nodes) {
+    const file = node.ref && refFileOf(node.ref);
+    const entry = file ? components?.get(file) : undefined;
+    if (!entry || entry.status === "ok") continue;
+    const code =
+      entry.status === "missing"
+        ? "ref-missing"
+        : entry.status === "invalid"
+          ? "ref-invalid"
+          : entry.status === "cycle"
+            ? "ref-cycle"
+            : "ref-depth";
+    const message =
+      entry.status === "missing"
+        ? `${node.ref} does not exist (${file}).`
+        : entry.status === "invalid"
+          ? `${node.ref} cannot be read as a diagram: ${entry.reason}.`
+          : entry.status === "cycle"
+            ? `${node.ref} references itself: ${entry.chain.join(" → ")}.`
+            : `References to diagrams nest more than ${MAX_COMPONENT_DEPTH} deep: ${entry.chain.join(" → ")}.`;
+    out.push(issue(code, joinPath(node.path, "ref"), message));
+  }
+
   const steps = new Map<number, string>();
   for (const f of ast.flows) {
     for (const end of ["from", "to"] as const) {
@@ -130,7 +159,32 @@ export function validateArch(ast: ArchDiagram, iconNames: ReadonlySet<string>): 
             ),
           );
         }
-        continue; // Part 2 checks the part after the dot against the referenced diagram
+        let ref = diagramRefOf.get(head);
+        const parts = id.slice(head.length + 1).split(".");
+        for (const [index, inner] of parts.entries()) {
+          const file = ref && refFileOf(ref);
+          const entry = file ? components?.get(file) : undefined;
+          if (!entry || entry.status !== "ok") break;
+          const target = [...entry.ast.nodes, ...entry.ast.zones].find((n) => n.id === inner);
+          if (!target) {
+            out.push(
+              issue("unknown-endpoint", joinPath(f.path, end), `${ref} has no id "${inner}".`),
+            );
+            break;
+          }
+          ref = "ref" in target ? target.ref : undefined;
+          if (!ref && index < parts.length - 1) {
+            out.push(
+              issue(
+                "unknown-endpoint",
+                joinPath(f.path, end),
+                `"${inner}" does not reference a diagram, so "${id}" cannot point inside it.`,
+              ),
+            );
+            break;
+          }
+        }
+        continue;
       }
       if (zones.has(id)) {
         out.push(

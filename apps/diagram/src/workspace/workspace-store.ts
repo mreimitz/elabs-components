@@ -8,6 +8,8 @@
  * Writers: `use-autosave.ts` (dirty, save), `live-reload.ts` (disk changes), and the actions
  * below. DG-22 (tree + tabs), DG-23 (new from template), DG-26 (components) read and call them.
  */
+import { preloadComponents } from "./component-loader";
+import { putComponentFiles } from "../state/component-files";
 import { useSyncExternalStore } from "react";
 import { createStore } from "../state/create-store";
 import { diagramActions, diagramStore, documentActions, editActions } from "../state/diagram-store";
@@ -288,6 +290,7 @@ export const workspaceActions = {
       throw error;
     }
     if (!current()) return false;
+    const { text, mtime } = file;
     // Edits queued before navigation must reach disk before replacing their document.
     if (diagramStore.get().text !== diagramStore.get().loadedText) {
       const saved = await workspaceActions.saveNow();
@@ -301,7 +304,14 @@ export const workspaceActions = {
         if (kept !== null) throw new UnsavedEditsError(kept, path);
       }
     }
-    const { text, mtime } = file;
+    const components = await preloadComponents(text, current);
+    if (!current() || !components) return false;
+    // A late editor update during dependency I/O must not be replaced by navigation.
+    const late = diagramStore.get();
+    if (late.path !== null && late.text !== late.loadedText) {
+      throw new UnsavedEditsError(late.path, path);
+    }
+    putComponentFiles(components);
     // `current` first: the autosave's path watcher then sees nothing to catch up on.
     workspaceStore.set({
       current: { path, mtime },

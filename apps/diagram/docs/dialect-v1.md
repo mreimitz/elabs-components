@@ -75,7 +75,7 @@ diagram-ref  := "ws" ("/" segment)+           segment: any character except "/",
 ### 2.2 Precedence: what a reference supplies
 
 The node's own written key always wins. Below it, only a catalog reference fills anything in
-R1 (a diagram reference's title/icon land in Part 2 — see §2.4):
+Reference values follow these precedence rules (diagram references: §2.4):
 
 | Key                                       | Catalog part supplies                                               | Catalog icon entry supplies                                        | Node default (no ref, or ref fills nothing) |
 | ----------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------- |
@@ -121,22 +121,30 @@ server's `/api/catalog/all` computes) until the live catalog loads, then the liv
 catalog edit recompiles the open diagram without touching its text, undo history or dirty
 flag. The MCP tools check against `readAll()` read fresh on every call, never a cache.
 
-### 2.4 Diagram references (partial; Part 2 completes this)
+### 2.4 Diagram references
 
-A node whose `ref` is a `ws/` path compiles to one `arch/composite` node (an interim look;
-`ServiceNode` today, DG-27 replaces it): its own written keys, `component` (the referenced
-file's path), and `ports` (the inner ids this diagram's flows name into it, in first-use
-order). **Known gap:** the referenced diagram's own title, icon and description are not yet
-copied in when the node writes none — that fill, `count`, and a `broken`/`pending` state for a
-missing or unreadable file, are Part 2. A `type` written on a diagram reference is kept in the
-AST but not drawn in R1 (the composite's data carries no type) — also left until DG-27.
+A `ws/` reference resolves the named workspace YAML before its first draw. It remains one
+collapsed `arch/composite` node. The referenced diagram supplies its title, `component.icon`,
+and `component.description` (falling back to its top-level description); explicitly written
+node values win, including an empty description. The compiled data includes the referenced
+file path, inner node count, and the inner ids used by parent flows. The current renderer is
+still the ordinary service card; inline expansion and dedicated composite controls are separate work.
 
-**Dotted flow ends (already built, 1a).** A flow end is either a plain id, or `<node>.<inner
-id>` reaching inside a node whose `ref` is a diagram (`tenant.qtdi -> warehouse`). The head
-before the first dot must be a node whose ref is a diagram reference, or the end is
-`unknown-endpoint`. Both ends inside the same reference is `inner-flow` (a warning: it would
-be a loop on the collapsed box, so it is not drawn). A note's `at:` never reaches inside a
-reference — a dotted target there is `unknown-note-target`.
+Missing files, invalid diagrams, reference cycles, and nesting deeper than eight diagrams
+produce positioned errors and a destructive card with a written reason. Unloaded references
+remain pending. Changes to referenced files, including creation or deletion, recompile the
+parent without editing or saving its YAML or changing its undo history. A reconnect reloads
+references because events may have been missed.
+
+A dotted flow end reaches inside a diagram reference (`tenant.qtdi -> warehouse`). Every
+segment must exist in the resolved diagram; another dot requires another diagram-reference
+node. Missing or invalid references report their own problem without cascading unknown-id
+errors. Both ends inside one reference produce an `inner-flow` warning because the collapsed
+box cannot draw that loop. Notes cannot reach inside references.
+
+MCP validation and write tools use the same resolver. An invalid reference refuses the write.
+`compose_set` cannot modify an inner node through its parent: edit the referenced file.
+It can still edit a parent flow whose endpoint is dotted.
 
 ## 3. The version rule
 

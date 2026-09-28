@@ -85,7 +85,7 @@ async function editFile(path, ctx, edit, hintIds) {
 }
 
 /** `""` → the top level; `flow:a->b` → that flow; any other string → the zone or node id. */
-function resolveTarget(ast, target) {
+function resolveTarget(ast, target, surface) {
   if (target === "") return { kind: "top", path: "" };
   const arrow = /^flow:\s*([^\s<>-][^\s<>]*?)\s*(<->|->)\s*(\S+)\s*$/.exec(target);
   if (arrow) {
@@ -93,6 +93,11 @@ function resolveTarget(ast, target) {
     const flow = ast.flows.find((f) => f.from === from && f.to === to);
     if (!flow) throw new Error(`No flow ${from} -> ${to}.`);
     return { kind: "flow", flow };
+  }
+  if (target.includes(".")) {
+    const head = ast.nodes.find((node) => node.id === target.split(".")[0]);
+    const file = head?.ref && surface.refFileOf(head.ref);
+    if (file) throw new Error(`${target} is inside ${head.ref}; edit that file (${file}).`);
   }
   const entry = [...ast.zones, ...ast.nodes].find((e) => e.id === target);
   if (!entry) throw new Error(`No zone or node has the id "${target}".`);
@@ -129,7 +134,7 @@ export const composeTools = [
         path,
         ctx,
         (text, ast, s) => {
-          const t = resolveTarget(ast, target);
+          const t = resolveTarget(ast, target, s);
           if (t.kind === "flow") return s.setFlowKeys(text, t.flow, toPatch(patch));
           // A new top-level key goes under the header (after `title:`), not after `flows:`.
           const options = t.kind === "top" ? { after: "title" } : undefined;

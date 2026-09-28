@@ -1,4 +1,5 @@
 /** Public surface of the dialect: text in, AST + positioned issues out. React-free. */
+import { buildComponentTable, type ComponentFiles, type ComponentTable } from "../compose/resolver";
 import { resolveCatalogRefs, type CatalogLookup } from "./catalog-refs";
 import { KEY_ANCHORED, type ArchIssue } from "./issues";
 import { normalizeArch } from "./normalize";
@@ -7,14 +8,15 @@ import { locate } from "./source-map";
 import type { ArchDiagram } from "./types";
 import { validateArch } from "./validate";
 
-// DG-26 — what references resolve against. Without a source, references stay as written.
+/** Explicit reference sources keep parsing deterministic in browser and server callers. */
 export interface ReferenceSources {
-  /** Catalog references are filled from it (Part 1b). */
+  /** Catalog values fill unwritten node fields. */
   catalog?: CatalogLookup;
-  // Part 2 adds: files?: ComponentFiles;
+  files?: ComponentFiles;
 }
 
 export interface ArchCheckResult {
+  components?: ComponentTable;
   /** null when the text is not a diagram at all (YAML error, wrong root, wrong version). */
   ast: ArchDiagram | null;
   /** Every issue, with a 1-based range, sorted by position. */
@@ -31,6 +33,7 @@ export function checkArchYaml(
   const parsed = parseArchYaml(text);
   const found: ArchIssue[] = [...parsed.issues];
   let ast: ArchDiagram | null = null;
+  let components: ComponentTable | undefined;
   if (parsed.raw !== undefined) {
     const normalized = normalizeArch(parsed.raw, parsed.sourceMap);
     ast = normalized.ast;
@@ -40,7 +43,14 @@ export function checkArchYaml(
       ast = filled.ast;
       found.push(...filled.issues);
     }
-    if (ast) found.push(...validateArch(ast, iconNames));
+    if (ast) {
+      if (sources.files)
+        components = buildComponentTable(ast, sources.files, {
+          catalog: sources.catalog,
+          iconNames,
+        });
+      found.push(...validateArch(ast, iconNames, components));
+    }
   }
   const issues = found
     .map((i) =>
@@ -52,7 +62,7 @@ export function checkArchYaml(
           },
     )
     .sort((a, b) => (a.range?.offset[0] ?? 0) - (b.range?.offset[0] ?? 0));
-  return { ast, issues, ok: !issues.some((i) => i.severity === "error") };
+  return { ast, components, issues, ok: !issues.some((i) => i.severity === "error") };
 }
 
 export { parseArchYaml, type ParsedArchYaml } from "./parse";
