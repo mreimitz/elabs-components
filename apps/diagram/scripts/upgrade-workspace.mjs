@@ -104,11 +104,25 @@ const rels = [...new Set(files.map((f) => relative(workspace, f)))].sort();
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
+// Plain words for `UpgradeResult`/`RefFirstResult`'s internal reason codes; a reason not in
+// this list (there is none today) still prints, verbatim, rather than throwing.
+const REASON_TEXT = {
+  "yaml-error": "the YAML does not parse",
+  "not-a-diagram": "this is not a diagram file",
+  "unsupported-version": "the dialect version is not one this app reads",
+  "no-exact-edit": "a value here could not be edited exactly",
+};
+const reasonText = (reason) => REASON_TEXT[reason] ?? reason;
+
 let changedCount = 0;
 let totalRefs = 0;
 let totalDropped = 0;
 let anyBadChoices = false;
 let failed = missingTarget;
+// Every `--ref-first` file is validated before any file is written: a converted file's text
+// waits here, and only lands on disk once the whole run comes back clean (never a mix of files
+// a fixed-up re-run would have to sort out).
+const refFirstWrites = [];
 for (const rel of rels) {
   const full = join(workspace, rel);
   let text;
@@ -126,7 +140,7 @@ for (const rel of rels) {
     // below, which names the real cause.
     const versionCheck = upgradeText(text);
     if (versionCheck.from !== null && versionCheck.from !== DIALECT_VERSION) {
-      console.log(`${rel}: cannot read (run the dialect upgrade first)`);
+      console.log(`${rel}: still dialect ${versionCheck.from}; run the plain upgrade first`);
       failed = true;
       continue;
     }
@@ -134,7 +148,7 @@ for (const rel of rels) {
     // review round 0 F2 — refFirstText now reports why an unreadable file could not be read
     // (the same reasons upgradeText does, below), never a quiet "unchanged".
     if (result.reason) {
-      console.log(`${rel}: cannot read (${result.reason})`);
+      console.log(`${rel}: cannot read (${reasonText(result.reason)})`);
       failed = true;
       continue;
     }
@@ -149,6 +163,18 @@ for (const rel of rels) {
     for (const skip of result.skipped) {
       console.log(`${rel}: "${skip.id}" left custom (${skip.reason})`);
     }
+    // A pinned key or an unspliceable drop is otherwise invisible: say so per node, not just
+    // in the file's own summary line below.
+    for (const change of result.changes) {
+      if (change.pinned) {
+        console.log(
+          `${rel}: "${change.id}" kept ${change.pinned.join(" and ")} so the drawing stays the same`,
+        );
+      }
+      if (change.reason) {
+        console.log(`${rel}: "${change.id}": a drop could not be made exactly, left in place`);
+      }
+    }
     if (!result.changed) {
       console.log(`${rel}: unchanged`);
       continue;
@@ -159,14 +185,14 @@ for (const rel of rels) {
     totalRefs += refs;
     totalDropped += dropped;
     changedCount += 1;
-    if (!dryRun) writeFileSync(full, result.text);
+    refFirstWrites.push({ full, text: result.text });
     continue;
   }
   const result = upgradeText(text);
   // Any reason at all (unreadable, or a version bump that could not be made exactly, DG-26
   // 1a.9) is a failure — never reported as a quiet "unchanged".
   if (result.reason !== undefined) {
-    console.log(`${rel}: cannot read (${result.reason})`);
+    console.log(`${rel}: cannot read (${reasonText(result.reason)})`);
     failed = true;
     continue;
   }
@@ -177,6 +203,16 @@ for (const rel of rels) {
   console.log(`${rel}: ${result.from} → ${DIALECT_VERSION} (lines ${result.lines.join(", ")})`);
   changedCount += 1;
   if (!dryRun) writeFileSync(full, result.text);
+}
+
+// A run with a bad choice, or a file that could not be read, writes NOTHING: every `--ref-first`
+// file above only queued its text; only a clean run puts any of it on disk.
+if (refFirst && !dryRun) {
+  if (failed || anyBadChoices) {
+    console.log("Run failed; no files were written. Fix the issue above and run it again.");
+  } else {
+    for (const { full, text } of refFirstWrites) writeFileSync(full, text);
+  }
 }
 
 const suffix = dryRun ? " (dry run)" : "";
