@@ -13,11 +13,10 @@ import { type Context, createContext, type RefObject, useContext, useMemo } from
 import { resolvePalette } from "./chart-context";
 
 /**
- * Default arc colours: the categorical palette through `resolvePalette`
- * (RM-186), uncapped — both arc families have always cycled all twelve
- * series colours (`--chart-1` … `--chart-12`), so they ask for them
- * `explicit`ly. The one list both
- * families' public default colour arrays are copied from.
+ * Default arc colours: the categorical palette through `resolvePalette`,
+ * uncapped — all twelve series colours (`--chart-1` … `--chart-12`), asked
+ * for `explicit`ly. Both families' public default colour arrays are copied
+ * from this one list.
  */
 export const defaultArcChartColors: string[] = resolvePalette("categorical", 12, {
   explicit: true,

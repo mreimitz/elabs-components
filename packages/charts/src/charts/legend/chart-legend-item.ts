@@ -60,8 +60,8 @@ export interface ChartLegendItem {
 }
 
 /**
- * A legend row made of the `Present` fields (always set) and the `Optional`
- * fields (may be omitted) of `ChartLegendItem`.
+ * A legend row that uses some of the legend fields: the `Present` ones are
+ * always set, the `Optional` ones may be omitted, and the rest are absent.
  */
 export type LegendItemShape<
   Present extends keyof ChartLegendItem,
