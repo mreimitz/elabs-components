@@ -35,6 +35,10 @@ export DIAGRAM_URL="$ATLAS_URL"
 node --test scripts/tests/reference-regressions.test.mjs
 node --test scripts/tests/home-titles.test.mjs
 node --test scripts/tests/yaml-context.test.mjs
+node --test scripts/tests/endpoint-metadata.test.mjs
+node --test scripts/tests/reference-endpoints.test.mjs
+node --test scripts/tests/node-details.test.mjs
+node --test scripts/tests/component-resolver.test.mjs
 node scripts/tests/reference-browser.mjs
 for title_form in block anchored aliased flow anchored-multiline; do
   ATLAS_TITLE_FORM="$title_form" node scripts/tests/home-browser.mjs
@@ -43,6 +47,8 @@ node tests/sidebar-search.mjs
 node tests/tab-bar.mjs
 node tests/lens-navigation.mjs
 node tests/editor-completions.mjs
+node tests/details-card.mjs
+node tests/component-references.mjs
 node scripts/check-view-mode.mjs
 node tests/lens-recovery.mjs
 node tests/lens-motion.mjs
@@ -56,12 +62,14 @@ node tests/lens-motion.mjs
 | Home browser          | Real template copies, distinct names across navigation surfaces, Retry focus, clipboard fallback and phone layouts.                    |
 | Sidebar search        | Matching names and content, visible evidence at nested widths, sequential queries, keyboard access and folder-state restoration.       |
 | YAML context          | Scalar replacement, comments, quotes, flow mappings, array values and layout-dependent schema traversal.                               |
-| Editor completions    | Real Monaco popup, slash triggers, keyboard acceptance, quoted references, workspace titles, schema values, icons and live ids.        |
+| Editor completions    | Real Monaco popup, references, inherited metadata, icon previews, snippets, provider lifecycle and collapsed inner endpoints.          |
 | Tab bar               | Tab overflow and selection, responsive visibility, keyboard focus, close confirmation, and sidebar/theme controls.                     |
 | View mode             | Personal overrides, external edits, mode changes, mobile canvas, presentation controls and thumbnail readiness.                        |
 | Lens navigation       | Fresh loads paint one lens; rapid reversals, mid-morph tab changes, stable tab positions, delayed A-B-A reads, Back/Forward and Retry. |
 | Lens interactions     | Shipped diagrams, routing geometry, read-only write/history guards, keyboard drill-down, refit and export.                             |
 | Lens motion           | First switch, resize, reversal, shared camera, persistent controls and reduced motion, with frame measurements.                        |
+
+`DETAILS_EVIDENCE` and `COMPONENT_EVIDENCE` save detail-card and workspace-reference browser results. Detail-card checks cover measured description expansion, safe links, empty overrides, read-only interaction and axe at desktop/phone widths in both themes. Component checks exercise live referenced-file changes, stale navigation guards and actual MCP rejection without partial writes.
 
 `EDITOR_EVIDENCE` saves completion screenshots and results. `ATLAS_EVIDENCE` saves Home/reference screenshots. `SEARCH_EVIDENCE_DIR`, `VIEW_EVIDENCE` and `LENS_EVIDENCE_DIR` save the respective stream's artifacts. Choose separate output folders. The development routes `#dev/spec-check` and `#dev/lens-check` expose the specification and lens fixtures; fixture counts grow as regressions are added.
 

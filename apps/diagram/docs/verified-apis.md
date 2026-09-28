@@ -2,6 +2,16 @@
 
 Verified against `main` @ cec46c39 on 2026-09-26 by reading the source. **Every DG item imports exactly these names.** If a name below is missing when you run `typecheck:local`, the library changed: stop, re-verify in the source file named here, and report — do not guess a replacement.
 
+## Current Atlas contracts — verified 2026-09-28
+
+These source contracts supersede the older implementation snapshots later in this document.
+
+- `src/interaction/node-details.ts` owns `resolveNodeDetails`, `detailKind`, `safeHref` and `componentPathOf`. Details derive from compiled data and catalog identity; written empty descriptions/docs clear inherited values. Only safe documentation URLs become links.
+- `src/spec/compose/resolver.ts` exports immutable `ComponentFiles` snapshots, `loadComponentFiles` and `buildComponentTable`. Workspace references use `ws/<path>`; catalog leaves cannot be traversed as diagrams. Cycle/depth checks and inner endpoint validation apply to browser and MCP writes.
+- `checkArchYaml(text, iconNames, { catalog, files })` returns the current AST and component table. The compiled graph alone does not contain the table. `src/state/component-files.ts` owns the current editor snapshot and invalidation revision.
+- `src/workspace/component-loader.ts` preloads reference files before publishing a document; `component-sync.ts` recompiles on dependency changes. Navigation and revision checks prevent obsolete reads from replacing the current document.
+- `src/editor/endpoint-metadata.ts` reads the current buffer with catalog inheritance. `reference-endpoints.ts` adds qualified inner IDs even when the instance is collapsed, with bounded candidate traversal and prefix-directed lookup. Providers recheck model, version, cancellation and read-only state after asynchronous work.
+
 ## How to work a DG item (for any agent tier)
 
 1. Read the item file, this document, and `2026-09-26-plan.md` §2 (D1–D14).
