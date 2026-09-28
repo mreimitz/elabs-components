@@ -5,6 +5,7 @@
 /* global document, getComputedStyle, requestAnimationFrame */
 import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { clearTimeout, setTimeout } from "node:timers";
 const catalogFile = new URL("../../catalog/parts/snowflake.yaml", import.meta.url);
 const catalogOriginal = await readFile(catalogFile, "utf8");
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? "playwright");
@@ -20,8 +21,31 @@ const errors = [];
 page.on("pageerror", (error) => errors.push(String(error)));
 const written = () =>
   page.evaluate(async () => (await import("/src/state/diagram-store.ts")).diagramStore.get().text);
+/** Await asynchronous predicates explicitly; waitForFunction treats their Promise as truthy. */
+const waitForState = async (predicate, arg) => {
+  const deadline = Date.now() + 10_000;
+  while (Date.now() < deadline) {
+    let timer;
+    try {
+      const result = await Promise.race([
+        page.evaluate(predicate, arg),
+        new Promise((_, reject) => {
+          timer = setTimeout(
+            () => reject(new Error("Timed out waiting for the expected diagram state")),
+            Math.max(1, deadline - Date.now()),
+          );
+        }),
+      ]);
+      if (result === true) return;
+    } finally {
+      clearTimeout(timer);
+    }
+    await page.waitForTimeout(25);
+  }
+  assert.fail("Timed out waiting for the expected diagram state");
+};
 const waitText = async (pattern) => {
-  await page.waitForFunction(
+  await waitForState(
     async (source) =>
       new RegExp(source).test(
         (await import("/src/state/diagram-store.ts")).diagramStore.get().text,
@@ -84,7 +108,7 @@ try {
       );
       assert.equal(await written(), textBeforeBackspace);
       assert.equal(await page.locator('.react-flow__node[data-id="probe"]').count(), 1);
-      await page.waitForFunction(
+      await waitForState(
         async ({ endpoint, text }) => (await (await fetch(endpoint)).text()) === text,
         { endpoint, text: textBeforeBackspace },
       );
@@ -113,7 +137,7 @@ try {
         );
     });
   await page.keyboard.press("Enter");
-  await page.waitForFunction(
+  await waitForState(
     async () =>
       !(await import("/src/state/diagram-store.ts")).diagramStore.get().text.includes("type:"),
   );
