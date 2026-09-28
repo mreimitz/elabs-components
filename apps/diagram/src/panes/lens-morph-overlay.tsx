@@ -369,9 +369,32 @@ export function LensMorphOverlay({
   const edgeOut = 1 - smoothstep(position / 0.5);
   const edgeIn = smoothstep((position - 0.5) / 0.5);
   const zoneT = smoothstep(position);
+  // maintainer 2026-09-27 (review round 1, M2/MF-3): the overlay itself used to sit at a flat,
+  // fully-opaque weight for its whole "gather" span (`gather` reaches 1 at `GATHER_END` and
+  // holds there) while `canvas-pane.tsx`'s two real panes were already both fully transparent
+  // — an opaque ghost layer popping in over blank panes, and popping back out in one frame
+  // the instant this component unmounts at a settled `position`, is exactly the "swap" S10 §7
+  // rules out. The whole overlay now ramps in lock-step with the SOURCE pane's own fade-out
+  // (0 → 1 over the same `[0, GATHER_START]` window `technicalOpacity` fades 1 → 0 over) and
+  // ramps back out in lock-step with the TARGET pane's fade-in (1 → 0 over the same
+  // `[DRESS_START, 1]` window `visualOpacity` fades 0 → 1 over) — direction-agnostic (a pure
+  // function of `position`), so a mid-flight reverse crosses the same curve backwards with no
+  // discontinuity. Applied to the outer container below, it multiplies every ghost's own
+  // opacity (CSS `opacity` compounds on nested elements), so this is the one place that needs
+  // to change, not each ghost kind's own timing.
+  const overlayOpacity =
+    position <= GATHER_START
+      ? subProgress(position, 0, GATHER_START)
+      : position >= DRESS_START
+        ? 1 - subProgress(position, DRESS_START, 1)
+        : 1;
 
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+    <div
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      style={{ opacity: overlayOpacity }}
+      aria-hidden="true"
+    >
       <svg className="absolute inset-0 h-full w-full">
         {plan.technicalFlows.map((seg) => (
           <line

@@ -591,11 +591,28 @@ function DiagramCanvas({
     const pane = paneRef.current?.querySelector<HTMLElement>(".react-flow");
     const limits = { minZoom: FIT_MIN_ZOOM, maxZoom: DRILLDOWN_MAX_ZOOM };
     const padding = pane ? chromeFitPadding(pane, all, limits) : 0.3;
-    fitView({ nodes: targets, padding, maxZoom: DRILLDOWN_MAX_ZOOM, duration: motionMs("base") });
-    // React Flow's fit moves the camera; it never moves focus itself (P4 library gap, see
-    // `focus-canvas.ts`'s own doc comment) — without this, ⌥-Enter left focus on the box the
-    // person had just left, in the pane that just went `inert`, which drops it to `<body>`.
-    focusCanvasElement(frameNodeIds[0] ?? null);
+    const target = frameNodeIds[0] ?? null;
+    // MF-5 (review round 1): `fitView` in `@xyflow/react` 12.11.1 is queued and async (its
+    // Promise resolves once the transform lands) — focusing the target right away used to
+    // race it: `.focus()` (`focus-canvas.ts`) fires before the frame settles, and React
+    // Flow's own `autoPanOnNodeFocus` then pans a SECOND time on focus, to whatever the
+    // viewport was mid-tween, competing with this fit's chrome-aware padding and zoom
+    // ceiling — whichever landed last won, so the drill-down often framed the wrong place.
+    // `autoPanOnNodeFocus={false}` below turns off React Flow's own pan-on-focus entirely
+    // (this fit already does that job, with padding/zoom limits React Flow's own does not
+    // know about); focus is requested only once this fit's Promise resolves, so it always
+    // lands on the settled frame.
+    void fitView({
+      nodes: targets,
+      padding,
+      maxZoom: DRILLDOWN_MAX_ZOOM,
+      duration: motionMs("base"),
+    }).then(() => {
+      // React Flow's fit moves the camera; it never moves focus itself (P4 library gap, see
+      // `focus-canvas.ts`'s own doc comment) — without this, ⌥-Enter left focus on the box the
+      // person had just left, in the pane that just went `inert`, which drops it to `<body>`.
+      focusCanvasElement(target);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once per `frameKey`, not on every node/edge change
   }, [frameKey, status]);
 
@@ -716,6 +733,10 @@ function DiagramCanvas({
           // Wave-2 review M3: React Flow lifts a selected node (and its children and edges) by
           // 1000, over the edge labels' fixed z 1000 — selecting a zone hid the labels on it.
           elevateNodesOnSelect={false}
+          // MF-5 (review round 1): this pane already re-frames a keyboard drill-down itself
+          // (chrome-aware padding, a zoom ceiling), above — React Flow's own pan-on-focus
+          // raced it and could win with a plainer, chrome-ignorant frame.
+          autoPanOnNodeFocus={false}
           proOptions={{ hideAttribution: true }}
           // DG-14: delete (a text edit) and every later wave-3 handler, merged above.
           {...waveProps}

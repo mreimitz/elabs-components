@@ -62,11 +62,20 @@ function VisualFit({ paneRef }: { paneRef: RefObject<HTMLDivElement | null> }) {
   const initialized = useNodesInitialized();
   const lastFit = useRef<{ x: number; y: number; zoom: number } | null>(null);
 
+  // MF-2 (review round 1): `fitView` in `@xyflow/react` 12.11.1 is queued and async — it
+  // returns `Promise<boolean>` that resolves once the viewport transform actually lands, even
+  // at `duration: 0`. Reading `getViewport()` right after CALLING `fitView` (the previous
+  // version) still read the PRE-fit viewport, so `lastFit.current` recorded the wrong value on
+  // every fit, including the first one on mount. The next resize then saw the (by then genuinely
+  // post-fit) `getViewport()` differ from that stale `lastFit`, read that as "the user moved the
+  // view" and skipped refitting forever after. Recording the viewport once the Promise resolves
+  // is what `fitView`'s own async contract requires.
   const fit = useCallback(() => {
     const pane = paneRef.current?.querySelector<HTMLElement>(".react-flow");
     if (!pane) return;
-    fitView({ padding: chromeFitPadding(pane, getNodes()), duration: 0 });
-    lastFit.current = getViewport();
+    void fitView({ padding: chromeFitPadding(pane, getNodes()), duration: 0 }).then(() => {
+      lastFit.current = getViewport();
+    });
   }, [paneRef, getNodes, fitView, getViewport]);
 
   useEffect(() => {
