@@ -37,7 +37,12 @@ server is an MCP server named `atlas` (`http://localhost:5180/mcp`); the tools b
 - `catalog_search` — find an icon or part by product name, alias or tag; use its `name` as
   `ref: catalog/<name>`.
 - `catalog_get` — one catalog entry and a ready-to-paste reference node (`yaml`).
-- `catalog_missing` / `catalog_update` — the `fill-catalog` prompt's loop; nothing else.
+- `catalog_missing` / `catalog_update` — fill descriptions/docs and create products without
+  their own icon. A new slug requires `kind`; optional `icon` must already exist. Omit it
+  to use the kind glyph, rather than borrowing an unrelated logo. A vendor with no pack
+  or catalog file additionally requires `create_vendor: true`. Generic entries carry
+  `generic: true`; curated entries are never overwritten. Use the returned catalog name
+  as `ref: catalog/<name>` in new diagrams.
 
 ## Conventions
 

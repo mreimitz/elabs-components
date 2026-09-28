@@ -12,7 +12,7 @@ import { LUCIDE_VENDOR, useCatalog, type CatalogEntry } from "./catalog-service"
 export const CATALOG_LABELS = {
   heading: "Catalog",
   intro: (entries: number, vendors: number) =>
-    `${entries} icons and parts from ${vendors} vendors. Open one to see what it is and copy its YAML.`,
+    `${entries} catalog entries from ${vendors} vendors. Open one to see what it is and copy its YAML.`,
   loading: "Loading the catalog…",
   all: "All",
   vendorFilter: "Vendor",
@@ -22,6 +22,7 @@ export const CATALOG_LABELS = {
   noneHint: "Try another word, or All vendors.",
   noDescription: "No description yet",
   part: "Part",
+  noIcon: "No icon yet",
   grid: (vendor: string) => `Catalog entries: ${vendor}`,
   problems: (n: number) =>
     `${n} catalog ${n === 1 ? "entry was" : "entries were"} skipped (see the dev server's /api/catalog/all).`,
@@ -141,6 +142,11 @@ export function CatalogView({ vendor }: CatalogViewProps) {
                     <Text as="span" variant="caption" tone="muted" className="line-clamp-2">
                       {e.description ?? CATALOG_LABELS.noDescription}
                     </Text>
+                    {e.generic ? (
+                      <Badge variant="outline" className="mt-1 self-start">
+                        {CATALOG_LABELS.noIcon}
+                      </Badge>
+                    ) : null}
                     {e.part ? (
                       <Badge variant="secondary" className="mt-1 self-start">
                         {CATALOG_LABELS.part}

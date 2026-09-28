@@ -29,7 +29,9 @@ export const ENTRY_LABELS = {
   curated: "Checked",
   notCurated: "Not checked yet",
   part: "Part",
+  noIcon: "No icon yet",
   snippetHeading: "Use it in a diagram",
+  snippetLabel: "YAML snippet",
   copy: "Copy YAML",
   copied: "Copied",
   aliases: "Also known as",
@@ -97,6 +99,7 @@ export function EntryView({ name }: EntryViewProps) {
           </Text>
           {/* Every badge is text: colour is never the only channel (N11). */}
           <div className="flex flex-wrap gap-2 pt-1">
+            {entry.generic ? <Badge variant="outline">{ENTRY_LABELS.noIcon}</Badge> : null}
             {entry.part ? <Badge variant="secondary">{ENTRY_LABELS.part}</Badge> : null}
             {entry.kind ? <Badge variant="outline">{entry.kind}</Badge> : null}
             <Badge variant={entry.curated ? "success" : "outline"}>
@@ -160,7 +163,14 @@ function Snippet({ entry }: { entry: CatalogEntry }) {
           {copied ? ENTRY_LABELS.copied : ENTRY_LABELS.copy}
         </Button>
       </div>
-      <pre className="overflow-x-auto rounded-md bg-muted p-3 text-code font-mono">{text}</pre>
+      <pre
+        role="region"
+        aria-label={ENTRY_LABELS.snippetLabel}
+        tabIndex={0}
+        className="focus-ring overflow-x-auto rounded-md bg-muted p-3 text-code font-mono"
+      >
+        {text}
+      </pre>
     </section>
   );
 }

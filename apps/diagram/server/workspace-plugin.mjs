@@ -269,6 +269,9 @@ function watchCatalog(watcher, events) {
 export function atlasWorkspace() {
   return {
     name: "atlas-workspace",
+    // Run after Vite's import-glob plugin: new data files must not re-add module updates
+    // after our hotUpdate returns []. SSE owns workspace and catalog refreshes.
+    enforce: "post",
     apply: "serve",
     configureServer(server) {
       // Vite already watches its root (the app); adding ROOT makes the dependency explicit.

@@ -29,6 +29,8 @@ export interface CatalogEntry {
   icon: string;
   /** false until the maintainer checks it (in the YAML); the MCP fill never overwrites true. */
   curated: boolean;
+  /** Product without its own shipped icon; icon holds its resolved drawable fallback. */
+  generic?: true;
   /** The server could not reach `docs` when it was written. */
   docsUnverified?: boolean;
   /** From index.json (icons only). */

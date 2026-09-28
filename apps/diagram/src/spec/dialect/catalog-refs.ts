@@ -97,7 +97,12 @@ export function resolveCatalogRefs(
   iconNames: ReadonlySet<string>,
 ): ResolvedCatalogRefs {
   const issues: ArchIssue[] = [];
-  const nodes = ast.nodes.map((node) => {
+  const nodes = ast.nodes.map((original) => {
+    // Legacy icon aliases borrow only the picture, including a reference's explicit
+    // icon override. A shipped icon always takes precedence over a catalog fallback.
+    const alias =
+      original.icon && !iconNames.has(original.icon) ? catalog.get(original.icon) : undefined;
+    const node = alias ? { ...original, icon: alias.icon, catalogEntry: alias.name } : original;
     if (node.ref === undefined) return node;
     const name = catalogNameOf(node.ref);
     if (name === undefined) return node; // a diagram ref, or invalid (already bad-ref)

@@ -36,6 +36,15 @@ export const KINDS = ["service", "actor", "datastore", "queue", "external", "not
 export const LUCIDE_VENDOR = "lucide";
 export const MAX_DESCRIPTION = 140;
 export const MAX_BATCH = 25;
+// Keep these drawable defaults in step with ARCH_KIND_DEFAULT_ICON and catalog-merge.ts.
+const KIND_ICONS = {
+  service: "lucide/box",
+  actor: "lucide/user",
+  datastore: "lucide/database",
+  queue: "lucide/layers",
+  external: "lucide/globe",
+  note: "lucide/file",
+};
 const MAX_TAGS = 8;
 const SLUG = /^[a-z0-9][a-z0-9-]*$/;
 const YAML_OPTIONS = { lineWidth: 0, flowCollectionPadding: false };
@@ -113,7 +122,7 @@ function metadata(fields) {
 /**
  * Every catalog entry: one per icon name (`iconNames`, the app's own `ICON_NAMES` — index
  * plus `lucide/*`), overlaid with `catalog/<vendor>.yaml`, plus every part. A file that does
- * not parse, an entry for a name that is no icon, or a bad part is skipped and reported in
+ * not parse, an entry without a valid kind, or a bad part is skipped and reported in
  * `problems` — one broken file never hides the rest of the catalog.
  *
  * @param {ReadonlySet<string>} iconNames
@@ -147,11 +156,44 @@ export async function readAll(iconNames) {
     for (const [slug, fields] of Object.entries(parsed.data)) {
       const name = `${vendor}/${slug}`;
       const base = entries.get(name);
-      if (!base || !fields || typeof fields !== "object") {
-        problems.push(`${label}: "${slug}" is not an icon of ${vendor}; the entry is ignored.`);
+      if (
+        !fields ||
+        typeof fields !== "object" ||
+        Array.isArray(fields) ||
+        !SLUG.test(vendor) ||
+        !SLUG.test(slug) ||
+        vendor === LUCIDE_VENDOR
+      ) {
+        problems.push(`${label}: "${slug}" needs a valid vendor, slug and fields map.`);
         continue;
       }
-      entries.set(name, { ...base, ...metadata(fields), curated: fields.curated === true });
+      if (base) {
+        // A shipped icon always wins, even if an older file still says generic: true.
+        entries.set(name, { ...base, ...metadata(fields), curated: fields.curated === true });
+        continue;
+      }
+      let icon = str(fields.icon);
+      if (!KINDS.includes(fields.kind)) {
+        problems.push(`${label}: "${slug}" needs a valid kind.`);
+        continue;
+      }
+      if (
+        (icon && !iconNames.has(icon)) ||
+        (fields.icon != null && typeof fields.icon !== "string")
+      ) {
+        problems.push(`${label}: "${slug}" has an unknown icon; using the kind glyph.`);
+        icon = undefined;
+      }
+      entries.set(name, {
+        name,
+        vendor,
+        slug,
+        label: slug,
+        ...metadata(fields),
+        icon: icon ?? KIND_ICONS[fields.kind],
+        generic: true,
+        curated: fields.curated === true,
+      });
     }
   }
   for (const vendor of await yamlFiles(PARTS_ROOT)) {
@@ -295,35 +337,49 @@ async function mapLimit(items, limit, fn) {
  * `after` (so a slug the model skips never blocks the loop).
  */
 export async function missing(vendor, iconNames, { limit = MAX_BATCH, after } = {}) {
-  await assertPack(vendor);
+  await assertVendor(vendor);
   const { entries } = await readAll(iconNames);
-  const open = entries.filter(
-    (e) => e.vendor === vendor && !e.part && !e.curated && (!e.description || !e.docs),
-  );
+  const open = entries
+    .filter((e) => e.vendor === vendor && !e.part && !e.curated && (!e.description || !e.docs))
+    .sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
   const next = typeof after === "string" ? open.filter((e) => e.slug > after) : open;
   return {
     vendor,
     total: open.length,
-    missing: next.slice(0, limit).map((e) => ({ slug: e.slug, name: e.name, label: e.label })),
+    missing: next.slice(0, limit).map((e) => ({
+      slug: e.slug,
+      name: e.name,
+      label: e.label,
+      ...(e.generic ? { generic: true } : {}),
+    })),
   };
 }
 
-async function assertPack(vendor) {
-  if (typeof vendor !== "string" || !(await packs()).includes(vendor)) {
-    throw refuse(`"${vendor}" is not an icon pack. Packs: ${(await packs()).join(", ")}.`);
+async function assertVendor(vendor, createVendor = false) {
+  if (typeof vendor !== "string" || !SLUG.test(vendor) || vendor === LUCIDE_VENDOR) {
+    throw refuse("vendor must be a lowercase slug; lucide is reserved for glyphs.");
+  }
+  if (
+    !(await packs()).includes(vendor) &&
+    (await readText(vendorFile(vendor))) === null &&
+    !createVendor
+  ) {
+    throw refuse(`No catalog vendor "${vendor}". Set create_vendor: true to create it.`);
   }
 }
 
-/** One patch's problem, or null. */
-function patchProblem(p, index, vendor) {
-  if (!p || typeof p.slug !== "string" || !index[`${vendor}/${p.slug}`]) {
-    return `not an icon of ${vendor}`;
-  }
+/** One patch's structural problem, or null. Existing state is checked inside the write queue. */
+function patchProblem(p, iconNames) {
+  if (!p || typeof p.slug !== "string" || !SLUG.test(p.slug))
+    return "slug must contain lowercase letters, digits or hyphens";
+  if (p.name != null && typeof p.name !== "string") return "name must be a string";
+  if (p.icon != null && p.icon !== "" && (typeof p.icon !== "string" || !iconNames.has(p.icon)))
+    return `icon "${p.icon}" must be a known icon name`;
   if (p.description !== undefined && p.description !== null) {
     if (typeof p.description !== "string" || p.description.length > MAX_DESCRIPTION) {
       return `description must be at most ${MAX_DESCRIPTION} characters`;
     }
-    if (/\n/.test(p.description)) return "description must be one line";
+    if (/[\r\n]/.test(p.description)) return "description must be one line";
   }
   if (p.docs !== undefined && p.docs !== null && p.docs !== "") {
     const problem = docsProblem(p.docs);
@@ -381,7 +437,7 @@ function setField(doc, entry, key, value) {
 }
 
 /**
- * Write metadata for icons of one pack — the MCP fill loop (`catalog_update`), the only
+ * Write metadata for products of one vendor — the MCP fill loop (`catalog_update`), the only
  * writer. A curated entry is never touched (`skippedCurated`); everything written is
  * `curated: false`. A `null` or `""` value removes the key. Docs are checked before the write
  * (outside the file lock); an unreachable page is kept but marked `docs_unverified: true`.
@@ -389,15 +445,15 @@ function setField(doc, entry, key, value) {
  * @returns {{ vendor, written: string[], skippedCurated: string[], docsUnverified: string[],
  *   rejected: { slug: string, reason: string }[] }}
  */
-export async function update(vendor, patches) {
-  await assertPack(vendor);
+export async function update(vendor, patches, { createVendor = false, iconNames } = {}) {
+  await assertVendor(vendor, createVendor === true);
   if (!Array.isArray(patches) || patches.length === 0) throw refuse("entries must not be empty.");
   if (patches.length > MAX_BATCH) throw refuse(`At most ${MAX_BATCH} entries per call.`);
   const index = await readIndex();
   const rejected = [];
   const accepted = [];
   for (const p of patches) {
-    const reason = patchProblem(p, index, vendor);
+    const reason = patchProblem(p, iconNames ?? new Set(Object.keys(index)));
     if (reason) rejected.push({ slug: String(p?.slug), reason });
     else accepted.push(p);
   }
@@ -411,11 +467,41 @@ export async function update(vendor, patches) {
     if (doc.errors.length > 0 || (doc.contents && !isMap(doc.contents))) {
       throw new WorkspaceError(409, `${label} does not parse; fix it by hand first.`);
     }
+    const parts = parseCatalog(
+      (await readText(partsFile(vendor))) ?? "{}",
+      `catalog/parts/${vendor}.yaml`,
+    );
+    if (parts.problem) throw new WorkspaceError(409, parts.problem);
+    const partSlugs = new Set(Object.keys(parts.data));
     const result = { vendor, written: [], skippedCurated: [], docsUnverified: [], rejected };
     accepted.forEach((p, i) => {
-      const current = doc.contents?.get?.(p.slug, true);
-      if (isMap(current) && current.get("curated") === true) {
+      // Resolve YAML aliases too: a curated map or flag may be anchored elsewhere.
+      const current = doc.toJS()?.[p.slug];
+      if (current?.curated === true) {
         result.skippedCurated.push(p.slug);
+        return;
+      }
+      const generic = !index[`${vendor}/${p.slug}`];
+      const effectiveIcon = p.icon === undefined ? current?.icon : p.icon;
+      if (
+        generic &&
+        effectiveIcon != null &&
+        effectiveIcon !== "" &&
+        !(iconNames ?? new Set(Object.keys(index))).has(effectiveIcon)
+      ) {
+        result.rejected.push({ slug: p.slug, reason: "icon must be a known icon name" });
+        return;
+      }
+      const kind = p.kind === undefined ? current?.kind : p.kind;
+      if (generic && !KINDS.includes(kind)) {
+        result.rejected.push({ slug: p.slug, reason: "a generic entry needs a valid kind" });
+        return;
+      }
+      if (generic && partSlugs.has(p.slug)) {
+        result.rejected.push({
+          slug: p.slug,
+          reason: "a part already uses this name; parts are never overwritten",
+        });
         return;
       }
       const entry = entryMap(doc, p.slug);
@@ -425,6 +511,13 @@ export async function update(vendor, patches) {
       setField(doc, entry, "kind", p.kind);
       setField(doc, entry, "tags", p.tags);
       setField(doc, entry, "aliases", p.aliases);
+      if (generic) {
+        setField(doc, entry, "icon", p.icon);
+        entry.set("generic", true);
+      } else {
+        entry.delete("generic");
+        entry.delete("icon");
+      }
       entry.set("curated", false);
       if (reachable[i] === false) {
         entry.set("docs_unverified", true);
