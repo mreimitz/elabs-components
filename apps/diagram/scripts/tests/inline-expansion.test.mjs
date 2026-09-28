@@ -15,7 +15,10 @@ const file = (text) => ({ text, mtime: 1 });
 const doc = (nodes, extra = "") =>
   `diagram: "1"\n${extra}\nnodes:\n${nodes.map((node) => `  - ${JSON.stringify(node)}`).join("\n")}\n`;
 const ref = (id, path = "leaf", expand = true) => ({ id, ref: `ws/${path}`, expand });
-const leaf = doc([{ id: "x" }, { id: "y" }], 'title: Leaf\nflows: ["x -> y"]');
+const leaf = doc(
+  [{ id: "x" }, { id: "y" }],
+  'title: Leaf\ncomponent: {description: Child diagram details}\nflows: ["x -> y"]',
+);
 const files = new Map([["leaf.yaml", file(leaf)]]);
 const checked = (text, sources = {}) => api.checkText(text, api.ICON_NAMES, { files, ...sources });
 const frozen = (value) => {
@@ -33,6 +36,10 @@ test("expanded instance owns real endpoints; synthetic origins are absent while 
   assert.equal(result.ok, true, JSON.stringify(result.issues));
   assert.deepEqual(result.spec.nodes.map((node) => node.id).sort(), ["a", "t", "t.x", "t.y"]);
   assert.equal(type(result, "t"), "arch/zone");
+  assert.equal(
+    result.spec.nodes.find((node) => node.id === "t").data.description,
+    "Child diagram details",
+  );
   assert.equal(result.spec.edges.length, 3);
   for (const node of result.spec.nodes.filter((node) => node.id.startsWith("t."))) {
     assert.equal(node.parent, "t");

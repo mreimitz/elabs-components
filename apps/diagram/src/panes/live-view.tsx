@@ -197,6 +197,7 @@ function LiveCanvas({ compiled }: { compiled: CompiledDiagram }) {
     }
   }, [graph, structure, spec.layout.engine, getNodes, getEdges, setNodes, setEdges]);
   const { status } = useDiagramLayout({
+    source: structure,
     layoutKey,
     direction: spec.layout.direction,
     manual: spec.layout.engine === "none",
