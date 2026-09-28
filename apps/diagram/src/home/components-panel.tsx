@@ -12,7 +12,7 @@ import {
   StatePanel,
   Text,
 } from "@elabs-ai/components-ui";
-import { Boxes } from "lucide-react";
+import { Boxes, ChevronDown } from "lucide-react";
 import { buildComponentEntries, type ComponentEntry } from "./component-usage";
 import { NoPreview } from "./no-preview";
 import { RECENT_LABELS } from "./recent-card";
@@ -64,14 +64,17 @@ function UsedIn({ entry }: { entry: ComponentEntry }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
+        {/* Colour alone (text-primary-text) does not tell this apart from the static "Not used
+            yet" line above — a chevron and an at-rest underline are the second, non-colour cue. */}
         <button
           type="button"
-          className="w-fit rounded-sm text-meta text-primary-text hover:underline focus-ring"
+          className="flex w-fit min-h-6 items-center gap-1 rounded-sm text-meta text-primary-text underline decoration-from-font underline-offset-2 focus-ring"
         >
           {COMPONENTS_LABELS.usedIn(count)}
+          <ChevronDown aria-hidden="true" className="size-3.5" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" aria-labelledby={headingId} className="w-64">
+      <PopoverContent align="start" aria-labelledby={headingId}>
         <Text id={headingId} variant="caption" tone="muted" className="mb-2">
           {COMPONENTS_LABELS.usedInHeading(entry.title)}
         </Text>
@@ -80,11 +83,12 @@ function UsedIn({ entry }: { entry: ComponentEntry }) {
             <li key={usage.path}>
               <a
                 href={toHash({ kind: "doc", path: usage.path })}
-                className="block max-w-full truncate rounded-sm text-body text-foreground hover:text-primary-text focus-ring"
+                className="block max-w-full rounded-sm text-body text-foreground hover:text-primary-text focus-ring"
               >
-                {usage.title}
-                {/* The folder tells apart two same-titled diagrams (e.g. a template and its
-                    copy) — the same "Workspace" root wording as `RecentCard`. */}
+                <span className="line-clamp-2 break-words">{usage.title}</span>
+                {/* The folder tells apart two same-titled diagrams — the same "Workspace" root
+                    wording as `RecentCard`. A copy's own title also carries a "(copy)"/"(copy N)"
+                    suffix (`titleWithCopySuffix`), so two copies in the same folder differ too. */}
                 <Text as="span" variant="meta" tone="muted" className="block truncate">
                   {usage.folder === "" ? RECENT_LABELS.root : usage.folder}
                 </Text>
@@ -124,7 +128,7 @@ export interface ComponentsPanelProps {
 /**
  * `StatePanel kind="empty"` with no components; else a list — thumbnail, name, "Used in N".
  * When the tree failed to load, this renders nothing: Home shows the one `TreeErrorPanel` for
- * the whole page once, not a second one per section (R1 review).
+ * the whole page once, not a second one per section.
  */
 export function ComponentsPanel({ tree, treeError }: ComponentsPanelProps) {
   const { loading, entries } = useComponentEntries(tree);
