@@ -48,6 +48,7 @@
 import { Children, forwardRef, isValidElement, type CSSProperties, type ReactNode } from "react";
 import { type AliasInput, applyAliases } from "@elabs-ai/components-ui/definition";
 import { ChartA11yLabel, useChartA11yContainerProps } from "../charts/chart-a11y";
+import { getChartChildComponentName } from "../charts/chart-defs";
 import { DEFAULT_CHART_STATUS } from "../charts/chart-phase";
 // The registry (RM-177): pure at runtime (`charts-definitions-pure`), never a
 // charts barrel — see the header's ENGINE ISOLATION note.
@@ -604,8 +605,7 @@ export function assertAxisPropsContract(name: string, props: Record<string, unkn
 function assertAxisChildrenContract(children: ReactNode): void {
   Children.forEach(children, (child) => {
     if (!isValidElement(child) || typeof child.type !== "function") return;
-    const type = child.type as { displayName?: string; name?: string };
-    const name = type.displayName || type.name || "";
+    const name = getChartChildComponentName(child);
     if ((AXIS_COMPONENT_NAMES as readonly string[]).includes(name)) {
       const raw = child.props as Record<string, unknown>;
       // RM-192 fix round 2: a container double never mounts its children (see the header),
