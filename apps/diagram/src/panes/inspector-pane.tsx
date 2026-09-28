@@ -1,4 +1,11 @@
-import { useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type FocusEvent,
+  type KeyboardEvent,
+} from "react";
 import { InspectorPanel } from "@elabs-ai/components-flow";
 import {
   Button,
@@ -54,7 +61,11 @@ function describeSupplied(value: Supplied[keyof Supplied]): string | undefined {
  * schema-form.tsx). An inherited enum (e.g. `type`, which has its own default) also needs a
  * way back to "inherited" once the user has picked a value — the enum only gets a "Not set"
  * option on its own when it has no default (form-spec.ts toFieldSpec), so one is added here,
- * labelled with the reference's value (review round 1 F1). Fields not inherited are untouched.
+ * labelled with the reference's value (review round 1 F1). A text field keeps the help text
+ * too, since nothing else on the field says where the value comes from. An enum that gets the
+ * added option does not: the option's own title already reads "From the reference: …", so
+ * repeating it as help text under the field said it twice, to sighted and screen-reader users
+ * alike. Fields not inherited are untouched.
  */
 function withReferenceHelp(
   spec: ReturnType<typeof entryFormSpec>,
@@ -67,17 +78,16 @@ function withReferenceHelp(
     fields: spec.fields.map((field): FieldSpec => {
       const value = describeSupplied(supplied[field.name as keyof Supplied]);
       if (!inherited.has(field.name) || value === undefined) return field;
-      const withHelp = { ...field, description: `${INSPECTOR_LABELS.fromReference}${value}` };
-      if (withHelp.type !== "enum") return withHelp;
-      const hasUnset = withHelp.options.some(
-        (o) => (typeof o === "string" ? o : o.const) === UNSET,
-      );
-      if (hasUnset) return withHelp;
+      if (field.type !== "enum") {
+        return { ...field, description: `${INSPECTOR_LABELS.fromReference}${value}` };
+      }
+      const hasUnset = field.options.some((o) => (typeof o === "string" ? o : o.const) === UNSET);
+      if (hasUnset) return { ...field, description: `${INSPECTOR_LABELS.fromReference}${value}` };
       return {
-        ...withHelp,
+        ...field,
         options: [
           { const: UNSET, title: `${INSPECTOR_LABELS.fromReference}${value}` },
-          ...withHelp.options,
+          ...field.options,
         ],
       };
     }),
@@ -242,6 +252,20 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
     focusCanvasElement(selectedId);
   };
 
+  // SchemaFormStore seeds once and stays uncontrolled while it holds focus (own keystrokes
+  // never remount it, per EntryForm's own comment above), so its "From the reference: …" help
+  // text can go stale once a field the user picks a value for stops being inherited.
+  // Remounting on every keystroke would reintroduce that same bug, so instead: once focus
+  // leaves the form entirely, the next mount re-seeds from the current text, and the help
+  // text catches up without ever dropping a keystroke.
+  const onFormBlur = (event: FocusEvent<HTMLDivElement>) => {
+    if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) {
+      return;
+    }
+    if (entry?.kind !== "node" || entry.node.ref === undefined) return;
+    setSeed((s) => ({ n: s.n + 1, text: compiledText }));
+  };
+
   return (
     <InspectorPanel
       open={open}
@@ -256,7 +280,7 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
       width={overlay ? "100%" : undefined}
       className={overlay ? OVERLAY_CLASS : undefined}
     >
-      <div className="flex flex-col gap-4" onKeyDown={onKeyDown}>
+      <div className="flex flex-col gap-4" onKeyDown={onKeyDown} onBlur={onFormBlur}>
         <Button
           variant="outline"
           size="sm"
