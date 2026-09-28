@@ -16,6 +16,7 @@ import { diagramStore, editActions, useDiagram } from "../state/diagram-store";
 import { navigate, parseRoute } from "../routes/use-hash";
 import { useWorkspace, workspaceActions, workspaceStore } from "../workspace/workspace-store";
 import { focusWorkspace } from "./focus"; // DG-22 review
+import { viewOverrideActions } from "./view-overrides-store"; // view mode overrides (maintainer 2026-09-27)
 
 export type DocMode = "view" | "edit";
 
@@ -100,6 +101,19 @@ export function useMode<T>(select: (state: ModeState) => T): T {
 /** A document's mode key. */
 export function docKey(path: string | null): string {
   return path ?? SHARED_DOC_KEY;
+}
+
+/**
+ * The per-viewer view-overrides key (`view-overrides-store.ts`) for a document: the workspace
+ * path, or — unlike `docKey`, which folds every path-less document into one `SHARED_DOC_KEY` —
+ * a share link's OWN content id, so opening a second shared diagram in the same tab never
+ * inherits the first one's view-only direction or node style (review-r0). A path-less,
+ * share-less document (a bare `#present`) still falls back to `SHARED_DOC_KEY`: there is
+ * nothing to tell two of those apart by.
+ */
+export function overrideDocKey(path: string | null, share: string | undefined): string {
+  if (path !== null) return path;
+  return share !== undefined ? `share:${share}` : SHARED_DOC_KEY;
 }
 
 /** The mode of the document the tab shows. */
@@ -256,9 +270,14 @@ export const modeActions = {
     if (next) navigate({ kind: "doc", path: next });
   },
 
-  /** A file or folder moved (rename, drag, "Move to"): tabs and modes follow it. */
+  /**
+   * A file or folder moved (rename, drag, "Move to"): tabs and modes follow it, and so does
+   * any open view-mode override (direction, node style) — a rename must not read as "reset my
+   * view choice" (review-r0).
+   */
   moved(from: string, to: string) {
     const follow = (p: string) => (isAt(p, from) ? to + p.slice(from.length) : p);
+    viewOverrideActions.moved(follow);
     const { openPaths, modes } = modeStore.get();
     setTabs(openPaths.map(follow));
     modeStore.set({
