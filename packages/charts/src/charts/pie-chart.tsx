@@ -2,7 +2,6 @@
 
 import { Group } from "@visx/group";
 import { getChartChildComponentName } from "./chart-defs";
-import { ChartParentSize } from "./chart-parent-size";
 import { pie as d3Pie } from "d3-shape";
 import type { Transition } from "motion/react";
 import {
@@ -22,6 +21,7 @@ import { useSvgId } from "./svg-id";
 import { cn, mergeRefs, StatePanel } from "@elabs-ai/components-ui";
 import { useArcChartLoaded } from "./use-arc-chart-loaded";
 import { generateArcPath, isNamedChartChild } from "./pie-ring-engine";
+import { RadialChartSizing } from "./radial-chart-sizing";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
 import type { ChartStateGroupProps } from "./props/chart-state";
@@ -1198,26 +1198,28 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
         );
   }
 
-  if (fixedSize) {
-    // Explicit-size branch: `PieChartInner` sizes its own SVG from these JS
-    // numbers rather than measuring the DOM, so — unlike the responsive
-    // branch below, where `ChartParentSize` measures the already-padded content
-    // box for free — margin has to shrink them by hand. Byte-identical to
-    // `fixedSize` at the default `ZERO_MARGIN`.
-    const plotWidth = fixedSize - marginBox.left - marginBox.right;
-    const plotHeightPx = fixedSize - marginBox.top - marginBox.bottom;
-    return containerLegend.wrap(
-      <ChartPlotRoot
-        aria-describedby={ariaDescribedby}
-        aria-label={ariaLabel}
-        className={cn("relative flex items-center justify-center", className)}
-        ref={mergedRef}
-        role={role}
-        style={{ width: fixedSize, height: fixedSize, ...marginStyle }}
-        tabIndex={tabIndex}
-      >
-        <ChartA11yLabel descId={descId} description={description} />
-        {withInteraction(
+  // Explicit `fixedSize`: `PieChartInner` sizes its own SVG from JS numbers
+  // shrunk by margin by hand. No `fixedSize`: `ChartParentSize` measures the
+  // already-padded content box for free. Shared with `RingChart` —
+  // `RadialChartSizing` (`radial-chart-sizing.tsx`). Byte-identical to
+  // `fixedSize` at the default `ZERO_MARGIN`.
+  return containerLegend.wrap(
+    <RadialChartSizing
+      ariaDescribedby={ariaDescribedby}
+      ariaLabel={ariaLabel}
+      className={className}
+      descId={descId}
+      description={description}
+      fixedSize={fixedSize}
+      innerRef={mergedRef}
+      marginBox={marginBox}
+      marginStyle={marginStyle}
+      plotHeight={plotHeight}
+      role={role}
+      tabIndex={tabIndex}
+    >
+      {({ width, height }) =>
+        withInteraction(
           <PieChartInner
             palette={palette}
             containerRef={containerRef}
@@ -1229,7 +1231,7 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
             geometryScrubbing={geometryScrubbing}
             align={align}
             half={half}
-            height={plotHeightPx}
+            height={height}
             hoveredIndexProp={effectiveHoveredIndex}
             hoverOffset={hoverOffset}
             innerRadius={innerRadius}
@@ -1245,66 +1247,13 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
             locale={locale}
             maxFractionDigits={maxFractionDigits}
             valueFormat={valueFormat}
-            width={plotWidth}
+            width={width}
           >
             {effectiveChildren}
           </PieChartInner>,
-        )}
-      </ChartPlotRoot>,
-    );
-  }
-
-  // Otherwise use ChartParentSize for responsive sizing
-  return containerLegend.wrap(
-    <ChartPlotRoot
-      plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
-      aria-describedby={ariaDescribedby}
-      aria-label={ariaLabel}
-      className={cn("relative w-full", className)}
-      ref={mergedRef}
-      role={role}
-      style={marginStyle}
-      tabIndex={tabIndex}
-    >
-      <ChartA11yLabel descId={descId} description={description} />
-      <ChartParentSize>
-        {({ width, height }) =>
-          withInteraction(
-            <PieChartInner
-              palette={palette}
-              containerRef={containerRef}
-              cornerRadius={cornerRadius}
-              data={groupedData}
-              endAngle={effectiveEndAngle}
-              enterStaggerScale={enterStaggerScale}
-              enterTransition={enterTransition}
-              geometryScrubbing={geometryScrubbing}
-              align={align}
-              half={half}
-              height={height}
-              hoveredIndexProp={effectiveHoveredIndex}
-              hoverOffset={hoverOffset}
-              innerRadius={innerRadius}
-              labels={labels}
-              onHoverChange={handleHoverChange}
-              padAngle={padAngle}
-              radiusKey={radiusKey}
-              referenceRings={referenceRings}
-              seams={seams}
-              sort={effectiveSort}
-              startAngle={effectiveStartAngle}
-              currency={currency}
-              locale={locale}
-              maxFractionDigits={maxFractionDigits}
-              valueFormat={valueFormat}
-              width={width}
-            >
-              {effectiveChildren}
-            </PieChartInner>,
-          )
-        }
-      </ChartParentSize>
-    </ChartPlotRoot>,
+        )
+      }
+    </RadialChartSizing>,
   );
 });
 

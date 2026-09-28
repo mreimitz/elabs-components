@@ -1,7 +1,6 @@
 "use client";
 
 import { Group } from "@visx/group";
-import { ChartParentSize } from "./chart-parent-size";
 import type { Transition } from "motion/react";
 import {
   Children,
@@ -44,6 +43,7 @@ import { RING_CHART } from "../definitions/ring-chart.definition";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
 import { useArcChartLoaded } from "./use-arc-chart-loaded";
 import { generateArcPath, isNamedChartChild } from "./pie-ring-engine";
+import { RadialChartSizing } from "./radial-chart-sizing";
 
 /** Stable empty array so a non-interactive RingChart never re-registers targets. */
 const EMPTY_RING_TARGETS: ChartDatapointTarget[] = [];
@@ -618,28 +618,28 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
     );
   }
 
-  // If fixed size is provided, use it directly
-  if (fixedSize) {
-    // Explicit-size branch: `RingChartInner` sizes its own SVG from these JS
-    // numbers rather than measuring the DOM, so — unlike the responsive
-    // branch below, where `ChartParentSize` measures the already-padded content
-    // box for free — margin has to shrink them by hand, exactly as
-    // `PieChart` does. Byte-identical to `fixedSize` at the default
-    // `ZERO_MARGIN`.
-    const plotWidth = fixedSize - marginBox.left - marginBox.right;
-    const plotHeightPx = fixedSize - marginBox.top - marginBox.bottom;
-    return (
-      <ChartPlotRoot
-        aria-describedby={ariaDescribedby}
-        aria-label={ariaLabel}
-        className={cn("relative flex items-center justify-center", className)}
-        ref={callbackRef}
-        role={role}
-        style={{ width: fixedSize, height: fixedSize, ...marginStyle }}
-        tabIndex={tabIndex}
-      >
-        <ChartA11yLabel descId={descId} description={accessibleDescription} />
-        {withInteraction(
+  // Explicit `fixedSize`: `RingChartInner` sizes its own SVG from JS numbers
+  // shrunk by margin by hand. No `fixedSize`: `ChartParentSize` measures the
+  // already-padded content box for free. Shared with `PieChart` —
+  // `RadialChartSizing` (`radial-chart-sizing.tsx`). Byte-identical to
+  // `fixedSize` at the default `ZERO_MARGIN`.
+  return (
+    <RadialChartSizing
+      ariaDescribedby={ariaDescribedby}
+      ariaLabel={ariaLabel}
+      className={className}
+      descId={descId}
+      description={accessibleDescription}
+      fixedSize={fixedSize}
+      innerRef={callbackRef}
+      marginBox={marginBox}
+      marginStyle={marginStyle}
+      plotHeight={plotHeight}
+      role={role}
+      tabIndex={tabIndex}
+    >
+      {({ width, height }) =>
+        withInteraction(
           <RingChartInner
             palette={palette}
             baseInnerRadius={baseInnerRadius}
@@ -649,62 +649,20 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
             enterStaggerScale={enterStaggerScale}
             enterTransition={enterTransition}
             geometryScrubbing={geometryScrubbing}
-            height={plotHeightPx}
+            height={height}
             hoveredIndexProp={hoveredIndex}
             labels={labels}
             onHoverChange={onHoverChange}
             ringGap={ringGap}
             startAngle={startAngle}
             strokeWidth={strokeWidth}
-            width={plotWidth}
+            width={width}
           >
             {children}
           </RingChartInner>,
-        )}
-      </ChartPlotRoot>
-    );
-  }
-
-  // Otherwise use ChartParentSize for responsive sizing
-  return (
-    <ChartPlotRoot
-      plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
-      aria-describedby={ariaDescribedby}
-      aria-label={ariaLabel}
-      className={cn("relative w-full", className)}
-      ref={callbackRef}
-      role={role}
-      style={marginStyle}
-      tabIndex={tabIndex}
-    >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <ChartParentSize>
-        {({ width, height }) =>
-          withInteraction(
-            <RingChartInner
-              palette={palette}
-              baseInnerRadius={baseInnerRadius}
-              containerRef={internalRef}
-              data={data}
-              endAngle={endAngle}
-              enterStaggerScale={enterStaggerScale}
-              enterTransition={enterTransition}
-              geometryScrubbing={geometryScrubbing}
-              height={height}
-              hoveredIndexProp={hoveredIndex}
-              labels={labels}
-              onHoverChange={onHoverChange}
-              ringGap={ringGap}
-              startAngle={startAngle}
-              strokeWidth={strokeWidth}
-              width={width}
-            >
-              {children}
-            </RingChartInner>,
-          )
-        }
-      </ChartParentSize>
-    </ChartPlotRoot>
+        )
+      }
+    </RadialChartSizing>
   );
 });
 
