@@ -162,7 +162,7 @@ try {
   await page.waitForTimeout(500);
   // A user zoom remains intentional across resize, then becomes the morph's actual camera.
   const visualPane = page.locator('[data-lens-pane="visual"] .react-flow');
-  await visualPane.hover({ position: { x: 80, y: 150 } });
+  await visualPane.hover({ position: { x: 80, y: 500 } });
   await page.mouse.wheel(0, -160);
   await page.waitForTimeout(350);
   const camera = () =>
@@ -282,11 +282,12 @@ try {
   await page.waitForTimeout(200);
   // Reload the route after presentation: the in-memory history fixture has no workspace
   // path, so presentation's route restoration can still have a document load in flight.
-  await page.reload();
+  await page.goto(`${url}/?lens-fixture=empty#d/examples/lakehouse-aws.yaml`);
   await page
-    .locator('[data-lens-pane="visual"] .react-flow__node')
+    .locator('[data-lens-pane="technical"] .react-flow__node')
     .first()
     .waitFor({ state: "attached" });
+  await lens(page, "visual");
   await settled(page, "visual");
   for (const [text, title] of [
     ["", "Nothing to draw yet"],

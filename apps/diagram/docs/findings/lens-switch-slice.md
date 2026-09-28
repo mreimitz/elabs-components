@@ -51,8 +51,12 @@ proves redo still works. File writes and unexpected browser errors fail the chec
 
 `lens-motion.mjs` records every requestAnimationFrame for immediate switching, return,
 resize-then-switch and actual mid-flight reversal, with normal and reduced motion. Normal
-motion requires at least 95% of moving frames within 16.9ms; preparation must remain below
-150ms with visible source content. Every moving normal frame must use identical cameras and
+motion requires at least 95% of moving frames within 16.9ms. Once the source document has a
+ready layout and visible renderer, lens preparation must remain below 150ms with visible source
+content. A separate held-read fixture requests the lens while a different document is still
+loading: it checks current document identity, immediate write blocking, continuous visible
+content and settlement within the existing four-second layout timeout. `LENS_LOADING_ONLY=1`
+runs only that fixture. Every moving normal frame must use identical cameras and
 keep chrome visible. Reduced motion must not display moving ghosts. Preparation latency is
 reported separately from moving-frame timing. Run performance checks without other browser
 or build workloads on the same machine; failed timing results remain failures.

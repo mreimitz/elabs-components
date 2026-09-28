@@ -17,6 +17,121 @@ try {
       reducedMotion,
     });
     const page = await context.newPage();
+    let releaseRead;
+    const readGate = new Promise((resolve) => {
+      releaseRead = resolve;
+    });
+    await page.route("**/api/workspace/file?*", async (route) => {
+      if (
+        new URL(route.request().url()).searchParams.get("path") ===
+        "examples/clickhouse-cloud-stack.yaml"
+      )
+        await readGate;
+      await route.continue();
+    });
+    await page.goto(`${url}/#d/examples/clickhouse-cloud-stack.yaml`, {
+      waitUntil: "domcontentloaded",
+    });
+    const earlyPromise = page.evaluate(async () => {
+      const { lensStore, lensActions } = await import("/src/shell/lens-store.ts");
+      const { diagramStore, diagramActions } = await import("/src/state/diagram-store.ts");
+      const { isLayoutReady } = await import("/src/panes/layout-ready-store.ts");
+      await new Promise((resolve) => {
+        const unsubscribe = diagramStore.subscribe(() => {
+          if (diagramStore.get().path !== "examples/clickhouse-cloud-stack.yaml") return;
+          unsubscribe();
+          resolve();
+        });
+        globalThis.__lensEarlyObserverReady = true;
+      });
+      const currentDocument = diagramStore.get().path;
+      const sourceReadyAtRequest = isLayoutReady(diagramStore.get().path);
+      const text = diagramStore.get().text;
+      const started = performance.now();
+      lensActions.setLens("visual");
+      diagramActions.setText(text + "\n# forbidden early write\n");
+      const writeBlocked = diagramStore.get().text === text;
+      const frames = [];
+      return new Promise((resolve) => {
+        const sample = (time) => {
+          const visible = [
+            ...document.querySelectorAll(
+              '[data-lens-pane] .react-flow__renderer, [data-slot="canvas-skeleton"], [data-morph-camera]',
+            ),
+          ].some((element) =>
+            element.checkVisibility({ visibilityProperty: true, opacityProperty: true }),
+          );
+          const renderer = document.querySelector(
+            '[data-lens-pane="visual"] .react-flow__renderer',
+          );
+          const settled =
+            !lensStore.get().animating &&
+            lensStore.get().position === 1 &&
+            isLayoutReady(diagramStore.get().path) &&
+            renderer?.checkVisibility({ visibilityProperty: true }) &&
+            getComputedStyle(renderer).opacity === "1";
+          frames.push({
+            elapsed: performance.now() - started,
+            visible,
+            settled: !!settled,
+            position: lensStore.get().position,
+            ready: isLayoutReady(diagramStore.get().path),
+            layers: [
+              ...document.querySelectorAll(
+                '[data-lens-pane] .react-flow__renderer, [data-slot="canvas-skeleton"]',
+              ),
+            ].map((element) => ({
+              class: element.className,
+              opacity: getComputedStyle(element).opacity,
+              visibility: getComputedStyle(element).visibility,
+              ancestors: [
+                ...(function* (node) {
+                  for (let current = node.parentElement; current; current = current.parentElement)
+                    yield current;
+                })(element),
+              ].map((parent) => ({
+                class: parent.className,
+                opacity: getComputedStyle(parent).opacity,
+                visibility: getComputedStyle(parent).visibility,
+                display: getComputedStyle(parent).display,
+              })),
+              visible: element.checkVisibility({ visibilityProperty: true, opacityProperty: true }),
+            })),
+          });
+          if (settled || time - started > 4000)
+            resolve({ currentDocument, sourceReadyAtRequest, writeBlocked, frames });
+          else requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      });
+    });
+    await page.waitForFunction(() => globalThis.__lensEarlyObserverReady === true);
+    releaseRead();
+    const early = await earlyPromise;
+    if (evidence)
+      await writeFile(
+        `${evidence}/early-open-${reducedMotion}.json`,
+        JSON.stringify(early, null, 2),
+      );
+    assert.equal(early.currentDocument, "examples/clickhouse-cloud-stack.yaml");
+    assert.equal(early.sourceReadyAtRequest, false, "early probe missed document loading");
+    assert(early.writeBlocked, "early-toggle write escaped");
+    assert(
+      early.frames.every((frame) => frame.visible),
+      "blank frame during initial loading toggle",
+    );
+    assert(
+      early.frames.at(-1).settled && early.frames.at(-1).elapsed <= 4000,
+      "early target did not settle within layout timeout",
+    );
+    await context.close();
+  }
+  for (const reducedMotion of process.env.LENS_LOADING_ONLY ? [] : ["no-preference", "reduce"]) {
+    const context = await browser.newContext({
+      viewport: { width: 1440, height: 900 },
+      reducedMotion,
+    });
+    const page = await context.newPage();
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(`${url}/#d/examples/lakehouse-aws.yaml`);
@@ -24,6 +139,26 @@ try {
       .locator('[data-lens-pane="technical"] .react-flow__node')
       .first()
       .waitFor({ state: "attached" });
+    // This budget measures lens preparation, separately from the document's initial ELK load.
+    await page.evaluate(async () => {
+      const { isLayoutReady } = await import("/src/panes/layout-ready-store.ts");
+      const { diagramStore } = await import("/src/state/diagram-store.ts");
+      await new Promise((resolve) => {
+        const ready = () => {
+          const renderer = document.querySelector(
+            '[data-lens-pane="technical"] .react-flow__renderer',
+          );
+          if (
+            isLayoutReady(diagramStore.get().path) &&
+            renderer?.checkVisibility({ visibilityProperty: true }) &&
+            getComputedStyle(renderer).opacity === "1"
+          )
+            resolve();
+          else requestAnimationFrame(ready);
+        };
+        ready();
+      });
+    });
     for (const scenario of ["immediate", "return", "resize", "reverse"]) {
       if (scenario === "resize") await page.setViewportSize({ width: 1280, height: 900 });
       const target = scenario === "return" ? "technical" : "visual";
@@ -95,6 +230,9 @@ try {
           )
           .reduce((sum, f) => sum + f.dt, 0),
       };
+      results.push({ ...metrics, data });
+      if (evidence)
+        await writeFile(`${evidence}/motion-metrics.json`, JSON.stringify(results, null, 2));
       assert.equal(data.at(-1).moving, false, `did not settle: ${scenario}`);
       assert(
         data.every((f) => f.chrome.includes("visible")),
@@ -137,7 +275,6 @@ try {
         preparation.every((frame) => frame.sourceVisible),
         "source blank during preparation",
       );
-      results.push({ ...metrics, data });
       // Return to technical before the reversal proof.
       if (scenario === "resize") {
         await page.keyboard.press("l");
