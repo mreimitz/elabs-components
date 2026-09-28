@@ -1,19 +1,5 @@
-/**
- * The lens switch's state (maintainer 2026-09-27, "the switch from technical to visual"):
- * `technical` (today's diagram) or `visual` (the derived lens, `src/visual/`). View-only —
- * nothing here ever touches `diagram-store`/`workspace-store`, so switching lenses can never
- * write the file, mark it dirty or enter undo (the hard requirement this task starts from: a
- * previous feature leaked a viewer-only view into the saved file).
- *
- * `position` is the transition's one scrubbable tween value, 0 (technical) .. 1 (visual) —
- * `docs/2026-09-27-style-system-concept.md` §7's "single tween `t`, so a mid-flight reverse is
- * continuous": `setLens` only ever changes `target` and lets `position` keep moving from
- * wherever it already is, at a constant rate, so calling it twice in a row (a fast double
- * toggle) reverses smoothly instead of restarting or jumping. `src/panes/canvas-pane.tsx`
- * reads `position` to cross-fade the two panes; see that file and
- * `docs/findings/lens-switch-slice.md` for exactly what this transition does and does not do
- * (a crossfade with each side pre-fitted to its own bounds, not a full shared-camera morph).
- */
+/** A reversible viewer-only lens tween. Target locks edits immediately; position controls the
+ * shared-camera morph. URL replacement preserves sharing without rerendering the shell. */
 import { useSyncExternalStore } from "react";
 import { prefersReducedMotion } from "../motion";
 import { createStore } from "../state/create-store";
@@ -21,9 +7,7 @@ import { hashWithLens, isVisualLensHash } from "../interaction/lens-mode";
 
 export type Lens = "technical" | "visual";
 
-/** S10's normal-motion duration (the concept's own 700 ms, not the app's token scale — see
- * `motion.ts`'s "one scale" note; this is the one deliberate, documented exception, because
- * the maintainer specified this exact number for this exact signature move). */
+/** Normal-motion choreography duration. */
 const DURATION_MS = 700;
 /** Reduced motion: a short cross-fade, no movement (style-system concept §7). */
 const REDUCED_DURATION_MS = 200;
@@ -62,11 +46,17 @@ export function useLens<T>(select: (state: LensState) => T): T {
 
 let rafId = 0;
 
+/** A stalled frame (a long task elsewhere on the main thread) must not jump the tween by
+ * however long the stall was: cap the elapsed time charged to any one frame at twice a normal
+ * 60fps frame, so a stall costs one visibly larger step, never a double-digit percent jump in
+ * `position`. */
+const MAX_FRAME_MS = (1000 / 60) * 2;
+
 function tick(now: number, last: number) {
   const state = lensStore.get();
   const targetPosition = state.target === "visual" ? 1 : 0;
   const duration = prefersReducedMotion() ? REDUCED_DURATION_MS : DURATION_MS;
-  const step = (now - last) / duration;
+  const step = Math.min(now - last, MAX_FRAME_MS) / duration;
   const position =
     targetPosition > state.position
       ? Math.min(targetPosition, state.position + step)
@@ -80,10 +70,34 @@ function tick(now: number, last: number) {
   rafId = requestAnimationFrame((t) => tick(t, now));
 }
 
+let preparing = false;
+let prepareTransition: (() => Promise<boolean>) | null = null;
+
+/** The mounted canvas prepares both current layouts before the animation clock starts. */
+export function registerLensPreparation(prepare: () => Promise<boolean>): () => void {
+  prepareTransition = prepare;
+  return () => {
+    if (prepareTransition === prepare) prepareTransition = null;
+  };
+}
+
 function ensureAnimating() {
-  if (rafId) return;
+  if (rafId || preparing) return;
+  preparing = true;
   lensStore.set({ animating: true });
-  rafId = requestAnimationFrame((t) => tick(t, t));
+  const prepared = prepareTransition?.() ?? Promise.resolve(false);
+  void prepared
+    .catch(() => false)
+    .then((ready) => {
+      preparing = false;
+      const state = lensStore.get();
+      const endpoint = state.target === "visual" ? 1 : 0;
+      if (!ready || state.position === endpoint) {
+        lensStore.set({ position: endpoint, lens: state.target, animating: false });
+        return;
+      }
+      rafId = requestAnimationFrame((time) => tick(time, time));
+    });
 }
 
 export const lensActions = {
@@ -92,7 +106,6 @@ export const lensActions = {
    * node ids `canvas-pane.tsx` frames once its pane shows again.
    */
   setLens(next: Lens, options: { frameNodeIds?: string[] } = {}) {
-    window.location.hash = hashWithLens(window.location.hash, next === "visual");
     const { frameKey } = lensStore.get();
     lensStore.set({
       target: next,
@@ -100,6 +113,13 @@ export const lensActions = {
       frameKey: options.frameNodeIds ? frameKey + 1 : frameKey,
     });
     ensureAnimating();
+    // Avoid hashchange and its full-shell render in the first moving frame.
+    const hash = hashWithLens(window.location.hash, next === "visual");
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${window.location.pathname}${window.location.search}${hash}`,
+    );
   },
   toggle() {
     lensActions.setLens(lensStore.get().target === "visual" ? "technical" : "visual");

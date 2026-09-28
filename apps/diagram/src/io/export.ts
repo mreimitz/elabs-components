@@ -21,6 +21,8 @@
  */
 import { FLOW_EDGE_DEFAULTS } from "@elabs-ai/components-flow";
 import { KIND_STROKE } from "../edges/edge-style";
+import { canvasChrome } from "../chrome/canvas-chrome";
+import { lensStore } from "../shell/lens-store";
 
 /** PNG pixels per CSS pixel. */
 export type PictureScale = 1 | 2 | 3;
@@ -72,12 +74,17 @@ interface Box {
 }
 
 /**
- * The canvas the app shows (not a gallery's).
+ * The canvas the app shows (not a gallery's) — the ACTIVE lens's canvas: technical and
+ * visual panes both mount at once during a lens cross-fade (`canvas-pane.tsx`,
+ * `data-lens-pane="technical"|"visual"`), so a plain `.react-flow` query always picked the
+ * technical one, first in the DOM. `lensStore` is read directly, not via `useLens`, because
+ * this module is React-free by design (this file's own header note).
  * P4: library gap — CanvasShell has no export API, so the exporter finds the canvas and its
  * parts by class name (docs/findings/DG-17-export.md §2).
  */
 function liveCanvas(): HTMLElement | null {
-  return document.querySelector<HTMLElement>('[data-slot="canvas-shell"] .react-flow');
+  const lens = lensStore.get().lens;
+  return document.querySelector<HTMLElement>(`[data-lens-pane="${lens}"] .react-flow`);
 }
 
 /** How long an export waits for a canvas that is still mounting or laying out. */
@@ -92,6 +99,13 @@ const CANVAS_WAIT_MS = 10_000;
  */
 export function canvasDrawn(): Promise<void> {
   const ready = () => {
+    const lens = lensStore.get();
+    if (
+      lens.animating ||
+      lens.target !== lens.lens ||
+      lens.position !== (lens.target === "visual" ? 1 : 0)
+    )
+      return false;
     const flow = liveCanvas();
     return flow !== null && flow.closest("[inert]") === null;
   };
@@ -182,7 +196,9 @@ function panelExtent(
   maxWidth?: number,
 ): PanelExtent {
   const none = { width: 0, reach: 0, boxWidth: 0 };
-  const live = flow.querySelector<HTMLElement>(selector);
+  const live =
+    flow.querySelector<HTMLElement>(selector) ??
+    canvasChrome(flow)?.querySelector<HTMLElement>(selector);
   if (!live) return none;
   const panel = maxWidth ? (live.cloneNode(true) as HTMLElement) : live;
   if (maxWidth) {
@@ -245,6 +261,8 @@ function unselect(stage: HTMLElement) {
 /** A clone of the canvas, sized to the picture, with only the picture left in it. */
 function stageOf(flow: HTMLElement, box: Box, options: PictureOptions) {
   const stage = flow.cloneNode(true) as HTMLElement;
+  for (const panel of canvasChrome(flow)?.querySelectorAll(PICTURE_PANELS) ?? [])
+    stage.append(panel.cloneNode(true));
   for (const child of [...stage.children]) {
     if (!child.matches(`.react-flow__renderer, ${PICTURE_PANELS}`)) child.remove();
   }
@@ -761,14 +779,16 @@ export async function pictureOfCanvas(
   title: string | undefined,
   options: PictureOptions = {},
 ): Promise<Picture> {
-  const flow = liveCanvas();
-  const box = flow ? drawnBox(flow) : null;
-  if (!flow || !box) throw new Error("There is no diagram on the canvas to export.");
   const sandbox = await openSandbox();
   let stage: HTMLElement;
   let size: { width: number; height: number };
   let pseudoCss: string;
   try {
+    await canvasDrawn();
+    const flow = liveCanvas();
+    const box = flow ? drawnBox(flow) : null;
+    if (lensStore.get().animating || !flow || !box)
+      throw new Error("There is no settled diagram on the canvas to export.");
     const staged = stageOf(flow, box, options);
     stage = staged.stage;
     size = staged;

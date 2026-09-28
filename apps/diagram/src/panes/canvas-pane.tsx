@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   CanvasShell,
   FlowMiniMap,
@@ -17,7 +17,7 @@ import { DiagramLegend } from "../chrome/diagram-legend";
 import { chromeFitPadding } from "../chrome/fit-padding";
 import { TitleBlock } from "../chrome/title-block";
 import { FIT_MIN_ZOOM, useDiagramLayout } from "../layout/use-diagram-layout";
-import { motionMs } from "../motion";
+import { motionMs, prefersReducedMotion } from "../motion";
 import { isZoneNode } from "../nodes/zone-data";
 import { useZoneAutofit } from "../nodes/use-zone-autofit";
 import { layoutReadyActions } from "./layout-ready-store";
@@ -30,6 +30,7 @@ import { keepSelection, patchGraph, stageGraph } from "../state/pipeline";
 // Wave 3: one import line per item under its marker; blank lines keep parallel merges clean.
 import { mergeCanvasProps, type CanvasProps } from "./canvas-props"; // DG-14
 import { useCanvasDelete } from "./use-canvas-delete"; // DG-14
+import { focusCanvasElement } from "./focus-canvas"; // maintainer 2026-09-27 (lens switch)
 
 import { useManualLayout } from "../layout/use-manual-layout"; // DG-15
 
@@ -52,6 +53,8 @@ import {
 } from "../shell/view-overrides-store"; // view mode overrides (maintainer 2026-09-27)
 
 import { useLens } from "../shell/lens-store"; // maintainer 2026-09-27 (lens switch)
+import { DRESS_START, GATHER_START, LensMorphOverlay, subProgress } from "./lens-morph-overlay"; // orchestrator correction 2026-09-27 (S10 morph)
+import { LensChrome, LensChromeTarget } from "./lens-chrome";
 import { VisualCanvasPane } from "./visual-canvas-pane"; // maintainer 2026-09-27 (lens switch)
 
 /** The pane's strings, in one place (`conventions/i18n-strings`). */
@@ -79,6 +82,10 @@ const CANVAS_LABELS = {
     "Press Enter or Space to select this node. Press ? to show its details. Press Escape to cancel.",
   readOnlyEdgeDescription: "Press Enter or Space to select this edge. Press Escape to cancel.",
 } as const;
+
+/** The orientation drill-down's own zoom ceiling (concept §5) — a one-node zone should
+ * still read as part of the diagram, not a close-up crop. */
+const DRILLDOWN_MAX_ZOOM = 1.25;
 
 /**
  * View mode is read-only (maintainer ruling 2026-09-27, superseding the narrower DG-18
@@ -137,6 +144,13 @@ export interface CanvasPaneProps {
   presenting?: boolean;
 }
 
+/** `CanvasPaneProps` plus the lens lock only `CanvasPane` (this file) computes and passes down. */
+interface TechnicalPaneProps extends CanvasPaneProps {
+  /** The visual lens is showing or a lens switch is mid-transition — the technical canvas
+   * takes no edit, exactly like `presenting`, for as long as it is true. */
+  lensLocked?: boolean;
+}
+
 /** `Dialect "1" is not supported…` → `"1"` (the version `normalize.ts` quoted in its message). */
 function issueVersion(message: string): string {
   return /Dialect "([^"]*)"/.exec(message)?.[1] ?? "?";
@@ -171,57 +185,102 @@ function applyViewNodeStyle(
   };
 }
 
-/**
- * maintainer 2026-09-27 ("the switch from technical to visual") — the pane the rest of the
- * app mounts: technical (`TechnicalCanvasPane`, today's implementation, untouched below) or
- * visual (`VisualCanvasPane`, `src/visual/`), cross-fading between them while a lens switch
- * is in flight (`shell/lens-store.ts`'s `position`, 0 = technical, 1 = visual).
- *
- * This is a documented simplification of `docs/2026-09-27-style-system-concept.md` §7's full
- * choreography, not that choreography: each side mounts its OWN `ReactFlowProvider` and fits
- * itself to its own content BEFORE the cross-fade starts (so "target layout computed before
- * the tween" holds, and nothing moves once the fade ends), and the two independently-fitted,
- * already-settled pictures cross-fade — there is no single shared camera move, and a
- * technical node does not fly to its box's slot (no DOM/React-key identity is shared between
- * the two canvases). `position` is applied as a plain inline `opacity` style, re-rendered every
- * animation frame by `shell/lens-store.ts`'s own `requestAnimationFrame` loop — not a CSS
- * transition — so it is exactly as smooth as that loop's frame rate, transform/opacity only,
- * and trivially reversible mid-flight (the store just changes `target`; this component only
- * ever reads the current `position`). `docs/findings/lens-switch-slice.md` has the measured
- * frame times and the honest list of what S10 asks for that this does not yet do.
- *
- * Neither side is draggable/connectable/deletable while the other is fading in — a lens
- * switch is not an interactive moment — and the settled, off-screen side is `inert` so it
- * takes no focus or hit-testing and is invisible to assistive tech.
- */
+/** Keeps both layouts mounted and shares one camera during the lens morph. Chrome is
+ * portaled outside fading content. Technical writes remain locked until fully settled. */
 export function CanvasPane(props: CanvasPaneProps) {
   const position = useLens((s) => s.position);
-  const showTechnical = position < 1;
-  const showVisual = position > 0;
-  const crossfading = showTechnical && showVisual;
+  const target = useLens((s) => s.target);
+  const viewing = useDocMode() === "view";
+  const [chromeTarget, setChromeTarget] = useState<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const technicalRef = useRef<HTMLDivElement>(null);
+  const visualRef = useRef<HTMLDivElement>(null);
+  // Re-read every render, not cached in state: this component already re-renders on every
+  // animation frame while `position` moves (`useLens`), so a preference flipped mid-session
+  // (taste profile) takes effect on the very next transition without a separate subscription.
+  const reduced = prefersReducedMotion();
+  const atTechnical = position === 0;
+  const atVisual = position === 1;
+  const morphing = !reduced && !atTechnical && !atVisual;
+  // The pane that just went `inert` forces the browser to blur whatever it held focus — with
+  // no next stop of its own, focus drops to `<body>` and a keyboard user has to tab in from
+  // the top of the page again. Once a switch settles, reclaim it: land on the pane that is
+  // now shown (its own root, `tabIndex={-1}` below — the drill-down's own `focusCanvasElement`
+  // already lands on a specific node when there is one to frame, so this only fires when
+  // nothing more specific claimed focus first).
+  useEffect(() => {
+    if (morphing) return;
+    if (document.activeElement !== document.body) return;
+    const shown = atVisual ? visualRef.current : technicalRef.current;
+    shown?.focus();
+  }, [atVisual, atTechnical, morphing]);
+  // The real panes' DIAGRAM content used to drop to `opacity: 0` the instant a switch started
+  // and pop back at the end — "a swap, not a morph" (S10's own bar). Per §7's gather/dress
+  // phases, the technical pane's content now fades OUT over the first 120 ms ("settle") and the
+  // visual pane's fades IN over the last 200 ms ("dress"); the ghost overlay owns the screen
+  // only in between, so the first and last frames are always real content. This is content-only
+  // (`--pane-opacity`, `index.css`'s `.react-flow__renderer` rule) — the chrome below runs its
+  // own, always-continuous cross-fade so it is never dark at the same time as the content.
+  const technicalOpacity = reduced
+    ? 1 - position
+    : morphing
+      ? 1 - subProgress(position, 0, GATHER_START)
+      : atVisual
+        ? 0
+        : 1;
+  const visualOpacity = reduced
+    ? position
+    : morphing
+      ? subProgress(position, DRESS_START, 1)
+      : atVisual
+        ? 1
+        : 0;
+  // `position !== 0` the instant a switch starts, not just once `atVisual` settles — React
+  // Flow's delete-key handling and drag/connect are document-level and ungated by
+  // `inert`/focus, so the technical pane must lock itself down (`deleteKeyCode: null`, no drag,
+  // no connect) for the whole time it is not the shown lens, including mid-morph. `inert`/
+  // `aria-hidden` below still only flip at the settled ends, so the pane keeps taking real
+  // focus/hit-testing while both sides cross-fade during a switch.
+  const technicalLensLocked = position !== 0 || target !== "technical";
   return (
-    <div className="relative h-full w-full">
-      {showTechnical ? (
+    <LensChromeTarget.Provider value={chromeTarget}>
+      <div ref={containerRef} data-lens-root className="@container relative h-full w-full">
         <div
-          className="absolute inset-0"
-          style={{ opacity: 1 - position }}
-          aria-hidden={crossfading || !showTechnical || undefined}
-          inert={crossfading || !showTechnical || undefined}
+          ref={technicalRef}
+          data-lens-pane="technical"
+          className="absolute inset-0 focus-ring-inset"
+          tabIndex={-1}
+          style={
+            {
+              "--pane-opacity": technicalOpacity,
+              visibility: atVisual ? "hidden" : "visible",
+            } as CSSProperties
+          }
+          aria-hidden={atVisual || undefined}
+          inert={atVisual || undefined}
         >
-          <TechnicalCanvasPane {...props} />
+          <TechnicalCanvasPane {...props} lensLocked={technicalLensLocked && !viewing} />
         </div>
-      ) : null}
-      {showVisual ? (
         <div
-          className="absolute inset-0"
-          style={{ opacity: position }}
-          aria-hidden={crossfading || !showVisual || undefined}
-          inert={crossfading || !showVisual || undefined}
+          ref={visualRef}
+          data-lens-pane="visual"
+          className="absolute inset-0 focus-ring-inset"
+          tabIndex={-1}
+          style={
+            {
+              "--pane-opacity": visualOpacity,
+              visibility: atTechnical ? "hidden" : "visible",
+            } as CSSProperties
+          }
+          aria-hidden={!atVisual || undefined}
+          inert={!atVisual || undefined}
         >
           <VisualCanvasPane />
         </div>
-      ) : null}
-    </div>
+        <LensMorphOverlay containerRef={containerRef} position={position} active={morphing} />
+        <div ref={setChromeTarget} className="pointer-events-none absolute inset-0 z-20" />
+      </div>
+    </LensChromeTarget.Provider>
   );
 }
 
@@ -229,7 +288,10 @@ export function CanvasPane(props: CanvasPaneProps) {
  * The technical canvas: the last compile with a graph (DG-12 store), laid out once (DG-11),
  * then patched in place while only words change.
  */
-function TechnicalCanvasPane({ presenting = false }: CanvasPaneProps) {
+const TechnicalCanvasPane = memo(function TechnicalCanvasPane({
+  presenting = false,
+  lensLocked = false,
+}: TechnicalPaneProps) {
   const drawn = useDiagram((s) => s.drawn);
   const structure = useDiagram((s) => s.structure);
   const stale = useDiagram((s) => s.compiled !== s.drawn);
@@ -336,6 +398,7 @@ function TechnicalCanvasPane({ presenting = false }: CanvasPaneProps) {
         structure={structure}
         stale={stale}
         presenting={presenting}
+        lensLocked={lensLocked}
         // view-mode direction (maintainer 2026-09-27): the file's own direction in edit mode,
         // else this viewer's own choice when one is set. `spec` is defined here (the guard
         // above returned early otherwise); `effectiveDirection` only reads as `undefined`
@@ -347,7 +410,7 @@ function TechnicalCanvasPane({ presenting = false }: CanvasPaneProps) {
       />
     </ReactFlowProvider>
   );
-}
+});
 
 interface DiagramCanvasProps {
   /** For `layout-ready-store.ts`: which document's layout this pane's `status` answers for. */
@@ -358,6 +421,9 @@ interface DiagramCanvasProps {
   structure: string;
   stale: boolean;
   presenting: boolean;
+  /** See `TechnicalPaneProps` — passed straight through to `useCanvasInteraction`'s
+   * `viewing` gate below. */
+  lensLocked: boolean;
   /** view-mode direction (maintainer 2026-09-27): what the canvas lays out with right now —
    * the file's own direction, or this viewer's own override (never the file's spec object). */
   direction: FlowSpecDirection;
@@ -416,6 +482,7 @@ function DiagramCanvas({
   structure,
   stale,
   presenting,
+  lensLocked,
   direction,
   nodeStyle,
 }: DiagramCanvasProps) {
@@ -545,14 +612,46 @@ function DiagramCanvas({
   // same box re-frames even if the id list is unchanged.
   const frameNodeIds = useLens((s) => s.frameNodeIds);
   const frameKey = useLens((s) => s.frameKey);
+  const technicalSettled = useLens(
+    (s) => s.position === 0 && s.target === "technical" && !s.animating,
+  );
   useEffect(() => {
-    if (status !== "ready" || !frameNodeIds || frameNodeIds.length === 0) return;
+    if (!technicalSettled || status !== "ready" || !frameNodeIds || frameNodeIds.length === 0)
+      return;
     const ids = new Set(frameNodeIds);
-    const targets = getNodes().filter((n) => ids.has(n.id));
+    const all = getNodes();
+    const targets = all.filter((n) => ids.has(n.id));
     if (targets.length === 0) return;
-    fitView({ nodes: targets, padding: 0.3, duration: motionMs("base") });
+    // The drill-down's own fit gets the same care as the first layout: chrome-aware padding
+    // (so the title block never lands over the framed zone) and a zoom ceiling (so a
+    // one-node zone doesn't zoom in past the diagram's own scale).
+    const pane = paneRef.current?.querySelector<HTMLElement>(".react-flow");
+    const limits = { minZoom: FIT_MIN_ZOOM, maxZoom: DRILLDOWN_MAX_ZOOM };
+    const padding = pane ? chromeFitPadding(pane, all, limits) : 0.3;
+    const target = frameNodeIds[0] ?? null;
+    // `fitView` in `@xyflow/react` 12.11.1 is queued and async — its Promise resolves once
+    // the transform actually lands. Focusing the target right away races it: `.focus()`
+    // (`focus-canvas.ts`) would fire before the frame settles, and React Flow's own
+    // `autoPanOnNodeFocus` would then pan a SECOND time on focus, to whatever the viewport
+    // was mid-tween, competing with this fit's chrome-aware padding and zoom ceiling —
+    // whichever landed last would win, framing the wrong place. `autoPanOnNodeFocus={false}`
+    // below turns off React Flow's own pan-on-focus entirely (this fit already does that
+    // job, with padding/zoom limits React Flow's own does not know about); focus is
+    // requested only once this fit's Promise resolves, so it always lands on the settled
+    // frame.
+    void fitView({
+      nodes: targets,
+      padding,
+      maxZoom: DRILLDOWN_MAX_ZOOM,
+      duration: motionMs("base"),
+    }).then(() => {
+      // React Flow's fit moves the camera; it never moves focus itself (P4 library gap, see
+      // `focus-canvas.ts`'s own doc comment) — without this, ⌥-Enter left focus on the box the
+      // person had just left, in the pane that just went `inert`, which drops it to `<body>`.
+      focusCanvasElement(target);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once per `frameKey`, not on every node/edge change
-  }, [frameKey, status]);
+  }, [frameKey, status, technicalSettled]);
 
   // Wave 3: each item's hook returns a slice of CanvasShell props (canvas-props.ts). One
   // line per item, blank lines between, so DG-15 and DG-18 each replace only their own slot.
@@ -568,14 +667,16 @@ function DiagramCanvas({
   // view mode is read-only (maintainer 2026-09-27) reuses `viewing` too.
   const viewing = useDocMode() === "view";
 
-  // View mode and presenting: DG-18's view-only slice, and every write path closed
-  // (READ_ONLY_PROPS) — deleteProps/layoutProps left out entirely, not merely overridden.
+  // View mode, presenting, or lens-locked (the visual lens is showing or a switch is
+  // mid-transition): every write path closed (READ_ONLY_PROPS) — deleteProps/layoutProps left
+  // out entirely, not merely overridden, so React Flow's own document-level delete-key
+  // listener is off (`deleteKeyCode: null`), not merely unfocused/inert.
   const waveProps = useMemo(
     () =>
-      presenting || viewing
+      presenting || lensLocked || viewing
         ? mergeCanvasProps(interactionProps, READ_ONLY_PROPS)
         : mergeCanvasProps(deleteProps, layoutProps, interactionProps, EDITABLE_PROPS),
-    [presenting, viewing, deleteProps, layoutProps, interactionProps],
+    [presenting, lensLocked, viewing, deleteProps, layoutProps, interactionProps],
   );
 
   // Hide the canvas and show the loading state only until the FIRST layout lands; later
@@ -669,50 +770,56 @@ function DiagramCanvas({
           // Wave-2 review M3: React Flow lifts a selected node (and its children and edges) by
           // 1000, over the edge labels' fixed z 1000 — selecting a zone hid the labels on it.
           elevateNodesOnSelect={false}
+          // This pane already re-frames a keyboard drill-down itself (chrome-aware padding, a
+          // zoom ceiling, above) — React Flow's own pan-on-focus would otherwise race it and
+          // could win with a plainer, chrome-ignorant frame.
+          autoPanOnNodeFocus={false}
           proOptions={{ hideAttribution: true }}
           // DG-14: delete (a text edit) and every later wave-3 handler, merged above.
           {...waveProps}
         >
           {/* DG-08: title block top-left, legend bottom-left (both in the exported picture). */}
           {/* DG-68: the diagram's own description, one sentence under the title. */}
-          <TitleBlock title={spec.title} description={spec.description} meta={source}>
-            {/* Wave-2 review m4: the stale badge sits in the top band, under the title card —
+          <LensChrome lens="technical">
+            <TitleBlock title={spec.title} description={spec.description} meta={source}>
+              {/* Wave-2 review m4: the stale badge sits in the top band, under the title card —
                 measured against bottom-centre on the four examples at 1920 and 1440, it costs
                 the fit less zoom (Qlik Cloud 0.760 vs 0.740 at 1920). Always mounted — a live
                 region announces what is added to it, not itself appearing — and an invisible,
                 hidden copy of the badge keeps it the badge's size while the diagram is
                 current, so every fit keeps nodes out from under it; the real badge is added
                 over the copy when the text goes stale. */}
-            <div className="grid" role="status" aria-live="polite">
-              <Badge
-                aria-hidden="true"
-                className="invisible col-start-1 row-start-1"
-                variant="warning"
-              >
-                {CANVAS_LABELS.stale}
-              </Badge>
-              {stale ? (
-                <Badge className="col-start-1 row-start-1" variant="warning">
+              <div className="grid" role="status" aria-live="polite">
+                <Badge
+                  aria-hidden="true"
+                  className="invisible col-start-1 row-start-1"
+                  variant="warning"
+                >
                   {CANVAS_LABELS.stale}
                 </Badge>
-              ) : null}
-            </div>
-          </TitleBlock>
-          <DiagramLegend mode={view.legend} />
-          {/* Top-right: the legend owns bottom-left. Hidden while the pane is under `@3xl`
+                {stale ? (
+                  <Badge className="col-start-1 row-start-1" variant="warning">
+                    {CANVAS_LABELS.stale}
+                  </Badge>
+                ) : null}
+              </div>
+            </TitleBlock>
+            <DiagramLegend mode={view.legend} />
+            {/* Top-right: the legend owns bottom-left. Hidden while the pane is under `@3xl`
               (768 px): at 1440 × 900 the pane is 710 px and the title block ran under it
               (wave-2 review m1); at phone width it covered the zoom controls (wave-0 m11). */}
-          <FlowMiniMap position="top-right" pannable zoomable className="@max-3xl:hidden" />
-          {/* P4: library gap — `ZoomControls`' Fit view calls React Flow's `fitView()` with no
+            <FlowMiniMap position="top-right" pannable zoomable className="@max-3xl:hidden" />
+            {/* P4: library gap — `ZoomControls`' Fit view calls React Flow's `fitView()` with no
               options (packages/flow/src/zoom-controls/zoom-controls.tsx:75) and takes no
               `onFitView`, so it ignores the chrome-aware fit and puts nodes under the panels
               (wave-2 review M7). Proposed: `onFitView?: () => void` (or `fitViewOptions`),
               through which the app would run its chrome-aware fit (use-diagram-layout.ts).
               docs/findings/DG-12-editor-integration.md. */}
-          <ZoomControls />
+            <ZoomControls />
 
-          {/* DG-18: details card, step player, presentation exit. */}
-          <InteractionOverlays nodes={nodes} />
+            {/* DG-18: details card, step player, presentation exit. */}
+            <InteractionOverlays nodes={nodes} />
+          </LensChrome>
         </CanvasShell>
       </div>
       {/* P4: library gap — CanvasShell has no `loading` prop; the state overlays the canvas.

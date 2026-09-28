@@ -28,6 +28,7 @@ import { valueAt } from "../spec/dialect/write-back";
 import { diagramStore, editActions, useDiagram } from "../state/diagram-store";
 import { entryOf, type DiagramEntry } from "../state/entries";
 import { focusCanvasElement } from "./focus-canvas";
+import { useLens } from "../shell/lens-store"; // maintainer 2026-09-27 (lens switch)
 
 /** The inspector's strings, in one place (`conventions/i18n-strings`). */
 const INSPECTOR_LABELS = {
@@ -155,6 +156,11 @@ interface EntryFormProps {
   onWrote: (text: string) => void;
   /** The edit could not be written exactly: re-seed from the text. */
   onRejected: () => void;
+  /** The visual lens is showing or mid-transition — the technical selection this form edits is
+   * hidden, so it is a durable, natively disabled read-only surface (every control disabled,
+   * not just visually dimmed) for exactly the window `canvas-pane.tsx`'s `technicalLensLocked`
+   * closes every other technical write path for (`position !== 0`). */
+  disabled: boolean;
 }
 
 /**
@@ -165,7 +171,7 @@ interface EntryFormProps {
  * docs/findings/DG-14-inspector-write-back.md. The inspector re-mounts this form (a new
  * `key`) whenever the text changes from anywhere else.
  */
-function EntryForm({ entry, written, onWrote, onRejected }: EntryFormProps) {
+function EntryForm({ entry, written, onWrote, onRejected, disabled }: EntryFormProps) {
   const { def, spec } = FORMS[entry.kind];
   // DG-26 — what the node's catalog reference supplies; nothing while the entry is unknown, a
   // custom node, or a diagram reference (Part 2 fills those).
@@ -197,6 +203,7 @@ function EntryForm({ entry, written, onWrote, onRejected }: EntryFormProps) {
   );
 
   const onChange = (next: FormValues) => {
+    if (disabled) return;
     const patch = entryFormPatch(def, last.current, next, referenceSupplied);
     last.current = next;
     if (Object.keys(patch).length === 0) return;
@@ -205,17 +212,19 @@ function EntryForm({ entry, written, onWrote, onRejected }: EntryFormProps) {
   };
 
   return (
-    <SchemaFormProvider spec={liveSpec} onChange={onChange}>
-      <SchemaFormRoot aria-label={kindLabel(entry)}>
-        <SchemaFormFields />
-      </SchemaFormRoot>
+    <SchemaFormProvider spec={liveSpec} onChange={onChange} disabled={disabled}>
+      <fieldset disabled={disabled} className="contents">
+        <SchemaFormRoot aria-label={kindLabel(entry)}>
+          <SchemaFormFields />
+        </SchemaFormRoot>
+      </fieldset>
     </SchemaFormProvider>
   );
 }
 
 /** Keep this action outside the keyed form: re-seeding fields must not remove keyboard
  * focus and hand the next Backspace to the canvas's document-level delete listener. */
-function ReferenceSubtitleAction({ entry }: { entry: DiagramEntry }) {
+function ReferenceSubtitleAction({ entry, disabled }: { entry: DiagramEntry; disabled: boolean }) {
   const catalog = currentCatalog();
   const found =
     entry.kind === "node" && entry.node.catalogEntry !== undefined
@@ -229,7 +238,9 @@ function ReferenceSubtitleAction({ entry }: { entry: DiagramEntry }) {
       type="button"
       variant="outline"
       size="sm"
+      disabled={disabled}
       onClick={() => {
+        if (disabled) return;
         // This is external to EntryForm: the inspector's compiled-text comparison re-seeds
         // its uncontrolled inputs while this button stays mounted and focused.
         editActions.editEntry(entry.id, { subtitle: inherited ? "" : undefined });
@@ -261,6 +272,8 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
   const selectedId = useDiagram((s) => s.selectedId);
   const compiled = useDiagram((s) => s.compiled);
   const compiledText = useDiagram((s) => s.compiledText);
+  // Lock immediately on a visual target and through the final frame of a return transition.
+  const lensLocked = useLens((s) => s.position !== 0 || s.target !== "technical");
   const raw = useMemo(() => parseArchYaml(compiledText).raw, [compiledText]);
   const entry = selectedId === null ? null : entryOf(compiled, selectedId);
   // DG-26 — a catalog change that lands after the form seeded (recompile() keeps the text, so
@@ -310,13 +323,14 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
         {entry && entry.kind !== "note" ? (
           <>
             <EntryForm
-              key={`${entry.id}:${seed.n}:${catalogGen}`}
+              key={`${entry.id}:${seed.n}:${catalogGen}:${lensLocked}`}
+              disabled={lensLocked}
               entry={entry}
               written={writtenKeys(entry, raw)}
               onWrote={(text) => setSeed((s) => ({ n: s.n, text }))}
               onRejected={() => setSeed((s) => ({ n: s.n + 1, text: s.text }))}
             />
-            <ReferenceSubtitleAction entry={entry} />
+            <ReferenceSubtitleAction entry={entry} disabled={lensLocked} />
           </>
         ) : (
           <Text tone="muted">{INSPECTOR_LABELS.note}</Text>

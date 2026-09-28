@@ -21,6 +21,18 @@ export const LANE_HEADER_HEIGHT = 44;
 export const LANE_PADDING = 16;
 export const LANE_WIDTH = 320;
 export const LANE_GAP = 64;
+/** Keep routing columns at least six graph units apart as the number of flows grows. */
+export function laneGap(lens: VisualLens): number {
+  return Math.max(LANE_GAP, (lens.flows.length + 1) * 6 + 8);
+}
+/** Only lane-skipping flows need a horizontal corridor above all boxes. */
+export function skipLaneFlowIds(lens: VisualLens): string[] {
+  const column = new Map(lens.lanes.map((lane, index) => [lane.role, index]));
+  const boxColumn = new Map(lens.boxes.map((box) => [box.id, column.get(box.lane) ?? 0]));
+  return lens.flows
+    .filter((flow) => Math.abs((boxColumn.get(flow.from) ?? 0) - (boxColumn.get(flow.to) ?? 0)) > 1)
+    .map((flow) => flow.id);
+}
 export const BOX_GAP = 16;
 /** A box's own header (title) band, above its member rows. */
 export const BOX_HEADER_HEIGHT = 32;
@@ -52,11 +64,21 @@ export interface VisualLayout {
   bounds: Rect;
 }
 
+/** A single-member box whose one member's title IS the box's own title (`capability-box-node.tsx`'s
+ * `soleMember`) never renders its member-list row — the header already names and icons that one
+ * member — so it must not reserve a row of height for it either. */
+function isSoleMemberBox(box: VisualBox): boolean {
+  return !box.aside && box.members.length === 1 && box.members[0]?.title === box.title;
+}
+
 function boxHeight(box: VisualBox): number {
-  const rows = Math.max(1, box.members.length);
+  const rows = isSoleMemberBox(box) ? 0 : Math.max(1, box.members.length);
   return Math.max(
     BOX_MIN_HEIGHT,
-    BOX_HEADER_HEIGHT + rows * BOX_MEMBER_ROW_HEIGHT + BOX_PADDING * 2,
+    BOX_HEADER_HEIGHT +
+      rows * BOX_MEMBER_ROW_HEIGHT +
+      BOX_PADDING * 2 +
+      (box.owner === "unowned" ? 24 : 0),
   );
 }
 
@@ -68,11 +90,12 @@ function boxHeight(box: VisualBox): number {
 export function layoutVisualLens(lens: VisualLens): VisualLayout {
   const lanes: LaidOutLane[] = [];
   const boxes: LaidOutBox[] = [];
+  const gap = laneGap(lens);
   let x = 0;
   let maxLaneHeight = 0;
   for (const lane of lens.lanes) {
     const members = lens.boxes.filter((b) => b.lane === lane.role);
-    let y = LANE_HEADER_HEIGHT + LANE_PADDING;
+    let y = LANE_HEADER_HEIGHT + LANE_PADDING + skipLaneFlowIds(lens).length * 8;
     for (const box of members) {
       const height = boxHeight(box);
       boxes.push({
@@ -84,10 +107,13 @@ export function layoutVisualLens(lens: VisualLens): VisualLayout {
     const laneHeight = Math.max(y - BOX_GAP + LANE_PADDING, LANE_HEADER_HEIGHT + LANE_PADDING * 2);
     lanes.push({ lane, rect: { x, y: 0, width: LANE_WIDTH, height: laneHeight } });
     maxLaneHeight = Math.max(maxLaneHeight, laneHeight);
-    x += LANE_WIDTH + LANE_GAP;
+    x += LANE_WIDTH + gap;
   }
   // Every lane panel spans the tallest lane's height (a level page, not a jagged one).
   for (const lane of lanes) lane.rect.height = maxLaneHeight;
-  const bounds: Rect = { x: 0, y: 0, width: Math.max(0, x - LANE_GAP), height: maxLaneHeight };
+  // The final lane reserves the same right routing gutter as the gaps between lanes.
+  const last = lanes.at(-1);
+  if (last) last.rect.width += gap;
+  const bounds: Rect = { x: 0, y: 0, width: Math.max(0, x), height: maxLaneHeight };
   return { lanes, boxes, bounds };
 }

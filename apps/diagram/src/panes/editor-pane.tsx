@@ -5,6 +5,7 @@ import {
   type MonacoCodeEditor,
 } from "@elabs-ai/components-editor";
 import { Kbd } from "@elabs-ai/components-ui";
+import { useLens } from "../shell/lens-store";
 import type { CompiledDiagram, DiagramIssue } from "../state/compile-text";
 import { diagramActions, diagramStore, useDiagram } from "../state/diagram-store";
 import { elementAt, elementRanges, type ElementRange } from "../state/pipeline";
@@ -80,6 +81,11 @@ export function EditorPane() {
   const compiled = useDiagram((s) => s.compiled);
   const selectedId = useDiagram((s) => s.selectedId);
   const loadCount = useDiagram((s) => s.loadCount);
+  // The technical file is read-only for exactly the window `canvas-pane.tsx`'s
+  // `technicalLensLocked` closes every other technical write path for (the visual lens showing,
+  // or a switch to/from it mid-flight): without this, typing here still autosaved the file even
+  // though the inspector was already locked for the same document.
+  const lensLocked = useLens((s) => s.position !== 0 || s.target !== "technical");
   const editorRef = useRef<MonacoCodeEditor | null>(null);
   const monacoRef = useRef<MonacoApi | null>(null);
   // The editor instance's generation: a loaded document mounts a new one (below), and every
@@ -190,6 +196,7 @@ export function EditorPane() {
           onMount={onMount}
           language="yaml"
           height="100%"
+          readOnly={lensLocked}
           ariaLabel="Diagram YAML"
           ariaInvalid={!compiled.ok}
           // P4: library gap — CodeEditor has no disclosed way to Tab out (Tab indents) and

@@ -19,6 +19,7 @@
  * P4: library gap — `fitView` has no "avoid these panels" option; CanvasShell could offer
  * one (proposed: `fitViewOptions.avoid: "panels"`). docs/findings/DG-12-editor-integration.md.
  */
+import { canvasChrome } from "../chrome/canvas-chrome";
 import type { Node } from "@elabs-ai/components-flow";
 // P4: library gap — flow does not re-export the `FitViewOptions` type (verified-apis.md → flow).
 import type { FitViewOptions } from "@xyflow/react";
@@ -122,7 +123,10 @@ function panelsOf(pane: HTMLElement): PanelBox[] {
     width: r.width,
     height: r.height,
   });
-  return [...pane.querySelectorAll<HTMLElement>(".react-flow__panel")].flatMap((panel) => {
+  return [
+    ...pane.querySelectorAll<HTMLElement>(".react-flow__panel"),
+    ...(canvasChrome(pane)?.querySelectorAll<HTMLElement>(".react-flow__panel") ?? []),
+  ].flatMap((panel) => {
     const r = panel.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) return [];
     const rect = relative(r);

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { LENS_PARAM } from "../interaction/lens-mode";
 import { PRESENT_PARAM } from "../interaction/presentation-mode";
 import { docParam } from "../io/share-url";
 
@@ -47,6 +48,15 @@ export type Route =
        */
       path: string | null;
       present?: boolean;
+      /**
+       * `&lens=visual` (maintainer 2026-09-27, "the switch from technical to visual"): carried
+       * on the `Route` itself, not just read ambiently off `location.hash`
+       * (`lens-mode.ts`/`shell/lens-store.ts` still do that for the live tween), so that a
+       * `navigate({ ...route, … })` call built from the CURRENT route — `syncDocRoute`'s
+       * "put the path back" after Present, the `P` keyboard shortcut — carries it forward
+       * instead of silently dropping back to technical (a regression fixed 2026-09-27).
+       */
+      lens?: "visual";
       /** Plan V11's story link (`&step=n`); DG-31 reads it. */
       step?: number;
       /** One release: an old `#doc=<text>` share link (DG-16) maps here. */
@@ -91,9 +101,11 @@ export function parseRoute(hash: string): Route {
   );
   const stepPart = parts.find((part) => part.startsWith(`${STEP_PARAM}=`));
   const step = stepPart ? Number(stepPart.slice(STEP_PARAM.length + 1)) : Number.NaN;
+  const lensVisual = parts.some((part) => part === `${LENS_PARAM}=visual`);
   const flags = {
     ...(present ? { present: true } : {}),
     ...(Number.isInteger(step) && step >= 0 ? { step } : {}),
+    ...(lensVisual ? { lens: "visual" as const } : {}),
   };
   const head = parts.find((part) => !part.includes("=") && part !== PRESENT_PARAM) ?? "";
 
@@ -136,6 +148,7 @@ export function toHash(route: Route): string {
       const params = [
         ...(route.present ? [PRESENT_PARAM] : []),
         ...(route.step !== undefined ? [`${STEP_PARAM}=${route.step}`] : []),
+        ...(route.lens === "visual" ? [`${LENS_PARAM}=visual`] : []),
       ];
       const head =
         route.path !== null

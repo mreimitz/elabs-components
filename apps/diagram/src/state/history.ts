@@ -13,6 +13,7 @@ import { useSyncExternalStore } from "react";
 import { isPresenting } from "../interaction/presentation-mode";
 import { focusCanvasElement, focusedCanvasId } from "../panes/focus-canvas";
 import { WORKSPACE_ID } from "../shell/diagram-shell";
+import { lensStore } from "../shell/lens-store";
 import { currentMode } from "../shell/mode-store"; // view mode is read-only (maintainer 2026-09-27)
 import { createStore } from "./create-store";
 import type { CompiledDiagram } from "./compile-text";
@@ -113,6 +114,7 @@ function restore(text: string, focus: boolean) {
 export const historyActions = {
   /** `focus`: move keyboard focus to what the step brought back (keyboard use). */
   undo(focus = false): boolean {
+    if (!canUseHistory()) return false;
     const text = past.pop();
     if (text === undefined) return false;
     future.push(current);
@@ -121,6 +123,7 @@ export const historyActions = {
     return true;
   },
   redo(focus = false): boolean {
+    if (!canUseHistory()) return false;
     const text = future.pop();
     if (text === undefined) return false;
     past.push(current);
@@ -129,6 +132,10 @@ export const historyActions = {
     return true;
   },
 };
+
+export function historyCounts(): Counts {
+  return counts.get();
+}
 
 export function useHistoryCounts(): Counts {
   return useSyncExternalStore(counts.subscribe, counts.get);
@@ -153,15 +160,30 @@ function fromCanvas(target: EventTarget | null): boolean {
 }
 
 /**
+ * Never while presenting (DG-18), outside edit mode (view mode is read-only, maintainer
+ * 2026-09-27), or while the visual lens is showing or mid-transition: its pane never mounts an
+ * undo of its own, but this listener is document-level (`main.tsx`) and the top-bar's Undo/Redo
+ * buttons call `historyActions` directly — with no shared gate, either path would silently
+ * undo/redo the TECHNICAL text the person cannot see. Gated on the lens's `target`, not the
+ * settled `lens`, so it stops the instant a switch to visual starts, not only once the
+ * transition lands.
+ */
+export function canUseHistory(): boolean {
+  return (
+    !isPresenting(window.location.hash) &&
+    currentMode() === "edit" &&
+    lensStore.get().target === "technical" &&
+    lensStore.get().position === 0
+  );
+}
+
+/**
  * ⌘/Ctrl+Z undoes, ⇧⌘/Ctrl+Z and Ctrl+Y redo, anywhere but in Monaco, a form field or a
- * dialog. Focus follows the change only when the key came from the canvas. Never while
- * presenting (DG-18) or in view mode (maintainer 2026-09-27): neither shows an Undo button,
- * and view mode's whole point is that nothing on the canvas — including the file's own
- * history — changes under the viewer.
+ * dialog. Focus follows the change only when the key came from the canvas.
  */
 export function onHistoryKeyDown(event: KeyboardEvent): void {
   if (event.defaultPrevented || event.altKey || !(event.metaKey || event.ctrlKey)) return;
-  if (isPresenting(window.location.hash) || currentMode() !== "edit") return;
+  if (!canUseHistory()) return;
   const key = event.key.toLowerCase();
   const redo = (key === "z" && event.shiftKey) || (key === "y" && event.ctrlKey);
   if ((key !== "z" && !redo) || ownsUndo(event.target)) return;

@@ -3,6 +3,7 @@ import { DropdownMenuItem, DropdownMenuSeparator, IconButton } from "@elabs-ai/c
 import { ChevronsDownUp, ChevronsUpDown, Presentation } from "lucide-react";
 import { isZoneNode } from "../nodes/zone-data";
 import { WORKSPACE_ID } from "../shell/diagram-shell";
+import { useLens } from "../shell/lens-store";
 import { useDiagram } from "../state/diagram-store";
 import { interactionActions } from "./interaction-store";
 import { enterPresentation, takePresentReturn } from "./presentation-mode";
@@ -21,7 +22,13 @@ const CONTROL_LABELS = {
  */
 function useAvailable() {
   const hasGraph = useDiagram((s) => (s.drawn.graph?.nodes.length ?? 0) > 0);
-  const hasZones = useDiagram((s) => s.drawn.graph?.nodes.some(isZoneNode) ?? false);
+  // These fold/open the TECHNICAL graph's zones — while the visual lens shows, that pane is
+  // `inert` (`canvas-pane.tsx`), so firing either one would change a diagram the person cannot
+  // currently see, with nothing on screen to show for it. Off while the visual lens is the
+  // target lens, the same gate `top-bar.tsx` uses for its own technical-only controls.
+  const technical = useLens((s) => s.target) === "technical";
+  const graphHasZones = useDiagram((s) => s.drawn.graph?.nodes.some(isZoneNode) ?? false);
+  const hasZones = technical && graphHasZones;
   return { hasGraph, hasZones };
 }
 
