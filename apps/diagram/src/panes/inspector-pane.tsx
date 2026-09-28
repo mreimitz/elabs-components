@@ -13,6 +13,7 @@ import { FileCode } from "lucide-react";
 import { catalogVersion, currentCatalog, onCatalogChange } from "../catalog/catalog-bundle"; // DG-26
 import { suppliedBy, type Supplied } from "../spec/dialect/catalog-refs"; // DG-26
 import { FLOW_DEF, NODE_DEF, ZONE_DEF } from "../spec/dialect/definitions";
+import { SUPPLIED_KEYS } from "../spec/dialect/types"; // DG-26
 import {
   entryFormPatch,
   entryFormSpec,
@@ -37,10 +38,14 @@ const INSPECTOR_LABELS = {
   showInYaml: "Show in YAML",
   advanced: "Advanced",
   unset: "Not set",
-  // "Diagram reference" (review round 0 F5/F7): "another diagram" (Ruling 9), never "Component".
+  // A workspace ref points to another diagram.
   kind: { zone: "Zone", node: "Node", flow: "Flow", note: "Note", component: "Diagram reference" },
   // DG-26 — help text on a field a catalog reference supplies (1b.6).
   fromReference: "From the reference: ",
+  // A field written blank on purpose (entryFormPatch) says what the reference would show instead.
+  clearedFromReference: "Cleared; the reference would show: ",
+  restoreSubtitle: "Use reference subtitle",
+  clearSubtitle: "Clear subtitle",
 } as const;
 
 /** A supplied value as help text (`badges`: joined; everything else is already a string). */
@@ -49,36 +54,35 @@ function describeSupplied(value: Supplied[keyof Supplied]): string | undefined {
   return Array.isArray(value) ? value.join(", ") : String(value);
 }
 
-/**
- * DG-26 — each field in `inherited` gets the reference's value as its help text, replacing
- * the field's own description (the schema form renders `description` as help text,
- * schema-form.tsx). An inherited enum (e.g. `type`, which has its own default) also needs a
- * way back to "inherited" once the user has picked a value — the enum only gets a "Not set"
- * option on its own when it has no default (form-spec.ts toFieldSpec), so one is added here,
- * labelled with the reference's value (review round 1 F1). Fields not inherited are untouched.
- */
+/** Reference defaults remain visible and restorable while the uncontrolled form stays mounted. */
 function withReferenceHelp(
   spec: ReturnType<typeof entryFormSpec>,
   supplied: Supplied | undefined,
   inherited: ReadonlySet<string>,
+  values: FormValues,
 ): ReturnType<typeof entryFormSpec> {
-  if (!supplied || inherited.size === 0) return spec;
+  if (!supplied) return spec;
   return {
     ...spec,
     fields: spec.fields.map((field): FieldSpec => {
       const value = describeSupplied(supplied[field.name as keyof Supplied]);
-      if (!inherited.has(field.name) || value === undefined) return field;
-      const withHelp = { ...field, description: `${INSPECTOR_LABELS.fromReference}${value}` };
-      if (withHelp.type !== "enum") return withHelp;
-      const hasUnset = withHelp.options.some(
-        (o) => (typeof o === "string" ? o : o.const) === UNSET,
-      );
-      if (hasUnset) return withHelp;
+      if (value === undefined) return field;
+      if (field.type !== "enum") {
+        if (inherited.has(field.name)) {
+          return { ...field, description: `${INSPECTOR_LABELS.fromReference}${value}` };
+        }
+        if (values[field.name] === "") {
+          return { ...field, description: `${INSPECTOR_LABELS.clearedFromReference}${value}` };
+        }
+        return field;
+      }
+      const hasUnset = field.options.some((o) => (typeof o === "string" ? o : o.const) === UNSET);
+      if (hasUnset) return { ...field, description: `${INSPECTOR_LABELS.fromReference}${value}` };
       return {
-        ...withHelp,
+        ...field,
         options: [
           { const: UNSET, title: `${INSPECTOR_LABELS.fromReference}${value}` },
-          ...withHelp.options,
+          ...field.options,
         ],
       };
     }),
@@ -182,18 +186,25 @@ function EntryForm({ entry, written, onWrote, onRejected, disabled }: EntryFormP
       (key) => supplied?.[key] !== undefined,
     ),
   );
+  // The SUPPLIED_KEYS the reference currently supplies a value for, written or not — the set
+  // `entryFormPatch` writes an explicit blank to instead of removing the key, so the reference's
+  // value cannot come back by surprise.
+  const referenceSupplied = new Set(SUPPLIED_KEYS.filter((key) => supplied?.[key] !== undefined));
   const [seeded] = useState(() => {
     const values = entryFormValues(spec, def, written, inherited);
-    return { values, spec: seedFormSpec(withReferenceHelp(spec, supplied, inherited), values) };
+    return { values };
   });
   const last = useRef<FormValues>(seeded.values);
+  // Update metadata from the current compiled entry without replacing controls or their
+  // uncontrolled values. In particular, Radix's portaled menus must retain focus while open.
+  const liveSpec = seedFormSpec(
+    withReferenceHelp(spec, supplied, inherited, last.current),
+    seeded.values,
+  );
 
   const onChange = (next: FormValues) => {
-    // A guard beside `disabled` below — the same shape as `document-controls.tsx`'s
-    // `canUseHistory()` re-check in its own onClick — in case anything ever calls this handler
-    // directly instead of through the disabled controls.
     if (disabled) return;
-    const patch = entryFormPatch(def, last.current, next);
+    const patch = entryFormPatch(def, last.current, next, referenceSupplied);
     last.current = next;
     if (Object.keys(patch).length === 0) return;
     if (editActions.editEntry(entry.id, patch)) onWrote(diagramStore.get().compiledText);
@@ -201,17 +212,42 @@ function EntryForm({ entry, written, onWrote, onRejected, disabled }: EntryFormP
   };
 
   return (
-    <SchemaFormProvider spec={seeded.spec} onChange={onChange} disabled={disabled}>
-      {/* A native `<fieldset disabled>` on top of the form's own per-field `disabled` prop: it
-          disables every descendant control at the DOM level regardless of the field type, so a
-          gap in the schema form's own disabled wiring for one control kind can never leave a
-          single field editable while the rest of the form is locked. */}
+    <SchemaFormProvider spec={liveSpec} onChange={onChange} disabled={disabled}>
       <fieldset disabled={disabled} className="contents">
         <SchemaFormRoot aria-label={kindLabel(entry)}>
           <SchemaFormFields />
         </SchemaFormRoot>
       </fieldset>
     </SchemaFormProvider>
+  );
+}
+
+/** Keep this action outside the keyed form: re-seeding fields must not remove keyboard
+ * focus and hand the next Backspace to the canvas's document-level delete listener. */
+function ReferenceSubtitleAction({ entry, disabled }: { entry: DiagramEntry; disabled: boolean }) {
+  const catalog = currentCatalog();
+  const found =
+    entry.kind === "node" && entry.node.catalogEntry !== undefined
+      ? catalog.get(entry.node.catalogEntry)
+      : undefined;
+  if (!found || suppliedBy(found, catalog).subtitle === undefined || entry.kind !== "node")
+    return null;
+  const inherited = entry.node.unwritten?.includes("subtitle") ?? false;
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      disabled={disabled}
+      onClick={() => {
+        if (disabled) return;
+        // This is external to EntryForm: the inspector's compiled-text comparison re-seeds
+        // its uncontrolled inputs while this button stays mounted and focused.
+        editActions.editEntry(entry.id, { subtitle: inherited ? "" : undefined });
+      }}
+    >
+      {inherited ? INSPECTOR_LABELS.clearSubtitle : INSPECTOR_LABELS.restoreSubtitle}
+    </Button>
   );
 }
 
@@ -236,12 +272,7 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
   const selectedId = useDiagram((s) => s.selectedId);
   const compiled = useDiagram((s) => s.compiled);
   const compiledText = useDiagram((s) => s.compiledText);
-  // The inspector edits the TECHNICAL selection, hidden while the visual lens shows or the
-  // switch to/from it is mid-flight — read the same `position !== 0` boundary
-  // `canvas-pane.tsx`'s `technicalLensLocked` uses for every other technical write path, not
-  // `target` (which flips the instant a switch starts, one whole tween ahead of the pane
-  // actually becoming hidden), so the inspector's form goes read-only for exactly the same
-  // window as the rest of the technical pane's writes, no earlier and no later.
+  // Lock immediately on a visual target and through the final frame of a return transition.
   const lensLocked = useLens((s) => s.position !== 0 || s.target !== "technical");
   const raw = useMemo(() => parseArchYaml(compiledText).raw, [compiledText]);
   const entry = selectedId === null ? null : entryOf(compiled, selectedId);
@@ -290,17 +321,17 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
           {INSPECTOR_LABELS.showInYaml}
         </Button>
         {entry && entry.kind !== "note" ? (
-          // `lensLocked` in the key: flipping the lock remounts the form fresh from `written`
-          // (the file's own values), so a keystroke typed right at the lock boundary can never
-          // leave the uncontrolled form's own DOM value out of step with what the file holds.
-          <EntryForm
-            key={`${entry.id}:${seed.n}:${catalogGen}:${lensLocked}`}
-            entry={entry}
-            written={writtenKeys(entry, raw)}
-            onWrote={(text) => setSeed((s) => ({ n: s.n, text }))}
-            onRejected={() => setSeed((s) => ({ n: s.n + 1, text: s.text }))}
-            disabled={lensLocked}
-          />
+          <>
+            <EntryForm
+              key={`${entry.id}:${seed.n}:${catalogGen}:${lensLocked}`}
+              disabled={lensLocked}
+              entry={entry}
+              written={writtenKeys(entry, raw)}
+              onWrote={(text) => setSeed((s) => ({ n: s.n, text }))}
+              onRejected={() => setSeed((s) => ({ n: s.n + 1, text: s.text }))}
+            />
+            <ReferenceSubtitleAction entry={entry} disabled={lensLocked} />
+          </>
         ) : (
           <Text tone="muted">{INSPECTOR_LABELS.note}</Text>
         )}
