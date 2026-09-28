@@ -22,9 +22,9 @@ pipeline, the zones/nodes/flows/styles/notes keys, ids and positions unchanged f
 `component` marks and describes a diagram meant to be referenced by another one (its icon and
 one-sentence description, shown where the reference collapses). `story` and `visual` are
 carried but not yet read by anything in R1 — later items (DG-31, DG-36) define their shape.
-`docs`/`status` are shown on the details card (DG-25); they are never supplied by a reference
-(§2). Any unrecognized top-level, zone or node key is still `unknown-prop` (a warning), as
-in v0.
+`docs`/`status` will be shown on the details card once DG-25 builds it (not yet); they are
+never supplied by a reference (§2). Any unrecognized top-level, zone or node key is still
+`unknown-prop` (a warning), as in v0.
 
 ## 2. References
 
@@ -62,9 +62,10 @@ diagram-ref  := "ws" ("/" segment)+           segment: any character except "/",
   folder and any file name the workspace tree itself accepts works here too — spaces,
   capitals, punctuation, unicode all fine (`ws/Demo Banking/landscape`). The last segment is
   the file **name**, not the diagram's `title:`.
-- A value with a character YAML reads specially (`: `, a leading `#`, a leading quote) is
-  written quoted by every writer in this app (`write-back.ts`'s `yamlScalar`); a plain path
-  with spaces needs no quotes of its own.
+- A value with a sequence YAML would misread — `: ` (colon-space, key syntax), ` #` (space
+  then hash, a comment start — anywhere in the value, not only when leading; review round 1
+  F4), or a leading quote — is written quoted by every writer in this app (`write-back.ts`'s
+  `yamlScalar`); a plain path with spaces needs no quotes of its own.
 - **Not referenceable in R1:** a `.yml`-extensioned file (the tree lists it, but a `ws/` path
   always resolves to `.yaml`), a dotfile (the tree hides dotfiles), anything under the root
   `_trash` folder (a leading `_` segment is rejected). A `.` or `..` segment (a relative path)
@@ -88,8 +89,10 @@ R1 (a diagram reference's title/icon land in Part 2 — see §2.4):
 - `title`, `subtitle`, `icon`, `type` and `badges` (`SUPPLIED_KEYS`) are filled into the AST
   before validation — only for the keys the node's text does not already have
   (`node.unwritten`, recorded by the normalizer from the raw entry, not from what the
-  reference happens to supply). Writing `badges: []` on the node keeps it empty; it is not
-  "unwritten".
+  reference happens to supply). A scalar key left blank (`title:` with no value, or
+  `title: ""`) counts as unwritten too (review round 1 N4) — the reference's value shows,
+  same as when the key is absent. Writing `badges: []` on the node keeps it empty; an array is
+  never "blank" the same way, so it is not "unwritten".
 - `description` and `docs` are **not** in `SUPPLIED_KEYS`: they never land in the compiled
   node's data even when the node writes neither, so the drawing never changes shape. Review
   round 0 F2 — narrowed from an earlier draft of this section: today only the inspector's
@@ -134,11 +137,13 @@ reference — a dotted target there is `unknown-note-target`.
 
 `diagram:` reads `"0"` and `"1"` (`READ_VERSIONS`); this app always **writes** `"1"`
 (`DIALECT_VERSION`). Any other value is `unsupported-version`. **A v0 file is never rewritten
-by opening or saving it** (review round 0 F1, correcting an earlier draft of this section): the
-app reads it and draws it as v1 in memory (`upgradeText`, applied on load, not written back),
-so its first line can still say `"0"` after a session in the app. Only a script writes to
-disk, and only when it is run on purpose. Two, mutually exclusive, script modes migrate files
-on disk without opening them (`scripts/upgrade-workspace.mjs`):
+by opening or saving it** (review round 0 F1, correcting an earlier draft of this section, and
+review round 1 F4, correcting it again): the normalizer (`normalize.ts`) reads a `"0"` or `"1"`
+file directly and draws either the same way — `upgradeText` is never called on open or save; it
+runs only from the migration script below and from `#dev/spec-check`'s own round-trip
+self-test. So a file's first line can still say `"0"` after a session in the app; only a script
+writes to disk, and only when it is run on purpose. Two, mutually exclusive, script modes
+migrate files on disk without opening them (`scripts/upgrade-workspace.mjs`):
 
 ```sh
 # 0 → 1 syntax upgrade (upgradeText): in place, on every *.yaml under the target (default:

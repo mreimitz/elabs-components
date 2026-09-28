@@ -9,7 +9,7 @@ import { normalizeArch } from "./normalize"; // DG-26 (1b.8)
 import { suppliedBy, type CatalogLookup, type Supplied } from "./catalog-refs"; // DG-26 (1b.8)
 import { CATALOG_REF_ROOT } from "./ids"; // DG-26 (review round 0 F3)
 import { renameEntryKey, setEntryKeys, valueAt, type WriteValue } from "./write-back";
-import { DIALECT_VERSION, READ_VERSIONS, type DialectVersion } from "./types";
+import { DIALECT_VERSION, READ_VERSIONS, SUPPLIED_KEYS, type DialectVersion } from "./types";
 
 export type UpgradeReason =
   | "yaml-error"
@@ -77,12 +77,40 @@ export interface RefFirstChange {
   ref: string;
   /** title/subtitle/type/badges/description/docs removed because the reference now supplies the same value. */
   dropped: readonly string[];
+  /**
+   * title/type written, matching what the node already drew (its id, or "service"), because
+   * without them the reference would have started supplying a different value for a key the
+   * node never wrote (review round 1 F1, verify-r1 — every drawing stays identical).
+   */
+  pinned?: readonly string[];
+  /** A drop that could not be spliced exactly: the keys stayed, unremarked otherwise (review round 1 N1). */
+  reason?: "no-exact-edit";
+}
+
+/** A node left custom on purpose, and why (review round 1 F1, verify-r1). Never a failure. */
+export interface RefFirstSkip {
+  id: string;
+  reason: string;
 }
 
 export interface RefFirstResult {
   text: string;
   changed: boolean;
   changes: readonly RefFirstChange[];
+  /**
+   * Nodes the migration chose not to convert even though a catalog name resolved, because
+   * doing so would have changed the drawing and nothing could be pinned to prevent that
+   * (subtitle, icon or badges: unlike title/type, there is no written value that means "no
+   * value" — review round 1 F1, verify-r1). Informational; never makes the script fail.
+   */
+  skipped: readonly RefFirstSkip[];
+  /**
+   * `choices` entries this call could not use: a node id not in this file, or a name (or ref)
+   * that names no catalog entry. A node simply not mentioned in `choices` at all is normal
+   * (it falls back to its own written icon) and is never reported here (review round 1 F3 /
+   * verify-r1 F2 — these ARE reported, because they read as typos).
+   */
+  badChoices: readonly string[];
   /**
    * Set when nothing could be read or edited: the same three unreadable-file reasons
    * `upgradeText` reports (review round 0 F2 — a parse/AST failure is a failure, never a
@@ -126,14 +154,23 @@ export function refFirstText(
   choices: RefChoices = {},
 ): RefFirstResult {
   const { raw, sourceMap } = parseArchYaml(text);
-  if (raw === undefined) return { text, changed: false, changes: [], reason: "yaml-error" };
+  if (raw === undefined)
+    return { text, changed: false, changes: [], skipped: [], badChoices: [], reason: "yaml-error" };
   const { ast, issues } = normalizeArch(raw, sourceMap);
   if (!ast) {
     const reason =
       issues[0]?.code === "unsupported-version" ? "unsupported-version" : "not-a-diagram";
-    return { text, changed: false, changes: [], reason };
+    return { text, changed: false, changes: [], skipped: [], badChoices: [], reason };
   }
   const changes: RefFirstChange[] = [];
+  const skipped: RefFirstSkip[] = [];
+  // review round 1 F3 (review-r1) / F2 (verify-r1) — a `choices` id this file has no node for
+  // is a typo worth reporting, same as a name below that names no catalog entry; a node simply
+  // absent from `choices` (the common case) is never in this list.
+  const nodeIds = new Set(ast.nodes.map((n) => n.id));
+  const badChoices: string[] = Object.keys(choices)
+    .filter((id) => !nodeIds.has(id))
+    .map((id) => `"${id}" is not a node in this file`);
   let out = text;
   // Node ids/paths only (to enumerate what to touch); every read of a value below re-parses
   // `out`, since each edit shifts every later offset.
@@ -141,7 +178,14 @@ export function refFirstText(
     if (node.ref !== undefined) continue;
     const { raw: rawNow } = parseArchYaml(out);
     if (rawNow === undefined)
-      return { text: out, changed: changes.length > 0, changes, reason: "no-exact-edit" };
+      return {
+        text: out,
+        changed: changes.length > 0,
+        changes,
+        skipped,
+        badChoices,
+        reason: "no-exact-edit",
+      };
     const entryRaw = rawEntryOf(rawNow, node.path);
     if (!entryRaw) continue;
     const choice = choices[node.id];
@@ -150,24 +194,89 @@ export function refFirstText(
     // review round 0 F3 — a choice written in the documented ref form ("catalog/aws/rds")
     // names the same catalog entry as the bare name ("aws/rds"); accept either.
     const catalogPrefix = `${CATALOG_REF_ROOT}/`;
-    const name =
-      (choice?.startsWith(catalogPrefix) ? choice.slice(catalogPrefix.length) : choice) ??
-      writtenIcon;
+    const chosenName = choice?.startsWith(catalogPrefix)
+      ? choice.slice(catalogPrefix.length)
+      : choice;
+    const name = chosenName ?? writtenIcon;
     if (name === undefined) continue;
     const entry = catalog.get(name);
-    if (!entry) continue;
+    if (!entry) {
+      // review round 1 F3 (review-r1) / F2 (verify-r1) — an EXPLICIT choice that names no
+      // catalog entry is reported; a node with no `choices` entry that simply has no catalog
+      // icon (the ordinary case) stays silently custom, as always.
+      if (chosenName !== undefined)
+        badChoices.push(`"${node.id}": "${choice}" is not a catalog item`);
+      continue;
+    }
+    const supplied: Supplied = suppliedBy(entry, catalog);
+
+    // review round 1 F1 (verify-r1) — a key the node never wrote would start drawing the
+    // reference's value once `ref:` lands (`resolveCatalogRefs` fills every SUPPLIED_KEY the
+    // node's `unwritten` names); every drawing stays identical (maintainer ruling
+    // 2026-09-27). `title` and `type` always have a value to pin (the id / "service"
+    // fallback, `normalize.ts`); `subtitle`, `icon` and `badges` do not — there is no written
+    // value that means "no value" — so a node needing one of those is left custom instead.
+    const pin: Record<string, WriteValue> = {};
+    let unsafe: string | undefined;
+    for (const key of SUPPLIED_KEYS) {
+      if (key in entryRaw) continue; // written: the drop loop below decides whether it stays
+      const after = supplied[key];
+      if (after === undefined) continue; // nothing would change
+      const before = node[key];
+      const same = Array.isArray(after)
+        ? sameList(before as readonly string[] | undefined, after as readonly string[])
+        : before === after;
+      if (same) continue;
+      if (key === "title" || key === "type") pin[key] = before as WriteValue;
+      else unsafe = key;
+    }
+    if (unsafe !== undefined) {
+      skipped.push({
+        id: node.id,
+        reason: `"${unsafe}" has no value of its own; the reference would newly draw one, so the node stayed custom`,
+      });
+      continue;
+    }
+
     const ref = `catalog/${entry.name}`;
     const renamed =
       writtenIcon === entry.icon || writtenIcon === entry.name
         ? renameEntryKey(out, node.path, "icon", "ref", ref)
         : setEntryKeys(out, node.path, { ref }, { after: "id" });
     if (renamed === null)
-      return { text: out, changed: changes.length > 0, changes, reason: "no-exact-edit" };
+      return {
+        text: out,
+        changed: changes.length > 0,
+        changes,
+        skipped,
+        badChoices,
+        reason: "no-exact-edit",
+      };
     out = renamed;
-    const supplied: Supplied = suppliedBy(entry, catalog);
+    const pinned = Object.keys(pin);
+    if (pinned.length > 0) {
+      const withPins = setEntryKeys(out, node.path, pin, { after: "id" });
+      if (withPins === null)
+        return {
+          text: out,
+          changed: changes.length > 0,
+          changes,
+          skipped,
+          badChoices,
+          reason: "no-exact-edit",
+        };
+      out = withPins;
+    }
     const { raw: rawAfterRef, sourceMap: mapAfterRef } = parseArchYaml(out);
     if (rawAfterRef === undefined) {
-      return { text: out, changed: changes.length > 0, changes, reason: "no-exact-edit" };
+      return {
+        text: out,
+        changed: changes.length > 0,
+        changes,
+        skipped,
+        badChoices,
+        reason: "no-exact-edit",
+      };
     }
     const entryAfterRef = rawEntryOf(rawAfterRef, node.path);
     const patch: Record<string, WriteValue | undefined> = {};
@@ -186,12 +295,24 @@ export function refFirstText(
       patch[key] = undefined;
       dropped.push(key);
     }
+    // review round 1 N1 (review-r1) — a drop that could not be spliced exactly is reported,
+    // never silently left in place unremarked.
+    let dropFailed = false;
     if (dropped.length > 0) {
       const patched = setEntryKeys(out, node.path, patch);
       if (patched !== null) out = patched;
-      else dropped.length = 0; // could not drop exactly: keep the keys, keep the ref
+      else {
+        dropped.length = 0;
+        dropFailed = true;
+      }
     }
-    changes.push({ id: node.id, ref, dropped });
+    changes.push({
+      id: node.id,
+      ref,
+      dropped,
+      ...(pinned.length > 0 && { pinned }),
+      ...(dropFailed && { reason: "no-exact-edit" as const }),
+    });
   }
-  return { text: out, changed: changes.length > 0, changes };
+  return { text: out, changed: changes.length > 0, changes, skipped, badChoices };
 }

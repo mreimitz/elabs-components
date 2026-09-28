@@ -298,10 +298,10 @@ specific part; stand-ins `nat`, `replicate` and onprem `licensing` stay custom).
 
 Every other node in the seven files defaults from its own written `icon:` (no entry needed);
 `components/qlik-cloud-tenant.yaml` and `examples/clickhouse-cloud-stack.yaml` needed no
-overrides at all. The gateway boxes in `qlik-cloud-data-gateway.yaml` and the two
-`gateway`/`tenant`-adjacent nodes elsewhere default to the general `catalog/qlik/data-gateway`
-entry (the maintainer's ruling), keeping each box's own distinct title since it differs from
-the entry's label "Qlik Data Gateway".
+overrides at all. Two nodes, both named `gateway` — one in
+`examples/qlik-cloud-data-gateway.yaml`, one in `templates/qlik-cloud-customer-landscape.yaml`
+— use the general `catalog/qlik/data-gateway` entry (the maintainer's ruling), keeping each
+box's own distinct title since it differs from the entry's label "Qlik Data Gateway".
 
 ### The dry-run output
 

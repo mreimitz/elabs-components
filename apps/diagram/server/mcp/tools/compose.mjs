@@ -32,9 +32,12 @@ const NODE_FIELDS = {
     description:
       "A reference this node's icon, title, subtitle, type, badges, description and docs " +
       "come from, unless the node also writes them: catalog/<pack>/<entry> for a catalog " +
-      "item, ws/<folder>/…/<file name> for another workspace diagram (DG-26).",
+      "item, ws/<folder>/…/<file name> for another workspace diagram.",
   },
-  expand: { type: "boolean", description: "A diagram ref only: inline it instead of one node." },
+  expand: {
+    type: "boolean",
+    description: "A diagram ref only. Reserved: not yet drawn differently either way.",
+  },
   docs: { type: "string" },
   status: { type: "string", enum: ["ok", "degraded", "down", "planned"] },
 };

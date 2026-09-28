@@ -90,8 +90,12 @@ function badRef(ref: string): { message: string; suggestion?: string } | null {
         message: `"${ref}" needs at least one folder or file after "ws": ws/<folder>/…/<file name>.`,
       };
     }
-    const bad = rest.split("/").find((segment) => !SEGMENT_RE.test(segment));
-    if (bad === "_trash") {
+    const segments = rest.split("/");
+    const badIndex = segments.findIndex((segment) => !SEGMENT_RE.test(segment));
+    const bad = badIndex === -1 ? undefined : segments[badIndex];
+    // review round 1 F2/F3 (verify-r1) — only the first segment after "ws" is the trash
+    // folder; the same name deeper in the path is an ordinary (reserved-prefix) segment.
+    if (bad === "_trash" && badIndex === 0) {
       return { message: `"${ref}" is in the trash; restore the diagram before referencing it.` };
     }
     if (bad === undefined || bad === "" || bad.trim() === "") {
@@ -102,6 +106,13 @@ function badRef(ref: string): { message: string; suggestion?: string } | null {
     if (bad === "." || bad === "..") {
       return {
         message: `"${ref}" has a "${bad}" segment; a reference names an exact path, never "." or "..".`,
+      };
+    }
+    // review round 1 F3 (verify-r1) / F2 (review-r1) — a leading/trailing space is the real
+    // cause; name it instead of falling through to the generic "bad character" message.
+    if (bad !== bad.trim()) {
+      return {
+        message: `"${ref}" names "${bad}", which starts or ends with a space; the workspace trims names.`,
       };
     }
     if (bad.startsWith("_")) {
@@ -322,7 +333,14 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         // DG-26
         ...(ref !== undefined && {
           ref,
-          unwritten: SUPPLIED_KEYS.filter((k) => !(k in entry)),
+          // review round 1 N4 — a scalar key left blank (`title:` with no value, or
+          // `title: ""`) still counts as "not written": the reference's value shows exactly
+          // as when the key is absent. `badges: []` stays deliberately written (§2.2,
+          // dialect-v1.md) — an array is never "blank" the same way a scalar is.
+          unwritten: SUPPLIED_KEYS.filter((k) => {
+            const value = (entry as Record<string, unknown>)[k];
+            return !(k in entry) || (k !== "badges" && (value === null || value === ""));
+          }),
         }),
         expand: pick<boolean>(entry, "expand", bad),
         // end DG-26

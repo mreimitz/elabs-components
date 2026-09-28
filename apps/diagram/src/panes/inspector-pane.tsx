@@ -18,6 +18,7 @@ import {
   entryFormSpec,
   entryFormValues,
   seedFormSpec,
+  UNSET,
   type EntryFormOptions,
 } from "../spec/dialect/form-spec";
 import { refForm } from "../spec/dialect/ids"; // DG-26
@@ -50,7 +51,10 @@ function describeSupplied(value: Supplied[keyof Supplied]): string | undefined {
 /**
  * DG-26 — each field in `inherited` gets the reference's value as its help text, replacing
  * the field's own description (the schema form renders `description` as help text,
- * schema-form.tsx). Fields not inherited are untouched.
+ * schema-form.tsx). An inherited enum (e.g. `type`, which has its own default) also needs a
+ * way back to "inherited" once the user has picked a value — the enum only gets a "Not set"
+ * option on its own when it has no default (form-spec.ts toFieldSpec), so one is added here,
+ * labelled with the reference's value (review round 1 F1). Fields not inherited are untouched.
  */
 function withReferenceHelp(
   spec: ReturnType<typeof entryFormSpec>,
@@ -63,7 +67,19 @@ function withReferenceHelp(
     fields: spec.fields.map((field): FieldSpec => {
       const value = describeSupplied(supplied[field.name as keyof Supplied]);
       if (!inherited.has(field.name) || value === undefined) return field;
-      return { ...field, description: `${INSPECTOR_LABELS.fromReference}${value}` };
+      const withHelp = { ...field, description: `${INSPECTOR_LABELS.fromReference}${value}` };
+      if (withHelp.type !== "enum") return withHelp;
+      const hasUnset = withHelp.options.some(
+        (o) => (typeof o === "string" ? o : o.const) === UNSET,
+      );
+      if (hasUnset) return withHelp;
+      return {
+        ...withHelp,
+        options: [
+          { const: UNSET, title: `${INSPECTOR_LABELS.fromReference}${value}` },
+          ...withHelp.options,
+        ],
+      };
     }),
   };
 }
