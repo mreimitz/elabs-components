@@ -22,7 +22,7 @@ export const CATALOG_LABELS = {
   noneHint: "Try another word, or All vendors.",
   noDescription: "No description yet",
   part: "Part",
-  noIcon: "No icon yet",
+  noIcon: "No product icon",
   grid: (vendor: string) => `Catalog entries: ${vendor}`,
   problems: (n: number) =>
     `${n} catalog ${n === 1 ? "entry was" : "entries were"} skipped (see the dev server's /api/catalog/all).`,

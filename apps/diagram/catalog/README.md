@@ -80,7 +80,7 @@ is created. Curated entries and hand-written parts remain protected.
 ```
 
 These entries are stored with `generic: true` and `curated: false`. The catalog shows
-**No icon yet**. Optional `icon` must name an existing icon (for example `lucide/brain`);
+**No product icon**. Optional `icon` must name an existing icon (for example `lucide/brain`);
 otherwise the kind supplies a glyph: service → box, actor → user, datastore → database,
 queue → layers, external → globe, note → file. Do not choose an unrelated product logo.
 The read API's `icon` is the resolved drawable name; the YAML need not contain `icon`.

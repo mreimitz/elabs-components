@@ -182,13 +182,13 @@ try {
       await page.evaluate((hash) => {
         location.hash = hash;
       }, `#catalog/${vendor}`);
-      const card = page.getByRole("link", { name: /Live generic analytics.*No icon yet/ });
+      const card = page.getByRole("link", { name: /Live generic analytics.*No product icon/ });
       await expect(card).toBeVisible();
       await card.focus();
       await page.keyboard.press("Enter");
       const detail = page.locator('[data-slot="entry-view"]');
       await expect(detail.getByRole("heading", { name: "Live generic analytics" })).toBeVisible();
-      await expect(detail.getByText("No icon yet", { exact: true })).toBeVisible();
+      await expect(detail.getByText("No product icon", { exact: true })).toBeVisible();
       await expect(detail.locator("pre")).toContainText(`ref: catalog/${vendor}/analytics`);
       await detail.getByRole("button", { name: "Copy YAML", exact: true }).click();
       await expect(detail.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
