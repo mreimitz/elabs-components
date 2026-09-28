@@ -7,6 +7,7 @@ import { ExternalNode } from "./external-node";
 import { NoteNode } from "./note-node";
 import { QueueNode } from "./queue-node";
 import { ServiceNode } from "./service-node";
+import { CompositeNode } from "./composite-node";
 // end DG-05
 // DG-06 — zone imports
 import { ZONE_NODE_TYPE } from "./zone-data";
@@ -31,6 +32,6 @@ export const archNodeTypes = {
   [ZONE_NODE_TYPE]: ZoneNode,
   // end DG-06
   // DG-26 — collapsed diagram references (interim; DG-27 replaces ServiceNode with its composite node)
-  [ARCH_COMPOSITE_TYPE]: ServiceNode,
+  [ARCH_COMPOSITE_TYPE]: CompositeNode,
   // end DG-26
 } satisfies NodeTypes;

@@ -21,6 +21,16 @@ type ElkEdge = NonNullable<FlowElkGraph["edges"]>[number];
 /** The side of a node a handle sits on (the arch definitions' `FlowPortDefinition.side`). */
 export type HandleSide = "left" | "right" | "top" | "bottom";
 
+/** A measured named handle, relative to its node; ordinary handles need only their side. */
+export interface HandleAnchor {
+  id: string;
+  side: HandleSide;
+  x: number;
+  y: number;
+}
+export type RoutingHandle = HandleSide | HandleAnchor;
+export type HandleAnchors = ReadonlyMap<string, ReadonlyMap<string, HandleAnchor>>;
+
 interface Size {
   width: number;
   height: number;
@@ -45,7 +55,7 @@ interface Size {
  */
 export interface ElkRouting {
   labels: ReadonlyMap<string, Size>;
-  handles: ReadonlyMap<string, { source?: HandleSide; target?: HandleSide }>;
+  handles: ReadonlyMap<string, { source?: RoutingHandle; target?: RoutingHandle }>;
   zoneMinWidth: ReadonlyMap<string, number>;
 }
 
@@ -155,15 +165,22 @@ function attachRouting(
     };
   }
 
-  const portOf = (nodeId: string, side: HandleSide, kind: "in" | "out"): string | undefined => {
+  const portOf = (
+    nodeId: string,
+    anchor: RoutingHandle,
+    kind: "in" | "out",
+  ): string | undefined => {
     const node = byId.get(nodeId);
     if (!node || node.children?.length || !node.width || !node.height) return undefined;
-    const id = `${nodeId}::${kind}:${side}`;
+    const side = typeof anchor === "string" ? anchor : anchor.side;
+    const id = `${nodeId}::${kind}:${typeof anchor === "string" ? anchor : anchor.id}`;
     const ports = (node.ports ??= []);
     if (!ports.some((port) => port.id === id)) {
       ports.push({
         id,
-        ...portPoint(side, node.width, node.height),
+        ...(typeof anchor === "string"
+          ? portPoint(side, node.width, node.height)
+          : { x: anchor.x, y: anchor.y }),
         width: 0,
         height: 0,
         layoutOptions: { "elk.port.side": ELK_SIDE[side] },

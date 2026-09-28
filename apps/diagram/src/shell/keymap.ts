@@ -143,7 +143,7 @@ export function onShellKeyDown(event: KeyboardEvent): void {
   }
   if (mod || event.altKey) return;
   // Tab navigation remains available, but document commands must target visible content.
-  if (doc?.path != null && doc.path !== diagramStore.get().path) doc = null;
+  if ((doc?.path != null && doc.path !== diagramStore.get().path) || doc?.into?.length) doc = null;
 
   if (event.key === "Escape") {
     if (!doc) return;

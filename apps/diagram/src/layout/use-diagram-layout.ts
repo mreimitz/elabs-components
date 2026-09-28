@@ -25,7 +25,7 @@ import {
   relayoutVisible,
   type DiagramLayoutResult,
 } from "./layout-from-spec";
-import type { DiagramDirection } from "./run-elk";
+import type { DiagramDirection, HandleAnchor, HandleAnchors } from "./run-elk";
 import { keepSelection, unstage } from "../state/pipeline"; // DG-12
 import { diagramBounds, type FitZoomLimits } from "../chrome/fit-padding"; // DG-12
 
@@ -158,10 +158,50 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
     fitPadding,
     onSettled,
   } = options;
-  const { setViewport, getNodes, getEdges } = useReactFlow();
+  const { setViewport, getNodes, getEdges, getInternalNode } = useReactFlow();
   const flowStore = useStoreApi(); // DG-12: the fit
   const initialized = useNodesInitialized();
   const domNode = useStore((state) => state.domNode); // DG-12: `matchesDom`
+  // A port list can change without changing its node's dimensions. Subscribe to the
+  // actual measured handles so the layout waits for the new IDs, not stale bounds.
+  const namedHandleMeasurements = useStore((state) =>
+    JSON.stringify(
+      [...state.nodeLookup.values()]
+        .filter((node) => node.type === "arch/composite")
+        .map((node) => [node.id, node.internals.handleBounds]),
+    ),
+  );
+  const measuredHandles = (measured: Node[], edges: Edge[]): HandleAnchors | undefined => {
+    const anchors = new Map<string, Map<string, HandleAnchor>>();
+    for (const node of measured) {
+      if (node.type !== "arch/composite") continue;
+      const bounds = getInternalNode(node.id)?.internals.handleBounds;
+      const entries = new Map<string, HandleAnchor>();
+      for (const handle of [...(bounds?.source ?? []), ...(bounds?.target ?? [])]) {
+        if (!handle.id?.includes(":inner:")) continue;
+        entries.set(handle.id, {
+          id: handle.id,
+          side: handle.position,
+          x: handle.x + handle.width / 2,
+          y: handle.y + handle.height / 2,
+        });
+      }
+      anchors.set(node.id, entries);
+    }
+    for (const edge of edges) {
+      if (
+        edge.sourceHandle?.startsWith("out:inner:") &&
+        !anchors.get(edge.source)?.has(edge.sourceHandle)
+      )
+        return;
+      if (
+        edge.targetHandle?.startsWith("in:inner:") &&
+        !anchors.get(edge.target)?.has(edge.targetHandle)
+      )
+        return;
+    }
+    return anchors;
+  };
   const [settled, setSettled] = useState<{
     key: string | number;
     status: LayoutStatus;
@@ -251,6 +291,8 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
     if (!initialized || busy.current || laidOutKey.current === layoutKey) return;
     const measured = getNodes();
     if (!isMeasured(measured) || !matchesDom(domNode ?? null, measured)) return;
+    const handleAnchors = measuredHandles(measured, layoutEdges);
+    if (!handleAnchors) return;
     // DG-15: shown before the fold — `collapseGroup` snapshots each child of a zone collapsed
     // on the canvas, and a child staged invisible (`stageGraph`: new, or moved into the zone)
     // came back invisible on expand. P4: library gap — `expandGroup` restores the snapshot
@@ -261,7 +303,7 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
     busy.current = true;
     laidOutKey.current = key;
     onSettledRef.current?.("pending");
-    const layoutOptions = { direction, noteAnchors, collapse };
+    const layoutOptions = { direction, noteAnchors, collapse, handleAnchors };
     const run = manual
       ? Promise.resolve(layoutManual(current, layoutEdges, layoutOptions))
       : layoutDiagram(current, layoutEdges, layoutOptions);
@@ -285,7 +327,7 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
       });
     // The option values are read when a run starts; these are the triggers.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialized, nodes, layoutKey, settled]);
+  }, [initialized, nodes, layoutKey, settled, namedHandleMeasurements]);
 
   // A zone collapsed or expanded on the canvas (ZoneNode's toggle → flow `toggleCollapse`).
   useEffect(() => {
@@ -294,7 +336,13 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
     busy.current = true;
     const key = layoutKey;
     const input = source;
-    relayoutVisible(getNodes(), getEdges(), { direction, noteAnchors })
+    const shown = getNodes();
+    const edges = getEdges();
+    relayoutVisible(shown, edges, {
+      direction,
+      noteAnchors,
+      handleAnchors: measuredHandles(shown, edges),
+    })
       .then((result) => {
         if (key !== latestKey.current || input !== latestSource.current) {
           // Release a full layout that was waiting for this obsolete fold to finish.

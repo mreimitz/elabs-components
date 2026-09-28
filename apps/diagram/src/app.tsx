@@ -21,6 +21,7 @@ import {
 } from "@elabs-ai/components-ui";
 import { DiagramShell, ShellServices } from "./shell/diagram-shell";
 import { EditorPane } from "./panes/editor-pane";
+import { DrillDownView } from "./interaction/drill-down-view";
 import { LiveView } from "./panes/live-view";
 import { CanvasPane } from "./panes/canvas-pane";
 import { InspectorPane } from "./panes/inspector-pane"; // DG-14
@@ -393,6 +394,9 @@ function DocumentBoundary({
   presentation?: boolean;
 }) {
   const phone = useIsMobile();
+  const route = useRoute();
+  const into = route.kind === "doc" ? route.into : undefined;
+  const drilling = Boolean(into?.length);
   const shown = useDiagram((state) => state.path);
   const status = useSyncExternalStore(navigationStatus.subscribe, navigationStatus.get);
   const loading = path !== null && path !== shown;
@@ -404,12 +408,16 @@ function DocumentBoundary({
       data-document-loading={loading || undefined}
     >
       <div
-        className={cn("flex min-h-0 min-w-0 flex-1 transition-none", loading && "opacity-0")}
-        inert={loading || undefined}
-        aria-hidden={loading || undefined}
+        className={cn(
+          "flex min-h-0 min-w-0 flex-1 transition-none",
+          (loading || drilling) && "opacity-0",
+        )}
+        inert={loading || drilling || undefined}
+        aria-hidden={loading || drilling || undefined}
       >
         {presentation ? <PresentationView /> : phone ? <PhoneWorkspace /> : <SplitWorkspace />}
       </div>
+      {drilling && !loading && into ? <DrillDownView chain={into} /> : null}
       {loading ? (
         <div
           data-slot={error ? "document-load-error" : "document-loading"}

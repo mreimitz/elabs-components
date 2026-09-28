@@ -1,3 +1,4 @@
+import { DrillBreadcrumb } from "../interaction/drill-breadcrumb";
 import { useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
   ArrowDown,
@@ -183,6 +184,7 @@ export function TopBar() {
   const hasTabs = useMode((s) => s.openPaths.length > 0);
   const route = useRoute();
   const onDoc = route.kind === "doc";
+  const drilling = onDoc && Boolean(route.into?.length);
   const shownPath = useDiagram((state) => state.path);
   const loading = onDoc && route.path !== null && route.path !== shownPath;
   const edit = useDocMode() === "edit" && onDoc;
@@ -252,76 +254,82 @@ export function TopBar() {
         className="flex h-header items-center gap-2 border-b px-4 [&>*:not(nav)]:shrink-0"
       >
         {hasTabs ? null : <SidebarTrigger />}
-        <TitleCrumbs route={route} />
-        {/* Always mounted (it owns the file input, a dialog and the share-link listener);
+        {drilling && route.kind === "doc" ? (
+          <DrillBreadcrumb route={route} />
+        ) : (
+          <TitleCrumbs route={route} />
+        )}
+        <div className={drilling ? "hidden" : "contents"} inert={drilling || undefined}>
+          {/* Always mounted (it owns the file input, a dialog and the share-link listener);
             off a document it shows nothing. */}
-        <DocumentControls
-          compact={compact || !onDoc}
-          showHistory={edit}
-          historyDisabled={lensTarget !== "technical" || lensMoving}
-        />
+          <DocumentControls
+            compact={compact || !onDoc}
+            showHistory={edit}
+            historyDisabled={lensTarget !== "technical" || lensMoving}
+          />
 
-        {/* No `min-w-0`: the centre keeps its controls' width, so the breadcrumb truncates
+          {/* No `min-w-0`: the centre keeps its controls' width, so the breadcrumb truncates
             instead of the controls running over their neighbours. */}
-        <div className="flex flex-1 items-center justify-center gap-2">
-          {/* View mode: the view-only direction and node-style controls (maintainer
+          <div className="flex flex-1 items-center justify-center gap-2">
+            {/* View mode: the view-only direction and node-style controls (maintainer
               2026-09-27) sit here; DG-31's story bar will share this slot once it exists.
               Lens switch (maintainer 2026-09-27): works in both view and edit mode, so it
               sits outside the `edit`/`viewing` gates below. */}
-          {onDoc && !compact ? <LensToggle /> : null}
-          {edit && !compact ? (
-            <>
-              <DiagramToggles direction={direction} nodeStyle={nodeStyle} disabled={disabled} />
-              <LayoutControls disabled={disabled} compact={false} />
-            </>
-          ) : viewing && !compact ? (
-            <ViewControls
-              direction={viewDirection}
-              nodeStyle={viewNodeStyle}
-              disabled={disabled}
-              lensDisabled={lensDisabled}
-              hasOverride={hasOverride}
-              onDirectionChange={onViewDirectionChange}
-              onNodeStyleChange={onViewNodeStyleChange}
-              onReset={resetOverride}
-            />
-          ) : null}
-        </div>
-        {/* Wave 3: LayoutControls owns the layout dialogs, so it stays mounted when its
+            {onDoc && !compact ? <LensToggle /> : null}
+            {edit && !compact ? (
+              <>
+                <DiagramToggles direction={direction} nodeStyle={nodeStyle} disabled={disabled} />
+                <LayoutControls disabled={disabled} compact={false} />
+              </>
+            ) : viewing && !compact ? (
+              <ViewControls
+                direction={viewDirection}
+                nodeStyle={viewNodeStyle}
+                disabled={disabled}
+                lensDisabled={lensDisabled}
+                hasOverride={hasOverride}
+                onDirectionChange={onViewDirectionChange}
+                onNodeStyleChange={onViewNodeStyleChange}
+                onReset={resetOverride}
+              />
+            ) : null}
+          </div>
+          {/* Wave 3: LayoutControls owns the layout dialogs, so it stays mounted when its
             controls are not shown (view mode, the compact bar). */}
-        {edit && !compact ? null : <LayoutControls disabled={disabled} compact />}
+          {edit && !compact ? null : <LayoutControls disabled={disabled} compact />}
 
-        {compact ? null : counts}
-        {edit && !compact ? <InspectorToggle open={inspectorOpen} /> : null}
-        {onDoc ? <SaveState /> : null}
-        {onDoc ? <EditToggle edit={edit} /> : null}
-        {onDoc ? <InteractionControls compact={compact} /> : null}
-        {onDoc ? <ExportMenu compact={compact} /> : null}
-        {compact && onDoc ? (
-          <>
-            {counts}
-            <DiagramOptionsMenu
-              direction={direction}
-              nodeStyle={nodeStyle}
-              disabled={disabled}
-              edit={edit}
-              lensDisabled={lensDisabled}
-              hasOverride={hasOverride}
-              viewDirection={viewDirection}
-              viewNodeStyle={viewNodeStyle}
-              onViewDirectionChange={onViewDirectionChange}
-              onViewNodeStyleChange={onViewNodeStyleChange}
-              onReset={resetOverride}
-            />
-          </>
-        ) : null}
-        {/* The library's family layout, as the website shows it: pick the brand, then light,
+          {compact ? null : counts}
+          {edit && !compact ? <InspectorToggle open={inspectorOpen} /> : null}
+          {onDoc ? <SaveState /> : null}
+          {onDoc ? <EditToggle edit={edit} /> : null}
+          {onDoc ? <InteractionControls compact={compact} /> : null}
+          {onDoc ? <ExportMenu compact={compact} /> : null}
+          {compact && onDoc ? (
+            <>
+              {counts}
+              <DiagramOptionsMenu
+                direction={direction}
+                nodeStyle={nodeStyle}
+                disabled={disabled}
+                edit={edit}
+                lensDisabled={lensDisabled}
+                hasOverride={hasOverride}
+                viewDirection={viewDirection}
+                viewNodeStyle={viewNodeStyle}
+                onViewDirectionChange={onViewDirectionChange}
+                onViewNodeStyleChange={onViewNodeStyleChange}
+                onReset={resetOverride}
+              />
+            </>
+          ) : null}
+          {/* The library's family layout, as the website shows it: pick the brand, then light,
           dark or system (maintainer ruling 2026-09-27). */}
-        {hasTabs ? null : (
-          <WithTooltip label={TOP_BAR_LABELS.theme}>
-            <ThemeSwitcher variant="ghost" size="sm" />
-          </WithTooltip>
-        )}
+          {hasTabs ? null : (
+            <WithTooltip label={TOP_BAR_LABELS.theme}>
+              <ThemeSwitcher variant="ghost" size="sm" />
+            </WithTooltip>
+          )}
+        </div>
       </header>
     </TooltipProvider>
   );

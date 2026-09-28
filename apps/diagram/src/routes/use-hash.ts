@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { ID_RE } from "../spec/dialect/ids";
 import { LENS_PARAM } from "../interaction/lens-mode";
 import { PRESENT_PARAM } from "../interaction/presentation-mode";
-import { docParam } from "../io/share-url";
 
 /**
  * The live `location.hash`, as it is. `useHash()` below is what the galleries read.
@@ -58,6 +58,8 @@ export type Route =
        * instead of silently dropping back to technical (a regression fixed 2026-09-27).
        */
       lens?: "visual";
+      /** Nested instance ids inspected without replacing the parent document. */
+      into?: readonly string[];
       /** Plan V11's story link (`&step=n`); DG-31 reads it. */
       step?: number;
       /** One release: an old `#doc=<text>` share link (DG-16) maps here. */
@@ -103,7 +105,11 @@ export function parseRoute(hash: string): Route {
   const stepPart = parts.find((part) => part.startsWith(`${STEP_PARAM}=`));
   const step = stepPart ? Number(stepPart.slice(STEP_PARAM.length + 1)) : Number.NaN;
   const lensVisual = parts.some((part) => part === `${LENS_PARAM}=visual`);
+  const intoPart = parts.find((part) => part.startsWith("into="));
+  const into = intoPart ? decodeSegment(intoPart.slice(5)).split(".") : [];
+  const validInto = into.length > 0 && into.length <= 8 && into.every((id) => ID_RE.test(id));
   const flags = {
+    ...(validInto ? { into } : {}),
     ...(present ? { present: true } : {}),
     ...(Number.isInteger(step) && step >= 0 ? { step } : {}),
     ...(lensVisual ? { lens: "visual" as const } : {}),
@@ -121,7 +127,7 @@ export function parseRoute(hash: string): Route {
   }
   if (head === "" || head === "home") {
     // One release: an old share link, `#doc=<text>[&present]`, is the document it carries.
-    const share = docParam(hash);
+    const share = new URLSearchParams(hash.replace(/^#/, "")).get("doc");
     if (share !== null) return { kind: "doc", path: null, share, ...flags };
     // DG-18's Present button writes a bare `#present` (it keeps only `key=value` parts).
     if (present) return { kind: "doc", path: null, ...flags };
@@ -155,6 +161,7 @@ export function toHash(route: Route): string {
       return `#v/${encodePath(route.path)}${route.theme ? `&theme=${route.theme}` : ""}`;
     case "doc": {
       const params = [
+        ...(route.into?.length ? [`into=${encodeURIComponent(route.into.join("."))}`] : []),
         ...(route.present ? [PRESENT_PARAM] : []),
         ...(route.step !== undefined ? [`${STEP_PARAM}=${route.step}`] : []),
         ...(route.lens === "visual" ? [`${LENS_PARAM}=visual`] : []),

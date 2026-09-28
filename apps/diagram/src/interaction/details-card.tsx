@@ -16,6 +16,7 @@ import { CircleCheck, CircleDashed, CircleX, ExternalLink, TriangleAlert } from 
 import { ArchMark } from "../nodes/arch-mark";
 import type { ArchNodeStatus } from "../nodes/arch-node-data";
 import { useCatalogEntry } from "../catalog/catalog-service";
+import { openDoc } from "../shell/mode-store";
 import { toHash } from "../routes/use-hash";
 import { catalogNameOfNode, resolveNodeDetails, type NodeDetails } from "./node-details";
 import { focusCanvasElement } from "../panes/focus-canvas";
@@ -89,7 +90,7 @@ function CardDescription({ text }: { text: string }) {
   );
 }
 
-function CardBody({ details, titleId }: { details: NodeDetails; titleId: string }) {
+export function CardBody({ details, titleId }: { details: NodeDetails; titleId: string }) {
   return (
     <>
       <div className="flex items-start gap-3">
@@ -144,7 +145,17 @@ function CardBody({ details, titleId }: { details: NodeDetails; titleId: string 
       ) : null}
       {details.componentPath ? (
         <Button asChild variant="link" size="sm" className="self-start px-0">
-          <a href={toHash({ kind: "doc", path: details.componentPath })}>{CARD_LABELS.diagram}</a>
+          <a
+            href={toHash({ kind: "doc", path: details.componentPath })}
+            onClick={(event) => {
+              if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+                event.preventDefault();
+                openDoc(details.componentPath!, { mode: "edit" });
+              }
+            }}
+          >
+            {CARD_LABELS.diagram}
+          </a>
         </Button>
       ) : null}
     </>

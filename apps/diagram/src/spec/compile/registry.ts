@@ -19,6 +19,7 @@ import type {
 } from "../dialect";
 import type { FlowSpecDefinitions } from "../flow-spec/types";
 import type { ReactFlowGraph } from "../flow-spec/to-react-flow";
+import { connectCompositePorts } from "../compose/ports";
 import {
   type ARCH_COMPOSITE_TYPE, // DG-26
   type ArchMarkedKind,
@@ -152,7 +153,7 @@ export function createArchRegistry(): ArchRegistry {
             ? { ...node, ariaLabel: archNodeAriaLabel(kind, title.get(node.id) ?? node.id) }
             : node;
         }),
-        edges: edges.map((edge) => {
+        edges: connectCompositePorts(nodes, edges).map((edge) => {
           const data = (edge.data ?? {}) as DataFlowEdgeData;
           return {
             ...edge,

@@ -1,3 +1,8 @@
+import { useCompositePreview } from "../interaction/composite-state";
+import { COMPOSITE_UI } from "../interaction/composite-actions";
+import { ReadonlyNodeDetails } from "../interaction/readonly-node-details";
+import { openDoc } from "../shell/mode-store";
+import { useRoute } from "../routes/use-hash";
 import { useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { InspectorPanel } from "@elabs-ai/components-flow";
 import {
@@ -46,6 +51,8 @@ const INSPECTOR_LABELS = {
   clearedFromReference: "Cleared; the reference would show: ",
   restoreSubtitle: "Use reference subtitle",
   clearSubtitle: "Clear subtitle",
+  openDiagram: "Open diagram",
+  readOnly: (id: string) => `Read-only · ${id}`,
 } as const;
 
 /** A supplied value as help text (`badges`: joined; everything else is already a string). */
@@ -124,7 +131,7 @@ const FORMS = {
     def: NODE_DEF,
     spec: entryFormSpec(NODE_DEF, {
       ...COMMON,
-      omit: ["parent", "position"],
+      omit: ["parent", "position", "expand"],
       readOnly: ["id"],
       multiline: ["description", "text"],
     }),
@@ -269,6 +276,8 @@ const OVERLAY_CLASS = "absolute inset-0 z-10 data-[state=collapsed]:pointer-even
  */
 export function InspectorPane({ overlay }: InspectorPaneProps) {
   const open = useDiagram((s) => s.inspectorOpen);
+  const route = useRoute();
+  const preview = useCompositePreview();
   const selectedId = useDiagram((s) => s.selectedId);
   const compiled = useDiagram((s) => s.compiled);
   const compiledText = useDiagram((s) => s.compiledText);
@@ -276,6 +285,19 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
   const lensLocked = useLens((s) => s.position !== 0 || s.target !== "technical");
   const raw = useMemo(() => parseArchYaml(compiledText).raw, [compiledText]);
   const entry = selectedId === null ? null : entryOf(compiled, selectedId);
+  const matching = preview.path === diagramStore.get().path;
+  const shownNode = matching
+    ? preview.graph?.nodes.find((node) => node.id === selectedId)
+    : undefined;
+  const inner = matching && selectedId ? preview.view?.inner?.[selectedId] : undefined;
+  const component = typeof shownNode?.data.component === "string";
+  const componentReason =
+    compiled.spec?.layout.engine === "none"
+      ? COMPOSITE_UI.manual
+      : shownNode?.data.broken || shownNode?.data.pending
+        ? COMPOSITE_UI.unavailable
+        : undefined;
+  const disabled = lensLocked || (route.kind === "doc" && Boolean(route.into?.length));
   // DG-26 — a catalog change that lands after the form seeded (recompile() keeps the text, so
   // `compiledText` alone would miss it) also re-mounts the form, so inherited help text follows.
   const catalogGen = useSyncExternalStore(onCatalogChange, catalogVersion);
@@ -298,11 +320,17 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
 
   return (
     <InspectorPanel
-      open={open}
+      open={open && (!overlay || selectedId !== null)}
       onOpenChange={editActions.setInspectorOpen}
       onClose={() => editActions.setInspectorOpen(false)}
-      title={entry ? `${kindLabel(entry)} · ${entry.id}` : INSPECTOR_LABELS.title}
-      hasSelection={entry !== null}
+      title={
+        inner
+          ? INSPECTOR_LABELS.readOnly(inner.id)
+          : entry
+            ? `${kindLabel(entry)} · ${entry.id}`
+            : INSPECTOR_LABELS.title
+      }
+      hasSelection={entry !== null || Boolean(inner)}
       selectionKey={selectedId ?? undefined}
       // P4: library gap — the empty message renders inside a <p>, so it takes text, not a
       // StatePanel. docs/findings/DG-14-inspector-write-back.md.
@@ -311,29 +339,64 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
       className={overlay ? OVERLAY_CLASS : undefined}
     >
       <div className="flex flex-col gap-4" onKeyDown={onKeyDown}>
-        <Button
-          variant="outline"
-          size="sm"
-          className="self-start"
-          onClick={editActions.revealInEditor}
-        >
-          <FileCode aria-hidden="true" />
-          {INSPECTOR_LABELS.showInYaml}
-        </Button>
-        {entry && entry.kind !== "note" ? (
+        {inner ? (
           <>
-            <EntryForm
-              key={`${entry.id}:${seed.n}:${catalogGen}:${lensLocked}`}
-              disabled={lensLocked}
-              entry={entry}
-              written={writtenKeys(entry, raw)}
-              onWrote={(text) => setSeed((s) => ({ n: s.n, text }))}
-              onRejected={() => setSeed((s) => ({ n: s.n + 1, text: s.text }))}
-            />
-            <ReferenceSubtitleAction entry={entry} disabled={lensLocked} />
+            {shownNode ? <ReadonlyNodeDetails node={shownNode} /> : <Text>{inner.id}</Text>}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openDoc(inner.component, { mode: "edit" })}
+            >
+              {INSPECTOR_LABELS.openDiagram}
+            </Button>
           </>
         ) : (
-          <Text tone="muted">{INSPECTOR_LABELS.note}</Text>
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className="self-start"
+              onClick={editActions.revealInEditor}
+            >
+              <FileCode aria-hidden="true" />
+              {INSPECTOR_LABELS.showInYaml}
+            </Button>
+            {component && shownNode ? (
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={disabled || Boolean(componentReason)}
+                  onClick={() => preview.toggle?.(shownNode.id)}
+                  aria-expanded={shownNode.type === "arch/zone"}
+                >
+                  {shownNode.type === "arch/zone"
+                    ? COMPOSITE_UI.collapse(String(shownNode.data.title))
+                    : COMPOSITE_UI.expand(String(shownNode.data.title))}
+                </Button>
+                {componentReason ? (
+                  <Text variant="meta" tone="muted">
+                    {componentReason}
+                  </Text>
+                ) : null}
+              </div>
+            ) : null}
+            {entry && entry.kind !== "note" ? (
+              <>
+                <EntryForm
+                  key={`${entry.id}:${seed.n}:${catalogGen}:${lensLocked}`}
+                  disabled={disabled}
+                  entry={entry}
+                  written={writtenKeys(entry, raw)}
+                  onWrote={(text) => setSeed((s) => ({ n: s.n, text }))}
+                  onRejected={() => setSeed((s) => ({ n: s.n + 1, text: s.text }))}
+                />
+                <ReferenceSubtitleAction entry={entry} disabled={disabled} />
+              </>
+            ) : (
+              <Text tone="muted">{INSPECTOR_LABELS.note}</Text>
+            )}
+          </>
         )}
       </div>
     </InspectorPanel>

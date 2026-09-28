@@ -1,3 +1,16 @@
+import {
+  CompositeActionContext,
+  COMPOSITE_UI,
+  isComposite,
+} from "../interaction/composite-actions";
+import {
+  compositeOverrides,
+  compositePreview,
+  useCompositeOverrides,
+} from "../interaction/composite-state";
+import { useDrillCamera } from "../interaction/drill-down";
+import { currentComponentFiles } from "../state/component-files";
+import { currentCatalog } from "../catalog/catalog-bundle";
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   CanvasShell,
@@ -16,16 +29,16 @@ import { CanvasNavigation } from "../chrome/canvas-navigation";
 import { chromeFitPadding } from "../chrome/fit-padding";
 import { TitleBlock } from "../chrome/title-block";
 import { FIT_MIN_ZOOM, useDiagramLayout } from "../layout/use-diagram-layout";
-import { motionMs, prefersReducedMotion } from "../motion";
+import { MOTION, motionMs, prefersReducedMotion } from "../motion";
 import { isZoneNode } from "../nodes/zone-data";
 import { useZoneAutofit } from "../nodes/use-zone-autofit";
 import { layoutReadyActions } from "./layout-ready-store";
 import type { ArchDiagram, NodeStyle } from "../spec/dialect";
 import type { ArchCompileView } from "../spec/compile/compile-arch";
 import type { FlowSpec, FlowSpecDirection, ReactFlowGraph } from "../spec/flow-spec";
-import { archRegistry } from "../state/compile-text";
-import { diagramActions, diagramStore, useDiagram } from "../state/diagram-store";
-import { keepSelection, patchGraph, stageGraph } from "../state/pipeline";
+import { archRegistry, compileText } from "../state/compile-text";
+import { diagramActions, diagramStore, editActions, useDiagram } from "../state/diagram-store";
+import { keepSelection, patchGraph, stageGraph, structureKey } from "../state/pipeline";
 // Wave 3: one import line per item under its marker; blank lines keep parallel merges clean.
 import { mergeCanvasProps, type CanvasProps } from "./canvas-props"; // DG-14
 import { useCanvasDelete } from "./use-canvas-delete"; // DG-14
@@ -178,7 +191,7 @@ function applyViewNodeStyle(
     ...graph,
     nodes: graph.nodes.map((node) => {
       const data = node.data as ArchNodeData;
-      if (data.variant === undefined || keepExplicit.has(node.id)) return node;
+      if (data.variant === undefined || keepExplicit.has(node.id) || data.inner) return node;
       return { ...node, data: { ...data, variant: nodeStyle } };
     }),
   };
@@ -191,7 +204,9 @@ export function CanvasPane(props: CanvasPaneProps) {
   const shownPath = useDiagram((s) => s.path);
   // React Flow owns document-level delete handlers. Lock those during a pending open,
   // while retaining the shown document's edit mode and Monaco undo session if it is canceled.
-  const documentPending = route.kind === "doc" && route.path !== null && route.path !== shownPath;
+  const documentPending =
+    route.kind === "doc" &&
+    ((route.path !== null && route.path !== shownPath) || Boolean(route.into?.length));
   const loadCount = useDiagram((s) => s.loadCount);
   const position = useLens((s) => s.position);
   const target = useLens((s) => s.target);
@@ -299,15 +314,31 @@ const TechnicalCanvasPane = memo(function TechnicalCanvasPane({
   presenting = false,
   lensLocked = false,
 }: TechnicalPaneProps) {
-  const drawn = useDiagram((s) => s.drawn);
-  const structure = useDiagram((s) => s.structure);
+  const authored = useDiagram((s) => s.drawn);
+  const compiledText = useDiagram((s) => s.compiledText);
   const stale = useDiagram((s) => s.compiled !== s.drawn);
   const loadCount = useDiagram((s) => s.loadCount);
   const blank = useDiagram((s) => s.text.trim() === ""); // DG-20
   const path = useDiagram((s) => s.path);
+  const viewing = useDocMode() === "view";
+  const expansions = useCompositeOverrides(path);
+  const drawn = useMemo(() => {
+    if (!expansions.size || stale) return authored;
+    const effective = [...expansions].filter(([id]) => viewing || id.includes("."));
+    if (!effective.length) return authored;
+    return compileText(compiledText, {
+      catalog: currentCatalog(),
+      files: currentComponentFiles(),
+      expand: new Set(effective.filter(([, value]) => value).map(([id]) => id)),
+      collapse: new Set(effective.filter(([, value]) => !value).map(([id]) => id)),
+    });
+  }, [authored, compiledText, expansions, viewing, stale]);
+  const structure = structureKey(drawn);
   const ast = drawn.ast;
-  const viewing = useDocMode() === "view"; // DG-22 review
   const { graph, spec, view, issues } = drawn;
+  useEffect(() => {
+    compositePreview.set({ path, graph, view });
+  }, [path, graph, view]);
   // view mode overrides (maintainer 2026-09-27): outside edit mode the canvas follows this
   // viewer's own choices for the document, when set; edit mode (and presenting or exporting
   // FROM edit mode) always shows the file's own values, never an override. A share link keys
@@ -495,7 +526,7 @@ function DiagramCanvas({
 }: DiagramCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const { getNodes, getEdges, fitView } = useReactFlow();
+  const { getNodes, getEdges, getNode, fitView } = useReactFlow();
   const layoutRequest = useDiagram((s) => s.layoutRequest);
   const selectedId = useDiagram((s) => s.selectedId);
   const selectionOrigin = useDiagram((s) => s.selectionOrigin);
@@ -510,6 +541,37 @@ function DiagramCanvas({
   // must not patch the staged graph back to the empty one `getNodes()` still returns.
   const paneRef = useRef<HTMLDivElement>(null);
   const handled = useRef<{ graph: ReactFlowGraph; request: number } | null>(null);
+  const transitionHost = useRef<HTMLDivElement>(null);
+  const snapshot = useRef<{ element: HTMLElement; graph: ReactFlowGraph; focus: string } | null>(
+    null,
+  );
+  const [changingComposite, setChangingComposite] = useState(false);
+  const compositeFocus = useRef<{ graph: ReactFlowGraph; id: string } | null>(null);
+  const captureComposite = useCallback(
+    (id: string) => {
+      compositeFocus.current = { graph, id };
+      const pane = paneRef.current,
+        host = transitionHost.current;
+      if (!pane || !host || motionMs("base") === 0) return;
+      snapshot.current?.element.remove();
+      const copy = pane.cloneNode(true) as HTMLElement;
+      copy.inert = true;
+      copy.setAttribute("aria-hidden", "true");
+      copy.setAttribute("data-diagram-export", "exclude");
+      copy.className = "pointer-events-none absolute inset-0";
+      host.append(copy);
+      snapshot.current = { element: copy, graph, focus: id };
+      setChangingComposite(true);
+    },
+    [graph],
+  );
+  useEffect(
+    () => () => {
+      snapshot.current?.element.remove();
+      snapshot.current = null;
+    },
+    [],
+  );
 
   // A new compile: same structure → patch the words in place; otherwise stage and lay out.
   useEffect(() => {
@@ -605,9 +667,45 @@ function DiagramCanvas({
     // The only writer of `layout-ready-store.ts`: `use-autosave.ts`'s thumbnail waits for this
     // before reading the canvas, so it never captures a layout mid-flight. Written at the event
     // that settles the layout itself, not mirrored from `status` after the fact.
-    onSettled: (settledStatus) => layoutReadyActions.setReady(path, settledStatus === "ready"),
+    onSettled: (settledStatus) =>
+      layoutReadyActions.setReady(path, settledStatus === "ready" && !snapshot.current),
   });
   useZoneAutofit(nodes, setNodes);
+  const enterComposite = useDrillCamera([], status === "ready", paneRef);
+  useEffect(() => {
+    const pending = compositeFocus.current;
+    if (!pending || pending.graph === graph || status !== "ready" || snapshot.current) return;
+    compositeFocus.current = null;
+    if (document.activeElement === document.body)
+      paneRef.current
+        ?.querySelector<HTMLElement>(`.react-flow__node[data-id="${CSS.escape(pending.id)}"]`)
+        ?.focus({ preventScroll: true });
+  }, [graph, status]);
+  useEffect(() => {
+    const previous = snapshot.current;
+    if (!previous || previous.graph === graph || status !== "ready") return;
+    setChangingComposite(false);
+    const animation = previous.element.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: motionMs("base"),
+      easing: MOTION.ease,
+      fill: "forwards",
+    });
+    void animation.finished
+      .then(() => {
+        previous.element.remove();
+        if (snapshot.current !== previous) return;
+        snapshot.current = null;
+        layoutReadyActions.setReady(path, true);
+        if (document.activeElement === document.body)
+          paneRef.current
+            ?.querySelector<HTMLElement>(
+              `.react-flow__node[data-id="${CSS.escape(previous.focus)}"]`,
+            )
+            ?.focus({ preventScroll: true });
+      })
+      .catch(() => {});
+  }, [graph, status, path]);
+
   // This pane unmounting (a document closed, or the visual lens swapping it out) leaves no
   // stale "ready" behind for a path nothing is drawing any more.
   useEffect(() => {
@@ -674,6 +772,49 @@ function DiagramCanvas({
 
   // view mode is read-only (maintainer 2026-09-27) reuses `viewing` too.
   const viewing = useDocMode() === "view";
+  const compositeActions = useMemo(
+    () => ({
+      viewerOnly: viewing || presenting,
+      disabledReason:
+        spec.layout.engine === "none"
+          ? COMPOSITE_UI.manual
+          : lensLocked
+            ? "Wait for the technical diagram."
+            : undefined,
+      drill: (id: string) => void enterComposite(id),
+      toggle: (id: string) => {
+        if (lensLocked || spec.layout.engine === "none") return;
+        const node = getNode(id);
+        if (!node || !isComposite(node) || node.data.broken || node.data.pending) return;
+        const expanded = node.type !== "arch/zone";
+        captureComposite(id);
+        if (viewing || presenting || node.data.inner) compositeOverrides.set(path, id, expanded);
+        else if (!editActions.editEntry(id, { expand: expanded })) {
+          snapshot.current?.element.remove();
+          snapshot.current = null;
+          setChangingComposite(false);
+        }
+      },
+    }),
+    [
+      viewing,
+      presenting,
+      spec.layout.engine,
+      lensLocked,
+      enterComposite,
+      getNode,
+      captureComposite,
+      path,
+    ],
+  );
+
+  useEffect(() => {
+    compositePreview.set({ toggle: compositeActions.toggle });
+    return () => {
+      if (compositePreview.get().toggle === compositeActions.toggle)
+        compositePreview.set({ toggle: undefined });
+    };
+  }, [compositeActions]);
 
   // View mode, presenting, or lens-locked (the visual lens is showing or a switch is
   // mid-transition): every write path closed (READ_ONLY_PROPS) — deleteProps/layoutProps left
@@ -755,92 +896,117 @@ function DiagramCanvas({
   }, []);
 
   return (
-    <div className="relative h-full w-full">
-      {/* Until the first layout lands the nodes sit at {0,0}: they mount (React Flow must
+    <CompositeActionContext.Provider value={compositeActions}>
+      <div ref={transitionHost} className="relative h-full w-full">
+        {/* Until the first layout lands the nodes sit at {0,0}: they mount (React Flow must
           measure them) behind `opacity-0` + `inert` — hidden from sight, assistive tech and
           the tab order. Not `invisible`: React Flow writes an inline `visibility: visible` on
           every measured node, which overrides a hidden ancestor (wave-1 review M1). */}
-      {/* `@container`: the chrome sizes to the pane, not the window (the minimap below). */}
-      <div
-        ref={paneRef}
-        className={cn("@container h-full w-full transition-none", !shown && "opacity-0")}
-        inert={!shown}
-      >
-        <CanvasShell
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onSelectionChange={onSelectionChange}
-          nodeTypes={archRegistry.nodeTypes}
-          edgeTypes={archRegistry.edgeTypes}
-          minZoom={FIT_MIN_ZOOM}
-          // Wave-2 review M3: React Flow lifts a selected node (and its children and edges) by
-          // 1000, over the edge labels' fixed z 1000 — selecting a zone hid the labels on it.
-          elevateNodesOnSelect={false}
-          // This pane already re-frames a keyboard drill-down itself (chrome-aware padding, a
-          // zoom ceiling, above) — React Flow's own pan-on-focus would otherwise race it and
-          // could win with a plainer, chrome-ignorant frame.
-          autoPanOnNodeFocus={false}
-          proOptions={{ hideAttribution: true }}
-          // DG-14: delete (a text edit) and every later wave-3 handler, merged above.
-          {...waveProps}
+        {/* `@container`: the chrome sizes to the pane, not the window (the minimap below). */}
+        <div
+          ref={paneRef}
+          className={cn(
+            "@container h-full w-full transition-opacity duration-base ease-standard",
+            (!shown || changingComposite) && "opacity-0",
+          )}
+          inert={!shown || changingComposite}
+          onDoubleClickCapture={(event) => {
+            const target = event.target as Element;
+            const element = target.closest<HTMLElement>(".react-flow__node");
+            const node = element ? getNode(element.dataset.id ?? "") : undefined;
+            if (node && isComposite(node) && !target.closest("button")) {
+              event.preventDefault();
+              event.stopPropagation();
+              void enterComposite(node.id);
+            }
+          }}
+          onKeyDownCapture={(event) => {
+            const target = event.target as HTMLElement;
+            if (event.key !== "Enter" || !target.classList.contains("react-flow__node")) return;
+            const node = getNode(target.dataset.id ?? "");
+            if (node && isComposite(node)) {
+              event.preventDefault();
+              event.stopPropagation();
+              void enterComposite(node.id);
+            }
+          }}
         >
-          {/* DG-08: title block top-left, legend bottom-left (both in the exported picture). */}
-          {/* DG-68: the diagram's own description, one sentence under the title. */}
-          <LensChrome lens="technical">
-            <TitleBlock title={spec.title} description={spec.description} meta={source}>
-              {/* Wave-2 review m4: the stale badge sits in the top band, under the title card —
+          <CanvasShell
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onSelectionChange={onSelectionChange}
+            nodeTypes={archRegistry.nodeTypes}
+            edgeTypes={archRegistry.edgeTypes}
+            minZoom={FIT_MIN_ZOOM}
+            // Wave-2 review M3: React Flow lifts a selected node (and its children and edges) by
+            // 1000, over the edge labels' fixed z 1000 — selecting a zone hid the labels on it.
+            elevateNodesOnSelect={false}
+            // This pane already re-frames a keyboard drill-down itself (chrome-aware padding, a
+            // zoom ceiling, above) — React Flow's own pan-on-focus would otherwise race it and
+            // could win with a plainer, chrome-ignorant frame.
+            autoPanOnNodeFocus={false}
+            proOptions={{ hideAttribution: true }}
+            // DG-14: delete (a text edit) and every later wave-3 handler, merged above.
+            {...waveProps}
+          >
+            {/* DG-08: title block top-left, legend bottom-left (both in the exported picture). */}
+            {/* DG-68: the diagram's own description, one sentence under the title. */}
+            <LensChrome lens="technical">
+              <TitleBlock title={spec.title} description={spec.description} meta={source}>
+                {/* Wave-2 review m4: the stale badge sits in the top band, under the title card —
                 measured against bottom-centre on the four examples at 1920 and 1440, it costs
                 the fit less zoom (Qlik Cloud 0.760 vs 0.740 at 1920). Always mounted — a live
                 region announces what is added to it, not itself appearing — and an invisible,
                 hidden copy of the badge keeps it the badge's size while the diagram is
                 current, so every fit keeps nodes out from under it; the real badge is added
                 over the copy when the text goes stale. */}
-              <div className="grid" role="status" aria-live="polite">
-                <Badge
-                  aria-hidden="true"
-                  className="invisible col-start-1 row-start-1"
-                  variant="warning"
-                >
-                  {CANVAS_LABELS.stale}
-                </Badge>
-                {stale ? (
-                  <Badge className="col-start-1 row-start-1" variant="warning">
+                <div className="grid" role="status" aria-live="polite">
+                  <Badge
+                    aria-hidden="true"
+                    className="invisible col-start-1 row-start-1"
+                    variant="warning"
+                  >
                     {CANVAS_LABELS.stale}
                   </Badge>
-                ) : null}
-              </div>
-            </TitleBlock>
-            <DiagramLegend mode={view.legend} />
-            {/* P4: library gap — `ZoomControls`' Fit view calls React Flow's `fitView()` with no
+                  {stale ? (
+                    <Badge className="col-start-1 row-start-1" variant="warning">
+                      {CANVAS_LABELS.stale}
+                    </Badge>
+                  ) : null}
+                </div>
+              </TitleBlock>
+              <DiagramLegend mode={view.legend} />
+              {/* P4: library gap — `ZoomControls`' Fit view calls React Flow's `fitView()` with no
               options (packages/flow/src/zoom-controls/zoom-controls.tsx:75) and takes no
               `onFitView`, so it ignores the chrome-aware fit and puts nodes under the panels
               (wave-2 review M7). Proposed: `onFitView?: () => void` (or `fitViewOptions`),
               through which the app would run its chrome-aware fit (use-diagram-layout.ts).
               docs/findings/DG-12-editor-integration.md. */}
-            <CanvasNavigation />
+              <CanvasNavigation />
 
-            {/* DG-18: details card, step player, presentation exit. */}
-            <InteractionOverlays nodes={nodes} />
-          </LensChrome>
-        </CanvasShell>
-      </div>
-      {/* P4: library gap — CanvasShell has no `loading` prop; the state overlays the canvas.
-          See docs/findings/DG-03-canvas-states.md. */}
-      {(status === "error" || !shown) && (
-        <div className="absolute inset-0 grid place-items-center p-6">
-          {status === "error" ? (
-            <StatePanel
-              kind="error"
-              title={CANVAS_LABELS.layoutFailed}
-              description={CANVAS_LABELS.layoutFailedHint}
-            />
-          ) : (
-            <LayoutSkeleton />
-          )}
+              {/* DG-18: details card, step player, presentation exit. */}
+              <InteractionOverlays nodes={nodes} />
+            </LensChrome>
+          </CanvasShell>
         </div>
-      )}
-    </div>
+        {/* P4: library gap — CanvasShell has no `loading` prop; the state overlays the canvas.
+          See docs/findings/DG-03-canvas-states.md. */}
+        {(status === "error" || !shown) && (
+          <div className="absolute inset-0 grid place-items-center p-6">
+            {status === "error" ? (
+              <StatePanel
+                kind="error"
+                title={CANVAS_LABELS.layoutFailed}
+                description={CANVAS_LABELS.layoutFailedHint}
+              />
+            ) : (
+              <LayoutSkeleton />
+            )}
+          </div>
+        )}
+      </div>
+    </CompositeActionContext.Provider>
   );
 }
