@@ -15,7 +15,7 @@ interface SearchState {
   /** Bumped to ask for the sidebar/sheet to open (if it is not already) and the input to focus.
    * A counter, not a boolean, so asking twice in a row still re-triggers the effect that serves
    * it even if nothing else about the state changed. The always-mounted
-   * `useSearchSidebarBridge` (`workspace-search.tsx`) reacts to every bump; `WorkspaceSearch`
+   * `SearchSidebarBridge` (`workspace-search.tsx`) reacts to every bump; `WorkspaceSearch`
    * itself only ever acts on a token NEWER than the one it last saw (a ref set at mount), so a
    * remount (the mobile sheet does this on every close) never replays a request from before it
    * mounted. */
@@ -62,9 +62,7 @@ export const searchActions = {
  * by whichever `WorkspaceSearch` render actually focuses the input (at mount, when it mounts
  * because a request just opened the sidebar/sheet, or later while already mounted, when a new
  * request arrives on desktop or an already-open mobile sheet). Reading it on every platform,
- * every time, is what keeps it from lingering: the previous version only ever read this on
- * mobile, so a desktop "/" press left it set until whatever mobile sheet open happened to come
- * next, and that unrelated open would then wrongly treat itself as the explicit one.
+ * every time, is what keeps a request from lingering past the open it was meant for.
  */
 export function consumePendingFocus(): boolean {
   const value = pendingFocus;

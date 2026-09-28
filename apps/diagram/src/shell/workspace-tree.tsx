@@ -266,9 +266,12 @@ function HighlightedText({ text, ranges }: { text: string; ranges: readonly Matc
 }
 
 /** Chars of context kept before the first match when windowing a matched field's second line
- * (`MatchLine`, below): short enough that a late match still lands near the window's own start.
- * The row's own title is never windowed this way — see the file row further down. */
-const SNIPPET_LEAD = 10;
+ * (`MatchLine`, below) — kept tiny: the line's own field label (`TREE_LABELS.matchField`) already
+ * takes up a fixed share of the narrow column a nested row leaves for it (`MatchLine` gives the
+ * label its own non-shrinking span so at least it is never itself cut), and a long lead here
+ * would push the match back out past what is left. The row's own title is never windowed this
+ * way — see the file row further down. */
+const SNIPPET_LEAD = 2;
 
 /**
  * `text`, windowed to start just before its first match when that would otherwise sit past
@@ -303,15 +306,52 @@ function MatchText({ text, ranges }: { text: string; ranges: readonly MatchRange
   );
 }
 
-/** A matching file's second line: what matched, when it is not the title itself. */
+/**
+ * A matching file's second line: what matched, when the title alone does not already show it
+ * (either a different field, or the title's own match sitting past what its truncated first line
+ * can display — the file row below builds that case as a `reason`-shaped value too). The field
+ * label gets its own `shrink-0` span so the value's `truncate` never eats into it, leaving the
+ * value the rest of the row's own width to window around the match in. The visible line is
+ * windowed for space and so `aria-hidden`; an `sr-only` span carries the same field, in full, so
+ * the row's accessible name never starts mid-word on the windowed fragment's own leading "…" —
+ * skipped for a title match, whose full text is already the row's own first line.
+ */
 function MatchLine({ reason }: { reason: EntryMatch["reason"] }) {
   if (!reason) return null;
+  const label = TREE_LABELS.matchField[reason.field];
   return (
-    <span className="truncate text-meta text-sidebar-muted-foreground">
-      {TREE_LABELS.matchField[reason.field]}:{" "}
-      <MatchText text={reason.text} ranges={reason.ranges} />
-    </span>
+    <>
+      <span
+        aria-hidden="true"
+        className="flex min-w-0 gap-1 text-meta text-sidebar-muted-foreground"
+      >
+        <span className="shrink-0">{label}:</span>
+        <span className="min-w-0 truncate">
+          <MatchText text={reason.text} ranges={reason.ranges} />
+        </span>
+      </span>
+      {reason.field === "title" ? null : (
+        <span className="sr-only">
+          {label}: {reason.text}
+        </span>
+      )}
+    </>
   );
+}
+
+/** How far into a title a match can start and still be visible once `truncate` clips the row's
+ * first line — conservative, favouring the deepest folder nesting the tree allows (the narrowest
+ * column a title ever gets), since this only decides whether the title needs a second line, not
+ * how the title itself renders. Past it, the title's own highlight is still in the DOM (screen
+ * readers still get the full text either way) but visually cut off, so the row would otherwise
+ * show no evidence at all for why it matched. */
+const TITLE_VISIBLE_CHARS = 16;
+
+/** Would the first of a title's own match ranges sit past what a truncated title can still show?
+ * `undefined` (no title match, or an empty query) never does. */
+function titleMatchHidden(ranges: readonly MatchRange[] | undefined): boolean {
+  const first = ranges?.[0];
+  return first !== undefined && first.start > TITLE_VISIBLE_CHARS;
 }
 
 // ── Dialog state, shared by every row and the root menu ───────────────────────────────
@@ -520,17 +560,26 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
   if (entry.kind === "file") {
     const active = entry.path === shown;
     const match = matches.get(entry.path);
-    const reason = match?.reason;
     // The title itself is highlighted too when it is where the query matched. Only while
     // filtering: an empty query never touches the plain title.
     const titleRanges = filtering ? match?.titleRanges : undefined;
+    // What explains the match, on a second line: another field's `reason`, or — when the title
+    // is the whole match but its own highlight sits past what the truncated first line can show
+    // — the title itself, windowed the same way any other field's match is (`MatchLine`,
+    // `titleMatchHidden`). A title match that IS visible needs no second line: the highlighted
+    // title above already shows it.
+    const secondLine =
+      match?.reason ??
+      (titleMatchHidden(titleRanges)
+        ? { field: "title" as const, text: entry.title, ranges: titleRanges! }
+        : undefined);
     return (
       <SidebarMenuSubItem>
         <div className="group/tree-row relative">
           <SidebarMenuSubButton
             asChild
             isActive={active}
-            className={cn("pe-7", reason && "h-auto min-h-7 py-1.5")}
+            className={cn("pe-7", secondLine && "h-auto min-h-7 py-1.5")}
           >
             <a
               href={toHash({ kind: "doc", path: entry.path })}
@@ -549,13 +598,12 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
               <span className="flex min-w-0 flex-col">
                 {/* The row's own name never loses its start: `truncate` trims only the END, and
                     the full title stays in this link's own `title=` above (a hover reveal) and
-                    in its accessible name (the link's visible text). The match evidence for a
-                    field that is not the title lives on the second line instead, where it is
-                    windowed around the match (`MatchLine`). */}
+                    in its accessible name (the link's visible text). The match evidence lives on
+                    the second line instead, where it is windowed around the match (`MatchLine`). */}
                 <span className="truncate">
                   <HighlightedText text={entry.title} ranges={titleRanges ?? []} />
                 </span>
-                <MatchLine reason={reason} />
+                <MatchLine reason={secondLine} />
               </span>
             </a>
           </SidebarMenuSubButton>
@@ -582,10 +630,10 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
                 type="button"
                 {...{ [TREE_PATH_ATTR]: entry.path }}
                 // While filtering, every folder renders forced open and this toggle is a no-op
-                // (`onToggle` above) so the pre-search expand state survives clearing — told to
-                // assistive tech too, since `aria-expanded` alone (always `true` here) doesn't
-                // say why the control stopped responding.
-                aria-disabled={filtering || undefined}
+                // (`onToggle` above) so the pre-search expand state survives clearing. Not
+                // `aria-disabled`: the row's own "…" menu and file drops onto it both stay live
+                // during a search, same as the rail's own Workspace row (`rail-nav.tsx`), which
+                // ignores its toggle the same way without marking itself disabled either.
                 onContextMenu={onContextMenu}
                 onDragOver={(event) => {
                   if (!hasTreeDrag(event)) return;

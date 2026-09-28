@@ -4,8 +4,8 @@
  * folder path, and also by what is drawn inside it: box names, ids, icons, descriptions.
  *
  * Built from the workspace tree plus one read per file, cached by mtime so a rebuild after a
- * change reads only what changed (the shape DG-23's old `home/search.ts` planned — see
- * `roadmap/DG-23-home.md` — reused here for the sidebar instead). Every file is parsed
+ * change reads only what changed (Home's own search was cut before it shipped in favour of this
+ * sidebar filter — `docs/findings/DG-23-home.md`). Every file is parsed
  * TOLERANTLY with the `yaml` library: `buildEntry` never throws, whatever the dialect (the v0
  * zones/nodes shape, or a v1 file with `ref:`/`component:`) — a box is anything, anywhere in
  * the document, carrying an `id`, `title`, `subtitle`, `description`, `icon`, `ref` or
@@ -186,9 +186,9 @@ export type MatchField =
   | "description";
 
 /**
- * The old Home search's weights (`roadmap/DG-23-home.md`: title exact 1, prefix .95,
- * contains .9, id exact .8, id contains .7, node title .6, icon .5, description .3),
- * reused. `fileName` and `folder` sit at the title tier — the maintainer's answer is "found
+ * The planned Home search weights (title exact 1, prefix .95, contains .9, id exact .8, id
+ * contains .7, node title .6, icon .5, description .3), reused here instead. `fileName` and
+ * `folder` sit at the title tier — the maintainer's answer is "found
  * by its title OR file name". `subtitle` has no weight in the original table: .4, a rung
  * between a box's own title and its description. `ref` (a v1 node's `ref:`/`component:`
  * target — DG-26) sits at the id tier: it is the same kind of machine name.

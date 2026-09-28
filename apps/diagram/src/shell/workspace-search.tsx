@@ -20,6 +20,7 @@ import {
 import { firstResultElement, focusSoon, treeRowElement, workspaceElement } from "./focus";
 import {
   consumePendingFocus,
+  isFiltering,
   searchActions,
   useSearchFocusToken,
   useSearchQuery,
@@ -87,7 +88,7 @@ export function WorkspaceSearch() {
   const handledFocusToken = useRef(servingRequest ? focusToken - 1 : focusToken);
 
   // A request from outside the input (the "/" shortcut, or the collapsed rail's icon button):
-  // `useSearchSidebarBridge` (always mounted) opens the sidebar/sheet; once this component is on
+  // `SearchSidebarBridge` (always mounted) opens the sidebar/sheet; once this component is on
   // screen because of that — a fresh mount serving the request above, or a request arriving
   // while already mounted, on desktop or an already-open mobile sheet — focus the field.
   useEffect(() => {
@@ -149,7 +150,7 @@ export function WorkspaceSearch() {
    * first, so there is no second copy of that logic here.
    */
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (query !== "" && (event.key === "ArrowDown" || event.key === "Enter")) {
+    if (isFiltering(query) && (event.key === "ArrowDown" || event.key === "Enter")) {
       const first = firstResultElement();
       if (!first) return;
       event.preventDefault();
