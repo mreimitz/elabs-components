@@ -20,9 +20,7 @@ export interface TitleBlockProps {
    * Semantic heading level for the title (m10). Default `2`: the app shell's top bar
    * already owns the page `<h1>` (plan §6). A standalone route with no shell (e.g.
    * `#legend`) passes `1` so the page still has exactly one `<h1>`. The visual rung stays
-   * pinned to `size="title"` either way, so this never changes how the title looks. (DG-68:
-   * dropped from `display` — the breadcrumb's file name is the page's own `h1`; this block is
-   * the only place the full title reads, but it no longer needs the display rung to do it.)
+   * pinned to `size="subtitle"` either way, so this never changes how the title looks.
    */
   headingLevel?: 1 | 2;
   /**
@@ -43,10 +41,7 @@ export interface TitleBlockProps {
  * lines passing behind it recede) with no shadow or border of its own — it is part of the
  * drawing, not a surface floating over it.
  *
- * DG-68 — the block was oversized for a working canvas (the title showed three times on
- * screen: breadcrumb, tab, here). It stays (D9: exported with the picture) but drops to the
- * `title` rung — the picture's only full-size title is now the picture's own, not a rival to
- * the shell's `h1`.
+ * Compact typography keeps the title readable without dominating the working canvas.
  */
 export function TitleBlock({
   title,
@@ -82,16 +77,18 @@ export function TitleBlock({
           data-slot="diagram-title-card"
           className="pointer-events-auto flex min-w-0 max-w-full flex-col gap-1 rounded-t-md border-b border-border bg-canvas/80 px-3 pt-2 pb-2.5 backdrop-blur-sm"
         >
-          {/* Wave-2 review m1: wraps to two lines before it clips — `truncate` kept one line
-              at the full title's width, which ran under the minimap at 1440. DG-68: `title`
-              rung, not `display` — see the file doc comment. */}
-          <Heading level={headingLevel} size="title" className="line-clamp-2 min-w-0 break-words">
+          {/* Wrap to two lines before clipping so a long title stays clear of the minimap. */}
+          <Heading
+            level={headingLevel}
+            size="subtitle"
+            className="line-clamp-2 min-w-0 break-words"
+          >
             {title}
           </Heading>
           {description ? (
             // DG-68 (review F-sizing): `text-pretty` keeps the wrap from stranding one word
             // on its own last line (the review flagged lakehouse-aws.yaml's old "lakehouse.").
-            <Text variant="body" tone="muted" className="min-w-0 max-w-prose text-pretty">
+            <Text variant="meta" tone="muted" className="min-w-0 max-w-prose text-pretty">
               {description}
             </Text>
           ) : null}

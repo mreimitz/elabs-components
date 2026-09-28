@@ -128,7 +128,7 @@ export function DocTabs() {
                 title={`${doc.title}\n${doc.path}`}
                 className={cn(
                   tabsTriggerVariants({ variant: "underline" }),
-                  "h-full min-w-0 gap-1.5 rounded-none ps-3 pe-8 hover:bg-transparent",
+                  "h-full min-w-0 gap-1.5 rounded-none ps-3 pe-8 text-meta hover:bg-transparent",
                 )}
                 onClick={() => openDoc(doc.path)}
                 onKeyDown={(event) => onKeyDown(event, index, doc.path)}
