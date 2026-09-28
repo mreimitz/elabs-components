@@ -2,7 +2,7 @@
  * DG-23 — one plain-YAML string field, shared by the components panel's `component.description`
  * and the template picker's top-level `description`. Read as plain YAML (`yaml`'s
  * `parseDocument`), not through the app's dialect-versioned compiler — a description renders
- * whether or not the rest of the file compiles. React-free (`conventions/logic-modules`).
+ * whether or not the rest of the file compiles. No React import.
  */
 import { parseDocument } from "yaml";
 

@@ -1,7 +1,6 @@
 /**
  * DG-23 — which diagrams use a component (`ref: ws/components/<file name>`), and the small pure
- * reads the components panel needs. React-free (`conventions/logic-modules`); `components-panel.tsx`
- * turns this into UI.
+ * reads the components panel needs. No React import; `components-panel.tsx` turns this into UI.
  *
  * Usage comes from a TEXT scan across every diagram file (dialect v1's reference form; the
  * retired `use:` key is not scanned for), independent of whether the file compiles.
