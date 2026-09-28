@@ -5,6 +5,14 @@
  * input and the `WorkspaceTree` it filters, so it lives here rather than in either), and a
  * "focus me" request the "/" shortcut (`keymap.ts`) and the collapsed icon rail's button
  * (`workspace-search.tsx`) can make from outside the input itself. React-free except the hooks.
+ *
+ * Opening the sidebar/sheet for that request is an EVENT, not state a component watches:
+ * `registerSearchOpener` lets `SearchSidebarBridge` (the one component that can actually call
+ * `useSidebar()`'s `setOpen`/`setOpenMobile`) hand over a function once, which `requestFocus()`
+ * then calls directly — no counter for it to bump, no effect to react to the bump, no
+ * `react-hooks/exhaustive-deps` suppression for deliberately not re-running on every render.
+ * `focusToken` remains for the one thing that DOES need a component to react to a request after
+ * the fact: focusing the input once it is actually on screen (`WorkspaceSearch`).
  */
 import { useSyncExternalStore } from "react";
 import { createStore } from "../state/create-store";
@@ -30,6 +38,22 @@ const searchStore = createStore<SearchState>({ query: "", focusToken: 0 });
 // so a "/" press with the sheet closed is still served once it opens, rather than lost.
 let pendingFocus = false;
 
+/** Opens the sidebar (desktop) or the sheet (mobile) — registered once by `SearchSidebarBridge`,
+ * the always-mounted component inside `SidebarProvider` that can call `useSidebar()`. `null`
+ * before that component has ever mounted, in which case `requestFocus()` has nothing to open yet
+ * but the bumped `focusToken` still reaches `WorkspaceSearch` once it does. */
+let opener: (() => void) | null = null;
+
+/** Register the function that opens the sidebar/sheet; returns the unregister (called on
+ * unmount). A later registration replaces an earlier one; unregistering a stale one (already
+ * replaced) is a no-op. */
+export function registerSearchOpener(open: () => void): () => void {
+  opener = open;
+  return () => {
+    if (opener === open) opener = null;
+  };
+}
+
 /** The live query (`""` when the box is empty — the tree then shows everything, unfiltered). */
 export function useSearchQuery(): string {
   return useSyncExternalStore(searchStore.subscribe, () => searchStore.get().query);
@@ -53,6 +77,7 @@ export const searchActions = {
   requestFocus() {
     activateSearchIndex();
     pendingFocus = true;
+    opener?.();
     searchStore.set((s) => ({ focusToken: s.focusToken + 1 }));
   },
 };

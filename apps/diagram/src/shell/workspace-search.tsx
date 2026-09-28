@@ -21,6 +21,7 @@ import { firstResultElement, focusSoon, treeRowElement, workspaceElement } from 
 import {
   consumePendingFocus,
   isFiltering,
+  registerSearchOpener,
   searchActions,
   useSearchFocusToken,
   useSearchQuery,
@@ -36,23 +37,27 @@ const SEARCH_LABELS = {
 /**
  * Renders nothing; mounted once, inside `SidebarProvider` but outside the sidebar itself
  * (`diagram-shell.tsx`), so it survives the mobile sheet unmounting `WorkspaceSearch` on every
- * close. Opens the sidebar, or the mobile sheet, the moment a "/" press or the collapsed rail's
- * icon button asks for the search box, so the request is served even when nothing else is on
- * screen yet to make it happen. `WorkspaceSearch`, once it mounts (or reacts) because of this,
- * only has to focus the input.
+ * close. Registers the function `searchActions.requestFocus()` calls directly to open the
+ * sidebar, or the mobile sheet, the moment a "/" press or the collapsed rail's icon button asks
+ * for the search box — an event handed to `search-store.ts` once, not a counter this component
+ * watches and reacts to (`registerSearchOpener`). The registration itself only runs at mount/
+ * unmount; a ref keeps the closure reading the LATEST `isMobile`/`setOpen`/`setOpenMobile` on
+ * every call without re-registering every time one of them changes. `WorkspaceSearch`, once it
+ * mounts (or reacts) because of this, only has to focus the input.
  */
 export function SearchSidebarBridge() {
-  const focusToken = useSearchFocusToken();
-  const { isMobile, setOpen, setOpenMobile } = useSidebar();
-  const seen = useRef(focusToken);
-  useEffect(() => {
-    if (focusToken === seen.current) return;
-    seen.current = focusToken;
-    if (isMobile) setOpenMobile(true);
-    else setOpen(true);
-    // Reacts only to a new request, not to `isMobile`/`setOpen`/`setOpenMobile` themselves.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusToken]);
+  const sidebar = useSidebar();
+  const sidebarRef = useRef(sidebar);
+  sidebarRef.current = sidebar;
+  useEffect(
+    () =>
+      registerSearchOpener(() => {
+        const { isMobile, setOpen, setOpenMobile } = sidebarRef.current;
+        if (isMobile) setOpenMobile(true);
+        else setOpen(true);
+      }),
+    [],
+  );
   return null;
 }
 
