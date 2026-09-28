@@ -1,3 +1,4 @@
+import { CAN_NAVIGATE_CATALOG } from "../viewer/capabilities";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import type { Node } from "@elabs-ai/components-flow";
 import {
@@ -138,7 +139,7 @@ export function CardBody({ details, titleId }: { details: NodeDetails; titleId: 
           ) : null}
         </div>
       ) : null}
-      {details.catalog ? (
+      {details.catalog && CAN_NAVIGATE_CATALOG ? (
         <Button asChild variant="link" size="sm" className="self-start px-0">
           <a href={toHash({ kind: "catalog", ...details.catalog })}>{CARD_LABELS.catalog}</a>
         </Button>

@@ -7,7 +7,7 @@ import { canvasChrome } from "../chrome/canvas-chrome";
 import { motionMs, prefersReducedMotion } from "../motion";
 import { useLens } from "../shell/lens-store";
 import { litStoryNodes, visibleStoryTarget } from "./visible-targets";
-import { advanceProgress, followPosition } from "./camera-math";
+import { advanceProgress, followPosition, storyBoundsMatch } from "./camera-math";
 import { storyActions, storyStore, useStory } from "./story-store";
 
 export function useStoryCamera(
@@ -160,11 +160,54 @@ export function useStoryCamera(
         // commit. A superseding step/layout/source still owns the cancellation token.
         void flow.setViewport(latest ?? viewport).then(() => {
           if (token !== generation.current) return;
-          frame = requestAnimationFrame(() => {
+          let committed = latest ?? viewport;
+          const deadline = performance.now() + 2000;
+          const confirmGeometry = () => {
             if (token !== generation.current) return;
+            const sought =
+              step.camera === "follow" && !prefersReducedMotion()
+                ? followViewport(pane, step.follow, storyStore.get().progress, committed.zoom)
+                : null;
+            if (
+              sought &&
+              (sought.x !== committed.x ||
+                sought.y !== committed.y ||
+                sought.zoom !== committed.zoom)
+            ) {
+              committed = sought;
+              void flow.setViewport(sought).then(() => {
+                if (token === generation.current) frame = requestAnimationFrame(confirmGeometry);
+              });
+              return;
+            }
+            const paneBox = pane.getBoundingClientRect();
+            const elements = new Map(
+              [...pane.querySelectorAll<HTMLElement>(".react-flow__node")].map((element) => [
+                element.dataset.id,
+                element,
+              ]),
+            );
+            const matches = selected.every((node) => {
+              const element = elements.get(node.id);
+              if (!element) return false;
+              const rendered = element.getBoundingClientRect();
+              return storyBoundsMatch(rendered, {
+                x: paneBox.x + committed.x + node.position.x * committed.zoom,
+                y: paneBox.y + committed.y + node.position.y * committed.zoom,
+                width: (node.measured?.width ?? node.width ?? 0) * committed.zoom,
+                height: (node.measured?.height ?? node.height ?? 0) * committed.zoom,
+              });
+            });
+            if (!matches) {
+              // A hidden or superseded graph must never run an unseen step indefinitely.
+              if (performance.now() >= deadline) storyActions.manual();
+              else frame = requestAnimationFrame(confirmGeometry);
+              return;
+            }
             cameraReady.current = true;
             if (host) host.dataset.storyCameraReady = "true";
-          });
+          };
+          frame = requestAnimationFrame(confirmGeometry);
         });
       }
     };

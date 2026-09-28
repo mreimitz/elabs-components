@@ -6,7 +6,7 @@ const root = fileURLToPath(new URL("../../", import.meta.url));
 const load = async (path) =>
   (await runnerImport(`${root}src/story/${path}`, { root, configFile: false, logLevel: "error" }))
     .module;
-const { advanceProgress, followPosition } = await load("camera-math.ts");
+const { advanceProgress, followPosition, storyBoundsMatch } = await load("camera-math.ts");
 const { visibleStoryTarget, litStoryNodes } = await load("visible-targets.ts");
 const { storyActions, storyStore } = await load("story-store.ts");
 const originalWindow = globalThis.window;
@@ -198,4 +198,15 @@ test("a whole-zone target lights nested descendants without lighting unrelated s
   assert.deepEqual([...litStoryNodes(["zone"], nodes)].sort(), ["group", "leaf", "peer", "zone"]);
   assert.deepEqual([...litStoryNodes(["leaf"], nodes)], ["leaf"]);
   assert.deepEqual([...litStoryNodes(["missing"], nodes)], []);
+});
+
+test("camera readiness rejects stale rendered dimensions and accepts subpixel layout rounding", () => {
+  const expected = { x: 16, y: 120, width: 358, height: 181.2375 };
+  assert.equal(
+    storyBoundsMatch({ x: 300.382, y: 120, width: 163.595, height: 181.2375 }, expected),
+    false,
+  );
+  assert.equal(storyBoundsMatch({ ...expected, x: 16.001, height: 181.238 }, expected), true);
+  assert.equal(storyBoundsMatch({ ...expected, x: NaN }, expected), false);
+  assert.equal(storyBoundsMatch(expected, { ...expected, width: Infinity }), false);
 });

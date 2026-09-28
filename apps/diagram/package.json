@@ -6,7 +6,7 @@
   "description": "Test & demo app: architecture diagrams from YAML on the flow canvas. Not deployed; not in the standard gates.",
   "scripts": {
     "dev": "node scripts/copy-themes.mjs && vite --port 5180 --strictPort",
-    "build:local": "node scripts/copy-themes.mjs && vite build",
+    "build:local": "node scripts/copy-themes.mjs && node scripts/build-viewer.mjs && vite build",
     "preview:local": "vite preview --port 5181",
     "typecheck:local": "node scripts/copy-themes.mjs && tsc --noEmit",
     "lint:local": "eslint .",

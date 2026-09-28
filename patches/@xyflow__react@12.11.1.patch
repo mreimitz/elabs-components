@@ -1,0 +1,114 @@
+diff --git a/dist/esm/index.js b/dist/esm/index.js
+index 31bd7dbfdc93a1cfb2d717ce0e98164c54fb1013..94c7f6b937ddeaa4b2e1e1a43069d6e05be0a267 100644
+--- a/dist/esm/index.js
++++ b/dist/esm/index.js
+@@ -2125,25 +2125,45 @@ function useVisibleNodeIds(onlyRenderVisible) {
+ const selector$c = (s) => s.updateNodeInternals;
+ function useResizeObserver() {
+     const updateNodeInternals = useStore(selector$c);
++    const frame = useRef(0);
++    const pending = useRef(new Map());
++    const mounted = useRef(true);
+     const [resizeObserver] = useState(() => {
+         if (typeof ResizeObserver === 'undefined') {
+             return null;
+         }
+         return new ResizeObserver((entries) => {
+-            const updates = new Map();
++            if (!mounted.current) return;
+             entries.forEach((entry) => {
+                 const id = entry.target.getAttribute('data-id');
+-                updates.set(id, {
+-                    id,
+-                    nodeElement: entry.target,
+-                    force: true,
+-                });
++                if (id && entry.target.isConnected) {
++                    pending.current.set(id, { id, nodeElement: entry.target, force: true });
++                }
++            });
++            if (frame.current || !pending.current.size) return;
++            // Updating measured parent/child geometry during observer delivery can cause
++            // WebKit to report undelivered notifications. Coalesce measurements per frame.
++            frame.current = requestAnimationFrame(() => {
++                frame.current = 0;
++                const updates = pending.current;
++                pending.current = new Map();
++                if (!mounted.current) return;
++                for (const [id, update] of updates) {
++                    if (!update.nodeElement.isConnected || update.nodeElement.getAttribute('data-id') !== id) {
++                        updates.delete(id);
++                    }
++                }
++                if (updates.size) updateNodeInternals(updates);
+             });
+-            updateNodeInternals(updates);
+         });
+     });
+     useEffect(() => {
++        mounted.current = true;
+         return () => {
++            mounted.current = false;
++            cancelAnimationFrame(frame.current);
++            frame.current = 0;
++            pending.current.clear();
+             resizeObserver?.disconnect();
+         };
+     }, [resizeObserver]);
+diff --git a/dist/esm/index.mjs b/dist/esm/index.mjs
+index 31bd7dbfdc93a1cfb2d717ce0e98164c54fb1013..94c7f6b937ddeaa4b2e1e1a43069d6e05be0a267 100644
+--- a/dist/esm/index.mjs
++++ b/dist/esm/index.mjs
+@@ -2125,25 +2125,45 @@ function useVisibleNodeIds(onlyRenderVisible) {
+ const selector$c = (s) => s.updateNodeInternals;
+ function useResizeObserver() {
+     const updateNodeInternals = useStore(selector$c);
++    const frame = useRef(0);
++    const pending = useRef(new Map());
++    const mounted = useRef(true);
+     const [resizeObserver] = useState(() => {
+         if (typeof ResizeObserver === 'undefined') {
+             return null;
+         }
+         return new ResizeObserver((entries) => {
+-            const updates = new Map();
++            if (!mounted.current) return;
+             entries.forEach((entry) => {
+                 const id = entry.target.getAttribute('data-id');
+-                updates.set(id, {
+-                    id,
+-                    nodeElement: entry.target,
+-                    force: true,
+-                });
++                if (id && entry.target.isConnected) {
++                    pending.current.set(id, { id, nodeElement: entry.target, force: true });
++                }
++            });
++            if (frame.current || !pending.current.size) return;
++            // Updating measured parent/child geometry during observer delivery can cause
++            // WebKit to report undelivered notifications. Coalesce measurements per frame.
++            frame.current = requestAnimationFrame(() => {
++                frame.current = 0;
++                const updates = pending.current;
++                pending.current = new Map();
++                if (!mounted.current) return;
++                for (const [id, update] of updates) {
++                    if (!update.nodeElement.isConnected || update.nodeElement.getAttribute('data-id') !== id) {
++                        updates.delete(id);
++                    }
++                }
++                if (updates.size) updateNodeInternals(updates);
+             });
+-            updateNodeInternals(updates);
+         });
+     });
+     useEffect(() => {
++        mounted.current = true;
+         return () => {
++            mounted.current = false;
++            cancelAnimationFrame(frame.current);
++            frame.current = 0;
++            pending.current.clear();
+             resizeObserver?.disconnect();
+         };
+     }, [resizeObserver]);

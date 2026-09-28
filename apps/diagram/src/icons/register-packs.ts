@@ -61,7 +61,7 @@ const SNOWFLAKE_DARK = darkVariant("snowflake", "snowflake.svg");
  * Several keys share one file: the DG-04 packs copy the vendor logo under product names
  * that have no mark of their own, so they share the vendor's dark variant too.
  */
-const THEME_AWARE_MARKS: Record<string, DarkMark> = {
+export const THEME_AWARE_MARKS: Record<string, DarkMark> = {
   "aws/aws": AWS_DARK,
   // Azure's blue clears 3:1 in the dark legends (3.9:1 dark, 3.0:1 qlik-dark) and no dark
   // variant was found: only its `mono` (grayscale, 2.0–3.0:1 in a zone header) needs the mask.

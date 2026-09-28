@@ -1,5 +1,6 @@
 # Atlas — changelog (one line per fortnight, newest first)
 
+- 2026-09-29 — Export → Interactive HTML downloads one offline, read-only file with both lenses, stories, details and component inspection. Notes and metrics are excluded recursively; the publishing theme and profiles are frozen. The file opens the authored technical view, without transient camera or expansion choices.
 - 2026-09-29 — Two bounded style profiles now resolve from theme, workspace and diagram choices. Qlik visual drawings use navy panels, role accents and accessible capability colors; other themes retain neutral owner styling. Morphs and exports share the effective profile, and theme changes cannot leave stale transition paint.
 - 2026-09-29 — Authored visual layouts now control named lanes, capability boxes, processes, sub-items and the control plane. Component layouts travel with their references; technical connections remain authoritative. Visual layout previews save through an isolated undo step, and IntelliSense completes layout identifiers. Rapid diff-preview closure is safe beside the YAML editor.
 - 2026-09-29 — Workspace creation reports when a file was created but could not be opened, preserving unsaved edits and refreshing the tree. Static preview responses no longer masquerade as YAML. Skipped and overlapping theme transitions clean up safely.

@@ -3,6 +3,7 @@
  * every keystroke; the compile runs 150 ms after the last one. The canvas draws the last
  * compile that produced a graph, so a half-typed line never blanks it.
  */
+import { IS_PUBLISHED_VIEWER } from "../viewer/capabilities";
 import { parseRoute } from "../routes/use-hash";
 import { lensStore } from "../shell/lens-store";
 import { useSyncExternalStore } from "react";
@@ -101,6 +102,7 @@ function compileNow() {
 
 /** Private drill views render a different file while retaining this store's parent text. */
 function mayChangeText(): boolean {
+  if (IS_PUBLISHED_VIEWER) return false;
   if (lensStore.get().target !== "technical" || lensStore.get().position !== 0) return false;
   if (typeof window === "undefined") return true;
   const route = parseRoute(window.location.hash);

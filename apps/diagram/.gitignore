@@ -5,3 +5,7 @@ src/themes/
 .evidence/
 # DG-21: deleted workspace files land here (never rm); not versioned.
 workspace/_trash/
+
+# DG-43 generated offline viewer template
+.viewer/
+public/viewer.template.json

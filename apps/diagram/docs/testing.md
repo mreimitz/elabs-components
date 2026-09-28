@@ -123,3 +123,19 @@ The diff lifecycle check stresses rapid preview closure while a normal YAML edit
 ## Style profiles and lens integration
 
 Run `node --test scripts/tests/style-profiles.test.mjs` for loader/cascade/config/schema and renderer contract checks. With the isolated server running, `DIAGRAM_URL=http://localhost:5444 node tests/style-mcp.mjs` proves server validation and `DIAGRAM_URL=http://localhost:5444 node tests/style-profiles.mjs` checks actual four-theme paint, read-only switching, mid-morph theme changes and config reload. The browser check temporarily replaces `workspace/atlas.config.yaml` and restores it in `finally`; use only the test checkout. Optional `STYLE_EVIDENCE` saves screenshots and JSON.
+
+## Offline interactive publishing
+
+The normal `build:local` also builds the self-contained viewer template. In an isolated checkout with the server running, use:
+
+```sh
+node --test scripts/tests/publish-snapshot.test.mjs scripts/tests/flow-observer.test.mjs
+PUBLISH_EVIDENCE=/tmp/atlas-publish DIAGRAM_URL=http://localhost:5442 node tests/publish-viewer.mjs
+PUBLISH_EVIDENCE=/tmp/atlas-publish node tests/publish-controls.mjs
+```
+
+Install the existing Playwright Chromium, Firefox and WebKit engines before this matrix. The first script downloads actual menu exports, records raw/gzip sizes (budget: 3 MiB gzip), compares fixed-profile paint against the authoring app and opens each file offline at 1440 and 390 pixels. Four diagrams across three engines yield 24 cases. It waits for both canvas and chrome to settle before screenshots. The second script reuses the generated adversarial artifact for six interaction cases and nine tampered-file refusals. Both reject external network attempts and unexpected browser errors.
+
+Notes and metrics, including inherited note nodes and nested referenced content, are excluded. Required targets removed by that policy fail export rather than silently changing the story. Public narrative remains. The immutable publishing theme/profile and authored initial technical drawing are retained; transient camera/expansion choices are not. See [DG-43](findings/DG-43.md) for privacy and build boundaries.
+
+The installed React Flow ESM observer patch has eight lifecycle/coalescing regressions. After changing it, also run `tests/lens-navigation.mjs`, `tests/composite-interactions.mjs`, `tests/story-interactions.mjs` and `scripts/check-view-mode.mjs` sequentially against the isolated server. Do not run builds or edit source during these browser checks: Vite reloads invalidate transient-state evidence. This patch is repository-local, not an upstream UMD or release guarantee.

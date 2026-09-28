@@ -52,6 +52,9 @@ const EXPORT_LABELS = {
   png: (scale: PictureScale) => `PNG ${scale}×`,
   svg: "SVG",
   copyPng: "Copy as PNG",
+  publish: "Interactive HTML",
+  offline: "One offline, read-only file. Notes and metrics are excluded.",
+  privacy: "Notes and metrics are excluded.",
   transparent: "Transparent background",
   exporting: "Exporting…",
   saved: (name: string) => `Saved ${name}`,
@@ -123,6 +126,13 @@ function saveSvg() {
   );
 }
 
+function publishHtml() {
+  void reported(
+    import("./publish").then(({ publishDiagram }) => publishDiagram()),
+    (result) => ({ message: EXPORT_LABELS.saved(result.name), description: EXPORT_LABELS.offline }),
+  );
+}
+
 function copyPng() {
   const png = picture().then((p) => pngBlob(p, COPY_SCALE));
   // The item is built now, inside the click, with a promise for its data: Safari
@@ -175,6 +185,13 @@ function ExportItems({
         <FileCode aria-hidden="true" />
         {EXPORT_LABELS.svg}
       </DropdownMenuItem>
+      <DropdownMenuItem disabled={disabled} onSelect={publishHtml}>
+        <FileCode aria-hidden="true" />
+        {EXPORT_LABELS.publish}
+      </DropdownMenuItem>
+      <DropdownMenuLabel className="max-w-64 whitespace-normal text-muted-foreground">
+        {EXPORT_LABELS.privacy}
+      </DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuItem disabled={disabled || !canCopy} onSelect={withCanvas(copyPng)}>
         <Copy aria-hidden="true" />
