@@ -11,8 +11,6 @@ import {
   CanvasShell,
   ReactFlowProvider,
   useReactFlow,
-  ZoomControls,
-  FlowMiniMap,
   type Edge,
   type Node,
 } from "@elabs-ai/components-flow";
@@ -26,6 +24,7 @@ import { LensChrome } from "./lens-chrome";
 import { DiagramLegend } from "../chrome/diagram-legend";
 import { lensActions } from "../shell/lens-store";
 import { TitleBlock } from "../chrome/title-block";
+import { CanvasNavigation } from "../chrome/canvas-navigation";
 import { focusEditor } from "../shell/focus";
 import { modeActions, useDocMode } from "../shell/mode-store";
 import type { ArchDiagram } from "../spec/dialect";
@@ -172,8 +171,7 @@ function VisualFlow({ paneRef, ast, built, source }: VisualFlowProps) {
       <LensChrome lens="visual">
         <TitleBlock title={ast.title} description={ast.description} meta={source} />
         <DiagramLegend mode="auto" />
-        <FlowMiniMap position="top-right" pannable zoomable className="@max-3xl:hidden" />
-        <ZoomControls />
+        <CanvasNavigation />
       </LensChrome>
     </CanvasShell>
   );

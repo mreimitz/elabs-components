@@ -31,6 +31,12 @@
   will-change: opacity;
   transition-property: none;
 }
+
+/* Compose the existing minimap and zoom primitives inside one positioned panel. */
+.react-flow [data-slot="canvas-navigation"] > .react-flow__panel {
+  position: static;
+  margin: 0;
+}
 @source "../../../packages/ui/src";
 @source "../../../packages/icons/src";
 @source "../../../packages/flow/src";

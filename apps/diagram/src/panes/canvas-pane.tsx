@@ -1,9 +1,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   CanvasShell,
-  FlowMiniMap,
   ReactFlowProvider,
-  ZoomControls,
   useEdgesState,
   useNodesState,
   useReactFlow,
@@ -14,6 +12,7 @@ import {
 import { Badge, Button, Skeleton, StatePanel, cn } from "@elabs-ai/components-ui"; // DG-22 review
 import { Workflow } from "lucide-react";
 import { DiagramLegend } from "../chrome/diagram-legend";
+import { CanvasNavigation } from "../chrome/canvas-navigation";
 import { chromeFitPadding } from "../chrome/fit-padding";
 import { TitleBlock } from "../chrome/title-block";
 import { FIT_MIN_ZOOM, useDiagramLayout } from "../layout/use-diagram-layout";
@@ -802,17 +801,13 @@ function DiagramCanvas({
               </div>
             </TitleBlock>
             <DiagramLegend mode={view.legend} />
-            {/* Top-right: the legend owns bottom-left. Hidden while the pane is under `@3xl`
-              (768 px): at 1440 × 900 the pane is 710 px and the title block ran under it
-              (wave-2 review m1); at phone width it covered the zoom controls (wave-0 m11). */}
-            <FlowMiniMap position="top-right" pannable zoomable className="@max-3xl:hidden" />
             {/* P4: library gap — `ZoomControls`' Fit view calls React Flow's `fitView()` with no
               options (packages/flow/src/zoom-controls/zoom-controls.tsx:75) and takes no
               `onFitView`, so it ignores the chrome-aware fit and puts nodes under the panels
               (wave-2 review M7). Proposed: `onFitView?: () => void` (or `fitViewOptions`),
               through which the app would run its chrome-aware fit (use-diagram-layout.ts).
               docs/findings/DG-12-editor-integration.md. */}
-            <ZoomControls />
+            <CanvasNavigation />
 
             {/* DG-18: details card, step player, presentation exit. */}
             <InteractionOverlays nodes={nodes} />

@@ -1,6 +1,6 @@
 /**
  * DG-12 — fit around the canvas chrome. The title block (top-left), the legend
- * (bottom-left), the minimap (top-right), the zoom controls (bottom-right) and the stale badge
+ * (bottom-left), the combined minimap and zoom controls (bottom-right) and the stale badge
  * (bottom-centre) are React Flow `Panel`s over the canvas; a plain `fitView` puts nodes under
  * them.
  *
@@ -127,6 +127,8 @@ function panelsOf(pane: HTMLElement): PanelBox[] {
     ...pane.querySelectorAll<HTMLElement>(".react-flow__panel"),
     ...(canvasChrome(pane)?.querySelectorAll<HTMLElement>(".react-flow__panel") ?? []),
   ].flatMap((panel) => {
+    // The navigation panel owns its minimap and controls' combined painted area.
+    if (panel.parentElement?.closest('[data-slot="canvas-navigation"]')) return [];
     const r = panel.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) return [];
     const rect = relative(r);

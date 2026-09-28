@@ -63,13 +63,11 @@ export function TitleBlock({
         // `position: absolute` inside `.react-flow` (which fills the pane, `width: 100%`,
         // `position: relative`), so a `%`-based max-width caps it to the PANE, not a fixed
         // rem — 2rem leaves room for the `top-left` panel's own 15px outer margin on both
-        // sides. Wave-2 review m1: from `@3xl` the canvas shows the minimap top-right, so the
-        // cap also leaves its 200px plus its 15px margin and a gap (16rem in all). P4: library
-        // gap — the floating-surface shell should cap itself to its pane so no consumer
+        // sides. P4: library gap — the floating-surface shell should cap itself to its pane so no consumer
         // writes this calc(); see docs/findings/DG-08-legend.md.
         // The column's empty corner (beside a short status line) must not catch the canvas's
         // pointer, so only the block takes it.
-        "pointer-events-none flex min-w-0 max-w-[calc(100%-2rem)] flex-col items-start gap-2 @3xl:max-w-[calc(100%-16rem)]",
+        "pointer-events-none flex min-w-0 max-w-[calc(100%-2rem)] flex-col items-start gap-2",
       )}
     >
       {title ? (
@@ -77,7 +75,7 @@ export function TitleBlock({
           data-slot="diagram-title-card"
           className="pointer-events-auto flex min-w-0 max-w-full flex-col gap-1 rounded-t-md border-b border-border bg-canvas/80 px-3 pt-2 pb-2.5 backdrop-blur-sm"
         >
-          {/* Wrap to two lines before clipping so a long title stays clear of the minimap. */}
+          {/* Wrap to two lines before clipping at the canvas edge. */}
           <Heading
             level={headingLevel}
             size="subtitle"
