@@ -2,7 +2,7 @@
  * ATLAS_URL selects the disposable dev server; ATLAS_EVIDENCE optionally saves screenshots.
  * Run: node scripts/tests/reference-browser.mjs (from apps/diagram).
  */
-/* global document, getComputedStyle, requestAnimationFrame */
+/* global document, getComputedStyle, performance, requestAnimationFrame */
 import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { clearTimeout, setTimeout } from "node:timers";
@@ -17,10 +17,12 @@ const endpoint = `${base}/api/workspace/file?path=${encodeURIComponent(path)}`;
 assert.equal((await fetch(`${endpoint}&create=1`, { method: "PUT", body: source })).ok, true);
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+await page.addInitScript(() => performance.setResourceTimingBufferSize(10_000));
 const errors = [];
+let storeUrl;
 page.on("pageerror", (error) => errors.push(String(error)));
 const written = () =>
-  page.evaluate(async () => (await import("/src/state/diagram-store.ts")).diagramStore.get().text);
+  page.evaluate(async (url) => (await import(url)).diagramStore.get().text, storeUrl);
 /** Await asynchronous predicates explicitly; waitForFunction treats their Promise as truthy. */
 const waitForState = async (predicate, arg) => {
   const deadline = Date.now() + 10_000;
@@ -46,11 +48,9 @@ const waitForState = async (predicate, arg) => {
 };
 const waitText = async (pattern) => {
   await waitForState(
-    async (source) =>
-      new RegExp(source).test(
-        (await import("/src/state/diagram-store.ts")).diagramStore.get().text,
-      ),
-    pattern,
+    async ({ pattern, url }) =>
+      new RegExp(pattern).test((await import(url)).diagramStore.get().text),
+    { pattern, url: storeUrl },
   );
 };
 const screenshot = async (name) => {
@@ -70,6 +70,20 @@ try {
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   await page.locator('.react-flow__node[data-id="probe"]').click();
   const form = page.getByRole("form", { name: "Node", exact: true });
+  // Resolve the module loaded by Vite, including its HMR timestamp. Importing the bare
+  // URL after a source update creates another store seeded with the default example.
+  storeUrl = await page.evaluate(
+    () =>
+      performance
+        .getEntriesByType("resource")
+        .findLast((entry) => new URL(entry.name).pathname === "/src/state/diagram-store.ts")?.name,
+  );
+  assert.ok(storeUrl, "The application must load its diagram store");
+  assert.equal(
+    await page.evaluate(async (url) => (await import(url)).diagramStore.get().path, storeUrl),
+    path,
+  );
+  assert.equal(await written(), source);
   const beforeCatalogEdit = await written();
   await writeFile(
     catalogFile,
@@ -138,8 +152,8 @@ try {
     });
   await page.keyboard.press("Enter");
   await waitForState(
-    async () =>
-      !(await import("/src/state/diagram-store.ts")).diagramStore.get().text.includes("type:"),
+    async (url) => !(await import(url)).diagramStore.get().text.includes("type:"),
+    storeUrl,
   );
   assert.doesNotMatch(await written(), /type:/);
   assert.equal(await type.evaluate((el) => el === document.activeElement), true);
