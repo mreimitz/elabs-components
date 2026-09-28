@@ -40,7 +40,11 @@ import {
   type WorkspaceFile,
   type WorkspaceTree,
 } from "../workspace/client";
-import { UnsavedEditsError, workspaceActions } from "../workspace/workspace-store";
+import {
+  CreatedDiagramNotOpenedError,
+  UnsavedEditsError,
+  workspaceActions,
+} from "../workspace/workspace-store";
 
 /** The flow's strings, in one place (`conventions/i18n-strings`). */
 export const START_LABELS = {
@@ -65,8 +69,8 @@ const CUSTOMERS_FOLDER = "customers";
  * Create (or copy), then open in edit mode and focus its tab. A write failure toasts "could not
  * create". `workspaceActions.create` (plain "New diagram") also opens the file as its last step
  * and can refuse to (the currently open tab has unsaved edits that did not reach disk); the file
- * still exists then, so that case toasts a distinct, honest message instead — `UnsavedEditsError`
- * already names both documents in its own message. `copyTemplate` never opens internally, so it
+ * still exists then, so that case toasts a distinct message instead. The created-file error
+ * carries its path and the navigation failure. `copyTemplate` never opens internally, so it
  * cannot raise this case; `openDoc` itself is synchronous and never throws.
  */
 async function createAndOpen(create: () => Promise<string>): Promise<void> {
@@ -74,7 +78,7 @@ async function createAndOpen(create: () => Promise<string>): Promise<void> {
   try {
     path = await create();
   } catch (error) {
-    if (error instanceof UnsavedEditsError) {
+    if (error instanceof CreatedDiagramNotOpenedError || error instanceof UnsavedEditsError) {
       toast.error(START_LABELS.createdNotOpened, { description: error.message });
       return;
     }

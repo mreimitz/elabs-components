@@ -240,6 +240,20 @@ export type DiskCheck = "ours" | "same" | "reloaded" | "conflict" | "gone";
  * disk (the write failed, or a disk conflict holds it). `path` is that document; it keeps its
  * edits.
  */
+/** Creation succeeded, but changing documents failed; never invite a duplicate retry. */
+export class CreatedDiagramNotOpenedError extends Error {
+  constructor(
+    readonly path: string,
+    cause: unknown,
+  ) {
+    super(
+      `Created “${path}”, but it could not be opened. ${cause instanceof Error ? cause.message : String(cause)}`,
+      { cause },
+    );
+    this.name = "CreatedDiagramNotOpenedError";
+  }
+}
+
 export class UnsavedEditsError extends Error {
   readonly path: string;
 
@@ -427,8 +441,13 @@ export const workspaceActions = {
   async create(folder: string, title: string): Promise<string> {
     const text = `diagram: "${DIALECT_VERSION}"\ntitle: ${JSON.stringify(title)}\n`;
     const path = await createUniqueFile(folder, yamlFileName(title), text);
-    await workspaceActions.open(path);
-    void workspaceActions.refreshTree().catch(() => undefined); // n12: the tree's own error state already reports it
+    // Refresh even when the current document's save guard prevents navigation.
+    void workspaceActions.refreshTree().catch(() => undefined);
+    try {
+      await workspaceActions.open(path);
+    } catch (error) {
+      throw new CreatedDiagramNotOpenedError(path, error);
+    }
     return path;
   },
 

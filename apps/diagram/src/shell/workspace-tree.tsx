@@ -81,7 +81,12 @@ import {
   type MatchField,
   type MatchRange,
 } from "../workspace/search-index";
-import { folderOf, useWorkspace, workspaceActions } from "../workspace/workspace-store";
+import {
+  CreatedDiagramNotOpenedError,
+  folderOf,
+  useWorkspace,
+  workspaceActions,
+} from "../workspace/workspace-store";
 import {
   activeElement,
   docTabElement,
@@ -114,6 +119,7 @@ const TREE_LABELS = {
   root: "Workspace (top level)",
   trash: "Trash",
   newDiagramTitle: "New diagram",
+  createdNotOpened: "Diagram created, but not opened",
   newDiagramField: "Title",
   newFolderTitle: "New folder",
   newFolderField: "Folder name",
@@ -748,7 +754,12 @@ function NameDialog({ request }: { request: Exclude<TreeRequest, { kind: "trash"
           openDoc(path, { mode: "edit" });
           focusDocTab(path);
         },
-        fail("create", name),
+        (error: unknown) => {
+          if (error instanceof CreatedDiagramNotOpenedError) {
+            toast.error(TREE_LABELS.createdNotOpened, { description: error.message });
+            focusEntry(error.path, () => returnFocusTo);
+          } else fail("create", name)(error);
+        },
       );
     } else if (request.kind === "new-folder") {
       const path = join(folder, name);
