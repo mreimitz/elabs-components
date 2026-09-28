@@ -29,7 +29,7 @@ export const ENTRY_LABELS = {
   curated: "Checked",
   notCurated: "Not checked yet",
   part: "Part",
-  noIcon: "No icon yet",
+  noIcon: "No product icon",
   snippetHeading: "Use it in a diagram",
   snippetLabel: "YAML snippet",
   copy: "Copy YAML",
