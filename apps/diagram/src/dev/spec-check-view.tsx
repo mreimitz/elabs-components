@@ -314,7 +314,7 @@ const WORKSPACE_SHAPE: Record<string, readonly [nodes: number, edges: number]> =
   "examples/lakehouse-aws.yaml": [19, 14],
   "examples/qlik-cloud-data-gateway.yaml": [13, 8],
   "examples/qlik-sense-enterprise-onprem.yaml": [21, 13],
-  "templates/qlik-cloud-customer-landscape.yaml": [18, 10], // 17 ids + 1 note; 10 flows
+  "templates/qlik-cloud-customer-landscape.yaml": [18, 11], // 17 ids + 1 note; 11 flows
   "templates/qlik-talend-cloud-pipeline.yaml": [28, 13],
 };
 /** Nodes whose `ref:` resolved to a catalog entry (`data.catalogEntry` set), per file (1b.12). */
@@ -392,6 +392,9 @@ function runWorkspace(): WorkspaceRow[] {
           ? tenantDetail(compiled)
           : undefined;
       const detail =
+        (shapeOk
+          ? undefined
+          : `Shape is ${nodes} nodes / ${edges} edges; expected ${wantNodes} / ${wantEdges}`) ??
         tenant ??
         (catalogOk
           ? undefined

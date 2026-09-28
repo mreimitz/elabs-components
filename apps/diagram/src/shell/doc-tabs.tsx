@@ -64,6 +64,7 @@ export function DocTabs() {
   const rowRef = useRef<HTMLDivElement>(null);
   const chosenOverflowPath = useRef<string | null>(null);
   const [tabLimit, setTabLimit] = useState(3);
+  const [windowStart, setWindowStart] = useState(0);
   const hasTabs = docs.length > 0;
 
   useLayoutEffect(() => {
@@ -80,17 +81,24 @@ export function DocTabs() {
     return () => observer.disconnect();
   }, [hasTabs]);
 
-  if (!hasTabs) return null;
-  // Keep the active tab and its neighbours in their original order. Opening a hidden
-  // document moves the visible window, without reordering or closing any documents.
+  // Keep visible tabs stationary when one is selected. Shift only to reveal a hidden
+  // selection or to clamp the window after resizing/closing tabs.
   const activeIndex = Math.max(
     0,
     docs.findIndex((doc) => doc.path === shown),
   );
-  const start = Math.max(
-    0,
-    Math.min(activeIndex - Math.floor(tabLimit / 2), docs.length - tabLimit),
-  );
+  const lastStart = Math.max(0, docs.length - tabLimit);
+  const clampedStart = Math.min(windowStart, lastStart);
+  const start =
+    activeIndex < clampedStart
+      ? activeIndex
+      : activeIndex >= clampedStart + tabLimit
+        ? Math.min(lastStart, activeIndex - tabLimit + 1)
+        : clampedStart;
+  useLayoutEffect(() => {
+    setWindowStart(start);
+  }, [start]);
+  if (!hasTabs) return null;
   const visibleDocs = docs.slice(start, start + tabLimit);
   const overflowDocs = docs.filter((_, index) => index < start || index >= start + tabLimit);
   // Roving tabindex: the shown tab, else the first (from Home, with tabs open).

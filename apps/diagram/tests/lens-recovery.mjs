@@ -40,7 +40,7 @@ async function settled(page, target) {
         return (
           pane &&
           getComputedStyle(pane).visibility === "visible" &&
-          (!renderer || getComputedStyle(renderer).opacity === "1")
+          (!renderer || globalThis.__lensEffectiveOpacity(renderer) === 1)
         );
       }, target);
       return;
@@ -54,6 +54,15 @@ try {
     for (const theme of ["light", "dark"]) {
       const context = await browser.newContext({ viewport: { width, height: 900 } });
       const page = await context.newPage();
+      await page.addInitScript(() => {
+        performance.setResourceTimingBufferSize(10000);
+        globalThis.__lensEffectiveOpacity = (element) => {
+          let opacity = 1;
+          for (let current = element; current; current = current.parentElement)
+            opacity *= Number(getComputedStyle(current).opacity);
+          return opacity;
+        };
+      });
       const errors = [],
         writes = [];
       page.on("pageerror", (error) => errors.push(error.message));
@@ -145,6 +154,15 @@ try {
     }
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
+  await page.addInitScript(() => {
+    performance.setResourceTimingBufferSize(10000);
+    globalThis.__lensEffectiveOpacity = (element) => {
+      let opacity = 1;
+      for (let current = element; current; current = current.parentElement)
+        opacity *= Number(getComputedStyle(current).opacity);
+      return opacity;
+    };
+  });
   const writes = [],
     errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -217,6 +235,23 @@ try {
   await page.keyboard.press("Alt+Enter");
   await settled(page, "technical");
   await page.waitForFunction(() => document.activeElement?.classList.contains("react-flow__node"));
+  // Enter a real shared-document route before creating history; do not detach the model
+  // from a workspace URL (that is now correctly treated as pending navigation).
+  const historyUrl = await page.evaluate(async () => {
+    const module = (path) =>
+      import(
+        performance.getEntriesByType("resource").findLast((entry) => entry.name.includes(path)).name
+      );
+    const { diagramStore } = await module("/src/state/diagram-store.ts");
+    const { shareUrl } = await module("/src/io/share-url.ts");
+    return shareUrl(diagramStore.get().text);
+  });
+  await page.goto("about:blank");
+  await page.goto(historyUrl);
+  await page
+    .locator('[data-lens-pane="technical"] .react-flow__node')
+    .first()
+    .waitFor({ state: "attached" });
   const historyGuard = await page.evaluate(async () => {
     const module = (path) =>
       import(
@@ -225,8 +260,8 @@ try {
     const { diagramStore, diagramActions } = await module("/src/state/diagram-store.ts");
     const { historyActions, historyCounts } = await module("/src/state/history.ts");
     const { lensStore, lensActions } = await module("/src/shell/lens-store.ts");
-    // An in-memory document avoids writing a shipped example while creating real history.
-    diagramActions.loadText(diagramStore.get().text);
+    if (diagramStore.get().path !== null)
+      throw new Error("History fixture is not a shared document");
     const { modeActions } = await module("/src/shell/mode-store.ts");
     modeActions.setMode("edit");
     diagramActions.setText(diagramStore.get().text + "\n# first history step\n");
@@ -293,13 +328,15 @@ try {
     ["", "Nothing to draw yet"],
     ["title: [", "The text is not a diagram"],
   ]) {
-    await page.evaluate(async (text) => {
+    const fixtureUrl = await page.evaluate(async (text) => {
       const moduleURL = performance
         .getEntriesByType("resource")
-        .find((entry) => entry.name.includes("/src/state/diagram-store.ts")).name;
-      const { diagramActions } = await import(moduleURL);
-      diagramActions.loadText(text);
+        .findLast((entry) => entry.name.includes("/src/io/share-url.ts")).name;
+      const { shareUrl } = await import(moduleURL);
+      return shareUrl(text);
     }, text);
+    await page.goto("about:blank");
+    await page.goto(`${fixtureUrl}&lens=visual`);
     await lens(page, "visual");
     await settled(page, "visual");
     await page

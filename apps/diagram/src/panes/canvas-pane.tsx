@@ -51,7 +51,7 @@ import {
   useViewOverrides,
 } from "../shell/view-overrides-store"; // view mode overrides (maintainer 2026-09-27)
 
-import { useLens } from "../shell/lens-store"; // maintainer 2026-09-27 (lens switch)
+import { lensActions, useLens } from "../shell/lens-store";
 import { DRESS_START, GATHER_START, LensMorphOverlay, subProgress } from "./lens-morph-overlay"; // orchestrator correction 2026-09-27 (S10 morph)
 import { LensChrome, LensChromeTarget } from "./lens-chrome";
 import { VisualCanvasPane } from "./visual-canvas-pane"; // maintainer 2026-09-27 (lens switch)
@@ -187,6 +187,12 @@ function applyViewNodeStyle(
 /** Keeps both layouts mounted and shares one camera during the lens morph. Chrome is
  * portaled outside fading content. Technical writes remain locked until fully settled. */
 export function CanvasPane(props: CanvasPaneProps) {
+  const route = useRoute();
+  const shownPath = useDiagram((s) => s.path);
+  // React Flow owns document-level delete handlers. Lock those during a pending open,
+  // while retaining the shown document's edit mode and Monaco undo session if it is canceled.
+  const documentPending = route.kind === "doc" && route.path !== null && route.path !== shownPath;
+  const loadCount = useDiagram((s) => s.loadCount);
   const position = useLens((s) => s.position);
   const target = useLens((s) => s.target);
   const viewing = useDocMode() === "view";
@@ -194,6 +200,9 @@ export function CanvasPane(props: CanvasPaneProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const technicalRef = useRef<HTMLDivElement>(null);
   const visualRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    lensActions.settleForDocument();
+  }, [loadCount]);
   // Re-read every render, not cached in state: this component already re-renders on every
   // animation frame while `position` moves (`useLens`), so a preference flipped mid-session
   // (taste profile) takes effect on the very next transition without a separate subscription.
@@ -240,14 +249,8 @@ export function CanvasPane(props: CanvasPaneProps) {
   // `aria-hidden` below still only flip at the settled ends, so the pane keeps taking real
   // focus/hit-testing while both sides cross-fade during a switch.
   const technicalLensLocked = position !== 0 || target !== "technical";
-  // Opacity belongs to the composited renderer, not an inherited custom property: changing
-  // a variable on the pane invalidates the styles of every node and edge on every frame.
-  useLayoutEffect(() => {
-    const technical = technicalRef.current?.querySelector<HTMLElement>(".react-flow__renderer");
-    const visual = visualRef.current?.querySelector<HTMLElement>(".react-flow__renderer");
-    if (technical) technical.style.opacity = String(technicalOpacity);
-    if (visual) visual.style.opacity = String(visualOpacity);
-  }, [technicalOpacity, visualOpacity]);
+  // Composite the pane itself: renderers can mount after layout completes, while this layer
+  // exists from the first paint. Opacity is not inherited and chrome is portaled outside it.
   return (
     <LensChromeTarget.Provider value={chromeTarget}>
       <div ref={containerRef} data-lens-root className="@container relative h-full w-full">
@@ -256,24 +259,32 @@ export function CanvasPane(props: CanvasPaneProps) {
           data-lens-pane="technical"
           className="absolute inset-0 focus-ring-inset"
           tabIndex={-1}
-          style={{ visibility: atVisual ? "hidden" : "visible" }}
+          style={{ visibility: atVisual ? "hidden" : "visible", opacity: technicalOpacity }}
           aria-hidden={atVisual || undefined}
           inert={atVisual || undefined}
         >
-          <TechnicalCanvasPane {...props} lensLocked={technicalLensLocked && !viewing} />
+          <TechnicalCanvasPane
+            {...props}
+            lensLocked={documentPending || (technicalLensLocked && !viewing)}
+          />
         </div>
         <div
           ref={visualRef}
           data-lens-pane="visual"
           className="absolute inset-0 focus-ring-inset"
           tabIndex={-1}
-          style={{ visibility: atTechnical ? "hidden" : "visible" }}
+          style={{ visibility: atTechnical ? "hidden" : "visible", opacity: visualOpacity }}
           aria-hidden={!atVisual || undefined}
           inert={!atVisual || undefined}
         >
           <VisualCanvasPane />
         </div>
-        <LensMorphOverlay containerRef={containerRef} position={position} active={morphing} />
+        <LensMorphOverlay
+          key={loadCount}
+          containerRef={containerRef}
+          position={position}
+          active={morphing}
+        />
         <div ref={setChromeTarget} className="pointer-events-none absolute inset-0 z-20" />
       </div>
     </LensChromeTarget.Provider>

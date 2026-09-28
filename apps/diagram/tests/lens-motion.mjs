@@ -18,6 +18,22 @@ try {
       reducedMotion,
     });
     const page = await context.newPage();
+    await page.addInitScript(() => {
+      performance.setResourceTimingBufferSize(10000);
+      globalThis.__lensModule = (pathname) => {
+        const resource = performance
+          .getEntriesByType("resource")
+          .findLast((entry) => new URL(entry.name).pathname === pathname);
+        if (!resource) throw new Error(`Module not loaded: ${pathname}`);
+        return import(resource.name);
+      };
+      globalThis.__lensEffectiveOpacity = (element) => {
+        let opacity = 1;
+        for (let current = element; current; current = current.parentElement)
+          opacity *= Number(getComputedStyle(current).opacity);
+        return opacity;
+      };
+    });
     let releaseRead;
     const readGate = new Promise((resolve) => {
       releaseRead = resolve;
@@ -34,9 +50,11 @@ try {
       waitUntil: "domcontentloaded",
     });
     const earlyPromise = page.evaluate(async () => {
-      const { lensStore, lensActions } = await import("/src/shell/lens-store.ts");
-      const { diagramStore, diagramActions } = await import("/src/state/diagram-store.ts");
-      const { isLayoutReady } = await import("/src/panes/layout-ready-store.ts");
+      const { lensStore, lensActions } = await globalThis.__lensModule("/src/shell/lens-store.ts");
+      const { diagramStore, diagramActions } = await globalThis.__lensModule(
+        "/src/state/diagram-store.ts",
+      );
+      const { isLayoutReady } = await globalThis.__lensModule("/src/panes/layout-ready-store.ts");
       await new Promise((resolve) => {
         const unsubscribe = diagramStore.subscribe(() => {
           if (diagramStore.get().path !== "examples/clickhouse-cloud-stack.yaml") return;
@@ -70,7 +88,7 @@ try {
             lensStore.get().position === 1 &&
             isLayoutReady(diagramStore.get().path) &&
             renderer?.checkVisibility({ visibilityProperty: true }) &&
-            getComputedStyle(renderer).opacity === "1";
+            globalThis.__lensEffectiveOpacity(renderer) === 1;
           frames.push({
             elapsed: performance.now() - started,
             visible,
@@ -83,7 +101,7 @@ try {
               ),
             ].map((element) => ({
               class: element.className,
-              opacity: getComputedStyle(element).opacity,
+              opacity: globalThis.__lensEffectiveOpacity(element),
               visibility: getComputedStyle(element).visibility,
               ancestors: [
                 ...(function* (node) {
@@ -133,6 +151,22 @@ try {
       reducedMotion,
     });
     const page = await context.newPage();
+    await page.addInitScript(() => {
+      performance.setResourceTimingBufferSize(10000);
+      globalThis.__lensModule = (pathname) => {
+        const resource = performance
+          .getEntriesByType("resource")
+          .findLast((entry) => new URL(entry.name).pathname === pathname);
+        if (!resource) throw new Error(`Module not loaded: ${pathname}`);
+        return import(resource.name);
+      };
+      globalThis.__lensEffectiveOpacity = (element) => {
+        let opacity = 1;
+        for (let current = element; current; current = current.parentElement)
+          opacity *= Number(getComputedStyle(current).opacity);
+        return opacity;
+      };
+    });
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(`${url}/#d/examples/lakehouse-aws.yaml`);
@@ -142,8 +176,8 @@ try {
       .waitFor({ state: "attached" });
     // This budget measures lens preparation, separately from the document's initial ELK load.
     await page.evaluate(async () => {
-      const { isLayoutReady } = await import("/src/panes/layout-ready-store.ts");
-      const { diagramStore } = await import("/src/state/diagram-store.ts");
+      const { isLayoutReady } = await globalThis.__lensModule("/src/panes/layout-ready-store.ts");
+      const { diagramStore } = await globalThis.__lensModule("/src/state/diagram-store.ts");
       await new Promise((resolve) => {
         const ready = () => {
           const renderer = document.querySelector(
@@ -152,7 +186,7 @@ try {
           if (
             isLayoutReady(diagramStore.get().path) &&
             renderer?.checkVisibility({ visibilityProperty: true }) &&
-            getComputedStyle(renderer).opacity === "1"
+            globalThis.__lensEffectiveOpacity(renderer) === 1
           )
             resolve();
           else requestAnimationFrame(ready);
@@ -192,7 +226,7 @@ try {
                   ...document.querySelectorAll("[data-lens-pane] .react-flow__renderer"),
                 ].some(
                   (renderer) =>
-                    getComputedStyle(renderer).opacity === "1" &&
+                    globalThis.__lensEffectiveOpacity(renderer) === 1 &&
                     renderer.checkVisibility({ visibilityProperty: true }),
                 ),
                 chrome: [...document.querySelectorAll("[data-lens-chrome]")].map(

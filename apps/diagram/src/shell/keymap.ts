@@ -117,7 +117,7 @@ export function onShellKeyDown(event: KeyboardEvent): void {
   if (closestOf(event.target, TEXT_ENTRY)) return;
   const mod = event.metaKey || event.ctrlKey;
   const route = parseRoute(window.location.hash);
-  const doc = route.kind === "doc" && !route.present ? route : null;
+  let doc = route.kind === "doc" && !route.present ? route : null;
 
   if (mod && !event.altKey && !event.shiftKey && event.code === "KeyK") {
     event.preventDefault();
@@ -142,6 +142,8 @@ export function onShellKeyDown(event: KeyboardEvent): void {
     return;
   }
   if (mod || event.altKey) return;
+  // Tab navigation remains available, but document commands must target visible content.
+  if (doc?.path != null && doc.path !== diagramStore.get().path) doc = null;
 
   if (event.key === "Escape") {
     if (!doc) return;

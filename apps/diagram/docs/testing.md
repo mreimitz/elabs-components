@@ -41,25 +41,27 @@ for title_form in block anchored aliased flow anchored-multiline; do
 done
 node tests/sidebar-search.mjs
 node tests/tab-bar.mjs
+node tests/lens-navigation.mjs
 node tests/editor-completions.mjs
 node scripts/check-view-mode.mjs
 node tests/lens-recovery.mjs
 node tests/lens-motion.mjs
 ```
 
-| Check                 | What it exercises                                                                                                                 |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Reference Node checks | Migration preserves compiled drawings, catalog appearances and copied stand-ins; invalid CLI inputs do not partially write files. |
-| Reference browser     | Live catalog metadata, inspector controls, subtitle clear/restore, retained keyboard focus and Backspace safety.                  |
-| Home Node checks      | YAML title-copy semantics, comments, line endings, template preservation and copy markers.                                        |
-| Home browser          | Real template copies, distinct names across navigation surfaces, Retry focus, clipboard fallback and phone layouts.               |
-| Sidebar search        | Matching names and content, visible evidence at nested widths, sequential queries, keyboard access and folder-state restoration.  |
-| YAML context          | Scalar replacement, comments, quotes, flow mappings, array values and layout-dependent schema traversal.                          |
-| Editor completions    | Real Monaco popup, slash triggers, keyboard acceptance, quoted references, workspace titles, schema values, icons and live ids.   |
-| Tab bar               | Tab overflow and selection, responsive visibility, keyboard focus, close confirmation, and sidebar/theme controls.                |
-| View mode             | Personal overrides, external edits, mode changes, mobile canvas, presentation controls and thumbnail readiness.                   |
-| Lens interactions     | Shipped diagrams, routing geometry, read-only write/history guards, keyboard drill-down, refit and export.                        |
-| Lens motion           | First switch, resize, reversal, shared camera, persistent controls and reduced motion, with frame measurements.                   |
+| Check                 | What it exercises                                                                                                                      |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Reference Node checks | Migration preserves compiled drawings, catalog appearances and copied stand-ins; invalid CLI inputs do not partially write files.      |
+| Reference browser     | Live catalog metadata, inspector controls, subtitle clear/restore, retained keyboard focus and Backspace safety.                       |
+| Home Node checks      | YAML title-copy semantics, comments, line endings, template preservation and copy markers.                                             |
+| Home browser          | Real template copies, distinct names across navigation surfaces, Retry focus, clipboard fallback and phone layouts.                    |
+| Sidebar search        | Matching names and content, visible evidence at nested widths, sequential queries, keyboard access and folder-state restoration.       |
+| YAML context          | Scalar replacement, comments, quotes, flow mappings, array values and layout-dependent schema traversal.                               |
+| Editor completions    | Real Monaco popup, slash triggers, keyboard acceptance, quoted references, workspace titles, schema values, icons and live ids.        |
+| Tab bar               | Tab overflow and selection, responsive visibility, keyboard focus, close confirmation, and sidebar/theme controls.                     |
+| View mode             | Personal overrides, external edits, mode changes, mobile canvas, presentation controls and thumbnail readiness.                        |
+| Lens navigation       | Fresh loads paint one lens; rapid reversals, mid-morph tab changes, stable tab positions, delayed A-B-A reads, Back/Forward and Retry. |
+| Lens interactions     | Shipped diagrams, routing geometry, read-only write/history guards, keyboard drill-down, refit and export.                             |
+| Lens motion           | First switch, resize, reversal, shared camera, persistent controls and reduced motion, with frame measurements.                        |
 
 `EDITOR_EVIDENCE` saves completion screenshots and results. `ATLAS_EVIDENCE` saves Home/reference screenshots. `SEARCH_EVIDENCE_DIR`, `VIEW_EVIDENCE` and `LENS_EVIDENCE_DIR` save the respective stream's artifacts. Choose separate output folders. The development routes `#dev/spec-check` and `#dev/lens-check` expose the specification and lens fixtures; fixture counts grow as regressions are added.
 
@@ -68,3 +70,5 @@ Run motion measurements without concurrent builds or other browser suites on the
 Browser checks complement independent review. Inspect affected surfaces at desktop and phone widths in settled light and dark themes, including keyboard focus and disabled states. Keep results tied to the commit tested, and repeat relevant checks after integrating overlapping workstreams.
 
 When a browser check reads a store directly, import the exact module URL loaded by Vite, including its update query, and assert the current document identity first. A bare import after a hot update can create a separate store instance. Await asynchronous predicates explicitly. Both lens renderers can remain mounted during a transition, so scope canvas locators to the intended lens and wait for its actual visible state. Set up saved edits in the technical lens with Edit enabled.
+
+`NAVIGATION_EVIDENCE` saves cold-load screenshots and navigation results. These checks deliberately do not toggle lenses to normalize the initial render. They delay file responses to prove that obsolete reads cannot replace the selected document.

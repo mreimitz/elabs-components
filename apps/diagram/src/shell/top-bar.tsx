@@ -183,6 +183,8 @@ export function TopBar() {
   const hasTabs = useMode((s) => s.openPaths.length > 0);
   const route = useRoute();
   const onDoc = route.kind === "doc";
+  const shownPath = useDiagram((state) => state.path);
+  const loading = onDoc && route.path !== null && route.path !== shownPath;
   const edit = useDocMode() === "edit" && onDoc;
   const viewing = onDoc && !edit; // view-mode direction (maintainer 2026-09-27)
   const direction = useDiagram((s) => s.compiled.ast?.direction);
@@ -245,6 +247,8 @@ export function TopBar() {
       <header
         ref={headerRef}
         data-slot="diagram-toolbar"
+        inert={loading || undefined}
+        aria-busy={loading}
         className="flex h-header items-center gap-2 border-b px-4 [&>*:not(nav)]:shrink-0"
       >
         {hasTabs ? null : <SidebarTrigger />}

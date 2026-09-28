@@ -159,6 +159,8 @@ function detach() {
 
 /** Writes run one after another: each save starts when the previous one has settled. */
 let chain: Promise<void> = Promise.resolve();
+/** Newer open requests supersede reads that have not committed a document yet. */
+let openRequest = 0;
 
 /** The outcome of `saveNow`, for the autosave's toasts and thumbnail. */
 export type SaveOutcome =
@@ -267,15 +269,39 @@ export const workspaceActions = {
    * document's edits did not reach disk (the save failed, or a disk conflict holds them),
    * nothing is read or loaded: it throws `UnsavedEditsError` and the edits stay on screen.
    */
-  async open(path: string): Promise<void> {
+  async open(path: string, options: { isCurrent?: () => boolean } = {}): Promise<boolean> {
+    const request = ++openRequest;
+    const current = () => request === openRequest && (options.isCurrent?.() ?? true);
     const outcome = await workspaceActions.saveNow();
+    if (!current()) return false;
     const kept = diagramStore.get().path;
     const unsaved =
       outcome.kind === "failed" ||
       outcome.kind === "changed-on-disk" ||
       workspaceStore.get().conflict;
     if (kept !== null && unsaved) throw new UnsavedEditsError(kept, path);
-    const { text, mtime } = await readFile(path);
+    let file;
+    try {
+      file = await readFile(path);
+    } catch (error) {
+      if (!current()) return false;
+      throw error;
+    }
+    if (!current()) return false;
+    // Edits queued before navigation must reach disk before replacing their document.
+    if (diagramStore.get().text !== diagramStore.get().loadedText) {
+      const saved = await workspaceActions.saveNow();
+      if (!current()) return false;
+      if (
+        saved.kind === "failed" ||
+        saved.kind === "changed-on-disk" ||
+        workspaceStore.get().conflict
+      ) {
+        const kept = diagramStore.get().path;
+        if (kept !== null) throw new UnsavedEditsError(kept, path);
+      }
+    }
+    const { text, mtime } = file;
     // `current` first: the autosave's path watcher then sees nothing to catch up on.
     workspaceStore.set({
       current: { path, mtime },
@@ -286,6 +312,7 @@ export const workspaceActions = {
     });
     diagramActions.load(text, path);
     remember(path);
+    return true;
   },
 
   /**

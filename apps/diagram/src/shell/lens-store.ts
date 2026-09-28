@@ -71,6 +71,7 @@ function tick(now: number, last: number) {
 }
 
 let preparing = false;
+let transitionGeneration = 0;
 let prepareTransition: (() => Promise<boolean>) | null = null;
 
 /** The mounted canvas prepares both current layouts before the animation clock starts. */
@@ -84,11 +85,13 @@ export function registerLensPreparation(prepare: () => Promise<boolean>): () => 
 function ensureAnimating() {
   if (rafId || preparing) return;
   preparing = true;
+  const generation = transitionGeneration;
   lensStore.set({ animating: true });
   const prepared = prepareTransition?.() ?? Promise.resolve(false);
   void prepared
     .catch(() => false)
     .then((ready) => {
+      if (generation !== transitionGeneration) return;
       preparing = false;
       const state = lensStore.get();
       const endpoint = state.target === "visual" ? 1 : 0;
@@ -101,6 +104,21 @@ function ensureAnimating() {
 }
 
 export const lensActions = {
+  /** Geometry belongs to one document. Discard its preparation and tween on navigation. */
+  settleForDocument() {
+    transitionGeneration++;
+    cancelAnimationFrame(rafId);
+    rafId = 0;
+    preparing = false;
+    const next = lensFromHash();
+    lensStore.set({
+      lens: next,
+      target: next,
+      position: next === "visual" ? 1 : 0,
+      animating: false,
+      frameNodeIds: null,
+    });
+  },
   /**
    * Switch lenses. `frameNodeIds` is the orientation drill-down (concept §5): the technical
    * node ids `canvas-pane.tsx` frames once its pane shows again.

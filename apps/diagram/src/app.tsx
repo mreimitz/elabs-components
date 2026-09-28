@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type ComponentRef } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ComponentRef } from "react";
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -22,6 +23,8 @@ import { EditorPane } from "./panes/editor-pane";
 import { CanvasPane } from "./panes/canvas-pane";
 import { InspectorPane } from "./panes/inspector-pane"; // DG-14
 import { navigate, parseRoute, useRoute, type Route } from "./routes/use-hash";
+import { createStore } from "./state/create-store";
+import { focusSelectedTab, focusSoon } from "./shell/focus";
 import { diagramStore, useDiagram } from "./state/diagram-store";
 import { UnsavedEditsError, workspaceActions } from "./workspace/workspace-store";
 import {
@@ -36,6 +39,7 @@ import {
   useMode,
 } from "./shell/mode-store";
 import { SHORTCUTS, displayKeys } from "./shell/keymap";
+import { lensActions } from "./shell/lens-store";
 import { MOTION_CLASS, motionMs } from "./motion";
 // Dev routes — one gallery per work package, each in its own file so parallel items
 // merge without touching each other's code. DG-22 moved them under `#dev/<name>`.
@@ -54,6 +58,8 @@ import { HomeView } from "./home/home-view"; // DG-23
 /** The app's strings, in one place (`conventions/i18n-strings`). */
 const APP_LABELS = {
   appName: "Atlas",
+  loading: (name: string) => `Opening ${name}…`,
+  retry: "Retry",
   resize: "Resize editor and canvas",
   views: "View",
   editor: "Editor",
@@ -88,19 +94,34 @@ export function routeLabel(route: Route): string {
 
 // ── The document route ────────────────────────────────────────────────────────────────
 
-/** One open at a time: a route change during a load is picked up when it settles. */
-let opening = false;
+/** Identity of the latest route request. Obsolete reads never install their document. */
+let opening: { path: string } | null = null;
+let documentRoute: string | null | undefined;
+const navigationStatus = createStore<{ error: { path: string; message: string } | null }>({
+  error: null,
+});
+let retryFocus: string | null = null;
 
 /**
  * Make the diagram store show the route's document: its tab exists, and the file is read when
- * the store holds another one. Reads the hash itself, so a second call while a load runs (a
- * StrictMode double effect, a quick second click) is a no-op, and the load's end looks again.
+ * the store holds another one. Repeated effects reuse the same request; a new path supersedes
+ * it immediately, and every asynchronous boundary rechecks the live route before committing.
  */
 function syncDocRoute(): void {
-  if (opening) return;
   const route = parseCurrentRoute();
-  if (route.kind !== "doc") return;
+  const nextPath = route.kind === "doc" ? route.path : null;
+  if (nextPath !== documentRoute) {
+    documentRoute = nextPath;
+    navigationStatus.set({ error: null });
+    retryFocus = null;
+    lensActions.settleForDocument();
+  }
+  if (route.kind !== "doc") {
+    opening = null;
+    return;
+  }
   if (route.path === null) {
+    opening = null;
     // DG-18's Present button keeps only `key=value` parts, so presenting a workspace file
     // writes a bare `#present`: put the path back (no Back step).
     const { path } = diagramStore.get();
@@ -115,20 +136,39 @@ function syncDocRoute(): void {
   // one that was already open before this call (a neighbour reached mid-close; leave it).
   const wasOpen = modeStore.get().openPaths.includes(path);
   modeActions.addTab(path);
-  if (path === diagramStore.get().path) return;
-  opening = true;
-  workspaceActions.open(path).then(
+  if (path === diagramStore.get().path) {
+    opening = null;
+    return;
+  }
+  if (opening?.path === path || navigationStatus.get().error?.path === path) return;
+  const request = { path };
+  opening = request;
+  const isCurrent = () => {
+    const now = parseCurrentRoute();
+    return opening === request && now.kind === "doc" && now.path === path;
+  };
+  workspaceActions.open(path, { isCurrent }).then(
     () => {
-      opening = false;
+      if (opening !== request) return;
+      opening = null;
       // The inspector is one flag for all documents: match it to this one's mode, or an
       // edit-mode document's inspector stays open over the next one's view mode.
       modeActions.setMode(currentMode());
+      if (retryFocus === path && diagramStore.get().path === path) {
+        retryFocus = null;
+        focusSelectedTab();
+      }
       syncDocRoute();
     },
     (error: unknown) => {
-      opening = false;
+      if (opening !== request) return;
+      opening = null;
       const now = parseCurrentRoute();
       const stillAsked = now.kind === "doc" && now.path === path;
+      if (!stillAsked) {
+        syncDocRoute();
+        return;
+      }
       if (error instanceof UnsavedEditsError) {
         // The document on screen kept edits that did not reach disk: stay on it, and leave
         // every tab as it was — a failed save on an ordinary tab switch must still refuse to
@@ -145,13 +185,12 @@ function syncDocRoute(): void {
         });
         if (stillAsked) navigate({ kind: "doc", path: error.path }, { replace: true });
       } else {
-        // A genuine open failure (the file is gone, a read error): the speculative tab
-        // `syncDocRoute` added for it never loaded, so it closes.
-        toast.error(APP_LABELS.openFailed(path), {
-          description: error instanceof Error ? error.message : String(error),
+        navigationStatus.set({
+          error: { path, message: error instanceof Error ? error.message : String(error) },
         });
-        if (stillAsked) navigate({ kind: "home" }, { replace: true });
-        modeActions.closeTab(path);
+        if (retryFocus === path)
+          focusSoon(() => document.querySelector<HTMLElement>('[data-slot="document-load-retry"]'));
+        return;
       }
       // DG-22 review 2 (SF1): match the inspector to the document actually shown now — the
       // previous code skipped this on the error path, so a view-mode document could keep
@@ -343,8 +382,62 @@ function PhoneWorkspace() {
   );
 }
 
-function Workspace() {
-  return useIsMobile() ? <PhoneWorkspace /> : <SplitWorkspace />;
+function DocumentBoundary({
+  path,
+  presentation = false,
+}: {
+  path: string | null;
+  presentation?: boolean;
+}) {
+  const phone = useIsMobile();
+  const shown = useDiagram((state) => state.path);
+  const status = useSyncExternalStore(navigationStatus.subscribe, navigationStatus.get);
+  const loading = path !== null && path !== shown;
+  const error = status.error?.path === path ? status.error : null;
+  return (
+    <div
+      className={cn("relative flex min-h-0 min-w-0 flex-1", presentation && "h-svh")}
+      aria-busy={loading && !error}
+      data-document-loading={loading || undefined}
+    >
+      <div
+        className={cn("flex min-h-0 min-w-0 flex-1 transition-none", loading && "opacity-0")}
+        inert={loading || undefined}
+        aria-hidden={loading || undefined}
+      >
+        {presentation ? <PresentationView /> : phone ? <PhoneWorkspace /> : <SplitWorkspace />}
+      </div>
+      {loading ? (
+        <div
+          data-slot={error ? "document-load-error" : "document-loading"}
+          role={error ? "alert" : "status"}
+          className="absolute inset-0 grid place-content-center gap-3 bg-background p-6 text-muted-foreground"
+        >
+          {error ? (
+            <>
+              <p className="font-medium text-foreground">
+                {APP_LABELS.openFailed(fileTitle(path))}
+              </p>
+              <p>{error.message}</p>
+              <Button
+                data-slot="document-load-retry"
+                variant="outline"
+                onClick={() => {
+                  retryFocus = path;
+                  navigationStatus.set({ error: null });
+                  syncDocRoute();
+                }}
+              >
+                {APP_LABELS.retry}
+              </Button>
+            </>
+          ) : (
+            APP_LABELS.loading(fileTitle(path))
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function KeyCombo({ keys }: { keys: readonly string[] }) {
@@ -427,10 +520,10 @@ function RouteView({ route }: { route: Route }) {
       return <DevRoute name={route.name} />;
     case "doc":
       // DG-18: presenting is the canvas alone, full viewport, outside the shell.
-      if (route.present) return <PresentationView />;
+      if (route.present) return <DocumentBoundary path={route.path} presentation />;
       return (
         <DiagramShell>
-          <Workspace />
+          <DocumentBoundary path={route.path} />
         </DiagramShell>
       );
     case "catalog":
