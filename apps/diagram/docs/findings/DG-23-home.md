@@ -320,6 +320,11 @@ above had landed), evidence in `.evidence/home-copies/fix-r0/`.
   Flow-map roots and alias titles are supported. If the title defines an anchor, its alias
   consumers are materialized with the original string so every non-title value and mapping
   key remains the same; those necessary token replacements also preserve their comments.
+  Repaired alias values use a single physical line with escaped line breaks and Unicode
+  separators, so multiline strings remain valid in nested mappings and flow collections.
+  Before creation, the candidate is parsed with bounded alias resolution and compared with
+  the original as YAML maps, retaining every non-title value and mapping key. Unsafe copies
+  fail before writing a file. Existing CRLF documents retain CRLF line endings.
   Server metadata resolves only a scalar alias, without recursive collection expansion.
   Copies whose alias expansion would exceed the document limit fail before writing a file.
 - **The copy marker survives truncation.** `splitCopySuffix` (`src/home/templates.ts`) splits a

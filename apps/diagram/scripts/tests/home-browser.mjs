@@ -1,5 +1,6 @@
 /** Run against an isolated Atlas dev server. PLAYWRIGHT_MODULE selects an installed Playwright;
- * ATLAS_URL defaults to :5414; ATLAS_EVIDENCE optionally stores screenshots. */
+ * ATLAS_URL defaults to :5414; ATLAS_EVIDENCE optionally stores screenshots.
+ * ATLAS_COPY_ONLY=1 skips the unrelated Retry/clipboard checks. */
 /* global document, navigator, getComputedStyle */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
@@ -10,17 +11,20 @@ const base = process.env.ATLAS_URL ?? "http://localhost:5414";
 const stem = `home-regression-${Date.now()}`;
 const template = `templates/${stem}.yaml`;
 const copies = [`customers/${stem}.yaml`, `customers/${stem}-2.yaml`];
-const title =
-  "Customer architecture with a very long title covering cloud systems data gateways and all downstream consumers";
 const form = process.env.ATLAS_TITLE_FORM ?? "block";
+const rawTitle =
+  "Customer architecture with a very long title covering cloud systems data gateways and all downstream consumers" +
+  (form === "anchored-multiline" ? '\nSecond line with quotes "kept" and a \\path' : "");
+const title = rawTitle.replace(/\s+/g, " ");
 const sources = {
   block: `# Keep this template\ndiagram: "1"\ntitle: > # preserve title comment\n  ${title}\ndescription: Copy proof\nnodes:\n  - id: tenant\n    ref: ws/components/qlik-cloud-tenant\n`,
   anchored: `# Keep this template\ndiagram: "1"\ntitle: &name ${title} # preserve title comment\ndescription: *name\nx-values: [*name, *name]\nx-map: {*name : unchanged}\nnodes:\n  - id: tenant\n    title: *name\n    ref: ws/components/qlik-cloud-tenant\n`,
   aliased: `# Keep this template\ndiagram: "1"\nx-title: &name ${title}\ntitle: *name # preserve title comment\ndescription: *name\nnodes:\n  - id: tenant\n    title: *name\n    ref: ws/components/qlik-cloud-tenant\n`,
   flow: `{diagram: "1", title: "${title}", description: Copy proof, nodes: [{id: tenant, ref: ws/components/qlik-cloud-tenant}]} # preserve title comment\n`,
+  "anchored-multiline": `# Keep this template\ndiagram: "1"\ntitle: &name ${JSON.stringify(rawTitle)} # preserve title comment\ndescription: *name\nx-values: [*name, {nested: [*name, *name]}]\nx-map: {*name : unchanged}\nnodes:\n  - id: tenant\n    title: *name\n    ref: ws/components/qlik-cloud-tenant\n`,
 };
 const source = sources[form];
-assert.ok(source, "ATLAS_TITLE_FORM must be block, anchored, aliased or flow");
+assert.ok(source, "ATLAS_TITLE_FORM must be block, anchored, aliased, flow or anchored-multiline");
 
 const get = async (path) =>
   (await fetch(`${base}/api/workspace/file?path=${encodeURIComponent(path)}`)).text();
@@ -86,7 +90,7 @@ try {
     const text = await get(copies[i]);
     const parsed = parseDocument(text);
     assert.deepEqual(parsed.errors, []);
-    assert.equal(parsed.get("title"), `${title} ${i === 0 ? "(copy)" : "(copy 2)"}`);
+    assert.equal(parsed.get("title"), `${rawTitle} ${i === 0 ? "(copy)" : "(copy 2)"}`);
     assert.ok(text.includes("# preserve title comment"));
     const original = parseDocument(source).toJS(),
       copy = parsed.toJS();
@@ -134,37 +138,39 @@ try {
       await screenshot(`tabs-${width}-${theme.toLowerCase()}`);
     }
   }
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto(`${base}/#home`);
-  await page.route("**/api/workspace/tree", (route) =>
-    route.fulfill({
-      status: 503,
-      contentType: "application/json",
-      body: JSON.stringify({ error: "Retry proof unavailable" }),
-    }),
-  );
-  await page.reload();
-  await page
-    .getByRole("heading", { name: "Could not load the workspace", level: 2, exact: true })
-    .waitFor();
-  await page.unroute("**/api/workspace/tree");
-  const retry = page.getByRole("button", { name: "Retry", exact: true }).last();
-  await retry.focus();
-  await retry.press("Enter");
-  await page.waitForFunction(() => document.activeElement?.id === "home-recent");
-  await screenshot("retry-focus");
-  await page.getByRole("button", { name: "Connect an LLM", exact: true }).click();
-  const dialog = page.getByRole("dialog");
-  await dialog.getByRole("button", { name: "Copy Claude Desktop config", exact: true }).click();
-  await dialog.getByText("Selected — press Ctrl+C or ⌘C to copy", { exact: true }).waitFor();
-  assert.match(await page.evaluate(() => document.getSelection()?.toString()), /mcpServers/);
-  await dialog
-    .getByText("Selected — press Ctrl+C or ⌘C to copy", { exact: true })
-    .waitFor({ state: "hidden", timeout: 6000 });
-  await page.setViewportSize({ width: 390, height: 844 });
-  assert.equal(await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth), true);
-  await screenshot("connect-phone-fallback-cleared");
-  await page.keyboard.press("Escape");
+  if (process.env.ATLAS_COPY_ONLY !== "1") {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto(`${base}/#home`);
+    await page.route("**/api/workspace/tree", (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Retry proof unavailable" }),
+      }),
+    );
+    await page.reload();
+    await page
+      .getByRole("heading", { name: "Could not load the workspace", level: 2, exact: true })
+      .waitFor();
+    await page.unroute("**/api/workspace/tree");
+    const retry = page.getByRole("button", { name: "Retry", exact: true }).last();
+    await retry.focus();
+    await retry.press("Enter");
+    await page.waitForFunction(() => document.activeElement?.id === "home-recent");
+    await screenshot("retry-focus");
+    await page.getByRole("button", { name: "Connect an LLM", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: "Copy Claude Desktop config", exact: true }).click();
+    await dialog.getByText("Selected — press Ctrl+C or ⌘C to copy", { exact: true }).waitFor();
+    assert.match(await page.evaluate(() => document.getSelection()?.toString()), /mcpServers/);
+    await dialog
+      .getByText("Selected — press Ctrl+C or ⌘C to copy", { exact: true })
+      .waitFor({ state: "hidden", timeout: 6000 });
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.equal(await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth), true);
+    await screenshot("connect-phone-fallback-cleared");
+    await page.keyboard.press("Escape");
+  }
   await page.goto(`${base}/#dev/spec-check`);
   await page.getByRole("heading", { name: "Spec check", exact: true }).waitFor();
   assert.equal(await page.locator('[data-pass="false"]').count(), 0);
@@ -178,8 +184,8 @@ try {
       desktopPhoneLightDark: true,
       recentAccessibleNames: true,
       foldersUsedInTabs: true,
-      retryKeyboardFocus: true,
-      clipboardFallbackExpires: true,
+      retryKeyboardFocus: process.env.ATLAS_COPY_ONLY !== "1",
+      clipboardFallbackExpires: process.env.ATLAS_COPY_ONLY !== "1",
       consoleErrors: errors,
     }),
   );

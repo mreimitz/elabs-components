@@ -27,6 +27,35 @@ export function templateDescription(text: string): string {
   return topLevelDescription(text, ["description"]);
 }
 
+/** JSON quoting is valid YAML when YAML's additional line separators are escaped too. */
+function singleLineQuoted(value: string): string {
+  return JSON.stringify(value).replace(
+    /[\u0085\u2028\u2029]/g,
+    (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
+  );
+}
+
+/** Compare parsed YAML graphs, retaining mapping keys and supporting cyclic aliases. */
+function sameYamlValue(a: unknown, b: unknown, seen = new Map<unknown, unknown>()): boolean {
+  if (Object.is(a, b)) return true;
+  if (seen.has(a)) return seen.get(a) === b;
+  if (a instanceof Map && b instanceof Map) {
+    if (a.size !== b.size) return false;
+    seen.set(a, b);
+    const entries = [...b];
+    return [...a].every(([key, value], i) => {
+      const entry = entries[i];
+      return !!entry && sameYamlValue(key, entry[0], seen) && sameYamlValue(value, entry[1], seen);
+    });
+  }
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    seen.set(a, b);
+    return a.every((value, i) => sameYamlValue(value, b[i], seen));
+  }
+  return false;
+}
+
 /**
  * Append the file-name attempt's copy marker to a string title, including alias and flow-map
  * forms. Edit CST tokens so comments, quoting and unrelated bytes remain intact. If the title
@@ -71,15 +100,37 @@ export function titleWithCopySuffix(text: string, n: number): string {
         // Quoting preserves strings such as "null", "true" and numeric-looking titles,
         // including when the alias supplies a mapping key or a flow-collection value.
         CST.setScalarValue(token, title, { type: "QUOTE_DOUBLE", inFlow: true });
+        // CST's multiline formatting needs indentation context that an alias token lacks.
+        // Keep the repaired scalar on one physical line in block values, flows and keys.
+        token.source = singleLineQuoted(title);
       }
     }
   });
-  CST.setScalarValue(valueToken, title.replace(/\n+$/, "") + suffix, {
+  const copyTitle = title.replace(/\n+$/, "") + suffix;
+  CST.setScalarValue(valueToken, copyTitle, {
     afterKey: true,
     inFlow: map.type === "flow-collection",
     ...(isAlias(titleNode) && { type: "QUOTE_DOUBLE" as const }),
   });
-  return tokens.map((token) => CST.stringify(token)).join("");
+  if (valueToken.type === "double-quoted-scalar") valueToken.source = singleLineQuoted(copyTitle);
+  let candidate = tokens.map((token) => CST.stringify(token)).join("");
+  if (text.includes("\r\n") && !/(?<!\r)\n/.test(text)) {
+    candidate = candidate.replace(/(?<!\r)\n/g, "\r\n");
+  }
+  // Refuse before file creation if formatting or bounded alias resolution changes anything
+  // except the root title. Maps retain non-string keys; no JSON conversion loses YAML data.
+  try {
+    const result = parseDocument(candidate);
+    if (result.errors.length > 0) throw new Error("Invalid copy YAML");
+    const original: unknown = parsed.toJS({ mapAsMap: true, maxAliasCount: 100 });
+    const copied: unknown = result.toJS({ mapAsMap: true, maxAliasCount: 100 });
+    if (!(original instanceof Map)) throw new Error("Invalid copy root");
+    original.set("title", copyTitle);
+    if (!sameYamlValue(original, copied)) throw new Error("Changed copy values");
+  } catch {
+    throw new Error("Could not safely copy this template's title. Simplify its YAML aliases.");
+  }
+  return candidate;
 }
 
 const COPY_SUFFIX_RE = / \(copy(?: \d+)?\)$/;
