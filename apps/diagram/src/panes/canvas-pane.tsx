@@ -527,13 +527,17 @@ function DiagramCanvas({
       const pane = paneRef.current?.querySelector<HTMLElement>(".react-flow");
       return pane ? chromeFitPadding(pane, laid, limits) : undefined;
     },
+    // The only writer of `layout-ready-store.ts`: `use-autosave.ts`'s thumbnail waits for this
+    // before reading the canvas, so it never captures a layout mid-flight. Written at the event
+    // that settles the layout itself, not mirrored from `status` after the fact.
+    onSettled: (settledStatus) => layoutReadyActions.setReady(path, settledStatus === "ready"),
   });
   useZoneAutofit(nodes, setNodes);
-  // The only writer of `layout-ready-store.ts`: `use-autosave.ts`'s thumbnail waits for this
-  // before reading the canvas, so it never captures a layout mid-flight.
+  // This pane unmounting (a document closed, or the visual lens swapping it out) leaves no
+  // stale "ready" behind for a path nothing is drawing any more.
   useEffect(() => {
-    layoutReadyActions.setReady(path, status === "ready");
-  }, [path, status]);
+    return () => layoutReadyActions.setReady(path, false);
+  }, [path]);
 
   // Orientation (maintainer 2026-09-27, concept §5): an ⌥-click on a visual-lens box sets
   // `frameNodeIds` and switches to technical (`lens-store.ts`); once this pane is ready, frame

@@ -184,7 +184,7 @@ export function StepPlayer() {
       <div
         ref={surfaceRef}
         className={cn(
-          "pointer-events-auto flex max-w-[min(36rem,calc(100vw-2rem),var(--step-player-room,36rem))] items-center gap-1 p-1 @max-2xl:w-[calc(100cqw-2rem)] @max-2xl:max-w-none",
+          "pointer-events-auto flex max-w-[min(36rem,calc(100vw-2rem),var(--step-player-room,36rem))] items-center gap-1 p-1 @max-2xl:w-[calc(100cqw-2rem)] @max-2xl:max-w-none @max-2xl:mb-13",
           presenting && "mb-13",
           SURFACE,
         )}

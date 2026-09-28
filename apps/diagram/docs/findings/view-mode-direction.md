@@ -166,20 +166,20 @@ mode, where the canvas always shows the file's own values regardless of what is 
 
 ## 4. Top bar: node style added, and three review-r0 UI bugs fixed
 
-- **Accessible name repeated the whole hint.** `WithTooltip`'s `label` sets both the visible
-  tooltip and the control's `aria-label`; the old view-mode tooltips embedded the full "— this
-  view only; the default for everyone is set in Edit mode" clause, so every radio's name was
-  that whole sentence. Fixed: the view-mode controls now reuse the exact same plain option
-  names edit mode uses ("Left to right (LR)", "Icons", …), and the scope note moved to a
-  separate hint reachable via `aria-describedby` on the group — a shared `sr-only` span in the
-  wide bar (`view-scope-hint`), a `DropdownMenuLabel` with an `id` in the compact menu
-  (`direction-view-hint`, `node-style-view-hint`). Verified with an accessibility snapshot:
-  each radio's name is exactly the option; `aria-describedby` resolves to the hint text.
-- **390 px overflow.** Review-r0 measured the compact menu's own hint text forcing the
-  dropdown past the viewport (`menuWidthWithHint: 390` vs. `211` without). The hint string is
-  shorter now ("This view only. Edit sets the default for everyone.", ~51 characters, down
-  from ~65) and its `DropdownMenuLabel` carries `max-w-56` so it wraps regardless of length.
-  Verified at 390×844: the menu's right edge sits at 334 px, comfortably inside the viewport.
+> The hint this section originally described (fixed ids `view-scope-hint`/`direction-view-hint`/
+> `node-style-view-hint`, an `sr-only` wide-bar span, "This view only. Edit sets the default for
+> everyone.") was replaced in the round-1 follow-ups (§5, "Visible cue, and a way back."): the
+> hint is a **visible** caption now, its id comes from `useId()` (never a fixed string, so a
+> second instance of the slot cannot collide with it), and the current wording lives there.
+
+- **Accessible name kept separate from the scope note.** `WithTooltip`'s `label` sets both the
+  visible tooltip and the control's `aria-label`; the view-mode toggles reuse the exact same
+  plain option names edit mode uses ("Left to right (LR)", "Icons", …), never the scope note —
+  so a screen reader hears just the option, never a whole sentence, as any radio's name.
+- **390 px overflow.** Review-r0 measured the compact menu's own hint text forcing the dropdown
+  past the viewport. Its `DropdownMenuLabel` carries `max-w-56`, wrapping the hint regardless of
+  its length — still true of the longer, current wording (§5) — verified at 390×844: the menu's
+  right edge stays inside the viewport.
 - **Double separator.** The old code rendered an unconditional separator right after the
   direction section, and in view mode (no node-style/inspector/layout block between it and
   `ExportMenuItems`, which renders its own leading separator) the two sat adjacent. Fixed by
@@ -203,21 +203,48 @@ override read back as live — exactly the bug this item reports. `view-override
 drops a field's override the instant the file's own value for it changes at all, via a
 permanent module-level subscription to `diagram-store.ts` (not a component effect, so it runs
 for the app's whole life, not only while some pane happens to stay mounted) that tracks the
-CURRENTLY open document's own last-seen direction/node style and compares on every change —
-never a comparison across two different documents, so switching tabs away and back never
-touches an untouched override. Verified live: `.evidence/view-followups/build/aba-repro-before
-.png` (a TB override on an LR file) and `aba-repro-after.png` (edit mode sets TB then LR, back
-in view mode the canvas and the top bar both show LR, no override marker).
+CURRENTLY open document's own last-seen direction/node style and compares on every change.
+Verified live: `.evidence/view-followups/build/aba-repro-before.png` (a TB override on an LR
+file) and `aba-repro-after.png` (edit mode sets TB then LR, back in view mode the canvas and the
+top bar both show LR, no override marker).
 
-**Visible cue, and a way back.** The wide bar's `viewScopeHint` ("Only for you here — not
-saved.") is now visible text next to the controls, not only an `aria-describedby` target; while
-either field is overridden, a `RotateCcw`-icon "Custom" button shows beside it (textual marker,
-not colour alone — WCAG 1.4.1), with a tooltip ("Back to the diagram's own setting. Not saved,
-and forgotten on reload.") and a click that calls `viewOverrideActions.clear(key)`. Neither
-control's `aria-label` carries this text — it stays the plain option name; the scope note is a
-sibling, per `WithTooltip`'s `description` prop or a visible caption beside the group.
-Screenshots: `wide-bar-override-light.png`, `wide-bar-override-dark.png`, `wide-bar-reset-tooltip.png`,
+A round-0 review of this branch (`fix-r0`, `.evidence/view-followups/{review-r0,fix-r0}/`) found
+that comparison alone still missed an A→B→A that happens while the document sits in a
+DIFFERENT tab, or is closed entirely (an agent or another editor rewriting the file directly):
+switching away resets the live comparison to whatever the reopened document's values already
+are, so it never sees the round trip, and the override survives. Comparing only the current
+value cannot fix this — a round trip that nets back to the same value is indistinguishable from
+no change at all by value alone. Each override now also records `workspace-store.ts`'s own
+mtime for the file at the moment it was set (`revisionAtSet`, a real per-file revision marker,
+not a value); reopening a key with an override on record compares its fresh mtime against that
+snapshot, and a mismatch drops the whole override for that key regardless of what value the file
+settled on. Verified live: an override set on a document, a background rewrite through a second
+tab while it was not the open one (disk direction LR → TB → LR, net unchanged), then reopened by
+hash — the override is gone and the canvas/top bar both show the file's own current value.
+
+**Visible cue, and a way back.** The wide bar's `viewScopeHint` ("Only for you here — not saved,
+forgotten on reload.") is visible text next to the controls, not only an `aria-describedby`
+target; while either field is overridden, a "Custom" marker shows beside it (textual, not colour
+alone — WCAG 1.4.1). Neither control's `aria-label` carries this text — it stays the plain
+option name; the scope note is a sibling, tied on via `aria-describedby`. Screenshots:
+`wide-bar-override-light.png`, `wide-bar-override-dark.png`, `wide-bar-reset-tooltip.png`,
 `wide-bar-reset-after.png`.
+
+A round-0 review (`fix-r0`) found the reset control itself, next to that marker, was named
+"Custom" too — its own accessible name, which is what a control DOES, not a state a sibling
+marker already shows. It is a `RotateCcw` `IconButton` now, split from the "Custom" text: its
+name and tooltip are `TOP_BAR_LABELS.viewOverrideReset` ("Reset to the diagram’s own setting"),
+with `TOP_BAR_LABELS.viewOverrideResetHint` ("Not saved, forgotten on reload.") appended as a
+second tooltip line. The review also found that activating it with the keyboard dropped focus to
+the page body, since the control it just fired unmounts the instant `hasOverride` goes false —
+it now moves focus to the first direction option itself right after. A third finding: at header
+widths just above the compact breakpoint, the marker and the always-visible caption together
+squeezed the breadcrumb's file name to zero width; the caption now hides (`sr-only`, so
+`aria-describedby` still names it) below `CAPTION_HIDE_BELOW`, comfortably above the compact
+breakpoint itself, while the "Custom" marker and the reset control's own tooltip keep saying the
+same thing on demand. Unlike the two direction/node-style groups, the reset control is never
+disabled by the visual lens — resetting an override it still shows regardless is always a
+harmless, useful action, in both the wide bar and the compact menu.
 
 **No-op overrides, and trashed files forgotten.** `setOverride` now drops the field instead of
 storing it when the chosen value equals the file's own current value, so choosing the file's
@@ -228,9 +255,13 @@ file's own value clears "Custom"). `mode-store.ts`'s `closeTabsAt` (a trash) now
 nothing left to apply a viewer's choice to once the file is gone.
 
 **Visual lens disables both controls.** Neither direction nor node style draws anything while
-the visual lens shows (`VisualCanvasPane` reads neither), so both `ViewToggleGroup`s disable
-with `TOP_BAR_LABELS.lensDisabledReason` ("Applies to the technical diagram.") as the tooltip's
-extra line, replacing the scope hint for the duration. Screenshot: `visual-lens-disabled.png`.
+the visual lens shows (`VisualCanvasPane` reads neither), so both `ViewToggleGroup`s disable,
+and the shared visible caption swaps to `TOP_BAR_LABELS.lensDisabledReason` ("Applies to the
+technical diagram."), replacing the scope hint for the duration — a disabled `ToggleGroupItem`
+carries `pointer-events-none`, so a per-item tooltip line would never open to say why. The one
+visible caption is the only place this reason shows; an earlier `description` prop that tried to
+also append it to each item's own tooltip was dead for the same reason and has been dropped.
+Screenshot: `visual-lens-disabled.png`.
 
 **Phones drew a blank canvas in view mode (pre-existing must-fix, now fixed).** Below the `md`
 breakpoint, view mode renders `CanvasWithInspector` as the lone child of `#diagram-workspace`'s
@@ -252,6 +283,15 @@ surface rises above that row (`mb-13`) whenever presenting, not only below `@2xl
 `presentation-900.png` (before, overlapping), `presentation-after.png` and
 `presentation-1440-after.png` (fixed, both widths).
 
+A round-0 review (`fix-r0`) found that last change was too narrow: replacing the walk-through
+surface's `@max-2xl:mb-13` with `presenting && "mb-13"` lifted it above the legend/zoom row only
+while presenting, so on any narrow pane NOT presenting (a phone in ordinary view or edit mode)
+the full-width surface dropped back onto that row and covered the Legend toggle and the Zoom
+in/out/Fit buttons. Both classes apply now (`@max-2xl:mb-13` for the narrow case,
+`presenting && "mb-13"` for the wide-and-presenting one) — verified at 390×844 in view mode with
+a walk-through open: `elementFromPoint` at each zoom button and the legend toggle returns the
+control itself, not the step player.
+
 **Thumbnails could capture mid-relayout (pre-existing should-fix, now fixed).** ELK lays a
 diagram out asynchronously; `use-autosave.ts`'s `makeThumb` used to read the canvas the moment
 a save landed, which could be before that layout (and the fit that follows it) painted. A new
@@ -262,6 +302,18 @@ since a newer edit may have landed while it waited. Separately: a save whose thu
 skipped for an override or the visual lens (not for a dark theme or an unclean compile, neither
 of which "clears") now retries once that condition ends, rather than waiting for the next edit
 to trigger a fresh save.
+
+A round-0 review (`fix-r0`) found two gaps left in that mechanism. `scheduleThumb`'s
+`clearTimeout` cannot cancel a `makeThumb` run already past it and waiting on the layout or the
+two frames after it, so a capture that resumes after a hidden tab regains focus could overlap a
+newer one — observed as two `POST /api/workspace/thumb` calls landing the same millisecond, the
+second a 404 from the exporter's own temp-file name colliding. A generation counter fixes it:
+every `scheduleThumb` bumps it, and a `makeThumb` run drops itself at each `await` once a newer
+one has superseded it. Separately, a thumbnail skipped because of a view-mode override was only
+retried on a later override- or lens-store change — pressing Edit also ends that block
+(`blockedByOverride` is gated on mode), but nothing was subscribed to mode changes, so the
+thumbnail stayed stale until the next edit rather than refreshing the moment Edit was pressed.
+`retryIfUnblocked` now also runs on every `mode-store.ts` change.
 
 **Docs and comments.** This section. Review-round labels (`fix-r0`, `review-r0`) removed from
 code comments in every file they were found in (`canvas-pane.tsx`, `view-overrides-store.ts`,
@@ -274,6 +326,22 @@ and the compact `DiagramOptionsMenu` call); both now share `onViewDirectionChang
 file's own intro paragraph (byte `e2 80 8b`, invisible in every renderer that showed this file
 before) is also gone.
 
+A round-0 review (`fix-r0`) found more of the same pattern still left. `view-overrides-store.ts`
+and `state/override-key.ts` both had a header comment carrying build/branch history (which
+branch this landed on, "the gap a component-effect design left open the first time this was
+built") rather than only the rule the module follows now; both are rewritten to state the
+current design alone. `onViewDirectionChange`/`onViewNodeStyleChange` themselves still repeated
+the same "guard, then call `setOverride`" shape once per field; a small `setViewOverride` helper
+now backs both. Separately (not a comment, the same underlying habit): `canvas-pane.tsx` wrote
+`layout-ready-store.ts` from a `useEffect` keyed on `[path, status]` — copying state that had
+already changed into an external store, the pattern the conventions call out by name, and one
+with no cleanup, so a pane that unmounted (the visual lens swapping it out) could leave a stale
+"ready" behind for a path nothing was drawing any more. `use-diagram-layout.ts`'s `useDiagramLayout`
+now takes an `onSettled` callback, called at the three points `status` itself settles (a fresh
+`layoutKey` starting, and the run that follows landing or failing) instead of being mirrored
+after the fact; `canvas-pane.tsx` passes `layoutReadyActions.setReady` straight in, and clears
+readiness in its own unmount cleanup.
+
 **Write-path table, two rows this round found.** Neither zone resize nor the arrow-key node
 nudge was in §2's table, though both were already blocked:
 
@@ -282,15 +350,23 @@ nudge was in §2's table, though both were already blocked:
 | Resize a zone (drag a handle) | `nodes/zone-node.tsx` `NodeResizer` | reads `nodesDraggable` straight from the React Flow store (the same flag `READ_ONLY_PROPS` sets); `isVisible` and `onResizeEnd` both gate on it                                                       |
 | Arrow-key node nudge          | React Flow's own keyboard handler   | gated on the same `nodesDraggable` flag internally (`@xyflow/react`'s `isDraggable` check) — confirmed live: selecting a node and pressing an arrow key in view mode leaves its `transform` unchanged |
 
-**Share-link isolation and rename survival: still not re-driven live.** As the "Not verified"
-section below already said, `overrideDocKey`'s per-share-id keying and `moved`'s carry-over on
-rename are exercised by the store's own logic (`view-overrides-store.ts`, `mode-store.ts`) but
-were not re-driven end-to-end through the browser in this round either — the same sandbox
-limits noted below still applied.
+**Share-link isolation: now re-driven live; rename survival still is not.** The "Not verified"
+section below previously listed both as store-level-only. This round drove `overrideDocKey`'s
+per-share-id keying end to end: a direction override set through a workspace tab's own "Copy
+share link" is invisible to a fresh, isolated view of that same share URL (a new browser context,
+no workspace path — `path === null`, keyed by `share:${id}`); a second diagram's own share link,
+opened in the same tab right after, shows its own default direction, not the first share's
+override; and returning to the first share URL in that same tab still shows its override,
+untouched by the second. `moved`'s carry-over on rename is unchanged from before — exercised by
+the store's own logic (`view-overrides-store.ts`, `mode-store.ts`) but not re-driven through the
+browser in this round either, since this build's File menu exposes no rename action to drive it
+through (Import YAML…, Export YAML, Copy share link only).
 
-## Checks and evidence
+## Checks and evidence (`diagram/view-direction`, before the round-1 follow-ups)
 
-Evidence under `apps/diagram/.evidence/view-read-only/build/` (gitignored, main checkout).
+Evidence under `apps/diagram/.evidence/view-read-only/build/` (gitignored, main checkout). This
+list is that earlier round's own build — §5 and the round-0 fixes above landed later, on
+`diagram/view-followups`, with their own fresh run below.
 
 - `pnpm exec tsc --noEmit -p .` / `pnpm run typecheck:local` (apps/diagram): 0 errors.
 - `pnpm run lint:local`: 0 errors, 12 warnings — the documented pre-existing baseline, none in
@@ -298,9 +374,7 @@ Evidence under `apps/diagram/.evidence/view-read-only/build/` (gitignored, main 
 - `pnpm brand-ui audit --strict apps/diagram/src` (worktree root): 0 blocking, 2 advisory
   (em-dash density in two of this change's own doc comments; non-blocking).
 - Prettier: clean on every changed file.
-- `git diff --stat -- packages/`: empty against this branch's own merge point; `origin/main`
-  gained unrelated `packages/charts` work after that merge, which a diff against the _current_
-  `origin/main` tip also shows — not this branch's change.
+- `git diff --stat -- packages/`: empty against this branch's own merge point.
 - `#dev/spec-check`: 37 of 37, no console errors.
 - Live browser session (`examples/lakehouse-aws.yaml`, 1440×900 and 390×844, light and dark
   menu chrome), view mode:
@@ -317,21 +391,60 @@ Evidence under `apps/diagram/.evidence/view-read-only/build/` (gitignored, main 
     just the option, `aria-describedby` resolves.
 - Edit mode, same document: the direction radio writes `direction: TB` straight to disk
   (confirmed by reading the file); a real drag moves the node and raises "Switch to manual
-  layout?" (declined, to leave the fixture clean). fix-r0 review-r0 found this claim was wrong
+  layout?" (declined, to leave the fixture clean). A round-0 review found this claim was wrong
   for a THIRD kind of edit-mode change this file did not test here: a words-only text edit (no
   direction/node-style/drag involved) reset the canvas's zoom and pan on every keystroke-level
   compile, via the `laidOutView` identity bug §1 describes — fixed there, and re-checked with an
   A/B: zoom in, edit a node's title through the Inspector, viewport transform unchanged.
 
+## Checks and evidence, round-0 fixes (`diagram/view-followups`, `fix-r0`)
+
+Evidence under `apps/diagram/.evidence/view-followups/fix-r0/` (gitignored, main checkout).
+
+- `pnpm run typecheck:local` (apps/diagram): 0 errors.
+- `pnpm run lint:local`: 0 errors, 11 warnings, all pre-existing and in files this round did not
+  touch (`dev/spec-check-view.tsx`, `panes/editor-pane.tsx`).
+- `pnpm brand-ui audit --strict apps/diagram/src` (worktree root): 0 blocking, 1 advisory
+  (em-dash density, `top-bar.tsx:661`; pre-existing, non-blocking).
+- Prettier: clean on every file this round changed.
+- `git status --porcelain packages/`: empty.
+- No absolute `/Users/…` paths in any file this round changed.
+- `#dev/spec-check`: 75 of 75 fixtures pass (`04-spec-check-75of75.png`).
+- `#dev/lens-check`: 4 of 4 examples derive a non-empty, deterministic visual lens
+  (`03-lens-check-4of4.png`).
+- F1 (step-player regression): 390×844 and 900×700, view mode, a walk-through open —
+  `elementFromPoint` at the Legend toggle and the Zoom in/out/Fit view buttons all resolve to the
+  control itself, never the step player or the "End walk-through" button
+  (`01-phone-view-stepplayer-fixed.png`, `02-900-presenting-check.png`); 1024×800 edit mode with
+  the inspector open, same result.
+- F2 (reset naming/focus): keyboard-focusing the wide bar's reset `IconButton` and activating it
+  with Enter moves focus to the first direction toggle option, not the page body.
+- F3 (breadcrumb squeeze): swept header widths 600–1450 px with an override active; the
+  breadcrumb's `h1` stays ≈170–197 px wide throughout (never squeezed toward zero), and the
+  scope caption's `sr-only` class toggles exactly at `CAPTION_HIDE_BELOW` (1352 px header width)
+  as designed (`05-1200-override-caption-hidden.png`, `06-1450-override-caption-visible.png`).
+- F4 (A→B→A staleness): a true round trip — override set to TB while the file's own direction was
+  LR, the file rewritten directly on disk to TB and back to LR (net unchanged) while the document
+  was the _non-active_ tab, then reopened by hash — dropped the override and showed the file's own
+  LR, which a value-only comparison would have missed since the value returned to what it started
+  as. A single external edit (no round trip) while backgrounded also drops the override, confirming
+  the mtime check fires on any real disk change, not only a detectable value change.
+- Share-link isolation: a direction override set through a workspace tab's "Copy share link" does
+  not appear in a fresh, isolated view of that same share URL (new browser context, `path ===
+null`); a second diagram's share link opened in the same tab shows its own default, unaffected
+  by the first; returning to the first share URL in that tab still shows its override, untouched
+  by the second.
+
 ## Not verified live this session
 
-- Two _different_ shared links' overrides staying isolated, and an override surviving a real
-  rename/move — both fixed at the store level (`overrideDocKey`, `viewOverrideActions.moved`)
-  and covered by the same generic logic already exercised for the direction-only design in
-  `verify-r0/`, but not re-driven end-to-end through the browser in this pass (clipboard
-  access was unavailable in this session's browser sandbox, and the share-link UI's own click
-  handler was not exercised reliably here). Low risk: the mechanism is a plain key computed
-  from data already read from `useRoute()`, not new plumbing.
+- An override surviving a real rename/move, fixed at the store level
+  (`viewOverrideActions.moved`, called from `mode-store.ts`) and covered by the same generic
+  logic already exercised for the direction-only design in `verify-r0/`, but not re-driven
+  end-to-end through the browser: this build's File menu has no rename action (Import YAML…,
+  Export YAML, Copy share link only), so there was no UI path to drive it through. Low risk:
+  the mechanism is a plain key rewrite over the same two records `setOverride`/`clear` already
+  write. (Two different shared links' overrides staying isolated — the other half of this bullet
+  in earlier rounds — was re-driven live this round; see §5's "Share-link isolation" paragraph.)
 - Cross-theme (light/dark) screenshots of the wide-bar view controls specifically — the
   compact menu was checked in both; the app's theme control in this build only exposed a
   brand picker (Default/Qlik), not a direct light/dark toggle, in the session's time budget.

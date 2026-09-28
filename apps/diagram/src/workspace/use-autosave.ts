@@ -16,8 +16,9 @@
  * this save has landed, plus two frames for the fit that follows it — a picture taken any
  * earlier shows the canvas mid-relayout. It is also refused outright while a view-mode
  * override or the visual lens could be on screen instead of the file's own technical diagram
- * (below); when either condition ends, `retryIfUnblocked` below re-tries the save's own
- * capture rather than waiting for the next edit to trigger a fresh one.
+ * (below); when the override or lens clears, or the viewer switches to edit mode (which also
+ * ends the override block), `retryIfUnblocked` below re-tries the save's own capture rather
+ * than waiting for the next edit to trigger a fresh one.
  */
 import { useEffect } from "react";
 import { toast } from "@elabs-ai/components-ui";
@@ -25,7 +26,7 @@ import { resolveThemeIsDark } from "@elabs-ai/components-tokens";
 import { pictureOfCanvas, pngBlob, type Picture, type PictureScale } from "../io/export";
 import { whenLayoutReady } from "../panes/layout-ready-store";
 import { lensStore } from "../shell/lens-store";
-import { currentMode } from "../shell/mode-store";
+import { currentMode, modeStore } from "../shell/mode-store";
 import { diagramStore } from "../state/diagram-store";
 import { viewOverrideActions } from "../shell/view-overrides-store"; // view mode overrides (maintainer 2026-09-27)
 import { writeThumb } from "./client";
@@ -84,6 +85,11 @@ export function installAutosave(): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let thumbTimer: ReturnType<typeof setTimeout> | undefined;
   let lastThumbAt = 0;
+  // Bumped by every `scheduleThumb`: a `makeThumb` run already past its `clearTimeout`-proof
+  // window (waiting on the layout, or the two frames after it) checks this after each `await`
+  // and drops itself once a newer run has superseded it, so two captures never race the same
+  // `<name>.thumb.png` (the loser's write used to 404 on the exporter's own temp-file name).
+  let thumbGeneration = 0;
   let failed = false;
   let { text: lastText, path: lastPath } = diagramStore.get();
   // A save whose thumbnail was refused for a condition that can end on its own (an override,
@@ -113,8 +119,8 @@ export function installAutosave(): () => void {
   // `position === 1` (pure visual, technical unmounted) is there nothing honest to capture.
   const blockedByLens = () => lensStore.get().position >= 1;
 
-  async function makeThumb(path: string, text: string) {
-    if (!isFresh(path, text)) return;
+  async function makeThumb(path: string, text: string, generation: number) {
+    if (generation !== thumbGeneration || !isFresh(path, text)) return;
     // Plan §9.2: thumbnails are light. The exporter paints in the page's theme
     // (io/export.ts has no theme option), so a dark page skips the thumbnail.
     if (resolveThemeIsDark()) return;
@@ -126,11 +132,17 @@ export function installAutosave(): () => void {
     // ELK lays the diagram out asynchronously; wait for it (and the fit that follows it, one
     // frame later) to land before reading the canvas, or the picture shows it mid-relayout.
     await whenLayoutReady(path);
-    if (!isFresh(path, text)) return;
+    if (generation !== thumbGeneration || !isFresh(path, text)) return;
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
-    if (!isFresh(path, text) || blockedByOverride(path) || blockedByLens()) return;
+    if (
+      generation !== thumbGeneration ||
+      !isFresh(path, text) ||
+      blockedByOverride(path) ||
+      blockedByLens()
+    )
+      return;
     const { compiled } = diagramStore.get();
     lastThumbAt = Date.now();
     try {
@@ -142,8 +154,9 @@ export function installAutosave(): () => void {
 
   function scheduleThumb(path: string, text: string) {
     clearTimeout(thumbTimer);
+    const generation = ++thumbGeneration;
     const wait = Math.max(0, lastThumbAt + THUMB_INTERVAL_MS - Date.now());
-    thumbTimer = setTimeout(() => void makeThumb(path, text), wait);
+    thumbTimer = setTimeout(() => void makeThumb(path, text, generation), wait);
   }
 
   /** The override or lens condition that skipped a thumbnail just ended: try it again. */
@@ -196,11 +209,16 @@ export function installAutosave(): () => void {
   });
   const unsubscribeOverrides = viewOverrideActions.subscribe(retryIfUnblocked);
   const unsubscribeLens = lensStore.subscribe(retryIfUnblocked);
+  // Entering edit mode also ends `blockedByOverride` (it is gated on mode, not just an
+  // override's presence) — without this, a thumbnail skipped in view mode stayed stale until
+  // the next edit, rather than refreshing the moment Edit is pressed.
+  const unsubscribeMode = modeStore.subscribe(retryIfUnblocked);
 
   return () => {
     unsubscribe();
     unsubscribeOverrides();
     unsubscribeLens();
+    unsubscribeMode();
     clearTimeout(thumbTimer);
     if (timer !== undefined) {
       clearTimeout(timer);

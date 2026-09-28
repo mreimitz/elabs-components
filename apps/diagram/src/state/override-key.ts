@@ -1,10 +1,10 @@
 /**
  * Document keys, shared by `shell/mode-store.ts` (tabs and modes) and
  * `shell/view-overrides-store.ts` (per-viewer direction/node-style choices). Kept here, in the
- * state layer, rather than in either store: `mode-store.ts` already imports `diagram-store.ts`,
- * and `diagram-store.ts` itself needs `overrideDocKey` (to drop a stale override the moment the
- * open document's own field changes — see that file), so a shell-layer home for these two
- * functions would cycle back on `diagram-store.ts`.
+ * state layer, rather than in either shell store: `mode-store.ts` already imports
+ * `view-overrides-store.ts` (to carry an override on a rename/move, drop one on a trash), and
+ * `view-overrides-store.ts` itself needs `overrideDocKey` — putting either function in one of
+ * those two stores would make them import each other.
  */
 
 /** The mode key of a document that is no workspace file (an old share link). */
