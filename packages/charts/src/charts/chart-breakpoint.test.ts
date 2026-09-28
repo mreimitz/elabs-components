@@ -1,4 +1,5 @@
-import { describe, expect, expectTypeOf, it } from "vitest";
+import { resetWarnOnce, warnOnce } from "@elabs-ai/components-ui/definition";
+import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import {
   breakpointForWidth,
   CHART_BREAKPOINT_THRESHOLDS,
@@ -10,6 +11,8 @@ import {
   resolvePlotBoxStyle,
   resolveResponsive,
   type Responsive,
+  warnChartOnce,
+  warnChartOnceFor,
 } from "./chart-breakpoint";
 
 describe("breakpointForWidth (ADR 0039 §1)", () => {
@@ -197,5 +200,96 @@ describe("definedStyle (RM-183 review round 2, G1)", () => {
 
   it("returns an empty object for undefined input", () => {
     expect(definedStyle(undefined)).toEqual({});
+  });
+});
+
+// RM-204 fix round (P2 item 7): warnChartOnce / warnChartOnceFor had no unit
+// test of their own — only indirect coverage through the families that call
+// them.
+describe("warnChartOnce", () => {
+  let warn: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    resetWarnOnce();
+  });
+  afterEach(() => {
+    warn.mockRestore();
+    resetWarnOnce();
+  });
+
+  it("warns the first time a key is seen", () => {
+    warnChartOnce("some-key", "[Chart] a thing happened");
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith("[Chart] a thing happened");
+  });
+
+  it("never warns again for the same key, even with a different message", () => {
+    warnChartOnce("some-key", "[Chart] first message");
+    warnChartOnce("some-key", "[Chart] second message");
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith("[Chart] first message");
+  });
+
+  it("warns again once resetWarnOnce clears the shared cache", () => {
+    warnChartOnce("some-key", "[Chart] a thing happened");
+    resetWarnOnce();
+    warnChartOnce("some-key", "[Chart] a thing happened");
+    expect(warn).toHaveBeenCalledTimes(2);
+  });
+
+  it("namespaces its key under charts: so it can't collide with a ui or flow key", () => {
+    warnChartOnce("shared-name", "[Chart] charts' own message");
+    warn.mockClear();
+    // A ui/flow caller using the same bare key still gets its own warning.
+    warnOnce("shared-name", "[ui] a different caller's message");
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith("[ui] a different caller's message");
+  });
+});
+
+describe("warnChartOnceFor", () => {
+  let warn: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+  });
+  afterEach(() => {
+    warn.mockRestore();
+  });
+
+  it("warns the first time a (instance, key) pair is seen", () => {
+    const instance = {};
+    warnChartOnceFor(instance, "some-key", "[Chart] a thing happened");
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("never warns again for the same instance and key", () => {
+    const instance = {};
+    warnChartOnceFor(instance, "some-key", "[Chart] a thing happened");
+    warnChartOnceFor(instance, "some-key", "[Chart] a thing happened");
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it("warns again for the SAME key on a DIFFERENT instance — scoped per instance, not per key", () => {
+    warnChartOnceFor({}, "some-key", "[Chart] a thing happened");
+    warnChartOnceFor({}, "some-key", "[Chart] a thing happened");
+    expect(warn).toHaveBeenCalledTimes(2);
+  });
+
+  it("warns again for a DIFFERENT key on the SAME instance", () => {
+    const instance = {};
+    warnChartOnceFor(instance, "key-a", "[Chart] a");
+    warnChartOnceFor(instance, "key-b", "[Chart] b");
+    expect(warn).toHaveBeenCalledTimes(2);
+  });
+
+  it("a fresh instance is exactly the reset a remounted chart gets: unmount/remount warns again", () => {
+    // No explicit reset function exists for this cache by design (the JSDoc:
+    // "unmount and remount the same chart (a new instance) and it warns
+    // again") — a new `instance` object IS the reset.
+    let instance = {};
+    warnChartOnceFor(instance, "some-key", "[Chart] a thing happened");
+    instance = {}; // simulates unmount + remount, a fresh useRef({})
+    warnChartOnceFor(instance, "some-key", "[Chart] a thing happened");
+    expect(warn).toHaveBeenCalledTimes(2);
   });
 });
