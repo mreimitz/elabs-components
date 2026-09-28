@@ -123,7 +123,8 @@ nodes:
 
 flows: # string shorthand or object form
   # A zone endpoint: every on-premises system reaches the gateway over this link.
-  - onprem -> gateway: { label: VPN / ExpressRoute, kind: network, secure: vpn }
+  - sap -> gateway: { label: VPN / ExpressRoute, kind: network, secure: vpn }
+  - erp -> gateway: { label: VPN / ExpressRoute, kind: network, secure: vpn }
   - gateway -> tenant: { label: HTTPS 443 outbound only, kind: data, secure: tls }
   - salesforce -> tenant.qtdi: { label: CRM data, kind: data }
   # Whether on-premises SharePoint reaches Answers through the gateway or SharePoint Online is
