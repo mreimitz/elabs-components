@@ -109,31 +109,39 @@ export function WorkspaceSearch() {
   queryRef.current = query;
 
   /**
-   * Escape while the input is focused: the FIRST press clears a non-empty query, staying in the
-   * field; the SECOND moves focus to the Workspace row. Inside the mobile sheet, Radix's own
-   * `DismissableLayer` also listens for Escape, on `document` in the capture phase, and closes
-   * the whole sheet on the very first press — unless `event.defaultPrevented` is already true by
-   * the time it runs (`onEscapeKeydown`, `@radix-ui/react-dismissable-layer`). A `window`
-   * listener always runs first in the capture phase (capture goes outside-in: window before
-   * document), so calling `preventDefault` here reaches Radix in time — on every platform, not
-   * only the ones with a sheet, which is also why this is not just a branch of `onKeyDown` below
-   * (a bubble-phase React handler on the input itself would run too late).
+   * Escape while the input is focused, on the desktop's persistent sidebar: the FIRST press
+   * clears a non-empty query, staying in the field; the SECOND (query already empty) moves focus
+   * to the Workspace row. Inside the mobile sheet there is no "Workspace row" to fall back to —
+   * the field's own container IS the dismissable layer — so the second press instead leaves the
+   * key alone and lets Radix's `DismissableLayer` close the sheet itself, exactly as it would if
+   * this listener were not here.
+   *
+   * Radix's `useEscapeKeydown` also listens for Escape, on `document` in the capture phase, and
+   * would otherwise close the sheet on the FIRST press too — unless `event.defaultPrevented` is
+   * already true by the time it runs (`onEscapeKeydown`, `@radix-ui/react-dismissable-layer`). A
+   * `window` listener always runs first in the capture phase (capture goes outside-in: window
+   * before document), so calling `preventDefault` here reaches Radix in time for the clear-only
+   * first press — on every platform, not only the ones with a sheet, which is also why this is
+   * not just a branch of `onKeyDown` below (a bubble-phase React handler on the input itself
+   * would run too late to pre-empt Radix).
    */
   useEffect(() => {
     const onWindowKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || document.activeElement !== inputRef.current) return;
-      event.preventDefault();
       if (queryRef.current !== "") {
+        event.preventDefault();
         searchActions.clear();
         inputRef.current?.focus();
         return;
       }
+      if (isMobile) return;
+      event.preventDefault();
       inputRef.current?.blur();
       focusSoon(() => treeRowElement(""), workspaceElement);
     };
     window.addEventListener("keydown", onWindowKeyDown, true);
     return () => window.removeEventListener("keydown", onWindowKeyDown, true);
-  }, []);
+  }, [isMobile]);
 
   /**
    * ArrowDown / Enter while a query is filtering: jump straight to the top result — the tree
