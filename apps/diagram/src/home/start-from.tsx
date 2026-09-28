@@ -35,9 +35,8 @@ import { TreeErrorPanel } from "./tree-error-panel";
 import { focusDocTab } from "../shell/focus";
 import { fileTitle, openDoc } from "../shell/mode-store";
 import {
+  createUniqueFile,
   readFile,
-  writeFile,
-  WorkspaceApiError,
   type WorkspaceFile,
   type WorkspaceTree,
 } from "../workspace/client";
@@ -136,31 +135,23 @@ function useTemplateEntries(
 
 /**
  * A copy of `entry`'s template under `workspace/customers/`, never overwriting a file and never
- * overwriting the template either — only the copy's text is ever written. The copy's `title:`
- * gets `titleWithCopySuffix`'s suffix so it never reads as the same diagram as its template, or as
- * an earlier copy, in Recent, Folders or a component's Used-in list. This re-implements
- * `createUniqueFile`'s "try the bare name, then `-2`, `-3`, …" numbering instead of calling it,
- * because each retry needs its own copy number baked into the text before the write, not just
- * into the file name. Opening the result is `createAndOpen`'s job (via the hash route), not this
- * function's — so a write that succeeds is never reported as "could not create" just because the
- * tab it would open in was busy with someone else's unsaved edits.
+ * overwriting the template either — only the copy's text is ever written. `createUniqueFile`
+ * picks the free name (bare, then `-2`, `-3`, …); each attempt's text carries that same number as
+ * `titleWithCopySuffix`'s suffix on the copy's own `title:`, so it never reads as the same diagram
+ * as its template, or as an earlier copy, in Recent, Folders or a component's Used-in list.
+ * Opening the result is `createAndOpen`'s job (via the hash route), not this function's — so a
+ * write that succeeds is never reported as "could not create" just because the tab it would open
+ * in was busy with someone else's unsaved edits.
  */
 async function copyTemplate(entry: TemplateEntry): Promise<string> {
   const templateText = entry.text ?? (await readFile(entry.file.path)).text;
   const stem = fileStem(entry.file.path);
-  for (let n = 1; n < 100; n += 1) {
-    const fileName = n === 1 ? stem : `${stem}-${n}`;
-    const path = `${CUSTOMERS_FOLDER}/${fileName}.yaml`;
-    try {
-      await writeFile(path, titleWithCopySuffix(templateText, n), { create: true });
-      // Non-blocking: the tree's own error state already reports a failed refresh.
-      void workspaceActions.refreshTree().catch(() => undefined);
-      return path;
-    } catch (error) {
-      if (!(error instanceof WorkspaceApiError && error.code === "exists")) throw error;
-    }
-  }
-  throw new WorkspaceApiError(409, `No free name for ${stem}.yaml.`, "exists");
+  const path = await createUniqueFile(CUSTOMERS_FOLDER, stem, (n) =>
+    titleWithCopySuffix(templateText, n),
+  );
+  // Non-blocking: the tree's own error state already reports a failed refresh.
+  void workspaceActions.refreshTree().catch(() => undefined);
+  return path;
 }
 
 /** "New diagram" — always at the workspace root, never an overwrite (`createUniqueFile`). */
