@@ -68,6 +68,14 @@ export function treeRowElement(path: string): HTMLElement | null {
   return document.querySelector<HTMLElement>(`[${TREE_PATH_ATTR}="${CSS.escape(path)}"]`);
 }
 
+/**
+ * The first file row on screen — a folder row is a `<button>`, a file row the `<a>` that opens
+ * it, so this is also the workspace search's top hit while a query is filtering the tree.
+ */
+export function firstResultElement(): HTMLAnchorElement | null {
+  return document.querySelector<HTMLAnchorElement>(`a[${TREE_PATH_ATTR}]`);
+}
+
 /** The tab of the document on screen, if one is. */
 export function selectedTabElement(): HTMLElement | null {
   return document.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');

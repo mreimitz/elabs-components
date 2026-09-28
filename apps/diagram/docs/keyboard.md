@@ -18,6 +18,7 @@ changes, update the code, and this page will then need updating to match.
 | `←` `→`           |                   | Previous / next story step (only while a story bar is shown)               |
 | `Esc`             |                   | Back out: close the inspector, then leave edit mode, then leave presenting |
 | `Mod` `B`         |                   | Show or hide the sidebar                                                   |
+| `/`               |                   | Focus the workspace search (opens the sidebar first if it is collapsed)    |
 | `Mod` `Z`         |                   | Undo (edit mode)                                                           |
 | `Mod` `Shift` `Z` |                   | Redo (edit mode)                                                           |
 
