@@ -1,7 +1,9 @@
 /**
- * DG-sidebar-search — the workspace search box's own state: the query text (read by both the
- * rail's input and the `WorkspaceTree` it filters, so it lives here rather than in either),
- * and a "focus me" request the "/" shortcut (`keymap.ts`) and the collapsed icon rail's button
+ * Sidebar search (maintainer request 2026-09-28: "also add a search box in the left side main
+ * nav panel below the home button and before the workspaces start. it should search and filter
+ * the entire workspace") — the search box's own state: the query text (read by both the rail's
+ * input and the `WorkspaceTree` it filters, so it lives here rather than in either), and a
+ * "focus me" request the "/" shortcut (`keymap.ts`) and the collapsed icon rail's button
  * (`workspace-search.tsx`) can make from outside the input itself. React-free except the hooks.
  */
 import { useSyncExternalStore } from "react";
@@ -10,20 +12,23 @@ import { activateSearchIndex } from "../workspace/search-index";
 
 interface SearchState {
   query: string;
-  /** Bumped to ask the input for focus (and the sidebar to open first if it is collapsed).
-   * A counter, not a boolean, so asking twice in a row still re-triggers the effect that
-   * opens the sidebar and focuses the input even if nothing else about the state changed.
-   * `WorkspaceSearch` only ever acts on a token NEWER than the one it last saw (a ref set at
-   * mount), so a remount (e.g. leaving presenting) never replays a request from before it
-   * mounted — m2/F2. */
+  /** Bumped to ask for the sidebar/sheet to open (if it is not already) and the input to focus.
+   * A counter, not a boolean, so asking twice in a row still re-triggers the effect that serves
+   * it even if nothing else about the state changed. The always-mounted
+   * `useSearchSidebarBridge` (`workspace-search.tsx`) reacts to every bump; `WorkspaceSearch`
+   * itself only ever acts on a token NEWER than the one it last saw (a ref set at mount), so a
+   * remount (the mobile sheet does this on every close) never replays a request from before it
+   * mounted. */
   focusToken: number;
 }
 
 const searchStore = createStore<SearchState>({ query: "", focusToken: 0 });
 
-// Module-level (not component state): survives `WorkspaceSearch` unmounting and remounting,
-// which the mobile sheet does on every open/close — s6.
-let openedExplicitly = false;
+// Module-level (not component state): true from `requestFocus()` until something actually
+// serves the request (opens the sidebar/sheet if needed, then focuses the input). Survives
+// `WorkspaceSearch` unmounting and remounting, which the mobile sheet does on every open/close,
+// so a "/" press with the sheet closed is still served once it opens, rather than lost.
+let pendingFocus = false;
 
 /** The live query (`""` when the box is empty — the tree then shows everything, unfiltered). */
 export function useSearchQuery(): string {
@@ -36,31 +41,40 @@ export function useSearchFocusToken(): number {
 
 export const searchActions = {
   setQuery(query: string) {
-    // Lazy: the index is built on the first real search, not on every app load (F7).
+    // Lazy: the index is built on the first real search, not on every app load.
     if (query !== "") activateSearchIndex();
     searchStore.set({ query });
   },
   clear() {
     searchStore.set({ query: "" });
   },
-  /** Open the sidebar if it is collapsed, then focus the search input. */
+  /** Ask for the sidebar (or the mobile sheet) to open if it is not already, and the input to
+   * focus once it is on screen. */
   requestFocus() {
     activateSearchIndex();
-    openedExplicitly = true;
+    pendingFocus = true;
     searchStore.set((s) => ({ focusToken: s.focusToken + 1 }));
   },
 };
 
 /**
- * Read (and clear) whether the sidebar's current open was asked for explicitly — a "/" press
- * or the collapsed rail's icon button — as opposed to an ordinary click on Workspace/the rail
- * toggle, or (on mobile) the sheet just opening on its own. `WorkspaceSearch` reads this once,
- * at mount, to tell its own explicit request apart from Radix's sheet-open auto-focus, which
- * would otherwise land in the first tabbable element — this input — instead of where main put
- * it (s6).
+ * Read and clear whether a focus request is still waiting to be served — called exactly once,
+ * by whichever `WorkspaceSearch` render actually focuses the input (at mount, when it mounts
+ * because a request just opened the sidebar/sheet, or later while already mounted, when a new
+ * request arrives on desktop or an already-open mobile sheet). Reading it on every platform,
+ * every time, is what keeps it from lingering: the previous version only ever read this on
+ * mobile, so a desktop "/" press left it set until whatever mobile sheet open happened to come
+ * next, and that unrelated open would then wrongly treat itself as the explicit one.
  */
-export function consumeExplicitOpen(): boolean {
-  const value = openedExplicitly;
-  openedExplicitly = false;
+export function consumePendingFocus(): boolean {
+  const value = pendingFocus;
+  pendingFocus = false;
   return value;
+}
+
+/** Whether `query` should narrow the tree — trimmed, so a whitespace-only query behaves like an
+ * empty one everywhere (the rail's forced-open Workspace section, the tree's own filtering),
+ * rather than in the tree only. */
+export function isFiltering(query: string): boolean {
+  return query.trim() !== "";
 }

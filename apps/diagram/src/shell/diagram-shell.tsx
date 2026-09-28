@@ -37,6 +37,7 @@ import { shortcutText, useRegisteredCommands, useShellKeymap, type PaletteComman
 import { fileTitle, modeActions, modeStore, openDoc, useMode, useOpenDocs } from "./mode-store";
 import { RailNav } from "./rail-nav";
 import { TopBar } from "./top-bar";
+import { SearchSidebarBridge } from "./workspace-search";
 
 export interface DiagramShellProps {
   children: ReactNode;
@@ -152,6 +153,7 @@ export function DiagramShell({ children }: DiagramShellProps) {
       </SidebarInset>
       <CommandPalette />
       <ReplaceEditsDialog />
+      <SearchSidebarBridge />
     </SidebarProvider>
   );
 }

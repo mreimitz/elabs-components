@@ -1,7 +1,7 @@
 /**
- * DG-sidebar-search — maintainer 2026-09-28: "also add a search box in the left side main nav
- * panel below the home button and before the workspaces start. it should search and filter
- * the entire workspace." Sits in the rail (`rail-nav.tsx`) between Home and Workspace; its
+ * Sidebar search (maintainer request 2026-09-28: "also add a search box in the left side main
+ * nav panel below the home button and before the workspaces start. it should search and filter
+ * the entire workspace"). Sits in the rail (`rail-nav.tsx`) between Home and Workspace; its
  * query (`search-store.ts`) is read by `WorkspaceTree` to narrow the tree.
  *
  * Collapsed icon rail: shows as a plain icon button (tooltip "Search workspace") that opens
@@ -19,7 +19,7 @@ import {
 } from "@elabs-ai/components-ui";
 import { firstResultElement, focusSoon, treeRowElement, workspaceElement } from "./focus";
 import {
-  consumeExplicitOpen,
+  consumePendingFocus,
   searchActions,
   useSearchFocusToken,
   useSearchQuery,
@@ -32,42 +32,69 @@ const SEARCH_LABELS = {
   clear: "Clear search",
 } as const;
 
+/**
+ * Renders nothing; mounted once, inside `SidebarProvider` but outside the sidebar itself
+ * (`diagram-shell.tsx`), so it survives the mobile sheet unmounting `WorkspaceSearch` on every
+ * close. Opens the sidebar, or the mobile sheet, the moment a "/" press or the collapsed rail's
+ * icon button asks for the search box, so the request is served even when nothing else is on
+ * screen yet to make it happen. `WorkspaceSearch`, once it mounts (or reacts) because of this,
+ * only has to focus the input.
+ */
+export function SearchSidebarBridge() {
+  const focusToken = useSearchFocusToken();
+  const { isMobile, setOpen, setOpenMobile } = useSidebar();
+  const seen = useRef(focusToken);
+  useEffect(() => {
+    if (focusToken === seen.current) return;
+    seen.current = focusToken;
+    if (isMobile) setOpenMobile(true);
+    else setOpen(true);
+    // Reacts only to a new request, not to `isMobile`/`setOpen`/`setOpenMobile` themselves.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusToken]);
+  return null;
+}
+
 export function WorkspaceSearch() {
   const query = useSearchQuery();
   const focusToken = useSearchFocusToken();
-  const { isMobile, setOpen, setOpenMobile } = useSidebar();
+  const { isMobile } = useSidebar();
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
-  // The token this component has already acted on, seeded from whatever it is at MOUNT time
-  // (not `0`) — so a remount (leaving presenting, a mobile sheet reopening, a breakpoint
-  // resize) never replays an older request it never actually served. Only a token that is
-  // newer than this one, front a "/" press or the collapsed rail's icon after mount, is acted
-  // on (m2/F2).
-  const handledFocusToken = useRef(focusToken);
+
+  // Consumed exactly once, at construction, before any effect (Radix's own sheet auto-focus
+  // included): was this mount caused by a still-unserved "/" (or the collapsed rail's icon)
+  // request, as opposed to an ordinary open? Both `tabExcluded` and `handledFocusToken` below
+  // need the same answer for this particular mount, so it is read once, here.
+  const [servingRequest] = useState(() => consumePendingFocus());
 
   // The mobile sheet remounts this component on every open, and Radix auto-focuses its first
-  // tabbable element on open — this input, ahead of the Workspace button main used to land on
-  // (s6). Read once at construction (before any layout effect, Radix's included): an ordinary
-  // open (not a "/" press or the collapsed rail's icon) keeps the input out of the initial tab
-  // search by giving it `tabIndex={-1}`, then rejoins the normal tab order on the next tick so
-  // keyboard users can still reach it directly afterwards.
-  const [tabExcluded, setTabExcluded] = useState(() => isMobile && !consumeExplicitOpen());
+  // tabbable element on open — this input (and, once there is a query, the clear button right
+  // after it), ahead of the Workspace row an ordinary open means to land on. An ordinary open
+  // keeps both out of the initial tab search by giving them `tabIndex={-1}`, then rejoins the
+  // normal tab order on the next tick so keyboard users can still reach them directly
+  // afterwards. An explicit request does not need this: it focuses the input itself, below.
+  const [tabExcluded, setTabExcluded] = useState(() => isMobile && !servingRequest);
   useEffect(() => {
     if (!tabExcluded) return;
     const id = setTimeout(() => setTabExcluded(false), 0);
     return () => clearTimeout(id);
   }, [tabExcluded]);
 
+  // The token this component has already served. A mount serving a pending request seeds one
+  // behind the current token, so the effect below still runs once for it; an ordinary mount
+  // seeds even with it, so nothing runs until the next request actually arrives.
+  const handledFocusToken = useRef(servingRequest ? focusToken - 1 : focusToken);
+
   // A request from outside the input (the "/" shortcut, or the collapsed rail's icon button):
-  // open the sidebar first when it is collapsed, then focus the field once it is on screen.
+  // `useSearchSidebarBridge` (always mounted) opens the sidebar/sheet; once this component is on
+  // screen because of that — a fresh mount serving the request above, or a request arriving
+  // while already mounted, on desktop or an already-open mobile sheet — focus the field.
   useEffect(() => {
     if (focusToken === handledFocusToken.current) return;
     handledFocusToken.current = focusToken;
-    if (isMobile) setOpenMobile(true);
-    else setOpen(true);
+    consumePendingFocus();
     focusSoon(() => inputRef.current);
-    // Reacts only to a new request, not to `isMobile`/`setOpen`/`setOpenMobile` themselves.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusToken]);
 
   const clear = () => {
@@ -75,24 +102,45 @@ export function WorkspaceSearch() {
     inputRef.current?.focus();
   };
 
+  // The query at the moment of a keydown, read through a ref so the window listener below (only
+  // ever registered once) always sees the latest value without re-subscribing on every
+  // keystroke.
+  const queryRef = useRef(query);
+  queryRef.current = query;
+
   /**
-   * Escape: clear the query first (staying in the field); a second Escape leaves it.
-   * ArrowDown / Enter while a query is filtering: jump straight to the top result — the tree
-   * below has already done the matching and ordering, this just reads the DOM row it rendered
-   * first (F11), so there is no second copy of that logic here.
+   * Escape while the input is focused: the FIRST press clears a non-empty query, staying in the
+   * field; the SECOND moves focus to the Workspace row. Inside the mobile sheet, Radix's own
+   * `DismissableLayer` also listens for Escape, on `document` in the capture phase, and closes
+   * the whole sheet on the very first press — unless `event.defaultPrevented` is already true by
+   * the time it runs (`onEscapeKeydown`, `@radix-ui/react-dismissable-layer`). A `window`
+   * listener always runs first in the capture phase (capture goes outside-in: window before
+   * document), so calling `preventDefault` here reaches Radix in time — on every platform, not
+   * only the ones with a sheet, which is also why this is not just a branch of `onKeyDown` below
+   * (a bubble-phase React handler on the input itself would run too late).
    */
-  const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Escape") {
+  useEffect(() => {
+    const onWindowKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || document.activeElement !== inputRef.current) return;
       event.preventDefault();
-      event.stopPropagation();
-      if (query !== "") {
-        clear();
+      if (queryRef.current !== "") {
+        searchActions.clear();
+        inputRef.current?.focus();
         return;
       }
       inputRef.current?.blur();
       focusSoon(() => treeRowElement(""), workspaceElement);
-      return;
-    }
+    };
+    window.addEventListener("keydown", onWindowKeyDown, true);
+    return () => window.removeEventListener("keydown", onWindowKeyDown, true);
+  }, []);
+
+  /**
+   * ArrowDown / Enter while a query is filtering: jump straight to the top result — the tree
+   * below has already done the matching and ordering, this just reads the DOM row it rendered
+   * first, so there is no second copy of that logic here.
+   */
+  const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (query !== "" && (event.key === "ArrowDown" || event.key === "Enter")) {
       const first = firstResultElement();
       if (!first) return;
@@ -111,13 +159,13 @@ export function WorkspaceSearch() {
           </label>
           {/* `text-muted-foreground`, not a `sidebar-*` token: `SidebarInput` is a `bg-background`
               field dropped onto the (often dark) sidebar surface, not the sidebar surface
-              itself — the sidebar's own ink tokens under-contrast on it in the light theme (F1).
+              itself — the sidebar's own ink tokens under-contrast on it in the light theme.
               `no-canvas-ink-in-sidebar` does not know about this nested `bg-background` island
               (it flags any canvas ink structurally inside a Sidebar* element), so it is
               disabled on the two lines below, not worked around with the wrong token. */}
           <Search
             aria-hidden="true"
-            // eslint-disable-next-line sidebar-a11y/no-canvas-ink-in-sidebar -- on SidebarInput's own bg-background surface, not bg-sidebar (F1).
+            // eslint-disable-next-line sidebar-a11y/no-canvas-ink-in-sidebar -- on SidebarInput's own bg-background surface, not bg-sidebar.
             className="pointer-events-none absolute start-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
           />
           <SidebarInput
@@ -128,6 +176,7 @@ export function WorkspaceSearch() {
             // ours (clear, then a second Escape leaves the field).
             type="text"
             autoComplete="off"
+            spellCheck={false}
             value={query}
             placeholder={SEARCH_LABELS.placeholder}
             className={cn("ps-8", query !== "" && "pe-9")}
@@ -140,8 +189,9 @@ export function WorkspaceSearch() {
               type="button"
               onClick={clear}
               aria-label={SEARCH_LABELS.clear}
-              // `size-6` (24px), the WCAG 2.2 AA 2.5.8 minimum hit target (F10).
-              // eslint-disable-next-line sidebar-a11y/no-canvas-ink-in-sidebar -- on SidebarInput's own bg-background surface, not bg-sidebar (F1).
+              tabIndex={tabExcluded ? -1 : undefined}
+              // `size-6` (24px), the WCAG 2.2 AA 2.5.8 minimum hit target.
+              // eslint-disable-next-line sidebar-a11y/no-canvas-ink-in-sidebar -- on SidebarInput's own bg-background surface, not bg-sidebar.
               className="absolute end-1 top-1/2 size-6 -translate-y-1/2 rounded-sm p-1 text-muted-foreground transition-colors duration-fast ease-standard hover:text-foreground focus-ring"
             >
               <X aria-hidden="true" className="size-full" />
