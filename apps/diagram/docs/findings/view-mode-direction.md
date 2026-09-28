@@ -4,7 +4,7 @@ Maintainer ruling, 2026-09-27: "in view mode nothing should be able to change, a
 the nodes is not allowed. Just the layout direction, if it's card or icon, and then the
 change from technical to visual [a lens, built separately on `diagram/lens-switch`] — these
 are the only allowed changes." This replaces the narrower "direction only" design the first
-pass of this file described; that review round (`​.evidence/view-direction/review-r0/`) found
+pass of this file described; that review round (`.evidence/view-direction/review-r0/`) found
 several holes in it, listed below next to their fixes. Built on `diagram/view-direction`
 (worktree `.claude/worktrees/view-direction`), against `origin/main`.
 
@@ -56,23 +56,22 @@ close:
 
 ## 1. Two per-viewer, in-memory choices: direction and node style
 
+> The `basis` field this section describes was retired in the round-1 follow-ups (§5): it read
+> an override set once, then changed away and back to the same value (A→B→A), as still live.
+> `setOverride`/`effectiveViewValue`/`activeOverrideValue` below are current; the storage and
+> staleness mechanism under them is §5's subscription-based drop, not `basis`.
+
 **Store.** `shell/view-overrides-store.ts` replaces the old `view-direction-store.ts`, and
 generalises from one field to a small `ViewOverrides` record (`direction?`, `nodeStyle?`),
 keyed per open document:
 
 - `setOverride(key, field, value, fileValue)` — the view-mode control's own choice for one
-  field, this document only, pinned to `fileValue` — the file's own value for that field right
-  now (its `basis`, fix-r0 F5 below).
+  field, this document only. Choosing `fileValue` itself — the file's own current value for
+  that field — removes the override instead of recording one (§5).
 - `effectiveViewValue(viewing, entry, fileValue)`/`activeOverrideValue(...)` are the one place
-  both `canvas-pane.tsx` and `top-bar.tsx` derive the shown value — review-r0 found they used
-  to derive it two different ways (`canvas-pane.tsx` gated on `viewing`, `top-bar.tsx` did
-  not), which could disagree about what a viewer was looking at. fix-r0 F5: an override reads
-  back as gone the moment its `basis` no longer matches the current `fileValue` — derived on
-  every call, not a separately-tracked "last seen" state kept in step by an effect (the earlier
-  `noteFileValues`/`useSyncViewOverridesWithFile` design, which only ran while `canvas-pane.tsx`
-  stayed mounted and so could miss a file change while a document sat in the phone's Editor
-  tab). The other field's override (if any) is untouched either way, since the two are
-  independent choices.
+  both `canvas-pane.tsx` and `top-bar.tsx` derive the shown value, so the two can never
+  disagree about what a viewer is looking at. The other field's override (if any) is untouched
+  either way, since the two are independent choices.
 - Nothing here reaches `diagramStore`/undo/autosave — confirmed below.
 - A third choice — the technical/visual lens — landed on `origin/main` from `diagram/lens-switch`
   as its own `shell/lens-store.ts` instead: global and URL-hash-carried, not a per-document
@@ -190,6 +189,104 @@ mode, where the canvas always shows the file's own values regardless of what is 
 - **Node style, view mode.** A second `ViewToggleGroup`/`OptionsRadioSection` next to
   direction's, same wording pattern, same wide-bar/compact-menu split, using the app's
   existing icon-node/card-node glyphs and tooltips.
+
+## 5. Follow-ups from the round-1 review (`diagram/view-followups`)
+
+Built on the merged `diagram/view-direction` (worktree `.claude/worktrees/view-followups`,
+against `origin/main`). Eight items; each below replaces or extends the section it follows.
+
+**A→B→A no longer resurrects a dropped override (§1's `basis` design retired).** The
+`basis`-and-derive-on-read mechanism §1 describes above was itself replaced: `basis` compared
+a snapshot taken when the override was SET, so setting an override, changing the file's real
+value away and then back to that same value (A→B→A) left `basis` matching again and the
+override read back as live — exactly the bug this item reports. `view-overrides-store.ts` now
+drops a field's override the instant the file's own value for it changes at all, via a
+permanent module-level subscription to `diagram-store.ts` (not a component effect, so it runs
+for the app's whole life, not only while some pane happens to stay mounted) that tracks the
+CURRENTLY open document's own last-seen direction/node style and compares on every change —
+never a comparison across two different documents, so switching tabs away and back never
+touches an untouched override. Verified live: `.evidence/view-followups/build/aba-repro-before
+.png` (a TB override on an LR file) and `aba-repro-after.png` (edit mode sets TB then LR, back
+in view mode the canvas and the top bar both show LR, no override marker).
+
+**Visible cue, and a way back.** The wide bar's `viewScopeHint` ("Only for you here — not
+saved.") is now visible text next to the controls, not only an `aria-describedby` target; while
+either field is overridden, a `RotateCcw`-icon "Custom" button shows beside it (textual marker,
+not colour alone — WCAG 1.4.1), with a tooltip ("Back to the diagram's own setting. Not saved,
+and forgotten on reload.") and a click that calls `viewOverrideActions.clear(key)`. Neither
+control's `aria-label` carries this text — it stays the plain option name; the scope note is a
+sibling, per `WithTooltip`'s `description` prop or a visible caption beside the group.
+Screenshots: `wide-bar-override-light.png`, `wide-bar-override-dark.png`, `wide-bar-reset-tooltip.png`,
+`wide-bar-reset-after.png`.
+
+**No-op overrides, and trashed files forgotten.** `setOverride` now drops the field instead of
+storing it when the chosen value equals the file's own current value, so choosing the file's
+own value removes the "Custom" marker rather than recording a redundant override that would
+only ever read back as the file's own value anyway (verified live: TB → LR when LR is the
+file's own value clears "Custom"). `mode-store.ts`'s `closeTabsAt` (a trash) now also calls
+`viewOverrideActions.forgetAt(path)`, dropping any override for that path or a path under it —
+nothing left to apply a viewer's choice to once the file is gone.
+
+**Visual lens disables both controls.** Neither direction nor node style draws anything while
+the visual lens shows (`VisualCanvasPane` reads neither), so both `ViewToggleGroup`s disable
+with `TOP_BAR_LABELS.lensDisabledReason` ("Applies to the technical diagram.") as the tooltip's
+extra line, replacing the scope hint for the duration. Screenshot: `visual-lens-disabled.png`.
+
+**Phones drew a blank canvas in view mode (pre-existing must-fix, now fixed).** Below the `md`
+breakpoint, view mode renders `CanvasWithInspector` as the lone child of `#diagram-workspace`'s
+row-flex directly (edit mode instead routes through a `flex-col` `Tabs` container, which
+stretches its child's width by default; a row-flex does not). With no width of its own to
+inherit and no content to size from, the root computed to `width: 0`, and React Flow logged
+`error#004` and drew nothing. Fixed with one `w-full` on `CanvasWithInspector`'s root
+(`app.tsx`). Verified at 390×844, view and edit mode, both lenses, before (0 width, `error#004`
+in the console) and after (390 px all the way down the DOM to `.react-flow`, no console errors).
+
+**"Exit presentation" overlapped the diagram title.** The button was `top-center`, but the
+title block is `top-left` with a CONTENT-sized box, not a fixed one — at 1440 px it happened to
+clear the centre by ~20 px, and by 900 px it sat directly under "Exit presentation". No
+breakpoint value fixes this in general, since the title's width is the title text's, not the
+pane's: `canvas-overlays.tsx` now always places the button `bottom-center` (between the legend
+and the zoom controls, where the title never reaches), and `step-player.tsx`'s walk-through
+surface rises above that row (`mb-13`) whenever presenting, not only below `@2xl` as before
+(when the button was `bottom-center` only on a narrow pane). Screenshots:
+`presentation-900.png` (before, overlapping), `presentation-after.png` and
+`presentation-1440-after.png` (fixed, both widths).
+
+**Thumbnails could capture mid-relayout (pre-existing should-fix, now fixed).** ELK lays a
+diagram out asynchronously; `use-autosave.ts`'s `makeThumb` used to read the canvas the moment
+a save landed, which could be before that layout (and the fit that follows it) painted. A new
+`panes/layout-ready-store.ts` — written only by `canvas-pane.tsx`, the moment its own layout
+`status` reaches `"ready"` — is awaited first, followed by two animation frames for the fit;
+`makeThumb` re-checks the save is still the open document's current text after each wait,
+since a newer edit may have landed while it waited. Separately: a save whose thumbnail was
+skipped for an override or the visual lens (not for a dark theme or an unclean compile, neither
+of which "clears") now retries once that condition ends, rather than waiting for the next edit
+to trigger a fresh save.
+
+**Docs and comments.** This section. Review-round labels (`fix-r0`, `review-r0`) removed from
+code comments in every file they were found in (`canvas-pane.tsx`, `view-overrides-store.ts`,
+`mode-store.ts`, `state/override-key.ts`, `nodes/zone-node.tsx`, `workspace/use-autosave.ts`,
+`interaction/canvas-overlays.tsx`) — a comment now explains the code as it stands, not the
+review history that produced it. `top-bar.tsx`'s `TopBar()` had the same
+`viewOverrideActions.setOverride` lambda written out twice (the wide bar's `ViewControls` call
+and the compact `DiagramOptionsMenu` call); both now share `onViewDirectionChange`/
+`onViewNodeStyleChange`, defined once. A stray zero-width space before `.evidence` in this
+file's own intro paragraph (byte `e2 80 8b`, invisible in every renderer that showed this file
+before) is also gone.
+
+**Write-path table, two rows this round found.** Neither zone resize nor the arrow-key node
+nudge was in §2's table, though both were already blocked:
+
+| Path                          | Where                               | Blocked by                                                                                                                                                                                            |
+| ----------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Resize a zone (drag a handle) | `nodes/zone-node.tsx` `NodeResizer` | reads `nodesDraggable` straight from the React Flow store (the same flag `READ_ONLY_PROPS` sets); `isVisible` and `onResizeEnd` both gate on it                                                       |
+| Arrow-key node nudge          | React Flow's own keyboard handler   | gated on the same `nodesDraggable` flag internally (`@xyflow/react`'s `isDraggable` check) — confirmed live: selecting a node and pressing an arrow key in view mode leaves its `transform` unchanged |
+
+**Share-link isolation and rename survival: still not re-driven live.** As the "Not verified"
+section below already said, `overrideDocKey`'s per-share-id keying and `moved`'s carry-over on
+rename are exercised by the store's own logic (`view-overrides-store.ts`, `mode-store.ts`) but
+were not re-driven end-to-end through the browser in this round either — the same sandbox
+limits noted below still applied.
 
 ## Checks and evidence
 
