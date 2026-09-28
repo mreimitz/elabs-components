@@ -752,7 +752,7 @@ function DiagramCanvas({
       {/* `@container`: the chrome sizes to the pane, not the window (the minimap below). */}
       <div
         ref={paneRef}
-        className={cn("@container h-full w-full", !shown && "opacity-0")}
+        className={cn("@container h-full w-full transition-none", !shown && "opacity-0")}
         inert={!shown}
       >
         <CanvasShell

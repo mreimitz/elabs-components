@@ -29,6 +29,7 @@
 /* Chrome is portaled outside these composited content layers. */
 [data-lens-pane] .react-flow__renderer {
   will-change: opacity;
+  transition-property: none;
 }
 @source "../../../packages/ui/src";
 @source "../../../packages/icons/src";
