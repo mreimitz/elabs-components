@@ -36,7 +36,8 @@ zones:
           - id: erp # the demo script renames this node in step 6; keep this id
             type: datastore
             # For Oracle use ref: catalog/oracle/db. For PostgreSQL use
-            # ref: catalog/azure/database-postgresql-server, or icon: lucide/database (a glyph).
+            # ref: catalog/azure/database-postgresql-server, or icon: lucide/database (the
+            # icon index has no generic PostgreSQL icon).
             ref: catalog/microsoft/sql-server
             title: SQL Server
             description: A Microsoft SQL Server database that stores an operational application's data.

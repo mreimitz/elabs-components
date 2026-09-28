@@ -15,6 +15,7 @@ import { isArchIssueCode, issue, type ArchIssue } from "./issues";
 import { aliasPaths, indexPath, joinPath, type SourceMap } from "./source-map";
 import {
   DIALECT_VERSION,
+  isSuppliedKeyWritten,
   READ_VERSIONS,
   SUPPLIED_KEYS,
   type ArchDiagram,
@@ -125,8 +126,14 @@ function badRef(ref: string): { message: string; suggestion?: string } | null {
         message: `"${ref}" names "${bad}", which starts with "." (hidden); a reference cannot use it.`,
       };
     }
+    // Escape control characters in the full path as well as naming the rejected character.
+    const shown = Array.from(ref, (char) => {
+      const code = char.charCodeAt(0);
+      return code < 32 || code === 127 ? `\\u${code.toString(16).padStart(4, "0")}` : char;
+    }).join("");
+    const character = bad.includes("\\") ? "a backslash" : "a control character";
     return {
-      message: `"${ref}" names "${bad}", which has a character the workspace does not accept in a name.`,
+      message: `"${shown}" contains ${character}; the workspace does not accept it in a name.`,
     };
   }
   if (form === "catalog") {
@@ -333,14 +340,11 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         // DG-26
         ...(ref !== undefined && {
           ref,
-          // review round 1 N4 — a scalar key left blank (`title:` with no value, or
-          // `title: ""`) still counts as "not written": the reference's value shows exactly
-          // as when the key is absent. `badges: []` stays deliberately written (§2.2,
-          // dialect-v1.md) — an array is never "blank" the same way a scalar is.
-          unwritten: SUPPLIED_KEYS.filter((k) => {
-            const value = (entry as Record<string, unknown>)[k];
-            return !(k in entry) || (k !== "badges" && (value === null || value === ""));
-          }),
+          // `isSuppliedKeyWritten` (types.ts) decides what "unwritten" means here: YAML null
+          // (`title:` with no value) is unwritten, same as the key's absence; an explicit
+          // `""` is a written override that draws nothing, the same as `badges: []` (§2.2,
+          // dialect-v1.md).
+          unwritten: SUPPLIED_KEYS.filter((k) => !isSuppliedKeyWritten(entry, k)),
         }),
         expand: pick<boolean>(entry, "expand", bad),
         // end DG-26
