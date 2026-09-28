@@ -1,3 +1,4 @@
+import { ParticleLayer } from "../particles/particle-layer";
 import {
   CompositeActionContext,
   COMPOSITE_UI,
@@ -987,6 +988,15 @@ function DiagramCanvas({
             >
               {/* DG-08: title block top-left, legend bottom-left (both in the exported picture). */}
               {/* DG-68: the diagram's own description, one sentence under the title. */}
+              <ParticleLayer
+                enabled={
+                  technicalSettled &&
+                  status === "ready" &&
+                  !lensLocked &&
+                  !stale &&
+                  !changingComposite
+                }
+              />
               <StoryCallouts />
               <LensChrome lens="technical">
                 <TitleBlock title={spec.title} description={spec.description} meta={source}>
@@ -1019,7 +1029,7 @@ function DiagramCanvas({
               (wave-2 review M7). Proposed: `onFitView?: () => void` (or `fitViewOptions`),
               through which the app would run its chrome-aware fit (use-diagram-layout.ts).
               docs/findings/DG-12-editor-integration.md. */}
-                <CanvasNavigation />
+                <CanvasNavigation flowAnimation />
 
                 {/* DG-18: details card, step player, presentation exit. */}
                 <InteractionOverlays nodes={nodes} />

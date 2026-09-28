@@ -1,5 +1,6 @@
 # Atlas — changelog (one line per fortnight, newest first)
 
+- 2026-09-29 — Technical flows animate with bounded particles reflecting direction, cadence and flow kind. Pause/Resume and reduced-motion controls work across documents; particles stop in inactive views and stay out of exports and thumbnails. The 60-flow local stress check stayed below 1 ms CPU p95 per draw.
 - 2026-09-29 — Authored stories now play with fit/follow camera movement, safe captions, callouts and keyboard/seek controls. Temporary reference expansion and camera changes leave YAML, undo history and viewer preferences intact. IntelliSense completes story steps and flow targets; the ClickHouse example includes a six-step walkthrough.
 - 2026-09-28 — Composite references show node counts and connected named ports. Expand them inline or inspect nested sources with breadcrumbs and Escape; the parent editor, undo history and camera remain intact. View-mode expansion is temporary, imported contents stay read-only, and Open diagram uses the normal save/conflict guard.
 - 2026-09-28 — Diagram references can expand inline with bounded nested contents and real inner endpoints. Imported content stays read-only; manual diagrams keep references collapsed. Shared dependency discovery avoids repeated parsing, and obsolete layout results cannot replace a newer graph.

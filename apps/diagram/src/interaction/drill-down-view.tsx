@@ -1,3 +1,4 @@
+import { ParticleLayer } from "../particles/particle-layer";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CanvasShell,
@@ -260,9 +261,10 @@ function DrillCanvas({
               void enter(node.id);
           }}
         >
+          <ParticleLayer enabled={status === "ready"} />
           <TitleBlock title={spec.title} description={spec.description} />
           <DiagramLegend mode={view.legend} />
-          <CanvasNavigation />
+          <CanvasNavigation flowAnimation />
         </CanvasShell>
       </div>
       {status !== "ready" || empty ? (

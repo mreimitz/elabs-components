@@ -1,7 +1,8 @@
+import { FlowAnimationControl } from "../particles/animation-control";
 import { FlowMiniMap, Panel, ZoomControls } from "@elabs-ai/components-flow";
 
 /** One navigation panel; compact canvases keep just the zoom and fit controls. */
-export function CanvasNavigation() {
+export function CanvasNavigation({ flowAnimation = false }: { flowAnimation?: boolean }) {
   return (
     <Panel
       position="bottom-right"
@@ -15,6 +16,7 @@ export function CanvasNavigation() {
         className="!rounded-none !shadow-none @max-3xl:hidden"
       />
       <ZoomControls className="rounded-none border-border shadow-none @3xl:border-t [&_button]:flex-1" />
+      {flowAnimation ? <FlowAnimationControl /> : null}
     </Panel>
   );
 }

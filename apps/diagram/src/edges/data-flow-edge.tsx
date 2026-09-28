@@ -201,6 +201,7 @@ export function DataFlowEdge(props: EdgeProps<DataFlowEdgeType>) {
         data-kind={kind}
         data-line-style={lineStyle}
         data-direction={direction}
+        data-schedule={data.schedule}
         data-routed={routed ? "elk" : "step"}
         data-motion={wantsMotion ? (marching ? "marching" : "reduced") : undefined}
         data-dimmed={dimmed || undefined}
