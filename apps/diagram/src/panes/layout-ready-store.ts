@@ -24,29 +24,29 @@ export const layoutReadyActions = {
   },
 };
 
-/** How long to wait for `path`'s layout before giving up and capturing anyway. */
+/** How long to wait for `path`'s layout before giving up without capturing. */
 const LAYOUT_READY_TIMEOUT_MS = 4000;
 
 /**
  * Resolves once `path`'s layout is ready — immediately if it already is, or after
- * `LAYOUT_READY_TIMEOUT_MS` regardless (a layout error, or a pane that never mounted, must
- * not hang a thumbnail forever).
+ * `LAYOUT_READY_TIMEOUT_MS` with false (a layout error, or a pane that never mounted,
+ * must not hang a thumbnail forever or publish an unsettled canvas).
  */
-export function whenLayoutReady(path: string): Promise<void> {
+export function whenLayoutReady(path: string): Promise<boolean> {
   const current = layoutReadyStore.get();
-  if (current.path === path && current.ready) return Promise.resolve();
+  if (current.path === path && current.ready) return Promise.resolve(true);
   return new Promise((resolve) => {
     let unsubscribe = () => {};
     const timeout = setTimeout(() => {
       unsubscribe();
-      resolve();
+      resolve(false);
     }, LAYOUT_READY_TIMEOUT_MS);
     unsubscribe = layoutReadyStore.subscribe(() => {
       const state = layoutReadyStore.get();
       if (state.path !== path || !state.ready) return;
       clearTimeout(timeout);
       unsubscribe();
-      resolve();
+      resolve(true);
     });
   });
 }

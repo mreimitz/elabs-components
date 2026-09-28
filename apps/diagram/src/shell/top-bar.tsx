@@ -37,7 +37,6 @@ import {
   ToggleGroup,
   ToggleGroupItem,
   TooltipProvider,
-  cn,
 } from "@elabs-ai/components-ui";
 import { SEVERITY_STATUS } from "../panes/issues-panel";
 import { toHash, useRoute, type Route } from "../routes/use-hash"; // catalog crumbs (maintainer 2026-09-27)
@@ -137,18 +136,6 @@ const TOP_BAR_LABELS = {
  */
 const COMPACT_BELOW = 1052;
 
-/**
- * Below this header width, view mode's always-visible caption hides (it stays in the DOM,
- * `sr-only`, so `aria-describedby` still names it for assistive tech): the caption plus the
- * "Custom" marker and reset control add roughly 300 px to the centre group (`ViewControls`),
- * which never shrinks — the header's `[&>*:not(nav)]:shrink-0` rule below pushes the whole
- * squeeze onto the breadcrumb instead, and at widths just above `COMPACT_BELOW` that emptied
- * the file name out entirely. Comfortably above `COMPACT_BELOW` so the band between the two
- * thresholds never leaves the breadcrumb title-less; the "Custom" marker and the reset
- * control's own tooltip say the same thing on demand.
- */
-const CAPTION_HIDE_BELOW = COMPACT_BELOW + 300;
-
 /** True while the element is narrower than `threshold` (measured before the first paint). */
 function useNarrowerThan(ref: RefObject<HTMLElement | null>, threshold: number): boolean {
   const [narrow, setNarrow] = useState(false);
@@ -208,7 +195,6 @@ export function TopBar() {
   const disabled = direction === undefined;
   const headerRef = useRef<HTMLElement>(null);
   const compact = useCompact(headerRef);
-  const captionHidden = useNarrowerThan(headerRef, CAPTION_HIDE_BELOW);
   const inspectorOpen = useDiagram((s) => s.inspectorOpen); // DG-14
 
   // view mode overrides (maintainer 2026-09-27): this viewer's own choices for the shown
@@ -279,7 +265,6 @@ export function TopBar() {
               disabled={disabled}
               lensDisabled={lensDisabled}
               hasOverride={hasOverride}
-              captionHidden={captionHidden}
               onDirectionChange={onViewDirectionChange}
               onNodeStyleChange={onViewNodeStyleChange}
               onReset={resetOverride}
@@ -320,6 +305,15 @@ export function TopBar() {
           <ThemeSwitcher variant="ghost" size="sm" />
         </WithTooltip>
       </header>
+      {viewing ? (
+        <div
+          data-slot="view-mode-hint"
+          className="flex shrink-0 flex-wrap gap-x-2 border-b px-4 py-1 text-caption text-muted-foreground"
+        >
+          <span>{TOP_BAR_LABELS.viewScopeHint}</span>
+          {lensDisabled ? <span>{TOP_BAR_LABELS.lensDisabledReason}</span> : null}
+        </div>
+      ) : null}
     </TooltipProvider>
   );
 }
@@ -646,10 +640,6 @@ interface ViewControlsProps {
   lensDisabled: boolean;
   /** This document has an override on record for direction, node style, or both. */
   hasOverride: boolean;
-  /** The always-visible caption would squeeze the breadcrumb's file name to nothing at this
-   * header width (`CAPTION_HIDE_BELOW`, below `TopBar`) — hide it, the "Custom" marker and the
-   * reset control's own tooltip still say the same thing on demand. */
-  captionHidden: boolean;
   onDirectionChange: (direction: DiagramDirection) => void;
   onNodeStyleChange: (nodeStyle: NodeStyle) => void;
   /** Back to the diagram's own setting for both fields at once. */
@@ -666,7 +656,6 @@ function ViewControls({
   disabled,
   lensDisabled,
   hasOverride,
-  captionHidden,
   onDirectionChange,
   onNodeStyleChange,
   onReset,
@@ -682,7 +671,12 @@ function ViewControls({
   const handleReset = () => {
     onReset();
     requestAnimationFrame(() => {
-      directionGroupRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+      const directionButton =
+        directionGroupRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)");
+      const lensButton = document.querySelector<HTMLButtonElement>(
+        '[aria-label="Lens"] button[aria-checked="true"]',
+      );
+      (directionButton ?? lensButton)?.focus();
     });
   };
   return (
@@ -724,10 +718,7 @@ function ViewControls({
           />
         </div>
       ) : null}
-      <span
-        id={scopeHintId}
-        className={cn("text-caption text-nowrap text-muted-foreground", captionHidden && "sr-only")}
-      >
+      <span id={scopeHintId} className="sr-only">
         {lensDisabled ? TOP_BAR_LABELS.lensDisabledReason : TOP_BAR_LABELS.viewScopeHint}
       </span>
     </div>
@@ -862,7 +853,12 @@ function OptionsRadioSection<T extends string>({
         onValueChange={(next) => next && onValueChange(next as T)}
       >
         {options.map((option) => (
-          <DropdownMenuRadioItem key={option.value} value={option.value} disabled={disabled}>
+          <DropdownMenuRadioItem
+            key={option.value}
+            value={option.value}
+            disabled={disabled}
+            className="data-disabled:pointer-events-none data-disabled:opacity-50"
+          >
             {option.label}
           </DropdownMenuRadioItem>
         ))}

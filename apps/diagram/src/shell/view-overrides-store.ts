@@ -46,7 +46,7 @@ import { createStore } from "../state/create-store";
 import { diagramStore } from "../state/diagram-store";
 import { overrideDocKey } from "../state/override-key";
 import { parseRoute } from "../routes/use-hash";
-import { workspaceStore } from "../workspace/workspace-store";
+import { onWorkspaceFileSaved, workspaceStore } from "../workspace/workspace-store";
 import type { DiagramDirection } from "../layout/run-elk";
 import type { NodeStyle } from "../spec/dialect";
 
@@ -155,6 +155,16 @@ diagramStore.subscribe(() => {
   if (nodeStyle !== trackedNodeStyle) {
     trackedNodeStyle = nodeStyle;
     dropField(key, "nodeStyle");
+  }
+});
+
+// The open document's compiles already invalidate changed fields. A successful local save
+// acknowledges that observed revision, so reopening after an unrelated edit preserves the
+// remaining override. External writes are never acknowledged here.
+onWorkspaceFileSaved((key, mtime) => {
+  const { revisionAtSet } = store.get();
+  if (revisionAtSet[key] !== undefined) {
+    store.set({ revisionAtSet: { ...revisionAtSet, [key]: mtime } });
   }
 });
 

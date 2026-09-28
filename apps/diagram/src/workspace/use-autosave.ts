@@ -111,13 +111,10 @@ export function installAutosave(): () => void {
   const blockedByOverride = (path: string) =>
     currentMode() !== "edit" && viewOverrideActions.hasOverride(path);
 
-  // Lens switch (maintainer 2026-09-27): the thumbnail is always the technical lens, never the
-  // derived visual one — leaking a viewer-only view into the saved thumbnail is the same
-  // failure mode as leaking it into the file itself. `position < 1` is exactly
-  // `canvas-pane.tsx`'s `showTechnical`: the technical pane, and so `pictureOfCanvas`'s first
-  // DOM match, stays mounted for any position short of a fully settled visual lens; only at
-  // `position === 1` (pure visual, technical unmounted) is there nothing honest to capture.
-  const blockedByLens = () => lensStore.get().position >= 1;
+  // Only the settled technical lens is safe to publish. A moving camera or a blend of
+  // technical and visual nodes must never become the document's persisted preview.
+  const blockedByLens = () =>
+    lensStore.get().position !== 0 || lensStore.get().target !== "technical";
 
   async function makeThumb(path: string, text: string, generation: number) {
     if (generation !== thumbGeneration || !isFresh(path, text)) return;
@@ -131,28 +128,33 @@ export function installAutosave(): () => void {
     pendingRetry = null;
     // ELK lays the diagram out asynchronously; wait for it (and the fit that follows it, one
     // frame later) to land before reading the canvas, or the picture shows it mid-relayout.
-    await whenLayoutReady(path);
+    if (!(await whenLayoutReady(path))) return;
     if (generation !== thumbGeneration || !isFresh(path, text)) return;
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
-    if (
-      generation !== thumbGeneration ||
-      !isFresh(path, text) ||
-      blockedByOverride(path) ||
-      blockedByLens()
-    )
+    if (generation !== thumbGeneration || !isFresh(path, text)) return;
+    if (blockedByOverride(path) || blockedByLens()) {
+      pendingRetry = { path, text };
       return;
+    }
     const { compiled } = diagramStore.get();
     lastThumbAt = Date.now();
     try {
-      await writeThumb(path, await thumbnailPng(await pictureOfCanvas(compiled.ast?.title)));
+      const png = await thumbnailPng(await pictureOfCanvas(compiled.ast?.title));
+      if (generation !== thumbGeneration || !isFresh(path, text)) return;
+      if (blockedByOverride(path) || blockedByLens()) {
+        pendingRetry = { path, text };
+        return;
+      }
+      await writeThumb(path, png);
     } catch {
       // No canvas drawn (a dev route, the phone's Editor tab): the next save tries again.
     }
   }
 
   function scheduleThumb(path: string, text: string) {
+    pendingRetry = null;
     clearTimeout(thumbTimer);
     const generation = ++thumbGeneration;
     const wait = Math.max(0, lastThumbAt + THUMB_INTERVAL_MS - Date.now());
@@ -163,6 +165,10 @@ export function installAutosave(): () => void {
   function retryIfUnblocked() {
     if (!pendingRetry) return;
     const { path, text } = pendingRetry;
+    if (!isFresh(path, text)) {
+      pendingRetry = null;
+      return;
+    }
     if (blockedByOverride(path) || blockedByLens()) return;
     scheduleThumb(path, text);
   }
@@ -219,6 +225,8 @@ export function installAutosave(): () => void {
     unsubscribeOverrides();
     unsubscribeLens();
     unsubscribeMode();
+    ++thumbGeneration;
+    pendingRetry = null;
     clearTimeout(thumbTimer);
     if (timer !== undefined) {
       clearTimeout(timer);
