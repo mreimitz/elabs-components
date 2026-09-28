@@ -1,12 +1,13 @@
 import type { CodeEditorProps, MonacoCodeEditor } from "@elabs-ai/components-editor";
-import { isMap, isScalar, isSeq, parseDocument } from "yaml";
+import { isScalar, parseDocument } from "yaml";
 import { catalogService } from "../catalog/catalog-service";
 import type { CatalogEntry } from "../catalog/catalog-entry";
 import { ICON_NAMES } from "../icons/icon-names";
 import { yamlScalar } from "../spec/dialect/write-back";
 import { diagramStore } from "../state/diagram-store";
 import { workspaceStore } from "../workspace/workspace-store";
-import { yamlContext, type YamlPath } from "./yaml-context";
+import { yamlContext } from "./yaml-context";
+import { endpointMetadata, type EndpointMetadata } from "./endpoint-metadata";
 import { schemasAt, type Schema } from "./yaml-schema";
 export { schemasAt } from "./yaml-schema";
 
@@ -14,37 +15,39 @@ type MonacoApi = Parameters<NonNullable<CodeEditorProps["onMount"]>>[1];
 const schemaHelp = (schema: Schema) =>
   schema.description ?? (schema.enum ? `Allowed values: ${schema.enum.join(", ")}` : undefined);
 const escapeMarkdown = (text: string) => text.replace(/[\\`*_{}[\]()#+.!<>|]/g, "\\$&");
+/** Monaco's media sanitizer requires an explicit allowed protocol. Resolve only catalog
+ * assets under this app's origin; raw HTML and trusted Markdown remain disabled. */
+function iconMarkdown(icon: string | undefined, label: string): string {
+  if (!icon?.startsWith("/icons/")) return "";
+  const url = new URL(icon, window.location.origin).href
+    .replaceAll("(", "%28")
+    .replaceAll(")", "%29");
+  return `![${escapeMarkdown(label)}](${url})\n\n`;
+}
 function catalogDocumentation(entry: CatalogEntry) {
   const icon = catalogService.get(entry.icon)?.iconPath;
   return {
-    value: `${icon?.startsWith("/icons/") ? `![${escapeMarkdown(entry.label)}](${encodeURI(icon)})\n\n` : ""}**${escapeMarkdown(entry.label)}**${entry.kind ? ` · ${entry.kind}` : ""}\n\n${escapeMarkdown(entry.description ?? "")}`,
+    value: `${iconMarkdown(icon, entry.label)}**${escapeMarkdown(entry.label)}**${entry.kind ? ` · ${entry.kind}` : ""}\n\n${escapeMarkdown(entry.description ?? "")}`,
     isTrusted: false,
     supportHtml: false,
   };
 }
 /** Parse the current buffer, rather than waiting for a successful debounced compile. */
-function endpoints(text: string): { id: string; title: string }[] {
-  const out = new Map<string, string>();
-  const walk = (node: unknown, path: YamlPath) => {
-    if (isMap(node)) {
-      const id = node.get("id"),
-        title = node.get("title");
-      if (
-        typeof id === "string" &&
-        path.some((p) => p === "nodes" || p === "zones" || p === "children")
-      )
-        out.set(id, typeof title === "string" ? title : id);
-      for (const pair of node.items)
-        if (isScalar(pair.key)) walk(pair.value, [...path, String(pair.key.value)]);
-    } else if (isSeq(node)) node.items.forEach((item, index) => walk(item, [...path, index]));
+function endpoints(text: string): EndpointMetadata[] {
+  const state = diagramStore.get();
+  return endpointMetadata(
+    text,
+    catalogService.state().entries,
+    state.compiledText === text ? state.compiled.graph?.nodes : undefined,
+  );
+}
+function endpointDocumentation(endpoint: EndpointMetadata) {
+  const icon = endpoint.icon ? catalogService.get(endpoint.icon)?.iconPath : undefined;
+  return {
+    value: `${iconMarkdown(icon, endpoint.title)}**${escapeMarkdown(endpoint.title)}**${endpoint.kind ? ` · ${escapeMarkdown(endpoint.kind)}` : ""}${endpoint.description ? `\n\n${escapeMarkdown(endpoint.description)}` : ""}`,
+    isTrusted: false,
+    supportHtml: false,
   };
-  walk(parseDocument(text).contents, []);
-  // Expanded references already in the graph expose their qualified inner endpoints.
-  for (const node of diagramStore.get().drawn.graph?.nodes ?? []) {
-    if (node.id.includes(".") && out.has(node.id.split(".")[0]!))
-      out.set(node.id, typeof node.data.title === "string" ? node.data.title : node.id);
-  }
-  return [...out].map(([id, title]) => ({ id, title }));
 }
 const ENDPOINT_KEYS = new Set(["from", "to", "parent", "at", "targets"]);
 const SNIPPETS = [
@@ -59,6 +62,11 @@ const SNIPPETS = [
     body: "id: ${1:zone}\nkind: ${2:cloud-account}\ntitle: ${3:Zone}\nchildren:\n  - id: ${4:node}\n    ref: ${5:catalog/aws/lambda}",
   },
   { label: "flow", path: "flows", body: "from: ${1:source}\nto: ${2:target}\nlabel: ${3:Data}" },
+  {
+    label: "component reference",
+    path: "nodes",
+    body: "id: ${1:component}\nref: ws/${2:components/qlik-cloud-tenant}\nexpand: false$0",
+  },
 ];
 
 /** Register only for this model; disposing or replacing the editor releases both providers. */
@@ -67,7 +75,7 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
   if (!model) return () => {};
   let disposed = false;
   const applies = (candidate: typeof model) =>
-    !disposed && candidate === model && !model.isDisposed();
+    !disposed && candidate === model && editor.getModel() === model && !model.isDisposed();
   const completion = monaco.languages.registerCompletionItemProvider("yaml", {
     triggerCharacters: ["/", ":", ">", " ", ".", "-"],
     async provideCompletionItems(candidate, position, _context, token) {
@@ -77,9 +85,17 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
       const text = candidate.getValue();
       const context = yamlContext(text, candidate.getOffsetAt(position));
       if (!context) return { suggestions: [] };
-      if (context.key === "ref" || context.key === "icon") await catalogService.ready();
+      if (
+        context.key === "ref" ||
+        context.key === "icon" ||
+        context.kind === "endpoint" ||
+        ENDPOINT_KEYS.has(context.key) ||
+        context.path.includes("targets")
+      )
+        await catalogService.ready();
       if (
         !applies(candidate) ||
+        editor.getOption(monaco.editor.EditorOption.readOnly) ||
         token.isCancellationRequested ||
         candidate.getVersionId() !== version
       )
@@ -130,7 +146,7 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
       };
       if (context.kind === "key" && context.path.includes("targets")) {
         for (const endpoint of endpoints(text))
-          add(endpoint.id, endpoint.title, kind.Reference, endpoint.title);
+          add(endpoint.id, endpoint.title, kind.Reference, endpointDocumentation(endpoint));
       } else if (
         context.kind === "key" &&
         typeof context.path.at(-1) === "number" &&
@@ -217,7 +233,7 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
         }
       } else if (context.kind === "endpoint" || ENDPOINT_KEYS.has(context.key)) {
         for (const endpoint of endpoints(text))
-          add(endpoint.id, endpoint.title, kind.Reference, endpoint.title);
+          add(endpoint.id, endpoint.title, kind.Reference, endpointDocumentation(endpoint));
       } else {
         for (const schema of schemasAt(context.path, text)) {
           const values = schema.enum ?? (schema.type === "boolean" ? [true, false] : []);
@@ -251,7 +267,14 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
       const raw = text.slice(context.from, context.to);
       const parsed = parseDocument(raw).contents;
       const value = isScalar(parsed) ? String(parsed.value) : raw;
-      if (context.key === "ref" || context.key === "icon") await catalogService.ready();
+      if (
+        context.key === "ref" ||
+        context.key === "icon" ||
+        context.key === "id" ||
+        context.kind === "endpoint" ||
+        ENDPOINT_KEYS.has(context.key)
+      )
+        await catalogService.ready();
       if (
         !applies(candidate) ||
         token.isCancellationRequested ||
@@ -269,7 +292,7 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
           ? schemasAt([...context.path, raw], text)
           : schemasAt(context.path, text);
       const endpoint =
-        context.kind === "endpoint" || ENDPOINT_KEYS.has(context.key)
+        context.kind === "endpoint" || context.key === "id" || ENDPOINT_KEYS.has(context.key)
           ? endpoints(text).find((item) => item.id === value)
           : undefined;
       const file =
@@ -290,7 +313,11 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
       return {
         range: new monaco.Range(from.lineNumber, from.column, to.lineNumber, to.column),
         contents: [
-          entry ? catalogDocumentation(entry) : { value: escapeMarkdown(prose!), isTrusted: false },
+          entry
+            ? catalogDocumentation(entry)
+            : endpoint
+              ? endpointDocumentation(endpoint)
+              : { value: escapeMarkdown(prose!), isTrusted: false },
         ],
       };
     },

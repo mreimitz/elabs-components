@@ -4,6 +4,7 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { mkdir, rm, writeFile } from "node:fs/promises";
+import { checkProviderLifecycle } from "./editor-provider-lifecycle.mjs";
 const require = createRequire(new URL("../../home/package.json", import.meta.url));
 const { chromium, expect } = require("@playwright/test");
 const base = process.env.DIAGRAM_URL ?? "http://localhost:5410";
@@ -35,12 +36,16 @@ try {
     }, theme);
     const page = await context.newPage();
     activePage = page;
-    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("pageerror", (error) => errors.push(error.stack ?? error.message));
     page.on("request", (request) => {
       if (["PUT", "POST", "DELETE"].includes(request.method()))
         writes.push({ url: request.url(), body: request.postData() });
     });
     await page.goto(`${base}/#d/${file}`);
+    await page.waitForFunction(
+      (theme) => getComputedStyle(document.documentElement).colorScheme === theme,
+      theme,
+    );
     const state = () =>
       page.evaluate(async () => {
         const { diagramStore } = await window.__completionModule("/src/state/diagram-store.ts");
@@ -63,6 +68,7 @@ try {
           .getEditors()
           .find((editor) => editor.getModel()?.getLanguageId() === "yaml");
         if (!editor) throw new Error("YAML editor not found");
+        window.__completionEditor = editor;
         editor.getModel().setValue(text);
         editor.setPosition(editor.getModel().getPositionAt(text.length));
         editor.focus();
@@ -157,6 +163,101 @@ try {
     await accept("target", `${header}    title: Target\nflows:\n  - source -> target`);
     results.push(`${theme}: shorthand arrow offers endpoint ids automatically`);
 
+    const reference = 'diagram: "1"\nnodes:\n  - id: database\n    ref: catalog/aws/rds\n';
+    await prepare(`${reference}flows:\n  - from: data`);
+    await page.keyboard.press("Control+Space");
+    await expect(popup).toContainText("Rds");
+    await accept("database", `${reference}flows:\n  - from: database`);
+    const hover = page.locator(".monaco-hover").filter({ hasText: "Rds" });
+    await page.evaluate(() =>
+      window.__completionEditor.trigger("test", "editor.action.showHover", {}),
+    );
+    await expect(hover).toBeVisible();
+    await expect(hover).toHaveCSS("opacity", "1");
+    await expect(hover).toContainText("service");
+    await expect(hover.locator('img[src$="/icons/aws/rds.svg"]')).toBeVisible();
+    await expect
+      .poll(() =>
+        hover.locator("img").evaluate((image) => image.complete && image.naturalWidth > 0),
+      )
+      .toBe(true);
+    if (evidence) await page.screenshot({ path: `${evidence}/${theme}-inherited-hover.png` });
+    await page.keyboard.press("Escape");
+    await prepare(reference.trimEnd());
+    await page.evaluate(() =>
+      window.__completionEditor.trigger("test", "editor.action.showHover", {}),
+    );
+    const catalogHover = page.locator(".monaco-hover").filter({ hasText: "Rds" });
+    await expect(catalogHover).toBeVisible();
+    await expect
+      .poll(() =>
+        catalogHover
+          .locator('img[src$="/icons/aws/rds.svg"]')
+          .evaluate((image) => image.complete && image.naturalWidth > 0),
+      )
+      .toBe(true);
+    results.push(`${theme}: catalog-reference hover renders a loaded same-origin icon`);
+    const overridden =
+      reference +
+      "    title: Customer queue\n    type: queue\n    icon: aws/lambda\n    description: Current description\nflows:\n  - to: database";
+    await prepare(overridden);
+    await page.evaluate(() =>
+      window.__completionEditor.trigger("test", "editor.action.showHover", {}),
+    );
+    const overrideHover = page.locator(".monaco-hover").filter({ hasText: "Customer queue" });
+    await expect(overrideHover).toBeVisible();
+    await expect(overrideHover).toContainText("queue");
+    await expect(overrideHover).toContainText("Current description");
+    await expect(overrideHover.locator('img[src$="/icons/aws/lambda.svg"]')).toBeVisible();
+    await expect(overrideHover).not.toContainText("Rds");
+    results.push(
+      `${theme}: endpoint suggestions and rendered hover inherit catalog metadata; explicit overrides and icon previews win`,
+    );
+
+    await prepare('diagram: "1"\nnodes:\n  - comp');
+    await page.keyboard.press("Control+Space");
+    await accept(
+      "component reference",
+      'diagram: "1"\nnodes:\n  - id: component\n    ref: ws/components/qlik-cloud-tenant\n    expand: false',
+    );
+    const selectedText = () =>
+      page.evaluate(() => {
+        const editor = window.__completionEditor;
+        return editor.getModel().getValueInRange(editor.getSelection());
+      });
+    assert.equal(await selectedText(), "component");
+    await page.keyboard.type("tenant");
+    await page.keyboard.press("Tab");
+    assert.equal(await selectedText(), "components/qlik-cloud-tenant");
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Escape");
+    assert.equal(
+      (await state()).text,
+      'diagram: "1"\nnodes:\n  - id: tenant\n    ref: ws/components/qlik-cloud-tenant\n    expand: false',
+    );
+    results.push(
+      `${theme}: component reference snippet inserts valid ref: ws YAML and keyboard tab stops`,
+    );
+    await prepare('diagram: "1"\ncomp');
+    await page.keyboard.press("Control+Space");
+    await accept(
+      "component reference",
+      'diagram: "1"\nnodes:\n  - id: component\n    ref: ws/components/qlik-cloud-tenant\n    expand: false',
+    );
+    assert.equal(await selectedText(), "component");
+    await page.keyboard.press("Escape");
+    results.push(
+      `${theme}: component reference snippet at root creates nodes without colliding with component metadata`,
+    );
+    const lifecycle = await checkProviderLifecycle(page);
+    assert.equal(lifecycle.length, 6);
+    results.push(
+      ...lifecycle.map(
+        (result) =>
+          `${theme}: ${result.mutation} discards pending edits and disposes both providers once`,
+      ),
+    );
+
     await prepare(`${header}    # ref: catalog/`);
     await page.keyboard.press("Control+Space");
     await expect(popup.locator(".monaco-list-row")).toHaveCount(0);
@@ -191,6 +292,12 @@ try {
     const otherTheme = theme === "light" ? "Dark" : "Light";
     await page.getByRole("button", { name: "Theme", exact: true }).click();
     await page.getByRole("menuitemradio", { name: otherTheme, exact: true }).click();
+    await page.waitForFunction(
+      (theme) =>
+        getComputedStyle(document.documentElement).colorScheme === theme &&
+        !document.documentElement.hasAttribute("data-vt"),
+      otherTheme.toLowerCase(),
+    );
     await expect(input).toBeVisible();
     await prepare(`${header}    ref: catalog`);
     await page.keyboard.type("/aws/rd");
