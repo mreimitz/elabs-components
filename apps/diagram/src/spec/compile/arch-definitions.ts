@@ -56,6 +56,7 @@ const NODE_FIELDS = {
 } as const satisfies Record<string, FlowFieldDefinition>;
 
 const ZONE_FIELDS = {
+  description: { kind: "string" },
   inner: { kind: "boolean" },
   component: { kind: "string" },
   count: { kind: "number" },

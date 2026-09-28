@@ -22,10 +22,10 @@ pipeline, the zones/nodes/flows/styles/notes keys, ids and positions unchanged f
 `component` marks and describes a diagram meant to be referenced by another one (its icon and
 one-sentence description, shown where the reference collapses). `story` and `visual` are
 carried but not yet read by anything in R1 — later items (DG-31, DG-36) define their shape.
-`docs`/`status` will be shown on the details card once DG-25 builds it (not yet). `status` is
-never supplied by a reference; `docs`, like `description`, comes from the reader when the node
-writes none (§2.2) — neither is copied into the compiled data. Any unrecognized top-level, zone
-or node key is still `unknown-prop` (a warning), as in v0.
+`docs` and `status` appear in node details. Status is authored on the node; catalog references
+can supply description and documentation when those fields are unwritten (§2.2). The details
+reader resolves that catalog metadata without adding fields to the source YAML. Any
+unrecognized top-level, zone or node key is still `unknown-prop` (a warning), as in v0.
 
 ## 2. References
 
@@ -74,18 +74,18 @@ diagram-ref  := "ws" ("/" segment)+           segment: any character except "/",
 
 ### 2.2 Precedence: what a reference supplies
 
-The node's own written key always wins. Below it, only a catalog reference fills anything in
-Reference values follow these precedence rules (diagram references: §2.4):
+The node's own written key always wins. Catalog reference values follow these precedence
+rules; diagram references are described in §2.4:
 
-| Key                                       | Catalog part supplies                                               | Catalog icon entry supplies                                        | Node default (no ref, or ref fills nothing) |
-| ----------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------- |
-| `title`                                   | the part's name, else its slug                                      | the vendor file's `name`, else the icon index label, else the slug | the node's `id`                             |
-| `subtitle`                                | the part's own `subtitle`                                           | none                                                               | none                                        |
-| `icon`                                    | the part's own `icon`                                               | its own `icon`                                                     | the type's glyph, at render                 |
-| `type`                                    | the part's own `kind`, else its icon entry's                        | its own `kind` (no vendor file sets one today)                     | `service`                                   |
-| `badges`                                  | the part's own `badges`                                             | none                                                               | none                                        |
-| `description`, `docs`                     | reserved for the future details reader (DG-25); not inherited today | (same)                                                             | none                                        |
-| `tone`, `href`, `class`, `text`, `status` | never supplied                                                      | never supplied                                                     | none                                        |
+| Key                                       | Catalog part supplies                               | Catalog icon entry supplies                                        | Node default (no ref, or ref fills nothing) |
+| ----------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------- |
+| `title`                                   | the part's name, else its slug                      | the vendor file's `name`, else the icon index label, else the slug | the node's `id`                             |
+| `subtitle`                                | the part's own `subtitle`                           | none                                                               | none                                        |
+| `icon`                                    | the part's own `icon`                               | its own `icon`                                                     | the type's glyph, at render                 |
+| `type`                                    | the part's own `kind`, else its icon entry's        | its own `kind`                                                     | `service`                                   |
+| `badges`                                  | the part's own `badges`                             | none                                                               | none                                        |
+| `description`, `docs`                     | the part's metadata, falling back to its icon entry | the entry's metadata, read by node details                         | none                                        |
+| `tone`, `href`, `class`, `text`, `status` | never supplied                                      | never supplied                                                     | none                                        |
 
 - `title`, `subtitle`, `icon`, `type` and `badges` (`SUPPLIED_KEYS`) are filled into the AST
   before validation — only for the keys the node's text does not already have
@@ -96,15 +96,16 @@ Reference values follow these precedence rules (diagram references: §2.4):
   (`subtitle: ""`) is a written override instead: it draws nothing, the same as `badges: []` —
   neither ever falls back to the reference's value. `type: ""` is a `not-in-enum` error;
   `icon: ""` warns `unknown-icon` and uses the type glyph.
-- `description` and `docs` are **not** in `SUPPLIED_KEYS`: they never land in the compiled
-  node's data even when the node writes neither, so the drawing never changes shape. Today
-  the inspector's supplied text/list fields show "From the reference: …" help while inherited.
+- `description` and `docs` are **not** in `SUPPLIED_KEYS`. Authored values stay in compiled
+  data; node details reads the catalog fallback for unwritten values. An explicit empty
+  description or documentation value suppresses that fallback. Documentation links allow
+  only safe URLs. The inspector's supplied text/list fields show "From the reference: …"
+  help while inherited.
   Type offers a "From the reference: …" option even after an override; choosing it removes
   the written key. **Clear subtitle**, or clearing a subtitle after editing, writes `subtitle: ""`;
   **Use reference subtitle** removes that override. Help updates while editing without
-  remounting fields or closing portaled menus; `description` and `docs` are not filled
-  into that form at all yet, and the details card does not read a reference's
-  `description`/`docs` either — that is DG-25's own work, not yet built.
+  remounting fields or closing portaled menus. Description and documentation inheritance is
+  shown by node details; it is not written into the inspector form or YAML.
 
 ### 2.3 Catalog references (built in Part 1b)
 
@@ -123,12 +124,12 @@ flag. The MCP tools check against `readAll()` read fresh on every call, never a 
 
 ### 2.4 Diagram references
 
-A `ws/` reference resolves the named workspace YAML before its first draw. It remains one
-collapsed `arch/composite` node. The referenced diagram supplies its title, `component.icon`,
+A `ws/` reference resolves the named workspace YAML before its first draw. By default it is
+one collapsed `arch/composite` node. The referenced diagram supplies its title, `component.icon`,
 and `component.description` (falling back to its top-level description); explicitly written
 node values win, including an empty description. The compiled data includes the referenced
 file path, inner node count, and the inner ids used by parent flows. The current renderer is
-still the ordinary service card; inline expansion and dedicated composite controls are separate work.
+still the ordinary service card; dedicated composite controls are separate work.
 
 Missing files, invalid diagrams, reference cycles, and nesting deeper than eight diagrams
 produce positioned errors and a destructive card with a written reason. Unloaded references
@@ -139,12 +140,44 @@ references because events may have been missed.
 A dotted flow end reaches inside a diagram reference (`tenant.qtdi -> warehouse`). Every
 segment must exist in the resolved diagram; another dot requires another diagram-reference
 node. Missing or invalid references report their own problem without cascading unknown-id
-errors. Both ends inside one reference produce an `inner-flow` warning because the collapsed
-box cannot draw that loop. Notes cannot reach inside references.
+errors. Both ends inside one collapsed reference produce an `inner-flow` warning because the
+box cannot draw that loop. Once the actual endpoints are expanded, that flow draws normally.
+Notes cannot reach inside references.
 
 MCP validation and write tools use the same resolver. An invalid reference refuses the write.
 `compose_set` cannot modify an inner node through its parent: edit the referenced file.
 It can still edit a parent flow whose endpoint is dotted.
+
+### 2.5 Inline expansion
+
+Under automatic layout, `expand: true` turns a resolved reference into a zone containing its
+referenced nodes, zones and flows. The wrapper keeps the instance id and its authored source
+entry. Each imported id is prefixed with the instance id (`tenant.qtdi`); nested references
+can expand again. Parent links and flow endpoints use the same prefix. A plain `tenant`
+endpoint attaches to the wrapper boundary, while `tenant.qtdi` attaches to that inner node.
+Child catalog metadata, styles and node style remain local to that source diagram. Imported
+positions and notes are not copied; the surrounding automatic layout places the contents.
+
+The imported contents are read-only. They have no source origin in the parent diagram,
+cannot be dragged or deleted, and cannot receive reparented nodes. Edit the referenced file
+to change them. The wrapper remains an authored reference, so deleting it removes that
+reference and the parent's attached flows, not the referenced file.
+
+`layout: manual` keeps references collapsed and retains their authored positions; requested
+expansion adds the informational `expand-ignored` issue. Expansion is also bounded to eight
+reference levels and 1,000 imported nodes, zones and flows per compilation. Each child
+diagram reserves its whole immediate contents before import. If the remaining budget is too
+small, that instance stays collapsed with a positioned `expand-limit` warning; it never
+shows an incomplete subset of its own nodes or flows. Nested references may remain collapsed
+inside an otherwise expanded parent.
+
+For temporary exploration, `compileArch(ast, components, { expand, collapse })` and
+`compileText(text, { files, catalog, expand, collapse })` accept sets of qualified instance
+ids. `expand` reveals additional references, and `collapse` takes precedence over both
+`expand` and authored `expand: true`. These options never change the source AST, YAML,
+history or dirty state. Manual layout still wins. `view.inner` maps imported graph ids to
+`{ component, id }` in their own source diagram; these addresses are navigation metadata,
+not writable parent origins.
 
 ## 3. The version rule
 
@@ -198,6 +231,8 @@ position is the issue's start.
 | `ref-missing`        | error    | `No catalog item "<name>".` (+ `Did you mean "catalog/<near>"?` when one is close) · `"<name>" is an icon with no catalog item; write "icon: <name>" instead of the ref.` | `issue-ref-missing.yaml` @ 5:10 and 7:10      |
 | `inner-flow`         | warning  | `Both ends are inside "<id>"; draw this flow in <ref> instead.`                                                                                                           | `issue-inner-flow.yaml` @ 7:5                 |
 | `expand-not-diagram` | warning  | `"expand" applies only to a node whose ref names a diagram (ws/…); here it does nothing.` (on the key)                                                                    | `issue-expand-not-diagram.yaml` @ 5:5 and 8:5 |
+| `expand-ignored`     | info     | Requested expansion stays collapsed under manual layout.                                                                                                                  | `compose/compose-inline-manual.yaml`          |
+| `expand-limit`       | warning  | An instance stays collapsed at the depth or imported-element budget.                                                                                                      | inline expansion unit stress fixture          |
 | `ref-type-not-drawn` | info     | `"type: <value>" is kept, but a diagram reference always draws as one box for now.`                                                                                       | `issue-ref-type-not-drawn.yaml` @ 9:5         |
 
 `bad-ref`'s exact message depends on why the path is not one of the two forms (§2.1); a

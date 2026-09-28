@@ -178,6 +178,7 @@ function DrillCanvas({
     [],
   );
   const { status } = useDiagramLayout({
+    source: structure,
     layoutKey,
     direction: spec.layout.direction,
     manual: spec.layout.engine === "none",

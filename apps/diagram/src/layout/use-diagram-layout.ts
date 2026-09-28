@@ -44,6 +44,8 @@ export type LayoutStatus = "pending" | "ready" | "error";
 export interface UseDiagramLayoutOptions {
   /** Change it to lay out the current nodes from scratch (a new graph, a new direction). */
   layoutKey: string | number;
+  /** Compiled structure: invalidates in-flight work before the deferred layout key advances. */
+  source: string;
   direction: DiagramDirection;
   /** `layout: manual` — positions come from the text; no ELK. */
   manual: boolean;
@@ -144,6 +146,7 @@ function matchesDom(root: HTMLElement | null, nodes: readonly Node[]): boolean {
 export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayout {
   const {
     layoutKey,
+    source,
     direction,
     manual,
     collapse,
@@ -214,6 +217,8 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
   // The key of the latest render: a run that finishes after the key moved on is dropped.
   const latestKey = useRef(layoutKey);
   latestKey.current = layoutKey;
+  const latestSource = useRef(source);
+  latestSource.current = source;
   // DG-12: the last layout's nodes, until the fit effect below has fitted them.
   const fitPending = useRef<Node[] | null>(null);
   // Wave-2 M1: the last fitted layout and the viewport that fit set — `refit`'s input, and how
@@ -294,6 +299,7 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
     // whole (docs/findings/DG-15-manual-layout.md §4).
     const current = measured.map(unstage);
     const key = layoutKey;
+    const input = source;
     busy.current = true;
     laidOutKey.current = key;
     onSettledRef.current?.("pending");
@@ -303,7 +309,7 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
       : layoutDiagram(current, layoutEdges, layoutOptions);
     run
       .then((result) => {
-        if (key !== latestKey.current) {
+        if (key !== latestKey.current || input !== latestSource.current) {
           // Stale: a newer graph arrived mid-run. Re-render so this effect runs for it.
           settle({ key, status: "pending" });
           return;
@@ -329,6 +335,7 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
     foldedKey.current = folded;
     busy.current = true;
     const key = layoutKey;
+    const input = source;
     const shown = getNodes();
     const edges = getEdges();
     relayoutVisible(shown, edges, {
@@ -337,7 +344,12 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
       handleAnchors: measuredHandles(shown, edges),
     })
       .then((result) => {
-        if (key === latestKey.current && result.engine !== "dagre") apply(result);
+        if (key !== latestKey.current || input !== latestSource.current) {
+          // Release a full layout that was waiting for this obsolete fold to finish.
+          settle({ key, status: "pending" });
+          return;
+        }
+        if (result.engine !== "dagre") apply(result);
       })
       .catch((error: unknown) => console.error("[DG-11] re-layout failed", error))
       .finally(() => {

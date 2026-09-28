@@ -651,6 +651,7 @@ function DiagramCanvas({
 
   const { status, refit } = useDiagramLayout({
     layoutKey,
+    source: structure,
     direction,
     manual: spec.layout.engine === "none",
     collapse,

@@ -64,6 +64,7 @@ export type CompiledNodeData = {
 };
 
 export type CompiledZoneData = {
+  description?: string;
   inner?: true;
   component?: string;
   count?: number;
@@ -270,6 +271,7 @@ export function compileArch(
       inner: expanded?.inner.has(zone.id) ? true : undefined,
       ...expanded?.instances.get(zone.id),
       title: zone.title,
+      description: zone.description,
       subtitle: zone.subtitle,
       kind: zone.kind,
       owner: ownerOf.get(zone.id) ?? DEFAULT_ZONE_OWNER,
