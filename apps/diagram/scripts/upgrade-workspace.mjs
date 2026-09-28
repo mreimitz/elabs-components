@@ -4,20 +4,25 @@
  *
  * `--ref-first [--choices <file.json>]` (1b.9): the reference-first migration, once, over
  * every `*.yaml` under the target (default: workspace), skipping `_trash` — the same walk as a
- * plain upgrade. `ref-first-choices.json` (this folder) is always the base: it is exactly what
- * migrated the seven shipped workspace files, so a bare `--ref-first` re-run is a no-op on them
- * (review round 1 F3, review-r1 — committed, not a file that only ever lived outside the repo).
- * `--choices <file.json>` merges on top of it, per file and then per node id, so a project can
- * add its own choices without repeating the shipped ones. `choices` shape: `{ "<workspace-
- * relative path>": { "<node id>": "<catalog name>" | "<ref to write>" | "custom" } }` — a bare
- * catalog name ("aws/rds") and the full ref form ("catalog/aws/rds") both work (review round 0
- * F3). A node not named in a file's `choices` falls back to its own written `icon:` as the
- * catalog name to try, so a file with no entry in `choices` at all is still processed (review
- * round 0 F8); "custom", or an icon that is not a catalog name, leaves the node exactly as
- * written. A `choices` entry naming no node in its file, or no catalog entry, is reported and
- * fails the run (review round 1 F3 / verify-r1 F2) unless `--dry-run`. Refuses a file not
- * already at the current dialect (review round 1 F6 / N2 — run the plain upgrade first). Never
- * run together with a dialect upgrade.
+ * plain upgrade. `ref-first-choices.json` (this folder, committed) names, for each of the shipped
+ * workspace files that needed one, the nodes whose catalog choice was not obvious from the
+ * written icon alone. `--choices <file.json>` merges on top of it, per file and then per node id,
+ * so a project can add its own choices without repeating the shipped ones. `choices` shape:
+ * `{ "<workspace-relative path>": { "<node id>": "<catalog name>" | "<ref to write>" | "custom" }
+ * }` — a bare catalog name ("aws/rds") and the full ref form ("catalog/aws/rds") both work. A
+ * file with no node written `ref:` yet: a node not named in its `choices` falls back to its own
+ * written `icon:` as the catalog name to try, so a file with no entry in `choices` at all is
+ * still processed. A file with at least one `ref:` node already (`hasCatalogRef`) has been
+ * through this once before: unless the merged `choices` names that file, it is left alone
+ * untouched (a copy of an already-migrated file keeps whatever custom stand-ins it has); named,
+ * only the ids `choices` lists convert — no icon fallback, so a stand-in the file's own author
+ * left custom stays that way unless named on purpose. This is why a bare `--ref-first` re-run is
+ * a no-op on all seven shipped files: the five `ref-first-choices.json` names convert nothing new
+ * (every node it names already has `ref:`), and the other two are already reference-first and
+ * unnamed. "custom", or an icon that is not a catalog name, leaves a node exactly as written
+ * either way. A `choices` entry naming no node in its file, or no catalog entry, is reported and
+ * fails the run unless `--dry-run`. Refuses a file not already at the current dialect (run the
+ * plain upgrade first). Never run together with a dialect upgrade.
  */
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
@@ -31,7 +36,7 @@ const { module } = await runnerImport(
   fileURLToPath(new URL("../src/server-surface.ts", import.meta.url)),
   { root, configFile: false, logLevel: "error" },
 );
-const { upgradeText, refFirstText, catalogLookupOf, ICON_NAMES } = module;
+const { upgradeText, refFirstText, hasCatalogRef, catalogLookupOf, ICON_NAMES } = module;
 const { module: typesModule } = await runnerImport(
   fileURLToPath(new URL("../src/spec/dialect/types.ts", import.meta.url)),
   { root, configFile: false, logLevel: "error" },
@@ -43,7 +48,7 @@ const dryRun = args.includes("--dry-run");
 const refFirst = args.includes("--ref-first");
 const choicesFlag = args.indexOf("--choices");
 const choicesPath = choicesFlag === -1 ? undefined : args[choicesFlag + 1];
-// review round 0 F1 — only exclude the value that actually follows a real `--choices` flag;
+// only exclude the value that actually follows a real `--choices` flag;
 // with no `--choices` at all, `choicesFlag === -1` must never exclude the argument at index 0.
 const targets = args.filter(
   (a, i) =>
@@ -104,11 +109,26 @@ const rels = [...new Set(files.map((f) => relative(workspace, f)))].sort();
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
+// Plain words for `UpgradeResult`/`RefFirstResult`'s internal reason codes; a reason not in
+// this list (there is none today) still prints, verbatim, rather than throwing.
+const REASON_TEXT = {
+  "yaml-error": "the YAML does not parse",
+  "not-a-diagram": "this is not a diagram file",
+  "unsupported-version": "the dialect version is not one this app reads",
+  "no-exact-edit": "a value here could not be edited exactly",
+  "drawing-changed": "the migration would have drawn a node differently",
+};
+const reasonText = (reason) => REASON_TEXT[reason] ?? reason;
+
 let changedCount = 0;
 let totalRefs = 0;
 let totalDropped = 0;
 let anyBadChoices = false;
 let failed = missingTarget;
+// Every `--ref-first` file is validated before any file is written: a converted file's text
+// waits here, and only lands on disk once the whole run comes back clean (never a mix of files
+// a fixed-up re-run would have to sort out).
+const refFirstWrites = [];
 for (const rel of rels) {
   const full = join(workspace, rel);
   let text;
@@ -120,34 +140,55 @@ for (const rel of rels) {
     continue;
   }
   if (refFirst) {
-    // review round 1 F6 / N2 — refuse a file `--ref-first` has not seen the plain upgrade
-    // run on yet: adding `ref:` beside `diagram: "0"` would leave a mixed file. A file this
-    // reads as unreadable for another reason falls through to `refFirstText`'s own reason
-    // below, which names the real cause.
+    // Refuse a file `--ref-first` has not seen the plain upgrade run on yet: adding `ref:`
+    // beside `diagram: "0"` would leave a mixed file. A file this reads as unreadable for
+    // another reason falls through to `refFirstText`'s own reason below, which names the real
+    // cause.
     const versionCheck = upgradeText(text);
     if (versionCheck.from !== null && versionCheck.from !== DIALECT_VERSION) {
-      console.log(`${rel}: cannot read (run the dialect upgrade first)`);
+      console.log(`${rel}: still dialect ${versionCheck.from}; run the plain upgrade first`);
       failed = true;
       continue;
     }
-    const result = refFirstText(text, catalog, choices[rel] ?? {});
-    // review round 0 F2 — refFirstText now reports why an unreadable file could not be read
-    // (the same reasons upgradeText does, below), never a quiet "unchanged".
+    const fileChoices = choices[rel] ?? {};
+    // A file with at least one `ref:` node already has been through this migration before: it
+    // is left alone unless the merged choices name it, so a copy of an already-migrated file
+    // (a "start from a template" copy, say) keeps whatever custom stand-ins it has.
+    const result = refFirstText(text, catalog, fileChoices, { onlyNamed: hasCatalogRef(text) });
+    // refFirstText reports why an unreadable file could not be read (the same reasons
+    // upgradeText does, below), never a quiet "unchanged".
     if (result.reason) {
-      console.log(`${rel}: cannot read (${result.reason})`);
+      console.log(`${rel}: cannot read (${reasonText(result.reason)})`);
       failed = true;
       continue;
     }
-    // review round 1 F3 (review-r1) / F2 (verify-r1) — a `choices` entry that named no node
-    // or no catalog item is reported, not silently dropped.
+    // A `choices` entry that named no node or no catalog item is reported, not silently
+    // dropped.
     for (const bad of result.badChoices) {
       console.log(`${rel}: bad choice ${bad}`);
       anyBadChoices = true;
     }
-    // review round 1 F1 (verify-r1) — informational: the node stayed custom on purpose, to
-    // keep the drawing identical. Never a failure.
+    // Informational: the node stayed custom on purpose, to keep the drawing identical. Never a
+    // failure.
     for (const skip of result.skipped) {
       console.log(`${rel}: "${skip.id}" left custom (${skip.reason})`);
+    }
+    // A pinned key, a key kept for an anchor/alias, or an unspliceable drop is otherwise
+    // invisible: say so per node, not just in the file's own summary line below.
+    for (const change of result.changes) {
+      if (change.pinned) {
+        console.log(
+          `${rel}: "${change.id}" kept ${change.pinned.join(" and ")} so the drawing stays the same`,
+        );
+      }
+      if (change.kept) {
+        console.log(
+          `${rel}: "${change.id}" kept ${change.kept.join(" and ")} (set through a YAML anchor or alias)`,
+        );
+      }
+      if (change.reason) {
+        console.log(`${rel}: "${change.id}": a drop could not be made exactly, left in place`);
+      }
     }
     if (!result.changed) {
       console.log(`${rel}: unchanged`);
@@ -159,14 +200,14 @@ for (const rel of rels) {
     totalRefs += refs;
     totalDropped += dropped;
     changedCount += 1;
-    if (!dryRun) writeFileSync(full, result.text);
+    refFirstWrites.push({ full, text: result.text });
     continue;
   }
   const result = upgradeText(text);
   // Any reason at all (unreadable, or a version bump that could not be made exactly, DG-26
   // 1a.9) is a failure — never reported as a quiet "unchanged".
   if (result.reason !== undefined) {
-    console.log(`${rel}: cannot read (${result.reason})`);
+    console.log(`${rel}: cannot read (${reasonText(result.reason)})`);
     failed = true;
     continue;
   }
@@ -179,7 +220,20 @@ for (const rel of rels) {
   if (!dryRun) writeFileSync(full, result.text);
 }
 
-const suffix = dryRun ? " (dry run)" : "";
+// A run with a bad choice, or a file that could not be read, writes NOTHING: every `--ref-first`
+// file above only queued its text; only a clean run puts any of it on disk.
+const refFirstFailed = refFirst && !dryRun && (failed || anyBadChoices);
+if (refFirst && !dryRun) {
+  if (refFirstFailed) {
+    console.log("Run failed; no files were written. Fix the issue above and run it again.");
+  } else {
+    for (const { full, text } of refFirstWrites) writeFileSync(full, text);
+  }
+}
+
+// A failed run's summary says what it WOULD have done, never what it did: nothing above was
+// written.
+const suffix = dryRun ? " (dry run)" : refFirstFailed ? " (not written)" : "";
 console.log(
   refFirst
     ? `${plural(totalRefs, "reference")} and ${plural(totalDropped, "dropped key")} in ${changedCount} of ${rels.length} files${suffix}`
@@ -187,6 +241,6 @@ console.log(
       ? `${changedCount} of ${rels.length} files would change`
       : `${changedCount} of ${rels.length} files upgraded`,
 );
-// review round 1 F3 (review-r1) / F2 (verify-r1) — a bad choice fails the run so it gets
+// a bad choice fails the run so it gets
 // fixed, but `--dry-run` is a preview: it reports without failing.
 process.exit(failed || (anyBadChoices && !dryRun) ? 1 : 0);

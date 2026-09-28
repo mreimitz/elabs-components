@@ -169,19 +169,29 @@ function sameValue(a: FormValue | undefined, b: FormValue | undefined): boolean 
 }
 
 /**
- * The keys that changed between two form value sets, as a write-back patch. An emptied
- * field, "Not set", and a boolean switched back to its default remove the key.
+ * The keys that changed between two form value sets, as a write-back patch. An emptied field,
+ * "Not set", and a boolean switched back to its default remove the key — except a text field
+ * named in `referenceSupplied` (a catalog reference currently supplies a value for it): emptying
+ * THAT one writes `""` instead, an explicit override that blocks the reference's value from
+ * showing again (dialect-v1.md; `normalize.ts` already treats a written `""` this way). Removing
+ * the key would mean "unwritten", which is what let the reference's value silently come back.
  */
 export function entryFormPatch(
   def: AnyComponentDefinition,
   before: FormValues,
   after: FormValues,
+  referenceSupplied: ReadonlySet<string> = new Set(),
 ): EntryPatch {
   const defaults = defaultsOf(def);
   const patch: Record<string, WriteValue | undefined> = {};
   for (const [name, value] of Object.entries(after)) {
     if (sameValue(before[name], value)) continue;
-    if (isEmpty(value) || (typeof value === "boolean" && value === defaults[name])) {
+    if (
+      (value === "" || (Array.isArray(value) && value.length === 0)) &&
+      referenceSupplied.has(name)
+    ) {
+      patch[name] = value === "" ? "" : [];
+    } else if (isEmpty(value) || (typeof value === "boolean" && value === defaults[name])) {
       patch[name] = undefined;
     } else if (
       typeof value === "string" ||

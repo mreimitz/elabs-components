@@ -19,13 +19,14 @@ import {
   suppliedBy,
   type ArchCheckResult,
   type ArchIssue,
+  type CatalogLookup,
   type Supplied,
 } from "../spec/dialect";
 import { NODE_TYPE_KEY } from "../spec/compile/arch-definitions"; // DG-26 (1b.12)
 import type { CompiledCompositeData } from "../spec/compile/compile-arch"; // DG-26
 import { NODE_DEF } from "../spec/dialect/definitions"; // DG-26 (1b.12)
 import { entryFormSpec, entryFormValues, UNSET } from "../spec/dialect/form-spec"; // DG-26 (1b.12)
-import { upgradeText } from "../spec/dialect/upgrade"; // DG-26
+import { refFirstText, upgradeText } from "../spec/dialect/upgrade"; // DG-26
 import { fromReactFlow, toReactFlow } from "../spec/flow-spec"; // DG-10
 import { archRegistry, compileText, type CompiledDiagram } from "../state/compile-text"; // DG-10
 
@@ -312,8 +313,8 @@ function runUpgrades(): UpgradeRow[] {
 
 const UPGRADE_ROWS = runUpgrades();
 
-// DG-26 (1b.12) — five checks over valid-ref-catalog.yaml and issue-ref-missing.yaml, run
-// against the bundled catalog: what a catalog reference fills into the compiled graph, and
+// DG-26 (1b.12) — checks over valid-ref-catalog.yaml and issue-ref-missing.yaml, run against
+// the bundled catalog: what a catalog reference fills into the compiled graph, and
 // what the inspector's form shows for a field a reference supplies (1b.6).
 interface RefRow {
   name: string;
@@ -355,6 +356,7 @@ function runReferenceFirst(): RefRow[] {
   const people = compiled && dataOf(compiled, "people");
   const ch = compiled && dataOf(compiled, "ch");
   const ch2 = compiled && dataOf(compiled, "ch2");
+  const ch3 = compiled && dataOf(compiled, "ch3");
 
   const rows: RefRow[] = [
     {
@@ -391,6 +393,11 @@ function runReferenceFirst(): RefRow[] {
       detail: `ch=${JSON.stringify(ch)} ch2=${JSON.stringify(ch2)}`,
     },
     {
+      name: 'ch3: a written subtitle: "" clears the reference\'s subtitle',
+      pass: ch3?.subtitle === "",
+      detail: JSON.stringify(ch3),
+    },
+    {
       name: "aws/rdss suggests catalog/aws/rds; lucide/users has no suggestion",
       pass: rdss?.suggestion === "catalog/aws/rds" && lucideUsers?.suggestion === undefined,
       detail: `rdss=${JSON.stringify(rdss?.suggestion)} lucide/users=${JSON.stringify(lucideUsers?.suggestion)}`,
@@ -416,9 +423,154 @@ function runReferenceFirst(): RefRow[] {
 
 const REFERENCE_FIRST_ROWS = runReferenceFirst();
 
-/** DG-26 (1b.12) — the bundled catalog merges without a problem and is not empty. */
+/**
+ * DG-26 — `refFirstText` over small inline texts, for cases the shipped workspace files never
+ * exercise: what it does to a node's compiled data must match before and after, exactly like the
+ * fixture-based Reference-first rows above.
+ */
+interface MigrationRow {
+  name: string;
+  pass: boolean;
+  detail: string;
+}
+
+function titleOf(text: string, id: string, catalog: CatalogLookup): string | undefined {
+  return dataOf(compileText(text, { catalog }), id)?.title;
+}
+
+function runRefFirstMigration(): MigrationRow[] {
+  const catalog = bundledCatalog();
+  const rows: MigrationRow[] = [];
+
+  // An explicit `title: ""` is a written override and stays blank; a no-value `title:` (YAML
+  // null) is unwritten and gets pinned to the id it already drew, so neither starts drawing the
+  // catalog's label once `ref:` lands.
+  {
+    const before =
+      'diagram: "1"\nnodes:\n  - id: a\n    icon: aws/glue\n    title: ""\n  - id: b\n    icon: aws/glue\n    title:\n';
+    const after = refFirstText(before, catalog).text;
+    const blankSame = titleOf(before, "a", catalog) === titleOf(after, "a", catalog);
+    const noValueSame = titleOf(before, "b", catalog) === titleOf(after, "b", catalog);
+    rows.push({
+      name: 'title: "" and no-value title: compile the same before and after',
+      pass: blankSame && noValueSame,
+      detail: `a: ${JSON.stringify(titleOf(before, "a", catalog))} → ${JSON.stringify(titleOf(after, "a", catalog))}; b: ${JSON.stringify(titleOf(before, "b", catalog))} → ${JSON.stringify(titleOf(after, "b", catalog))}`,
+    });
+  }
+
+  // A trailing comment on a key that would otherwise be dropped (its written value equals what
+  // the reference now supplies) blocks the drop; the key and its comment stay exactly as written.
+  {
+    const before =
+      'diagram: "1"\nnodes:\n  - id: ch\n    icon: clickhouse/cloud\n    title: ClickHouse Cloud\n    type: datastore\n    badges: [managed]\n    subtitle: Cloud # keep\n';
+    const result = refFirstText(before, catalog);
+    const change = result.changes.find((c) => c.id === "ch");
+    const pass =
+      change !== undefined &&
+      !change.dropped.includes("subtitle") &&
+      change.dropped.includes("title") &&
+      result.text.includes("subtitle: Cloud # keep");
+    rows.push({
+      name: "a trailing comment on a droppable key keeps it",
+      pass,
+      detail: JSON.stringify(change),
+    });
+  }
+
+  // A node written in flow-map style (`{ id, icon }`) converts the same way as a block-style
+  // one; the write-back is a generic map edit, not only a block one.
+  {
+    const before = 'diagram: "1"\nnodes:\n  - { id: g, icon: aws/glue }\n';
+    const result = refFirstText(before, catalog);
+    const compiledAfter = compileText(result.text, { catalog });
+    const pass =
+      result.changed &&
+      result.text.includes("ref: catalog/aws/glue") &&
+      dataOf(compiledAfter, "g")?.catalogEntry === "aws/glue" &&
+      titleOf(before, "g", catalog) === dataOf(compiledAfter, "g")?.title;
+    rows.push({
+      name: "a flow-map node ({ id, icon }) converts the same way",
+      pass,
+      detail: result.text,
+    });
+  }
+
+  // A written icon naming a part's own catalog entry ("generic/users"), rather than what that
+  // part actually draws ("lucide/users"), still converts — the icon stays written (never
+  // renamed away) and the node draws the same before and after.
+  {
+    const before = 'diagram: "1"\nnodes:\n  - id: u\n    icon: generic/users\n';
+    const result = refFirstText(before, catalog);
+    const compiledAfter = compileText(result.text, { catalog });
+    const beforeData = dataOf(compileText(before, { catalog }), "u");
+    const afterData = dataOf(compiledAfter, "u");
+    const pass =
+      result.changed &&
+      result.text.includes("icon: generic/users") &&
+      !result.text.includes("ref: generic/users") &&
+      afterData?.icon === "generic/users" &&
+      beforeData?.title === afterData?.title &&
+      typeOf(compileText(before, { catalog }), "u") === typeOf(compiledAfter, "u");
+    rows.push({
+      name: "a written icon naming a part (not its own drawn icon) stays written, never renamed",
+      pass,
+      detail: result.text,
+    });
+  }
+
+  // A key a YAML anchor or alias sets is never rewritten as text: the anchor/alias round trips
+  // and the node it names still draws the same reference-supplied value.
+  {
+    const before =
+      'diagram: "1"\nx-names: &glue AWS Glue\nnodes:\n  - id: a\n    icon: aws/glue\n    title: *glue\n';
+    const result = refFirstText(before, catalog);
+    const change = result.changes.find((c) => c.id === "a");
+    const pass =
+      result.changed &&
+      change?.kept?.includes("title") === true &&
+      !change.dropped.includes("title") &&
+      result.text.includes("title: *glue") &&
+      titleOf(before, "a", catalog) === titleOf(result.text, "a", catalog);
+    rows.push({
+      name: "a title set through a YAML alias is kept written, not dropped",
+      pass,
+      detail: result.text,
+    });
+  }
+  {
+    const before =
+      'diagram: "1"\nnodes:\n  - id: a\n    icon: clickhouse/cloud\n    title: ClickHouse Cloud\n    type: datastore\n    subtitle: Cloud\n    badges: &b [managed]\n  - id: b\n    icon: aws/glue\n    badges: *b\n';
+    const result = refFirstText(before, catalog);
+    const change = result.changes.find((c) => c.id === "a");
+    const bBadgesBefore = dataOf(compileText(before, { catalog }), "b")?.badges;
+    const bBadgesAfter = dataOf(compileText(result.text, { catalog }), "b")?.badges;
+    const pass =
+      result.changed &&
+      change?.kept?.includes("badges") === true &&
+      result.text.includes("badges: &b [managed]") &&
+      result.text.includes("badges: *b") &&
+      JSON.stringify(bBadgesBefore) === JSON.stringify(bBadgesAfter);
+    rows.push({
+      name: "badges set through a YAML anchor stay written, so another node's alias still resolves",
+      pass,
+      detail: result.text,
+    });
+  }
+
+  return rows;
+}
+
+const REF_FIRST_MIGRATION_ROWS = runRefFirstMigration();
+
+/**
+ * DG-26 (1b.12) — the bundled catalog merges without a problem, and has exactly one entry per
+ * icon name plus one per part that landed (narrower than ">0", so a part silently dropped
+ * without a `problems` entry still fails this row).
+ */
 const CATALOG_BUNDLE_ROW = {
-  pass: BUNDLED_CATALOG.problems.length === 0 && BUNDLED_CATALOG.entries.length > 0,
+  pass:
+    BUNDLED_CATALOG.problems.length === 0 &&
+    BUNDLED_CATALOG.entries.length === ICON_NAMES.size + 15,
   entries: BUNDLED_CATALOG.entries.length,
   problems: BUNDLED_CATALOG.problems,
 };
@@ -430,6 +582,7 @@ export function SpecCheckView() {
     WORKSPACE_ROWS.filter((r) => r.pass).length +
     UPGRADE_ROWS.filter((r) => r.pass).length +
     REFERENCE_FIRST_ROWS.filter((r) => r.pass).length +
+    REF_FIRST_MIGRATION_ROWS.filter((r) => r.pass).length +
     (CATALOG_BUNDLE_ROW.pass ? 1 : 0);
   const total =
     ROWS.length +
@@ -437,6 +590,7 @@ export function SpecCheckView() {
     WORKSPACE_ROWS.length +
     UPGRADE_ROWS.length +
     REFERENCE_FIRST_ROWS.length +
+    REF_FIRST_MIGRATION_ROWS.length +
     1;
   return (
     <main className="min-h-dvh bg-background p-8 text-foreground">
@@ -642,6 +796,38 @@ export function SpecCheckView() {
       </Table>
 
       <Table className="mt-6">
+        <TableCaption>{SPEC_CHECK_LABELS.refFirstMigration}</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{SPEC_CHECK_LABELS.check}</TableHead>
+            <TableHead>{SPEC_CHECK_LABELS.result}</TableHead>
+            <TableHead>{SPEC_CHECK_LABELS.detail}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {REF_FIRST_MIGRATION_ROWS.map((row) => (
+            <TableRow key={row.name} data-pass={row.pass}>
+              <TableCell>
+                <Text as="span" variant="code">
+                  {row.name}
+                </Text>
+              </TableCell>
+              <TableCell>
+                <StatusBadge status={row.pass ? "complete" : "failed"}>
+                  {row.pass ? "Pass" : "Fail"}
+                </StatusBadge>
+              </TableCell>
+              <TableCell>
+                <Text as="span" variant="caption" tone="muted" className="min-w-0 break-words">
+                  {row.detail}
+                </Text>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <Table className="mt-6">
         <TableCaption>{SPEC_CHECK_LABELS.catalogBundle}</TableCaption>
         <TableHeader>
           <TableRow>
@@ -689,6 +875,7 @@ const SPEC_CHECK_LABELS = {
   changed: "Changed",
   result: "Result",
   referenceFirst: "Reference-first (DG-26 1b)",
+  refFirstMigration: "Reference-first migration (refFirstText)",
   catalogBundle: "Catalog bundle",
   check: "Check",
   entries: "Entries",

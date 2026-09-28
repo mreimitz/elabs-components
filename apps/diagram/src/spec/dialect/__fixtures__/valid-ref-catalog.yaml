@@ -11,4 +11,7 @@ nodes:
     ref: catalog/clickhouse/cloud
     title: Analytics DB
     badges: []
+  - id: ch3
+    ref: catalog/clickhouse/cloud
+    subtitle: ""
 # expect: none
