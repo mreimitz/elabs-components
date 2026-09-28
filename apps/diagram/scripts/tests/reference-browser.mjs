@@ -2,7 +2,7 @@
  * ATLAS_URL selects the disposable dev server; ATLAS_EVIDENCE optionally saves screenshots.
  * Run: node scripts/tests/reference-browser.mjs (from apps/diagram).
  */
-/* global document, getComputedStyle */
+/* global document, getComputedStyle, requestAnimationFrame */
 import assert from "node:assert/strict";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 const catalogFile = new URL("../../catalog/parts/snowflake.yaml", import.meta.url);
@@ -36,7 +36,11 @@ const screenshot = async (name) => {
 };
 try {
   await page.goto(`${base}/#dev/spec-check`);
-  await page.getByText(/82 of 82 checks pass/).waitFor();
+  const summary = page.getByText(/\d+ of \d+ checks pass/);
+  await summary.waitFor();
+  const [, passed, total] = (await summary.innerText()).match(/(\d+) of (\d+) checks pass/);
+  assert.equal(Number(passed), Number(total));
+  assert.ok(Number(total) > 0);
   assert.equal(await page.locator('[data-pass="false"]').count(), 0);
   await page.goto(`${base}/#d/${path}`);
   await page.getByRole("button", { name: "Edit", exact: true }).click();
@@ -53,9 +57,40 @@ try {
   assert.equal(await written(), beforeCatalogEdit);
   await writeFile(catalogFile, catalogOriginal);
   await form.getByText("From the reference: Snowflake database", { exact: true }).waitFor();
-  await form.getByRole("button", { name: "Clear subtitle", exact: true }).click();
-  await waitText('subtitle: ""');
-  await form.getByRole("button", { name: "Use reference subtitle", exact: true }).click();
+  for (const theme of ["Light", "Dark"]) {
+    await page.getByRole("button", { name: "Theme", exact: true }).click();
+    await page.getByRole("menuitemradio", { name: theme, exact: true }).click();
+    await page.keyboard.press("Escape");
+    await page.waitForFunction(
+      (name) => getComputedStyle(document.documentElement).colorScheme === name,
+      theme.toLowerCase(),
+    );
+    for (const [before, after] of [
+      ["Clear subtitle", "Use reference subtitle"],
+      ["Use reference subtitle", "Clear subtitle"],
+    ]) {
+      const action = page.getByRole("button", { name: before, exact: true });
+      await action.focus();
+      await action.press("Enter");
+      const replacement = page.getByRole("button", { name: after, exact: true });
+      await replacement.waitFor();
+      assert.equal(await replacement.evaluate((el) => el === document.activeElement), true);
+      const textBeforeBackspace = await written();
+      if (after === "Use reference subtitle") assert.match(textBeforeBackspace, /subtitle: ""/);
+      else assert.doesNotMatch(textBeforeBackspace, /subtitle:/);
+      await page.keyboard.press("Backspace");
+      await page.evaluate(
+        () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+      );
+      assert.equal(await written(), textBeforeBackspace);
+      assert.equal(await page.locator('.react-flow__node[data-id="probe"]').count(), 1);
+      await page.waitForFunction(
+        async ({ endpoint, text }) => (await (await fetch(endpoint)).text()) === text,
+        { endpoint, text: textBeforeBackspace },
+      );
+      assert.equal(await replacement.evaluate((el) => el === document.activeElement), true);
+    }
+  }
   const type = form.getByRole("combobox", { name: "Type", exact: true });
   await form.getByRole("textbox", { name: "Title", exact: true }).focus();
   await type.click();
@@ -102,7 +137,7 @@ try {
   await waitText('subtitle: ""');
   await form.getByText("Cleared; the reference would show: Database", { exact: true }).waitFor();
   await screenshot("inspector-light-cleared");
-  await form.getByRole("button", { name: "Use reference subtitle", exact: true }).click();
+  await page.getByRole("button", { name: "Use reference subtitle", exact: true }).click();
   assert.doesNotMatch(await written(), /subtitle:/);
   await form.getByRole("button", { name: "Advanced", exact: true }).click();
   await form.getByText("From the reference: Database", { exact: true }).waitFor();
@@ -139,7 +174,7 @@ try {
   console.log(
     JSON.stringify({
       result: "pass",
-      specChecks: 82,
+      specChecks: Number(total),
       mouseSelect: true,
       keyboardRestore: true,
       backspaceSafe: true,

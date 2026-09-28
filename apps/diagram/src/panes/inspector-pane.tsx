@@ -208,29 +208,35 @@ function EntryForm({ entry, written, onWrote, onRejected }: EntryFormProps) {
     <SchemaFormProvider spec={liveSpec} onChange={onChange}>
       <SchemaFormRoot aria-label={kindLabel(entry)}>
         <SchemaFormFields />
-        {supplied?.subtitle !== undefined && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              if (
-                editActions.editEntry(entry.id, {
-                  subtitle: inherited.has("subtitle") ? "" : undefined,
-                })
-              ) {
-                onWrote(diagramStore.get().compiledText);
-              }
-              onRejected();
-            }}
-          >
-            {inherited.has("subtitle")
-              ? INSPECTOR_LABELS.clearSubtitle
-              : INSPECTOR_LABELS.restoreSubtitle}
-          </Button>
-        )}
       </SchemaFormRoot>
     </SchemaFormProvider>
+  );
+}
+
+/** Keep this action outside the keyed form: re-seeding fields must not remove keyboard
+ * focus and hand the next Backspace to the canvas's document-level delete listener. */
+function ReferenceSubtitleAction({ entry }: { entry: DiagramEntry }) {
+  const catalog = currentCatalog();
+  const found =
+    entry.kind === "node" && entry.node.catalogEntry !== undefined
+      ? catalog.get(entry.node.catalogEntry)
+      : undefined;
+  if (!found || suppliedBy(found, catalog).subtitle === undefined || entry.kind !== "node")
+    return null;
+  const inherited = entry.node.unwritten?.includes("subtitle") ?? false;
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={() => {
+        // This is external to EntryForm: the inspector's compiled-text comparison re-seeds
+        // its uncontrolled inputs while this button stays mounted and focused.
+        editActions.editEntry(entry.id, { subtitle: inherited ? "" : undefined });
+      }}
+    >
+      {inherited ? INSPECTOR_LABELS.clearSubtitle : INSPECTOR_LABELS.restoreSubtitle}
+    </Button>
   );
 }
 
@@ -302,13 +308,16 @@ export function InspectorPane({ overlay }: InspectorPaneProps) {
           {INSPECTOR_LABELS.showInYaml}
         </Button>
         {entry && entry.kind !== "note" ? (
-          <EntryForm
-            key={`${entry.id}:${seed.n}:${catalogGen}`}
-            entry={entry}
-            written={writtenKeys(entry, raw)}
-            onWrote={(text) => setSeed((s) => ({ n: s.n, text }))}
-            onRejected={() => setSeed((s) => ({ n: s.n + 1, text: s.text }))}
-          />
+          <>
+            <EntryForm
+              key={`${entry.id}:${seed.n}:${catalogGen}`}
+              entry={entry}
+              written={writtenKeys(entry, raw)}
+              onWrote={(text) => setSeed((s) => ({ n: s.n, text }))}
+              onRejected={() => setSeed((s) => ({ n: s.n + 1, text: s.text }))}
+            />
+            <ReferenceSubtitleAction entry={entry} />
+          </>
         ) : (
           <Text tone="muted">{INSPECTOR_LABELS.note}</Text>
         )}
