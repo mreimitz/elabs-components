@@ -88,7 +88,7 @@ import {
   treeRowElement,
 } from "./focus";
 import { fileTitle, modeActions, openDoc } from "./mode-store";
-import { useSearchQuery } from "./search-store";
+import { isFiltering, useSearchQuery } from "./search-store";
 
 /** The tree's strings, in one place (`conventions/i18n-strings`). */
 const TREE_LABELS = {
@@ -225,8 +225,8 @@ function ancestorFolderNames(folder: string): string[] {
 
 /**
  * `entries`, kept to only the files in `matches` and the folders that lead to one — in tree
- * order, at every depth (a collapsed folder's matches still show; DG-sidebar-search's binding
- * design: "across ALL folders, collapsed ones included").
+ * order, at every depth (a collapsed folder's matches still show: the maintainer asked to search
+ * "the entire workspace", collapsed folders included).
  */
 function filterEntries(
   entries: readonly TreeEntry[],
@@ -265,15 +265,17 @@ function HighlightedText({ text, ranges }: { text: string; ranges: readonly Matc
   return <>{parts}</>;
 }
 
-/** Chars of context kept before the first match when windowing a matched field (F5/s1): short
- * enough that a late match still lands near the window's own start. */
+/** Chars of context kept before the first match when windowing a matched field's second line
+ * (`MatchLine`, below): short enough that a late match still lands near the window's own start.
+ * The row's own title is never windowed this way — see the file row further down. */
 const SNIPPET_LEAD = 10;
 
 /**
  * `text`, windowed to start just before its first match when that would otherwise sit past
  * where `truncate`'s end-ellipsis can reach — `truncate` only trims the END, so a long prefix
- * (a nested folder path, a late word in a description) hid the match entirely (F5/s1). Ranges
- * come back re-based to the windowed text.
+ * (a nested folder path, a late word in a description) would otherwise hide the match entirely.
+ * Ranges come back re-based to the windowed text. Only for the "what matched" second line: the
+ * row's own title is shown in full and highlighted instead, never windowed.
  */
 function windowText(
   text: string,
@@ -289,8 +291,8 @@ function windowText(
   };
 }
 
-/** A matched field's text: windowed around its first match, highlighted, with the full,
- * un-windowed text in `title=` for a hover reveal (F5/s1/n3). */
+/** A matched field's second-line text: windowed around its first match, highlighted, with the
+ * full, un-windowed text in `title=` for a hover reveal. */
 function MatchText({ text, ranges }: { text: string; ranges: readonly MatchRange[] }) {
   if (ranges.length === 0) return <>{text}</>;
   const windowed = windowText(text, ranges);
@@ -519,9 +521,8 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
     const active = entry.path === shown;
     const match = matches.get(entry.path);
     const reason = match?.reason;
-    // n3: the title itself is highlighted (and windowed) too when it is where the query
-    // matched — otherwise a long title's own truncation can hide the only visible reason a
-    // row showed up. Only while filtering: an empty query never touches the plain title.
+    // The title itself is highlighted too when it is where the query matched. Only while
+    // filtering: an empty query never touches the plain title.
     const titleRanges = filtering ? match?.titleRanges : undefined;
     return (
       <SidebarMenuSubItem>
@@ -546,12 +547,13 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
             >
               <FileText aria-hidden="true" />
               <span className="flex min-w-0 flex-col">
+                {/* The row's own name never loses its start: `truncate` trims only the END, and
+                    the full title stays in this link's own `title=` above (a hover reveal) and
+                    in its accessible name (the link's visible text). The match evidence for a
+                    field that is not the title lives on the second line instead, where it is
+                    windowed around the match (`MatchLine`). */}
                 <span className="truncate">
-                  {titleRanges && titleRanges.length > 0 ? (
-                    <MatchText text={entry.title} ranges={titleRanges} />
-                  ) : (
-                    entry.title
-                  )}
+                  <HighlightedText text={entry.title} ranges={titleRanges ?? []} />
                 </span>
                 <MatchLine reason={reason} />
               </span>
@@ -579,6 +581,11 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
               <button
                 type="button"
                 {...{ [TREE_PATH_ATTR]: entry.path }}
+                // While filtering, every folder renders forced open and this toggle is a no-op
+                // (`onToggle` above) so the pre-search expand state survives clearing — told to
+                // assistive tech too, since `aria-expanded` alone (always `true` here) doesn't
+                // say why the control stopped responding.
+                aria-disabled={filtering || undefined}
                 onContextMenu={onContextMenu}
                 onDragOver={(event) => {
                   if (!hasTreeDrag(event)) return;
@@ -878,10 +885,12 @@ export function WorkspaceTree() {
 
   const query = useSearchQuery();
   const words = useMemo(() => queryWords(query), [query]);
-  const filtering = words.length > 0;
-  // `indexStore` is a plain vanilla store (F7: `search-index.ts` stays React-free); `ready` is
-  // `false` until the first build lands, and `search-store.ts` only starts one on the first
-  // real query, so an early query never falsely reads as "no matches" (F6).
+  // Shared with `rail-nav.tsx` (`isFiltering`), so a whitespace-only query never disagrees about
+  // whether a search is in progress between the rail and the tree.
+  const filtering = isFiltering(query);
+  // `indexStore` is a plain vanilla store (`search-index.ts` stays React-free); `ready` is
+  // `false` until the first build lands, and `search-store.ts` only starts one on the first real
+  // query, so an early query never falsely reads as "no matches".
   const { entries: indexEntries, ready: indexReady } = useSyncExternalStore(
     indexStore.subscribe,
     indexStore.get,
@@ -903,7 +912,8 @@ export function WorkspaceTree() {
   // While filtering every folder renders forced open regardless of `collapsed` (`TreeItem`), so
   // a click on a folder's own chevron would otherwise mutate `collapsed` invisibly; ignoring it
   // keeps `collapsed` exactly as the person left it, and clearing the query needs no restore
-  // step of its own (F3/s4/N1 — no `useEffect`-to-sync of the pre-search expand state).
+  // step of its own — no `useEffect`-to-sync of the pre-search expand state. The rail's own
+  // Workspace toggle guards the same way (`rail-nav.tsx`).
   const onToggle = (path: string, open: boolean) => {
     if (filtering) return;
     setCollapsed((prev) => {
@@ -915,7 +925,7 @@ export function WorkspaceTree() {
   };
 
   // A polite, debounced count — announced once typing (and the first index build) settles, not
-  // on every keystroke, and never while the index has nothing to report yet (F6).
+  // on every keystroke, and never while the index has nothing to report yet.
   const [announced, setAnnounced] = useState("");
   useEffect(() => {
     if (!filtering || !indexReady) {
