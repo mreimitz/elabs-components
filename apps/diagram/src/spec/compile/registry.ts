@@ -129,6 +129,7 @@ export function createArchRegistry(): ArchRegistry {
       );
       return {
         nodes: nodes.map((node) => {
+          if (node.data.inner === true) node = { ...node, draggable: false, deletable: false };
           // Wave-2 review m3: a zone is named "<title>, <kind>, <owner>" — its aria-label
           // overrides the header's sr-only kind and owner spans, so it must carry them.
           if (isZoneNode(node)) {
@@ -155,6 +156,7 @@ export function createArchRegistry(): ArchRegistry {
           const data = (edge.data ?? {}) as DataFlowEdgeData;
           return {
             ...edge,
+            ...(data.inner === true ? { deletable: false } : {}),
             ...edgeMarkers(data.kind, data.direction),
             ariaLabel: edgeAriaLabel(
               title.get(edge.source) ?? edge.source,

@@ -69,6 +69,16 @@ export function manualEdit(
   switchOn: boolean,
 ): TextEditFn {
   return (text, compiled) => {
+    // Only authored entries may move, and only authored zones may receive them. Expanded
+    // reference wrappers are authored nodes, so writing children into them would corrupt YAML.
+    if (
+      moves.some(
+        (move) =>
+          !writable(compiled, move.id) ||
+          (move.into !== null && entryOf(compiled, move.into)?.kind !== "zone"),
+      )
+    )
+      return null;
     const moving = new Map(moves.map((move) => [move.id, move]));
     const patches: EntryKeysPatch[] = [];
     if (switchOn) {

@@ -141,7 +141,8 @@ export function ZoneNode({ id, data, selected, parentId, isConnectable }: NodePr
   // maintainer's three allowed view-mode changes are direction, node style and lens, nothing on
   // the canvas itself. Read straight from the React Flow store rather than threading a prop
   // through `NodeProps`, same pattern `useZoneNesting` above already uses.
-  const resizable = useStore((state: ReactFlowState) => state.nodesDraggable);
+  const editing = useStore((state: ReactFlowState) => state.nodesDraggable);
+  const resizable = editing && data.inner !== true;
   // What `useFlowGroups().toggleCollapse` did, through the app's fold (zone-folds.ts).
   const toggle = useCallback(() => {
     const graph = toggleZone({ nodes: getNodes(), edges: getEdges() }, id);

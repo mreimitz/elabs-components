@@ -13,6 +13,9 @@ export interface ReferenceSources {
   /** Catalog values fill unwritten node fields. */
   catalog?: CatalogLookup;
   files?: ComponentFiles;
+  /** Read-only compile overrides; parsing and reference validation do not mutate the AST. */
+  expand?: ReadonlySet<string>;
+  collapse?: ReadonlySet<string>;
 }
 
 export interface ArchCheckResult {

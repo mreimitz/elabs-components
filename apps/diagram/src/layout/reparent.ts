@@ -248,14 +248,19 @@ export function dropsOf(start: Snapshot, dragged: ReadonlyMap<string, Point>): M
   };
   const zones: ZoneBox[] = [];
   for (const { node, abs } of start.values()) {
-    if (isZoneNode(node) && !node.hidden) {
+    if (
+      isZoneNode(node) &&
+      !node.hidden &&
+      node.data.component === undefined &&
+      node.data.inner !== true
+    ) {
       zones.push({ id: node.id, depth: depth(node), ...abs, ...sizeOf(node) });
     }
   }
   const out: Move[] = [];
   for (const [id, abs] of dragged) {
     const node = start.get(id)?.node;
-    if (!node || isZoneNode(node) || id.startsWith("note:")) continue;
+    if (!node || isZoneNode(node) || node.data.inner === true || id.startsWith("note:")) continue;
     const into = dropTarget({ ...abs, ...sizeOf(node) }, zones);
     if (into === (node.parentId ?? null)) continue;
     const target = into === null ? undefined : start.get(into);

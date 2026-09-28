@@ -39,6 +39,7 @@ const ALL_PORTS = {
 } as const satisfies Record<string, FlowPortDefinition>;
 
 const NODE_FIELDS = {
+  inner: { kind: "boolean" },
   title: { kind: "string", required: true },
   subtitle: { kind: "string" },
   icon: { kind: "string" },
@@ -55,6 +56,10 @@ const NODE_FIELDS = {
 } as const satisfies Record<string, FlowFieldDefinition>;
 
 const ZONE_FIELDS = {
+  description: { kind: "string" },
+  inner: { kind: "boolean" },
+  component: { kind: "string" },
+  count: { kind: "number" },
   title: { kind: "string", required: true },
   subtitle: { kind: "string" },
   kind: { kind: "string", required: true },
@@ -68,6 +73,7 @@ const ZONE_FIELDS = {
 } as const satisfies Record<string, FlowFieldDefinition>;
 
 const FLOW_FIELDS = {
+  inner: { kind: "boolean" },
   label: { kind: "string" },
   kind: { kind: "string" },
   style: { kind: "string" },
