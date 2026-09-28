@@ -54,7 +54,30 @@ export function checkText(
   if (!checked.ast) {
     return { ast: null, spec: null, view: null, origin: {}, issues, ok: false };
   }
-  const { spec, view, origin } = compileArch(checked.ast, checked.components);
+  const {
+    spec,
+    view,
+    origin,
+    issues: compileIssues,
+  } = compileArch(checked.ast, checked.components, sources);
+  if (compileIssues.length) {
+    const { sourceMap } = parseArchYaml(text);
+    for (const found of compileIssues) {
+      if (issues.some((item) => item.code === found.code && item.path === found.path)) continue;
+      issues.push({ ...found, stage: "dialect", range: locate(sourceMap, found.path, "value") });
+    }
+  }
+  // A flow inside a revealed instance is drawable; the collapsed-loop warning no longer applies.
+  for (let i = issues.length - 1; i >= 0; i--) {
+    const found = issues[i]!;
+    if (
+      found.code === "inner-flow" &&
+      spec.edges.some(
+        (edge, index) => origin[`edges[${index}]`] === found.path && edge.source !== edge.target,
+      )
+    )
+      issues.splice(i, 1);
+  }
   const specIssues = validateFlowSpec(spec, ARCH_DEFINITIONS);
   if (specIssues.length > 0) {
     // DG-09's `checkArchYaml` does not return its source map; parse once more to put a

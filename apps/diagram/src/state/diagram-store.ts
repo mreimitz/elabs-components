@@ -3,6 +3,7 @@
  * every keystroke; the compile runs 150 ms after the last one. The canvas draws the last
  * compile that produced a graph, so a half-typed line never blanks it.
  */
+import { parseRoute } from "../routes/use-hash";
 import { lensStore } from "../shell/lens-store";
 import { useSyncExternalStore } from "react";
 // DG-21: the seed is a workspace document (its `?raw` import does not hot-reload the page:
@@ -98,10 +99,21 @@ function compileNow() {
   );
 }
 
+/** Private drill views render a different file while retaining this store's parent text. */
+function mayChangeText(): boolean {
+  if (lensStore.get().target !== "technical" || lensStore.get().position !== 0) return false;
+  if (typeof window === "undefined") return true;
+  const route = parseRoute(window.location.hash);
+  return (
+    route.kind !== "view" &&
+    !(route.kind === "doc" && "into" in route && Array.isArray(route.into) && route.into.length > 0)
+  );
+}
+
 export const diagramActions = {
   /** Every keystroke. The compile follows `COMPILE_DEBOUNCE_MS` after the last one. */
   setText(text: string) {
-    if (lensStore.get().target !== "technical" || lensStore.get().position !== 0) return;
+    if (!mayChangeText()) return;
     if (text === diagramStore.get().text) return;
     diagramStore.set({ text });
     clearTimeout(pending);
@@ -136,7 +148,7 @@ export const diagramActions = {
   },
   /** A top-bar toggle: rewrite one top-level key in the text, then compile now. */
   setTopLevel(key: TopLevelScalarKey, value: string) {
-    if (lensStore.get().target !== "technical" || lensStore.get().position !== 0) return;
+    if (!mayChangeText()) return;
     const next = setTopLevelScalar(diagramStore.get().text, key, value);
     if (next === null) return;
     clearTimeout(pending);
@@ -184,7 +196,7 @@ export const editActions = {
    * `null`) or changed nothing: the text is left alone.
    */
   applyEdit(edit: TextEditFn): boolean {
-    if (lensStore.get().target !== "technical" || lensStore.get().position !== 0) return false;
+    if (!mayChangeText()) return false;
     if (pending !== undefined || diagramStore.get().compiledText !== diagramStore.get().text) {
       clearTimeout(pending);
       compileNow();

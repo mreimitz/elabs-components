@@ -41,6 +41,8 @@ export const ISSUE_SEVERITY = {
   "ref-depth": "error",
   "inner-flow": "warning",
   "expand-not-diagram": "warning",
+  "expand-ignored": "info",
+  "expand-limit": "warning",
   "ref-type-not-drawn": "info",
   // end DG-26
 } as const satisfies Record<string, ArchIssueSeverity>;

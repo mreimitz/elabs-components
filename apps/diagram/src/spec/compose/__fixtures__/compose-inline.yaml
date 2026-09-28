@@ -1,0 +1,9 @@
+diagram: "1"
+nodes:
+  - id: t
+    ref: ws/inline-leaf
+    expand: true
+  - id: a
+flows:
+  - a -> t.x
+  - a -> t
