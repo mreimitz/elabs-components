@@ -128,8 +128,16 @@ A `ws/` reference resolves the named workspace YAML before its first draw. By de
 one collapsed `arch/composite` node. The referenced diagram supplies its title, `component.icon`,
 and `component.description` (falling back to its top-level description); explicitly written
 node values win, including an empty description. The compiled data includes the referenced
-file path, inner node count, and the inner ids used by parent flows. The current renderer is
-still the ordinary service card; dedicated composite controls are separate work.
+file path, inner node count, and the inner ids used by parent flows. Its stacked card shows
+the referenced kind/product mark, node count and named endpoints. An explicit `type:` chooses
+the collapsed mark's kind. Named endpoints attach to their own measured row handles.
+
+Double-click or Enter inspects the referenced diagram in a read-only canvas; breadcrumbs
+and Escape return to the parent without replacing its editor or undo history. The route
+`#d/<parent-path>&into=tenant.nested` identifies nested instances. **Open diagram** opens
+the source in its own Edit tab through the normal save/conflict guard. Expansion in View is
+temporary; expansion of an authored instance in Edit writes `expand:`. Imported descendants
+remain read-only, and manual-layout diagrams keep inline expansion disabled.
 
 Missing files, invalid diagrams, reference cycles, and nesting deeper than eight diagrams
 produce positioned errors and a destructive card with a written reason. Unloaded references
@@ -233,7 +241,6 @@ position is the issue's start.
 | `expand-not-diagram` | warning  | `"expand" applies only to a node whose ref names a diagram (ws/…); here it does nothing.` (on the key)                                                                    | `issue-expand-not-diagram.yaml` @ 5:5 and 8:5 |
 | `expand-ignored`     | info     | Requested expansion stays collapsed under manual layout.                                                                                                                  | `compose/compose-inline-manual.yaml`          |
 | `expand-limit`       | warning  | An instance stays collapsed at the depth or imported-element budget.                                                                                                      | inline expansion unit stress fixture          |
-| `ref-type-not-drawn` | info     | `"type: <value>" is kept, but a diagram reference always draws as one box for now.`                                                                                       | `issue-ref-type-not-drawn.yaml` @ 9:5         |
 
 `bad-ref`'s exact message depends on why the path is not one of the two forms (§2.1); a
 `suggestion` is set where the fix is unambiguous:

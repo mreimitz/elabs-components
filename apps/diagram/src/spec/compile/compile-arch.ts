@@ -108,8 +108,8 @@ export type CompiledCompositeData = CompiledNodeData & {
   /** Number of nodes inside the referenced diagram. */
   count?: number;
   /**
-   * `type:` as written on the node, only when it overrides the default ("service"); kept for
-   * DG-27's composite renderer (`ref-type-not-drawn`: not drawn until then).
+   * Explicit node kind used by the collapsed composite renderer. The normalized default
+   * service kind needs no override.
    */
   overrideType?: ArchNodeType;
   /** The reference is broken; `subtitle` says why in words (N11). */

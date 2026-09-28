@@ -40,6 +40,8 @@ node --test scripts/tests/reference-endpoints.test.mjs
 node --test scripts/tests/node-details.test.mjs
 node --test scripts/tests/component-resolver.test.mjs
 node --test scripts/tests/inline-expansion.test.mjs
+node --test scripts/tests/composite-navigation.test.mjs
+node --test scripts/tests/composite-ports.test.mjs
 node --test scripts/tests/catalog-generic.test.mjs
 node --test scripts/tests/live-view-url.test.mjs
 node scripts/tests/reference-browser.mjs
@@ -53,6 +55,8 @@ node tests/editor-completions.mjs
 node tests/details-card.mjs
 node tests/component-references.mjs
 node tests/inline-expansion.mjs
+node tests/composite-interactions.mjs
+node tests/composite-ports.mjs
 node tests/catalog-generic.mjs
 node tests/live-view.mjs
 node tests/live-view-shell.mjs
@@ -83,6 +87,8 @@ node tests/lens-motion.mjs
 `DETAILS_EVIDENCE` and `COMPONENT_EVIDENCE` save detail-card and workspace-reference browser results. Detail-card checks cover measured description expansion, safe links, empty overrides, read-only interaction and axe at desktop/phone widths in both themes. Component checks exercise live referenced-file changes, stale navigation guards and actual MCP rejection without partial writes.
 
 `INLINE_EVIDENCE` saves the expanded-template checks in both themes at desktop and phone widths. They use disposable copies, verify original parent/component hashes, and exercise imported-content write guards and the manual-layout fallback. Run them after changing compiler origins or manual-layout interactions.
+
+`COMPOSITE_EVIDENCE` saves real expansion and nested inspection checks, including parent text/model/history preservation and child write refusal. `PORT_EVIDENCE` saves exact SVG endpoint comparisons against named handles in both layout directions and themes. Wait for visible, laid-out nodes before measuring geometry; edge routes can appear before staged nodes become visible.
 
 `LIVE_EVIDENCE` saves live-picture construction, invalid/missing recovery, reference refresh and theme/phone checks. The shell companion checks retained dirty text, unload protection, external-change conflicts and cancellation of post-unmount thumbnail work. Run both after changing the shared SSE connection or autosave lifecycle.
 

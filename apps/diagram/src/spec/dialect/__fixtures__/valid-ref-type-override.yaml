@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v1.schema.json
+diagram: "1"
+# A diagram reference may choose a different kind for its collapsed mark.
+nodes:
+  - id: t
+    ref: ws/components/leaf
+    type: datastore

@@ -288,21 +288,6 @@ export function validateArch(
     }
   }
 
-  // A `type:` written on a diagram reference overrides what the reference supplies (maintainer
-  // ruling), but nothing draws that override before Part 2 (the composite renderer is DG-27's).
-  // "service" is the normalizer's default, so a value other than "service" can only be written.
-  for (const n of ast.nodes) {
-    if (n.type === "service" || n.ref === undefined || refForm(n.ref) !== "diagram") continue;
-    out.push(
-      issue(
-        "ref-type-not-drawn",
-        joinPath(n.path, "type"),
-        // Plain words, no internal phase name (review round 0 F3/F6): a diagram reference
-        // always draws as one box for now; the written type is kept, only not drawn yet.
-        `"type: ${n.type}" is kept, but a diagram reference always draws as one box for now.`,
-      ),
-    );
-  }
   // end DG-26
 
   const providers = new Set([...iconNames].map((name) => name.split("/")[0]));

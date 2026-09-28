@@ -43,7 +43,6 @@ export const ISSUE_SEVERITY = {
   "expand-not-diagram": "warning",
   "expand-ignored": "info",
   "expand-limit": "warning",
-  "ref-type-not-drawn": "info",
   // end DG-26
 } as const satisfies Record<string, ArchIssueSeverity>;
 
@@ -54,7 +53,6 @@ export const KEY_ANCHORED: ReadonlySet<ArchIssueCode> = new Set([
   "unknown-prop",
   "position-without-manual",
   "expand-not-diagram", // DG-26
-  "ref-type-not-drawn", // DG-26
 ]);
 
 export interface ArchIssue {
