@@ -70,7 +70,7 @@ export function treeRowElement(path: string): HTMLElement | null {
 
 /**
  * The first file row on screen — a folder row is a `<button>`, a file row the `<a>` that opens
- * it, so this is also the workspace search's top hit while a query is filtering the tree (F11).
+ * it, so this is also the workspace search's top hit while a query is filtering the tree.
  */
 export function firstResultElement(): HTMLAnchorElement | null {
   return document.querySelector<HTMLAnchorElement>(`a[${TREE_PATH_ATTR}]`);

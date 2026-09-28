@@ -158,10 +158,10 @@ export function onShellKeyDown(event: KeyboardEvent): void {
     else storyKeys.next();
     return;
   }
-  // Checked ahead of the `shiftKey` guard below (s3/F4): `event.key` is already
-  // layout-resolved, so this is the one binding that must fire on a layout where "/" needs
-  // Shift (German, Swiss, Nordic: Shift+7) — the letter shortcuts below stay Shift-free. No
-  // `doc` requirement: the search box lives in the rail, shown on every route.
+  // Checked ahead of the `shiftKey` guard below: `event.key` is already layout-resolved, so
+  // this is the one binding that must fire on a layout where "/" needs Shift (German, Swiss,
+  // Nordic: Shift+7) — the letter shortcuts below stay Shift-free. No `doc` requirement: the
+  // search box lives in the rail, shown on every route.
   if (event.key === "/") {
     if (closestOf(event.target, OVERLAY)) return;
     event.preventDefault();
