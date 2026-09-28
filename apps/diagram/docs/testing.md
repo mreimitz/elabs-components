@@ -34,12 +34,14 @@ export DIAGRAM_URL="$ATLAS_URL"
 
 node --test scripts/tests/reference-regressions.test.mjs
 node --test scripts/tests/home-titles.test.mjs
+node --test scripts/tests/yaml-context.test.mjs
 node scripts/tests/reference-browser.mjs
 for title_form in block anchored aliased flow anchored-multiline; do
   ATLAS_TITLE_FORM="$title_form" node scripts/tests/home-browser.mjs
 done
 node tests/sidebar-search.mjs
 node tests/tab-bar.mjs
+node tests/editor-completions.mjs
 node scripts/check-view-mode.mjs
 node tests/lens-recovery.mjs
 node tests/lens-motion.mjs
@@ -52,12 +54,14 @@ node tests/lens-motion.mjs
 | Home Node checks      | YAML title-copy semantics, comments, line endings, template preservation and copy markers.                                        |
 | Home browser          | Real template copies, distinct names across navigation surfaces, Retry focus, clipboard fallback and phone layouts.               |
 | Sidebar search        | Matching names and content, visible evidence at nested widths, sequential queries, keyboard access and folder-state restoration.  |
+| YAML context          | Scalar replacement, comments, quotes, flow mappings, array values and layout-dependent schema traversal.                          |
+| Editor completions    | Real Monaco popup, slash triggers, keyboard acceptance, quoted references, workspace titles, schema values, icons and live ids.   |
 | Tab bar               | Tab overflow and selection, responsive visibility, keyboard focus, close confirmation, and sidebar/theme controls.                |
 | View mode             | Personal overrides, external edits, mode changes, mobile canvas, presentation controls and thumbnail readiness.                   |
 | Lens interactions     | Shipped diagrams, routing geometry, read-only write/history guards, keyboard drill-down, refit and export.                        |
 | Lens motion           | First switch, resize, reversal, shared camera, persistent controls and reduced motion, with frame measurements.                   |
 
-`ATLAS_EVIDENCE` saves Home/reference screenshots. `SEARCH_EVIDENCE_DIR`, `VIEW_EVIDENCE` and `LENS_EVIDENCE_DIR` save the respective stream's artifacts. Choose separate output folders. The development routes `#dev/spec-check` and `#dev/lens-check` expose the specification and lens fixtures; fixture counts grow as regressions are added.
+`EDITOR_EVIDENCE` saves completion screenshots and results. `ATLAS_EVIDENCE` saves Home/reference screenshots. `SEARCH_EVIDENCE_DIR`, `VIEW_EVIDENCE` and `LENS_EVIDENCE_DIR` save the respective stream's artifacts. Choose separate output folders. The development routes `#dev/spec-check` and `#dev/lens-check` expose the specification and lens fixtures; fixture counts grow as regressions are added.
 
 Run motion measurements without concurrent builds or other browser suites on the same machine. Record source-ready preparation separately from a switch requested during document loading, and retain the full request-to-settle time for that loading case. A smooth tween does not establish that the first click responds promptly.
 

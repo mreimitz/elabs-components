@@ -37,6 +37,11 @@
   position: static;
   margin: 0;
 }
+/* Monaco's brand highlight uses the accent fill; suggestions need the readable text token. */
+[data-slot="diagram-yaml-editor"] .suggest-widget {
+  --vscode-editorSuggestWidget-highlightForeground: var(--primary-text);
+  --vscode-editorSuggestWidget-focusHighlightForeground: var(--primary-text);
+}
 @source "../../../packages/ui/src";
 @source "../../../packages/icons/src";
 @source "../../../packages/flow/src";

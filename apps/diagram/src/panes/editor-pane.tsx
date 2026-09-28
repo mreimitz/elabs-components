@@ -9,6 +9,7 @@ import { useLens } from "../shell/lens-store";
 import type { CompiledDiagram, DiagramIssue } from "../state/compile-text";
 import { diagramActions, diagramStore, useDiagram } from "../state/diagram-store";
 import { elementAt, elementRanges, type ElementRange } from "../state/pipeline";
+import { registerDiagramLanguage } from "../editor/language-service";
 import { IssuesPanel } from "./issues-panel";
 
 /** `onMount`'s second argument. The editor package does not export the name; never import Monaco's global. */
@@ -36,7 +37,12 @@ const HIGHLIGHT_OPTIONS = {
 } as const;
 
 /** Keep Monaco on its <textarea> surface (see the P4 note at the CodeEditor). */
-const EDITOR_OPTIONS = { editContext: false } as const;
+const EDITOR_OPTIONS = {
+  editContext: false,
+  quickSuggestions: { other: true, strings: true, comments: false },
+  suggestOnTriggerCharacters: true,
+  wordBasedSuggestions: "off",
+} as const;
 
 /** Element ranges per compile, built on first use (a cursor move or a canvas selection). */
 const rangeCache = new WeakMap<CompiledDiagram, ElementRange[]>();
@@ -88,6 +94,8 @@ export function EditorPane() {
   const lensLocked = useLens((s) => s.position !== 0 || s.target !== "technical");
   const editorRef = useRef<MonacoCodeEditor | null>(null);
   const monacoRef = useRef<MonacoApi | null>(null);
+  const releaseLanguage = useRef<(() => void) | null>(null);
+  useEffect(() => () => releaseLanguage.current?.(), []);
   // The editor instance's generation: a loaded document mounts a new one (below), and every
   // effect that touches the editor re-runs against it. 0 until the first mount.
   const [mounted, setMounted] = useState(0);
@@ -97,6 +105,8 @@ export function EditorPane() {
   );
 
   const onMount: CodeEditorProps["onMount"] = (editor, monacoApi) => {
+    releaseLanguage.current?.();
+    releaseLanguage.current = registerDiagramLanguage(editor, monacoApi);
     editorRef.current = editor;
     monacoRef.current = monacoApi;
     highlight.current = editor.createDecorationsCollection();
@@ -182,6 +192,7 @@ export function EditorPane() {
           outline. docs/findings/DG-13-examples-review.md. */}
       <div className="relative min-h-0 flex-1 after:pointer-events-none after:absolute after:inset-0 has-[textarea:focus-visible]:after:focus-ring-static-inset">
         <CodeEditor
+          data-slot="diagram-yaml-editor"
           // Review-wave3 M2: a loaded document (an example, a file, a share link: every
           // `loadText`, the same boundary DG-16's history resets at) gets a new editor, so
           // Monaco's undo stack starts at the load and ⌘Z inside the editor cannot bring the
@@ -191,6 +202,7 @@ export function EditorPane() {
           // (packages/editor/src/code-editor/code-editor.tsx:291-299, 306-322). A remount is
           // the only way to reset the undo stack from outside. docs/findings/DG-16-undo-share-files.md.
           key={loadCount}
+          path={`diagram/${encodeURIComponent(hintId)}/${loadCount}.yaml`}
           value={text}
           onChange={diagramActions.setText}
           onMount={onMount}
