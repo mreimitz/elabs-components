@@ -7,8 +7,8 @@ an LLM session connected to Atlas's MCP server, then checked by you.
 
 ## Files
 
-- `<vendor>.yaml` — one per icon pack in `public/icons/`. The key is the icon's file stem
-  (`lambda` for `aws/lambda`):
+- `<vendor>.yaml` — one per vendor. A key can be an icon's file stem
+  (`lambda` for `aws/lambda`) or a new product slug:
 
   ```yaml
   lambda:
@@ -54,3 +54,41 @@ an LLM session connected to Atlas's MCP server, then checked by you.
 
 A broken file never hides the rest of the catalog: the dev server skips it and lists it
 under `problems` in `/api/catalog/all`.
+
+## Products without an icon
+
+Use `catalog_update` with a new slug and a valid `kind` to add a product the icon pack does
+not cover. For a vendor with neither a pack nor a catalog file, also pass
+`create_vendor: true`; without it, a typo cannot create a vendor. Vendor names and slugs
+use lowercase letters, digits and hyphens. Invalid entries are rejected before any file
+is created. Curated entries and hand-written parts remain protected.
+
+```json
+{
+  "vendor": "example-vendor",
+  "create_vendor": true,
+  "entries": [
+    {
+      "slug": "analytics-cloud",
+      "name": "Analytics Cloud",
+      "description": "Managed analytics for the team's data.",
+      "docs": "https://example.com/docs/analytics",
+      "kind": "service"
+    }
+  ]
+}
+```
+
+These entries are stored with `generic: true` and `curated: false`. The catalog shows
+**No icon yet**. Optional `icon` must name an existing icon (for example `lucide/brain`);
+otherwise the kind supplies a glyph: service → box, actor → user, datastore → database,
+queue → layers, external → globe, note → file. Do not choose an unrelated product logo.
+The read API's `icon` is the resolved drawable name; the YAML need not contain `icon`.
+A hand-edited unknown icon is reported and falls back to the kind glyph.
+
+Use `ref: catalog/example-vendor/analytics-cloud` in new diagrams. Existing
+`icon: example-vendor/analytics-cloud` aliases still draw the fallback without rewriting
+the YAML. If a matching product icon is later shipped in the icon index, it takes
+precedence immediately; the next non-curated update removes the stale `generic` marker.
+`catalog_missing` includes incomplete generic entries with `generic: true` in each row.
+New and changed vendor files update running tabs through the catalog event stream.

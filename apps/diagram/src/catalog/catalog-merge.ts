@@ -10,6 +10,14 @@ import type { CatalogEntry } from "./catalog-entry";
 
 /** The dialect's node types; a catalog `kind` is one of them (server/catalog-fs.mjs KINDS). */
 const KINDS: readonly string[] = ["service", "actor", "datastore", "queue", "external", "note"];
+const KIND_ICONS: Record<string, string> = {
+  service: "lucide/box",
+  actor: "lucide/user",
+  datastore: "lucide/database",
+  queue: "lucide/layers",
+  external: "lucide/globe",
+  note: "lucide/file",
+};
 const SLUG = /^[a-z0-9][a-z0-9-]*$/;
 
 export interface IndexIcon {
@@ -75,7 +83,7 @@ function metadata(fields: Record<string, unknown>) {
 
 /**
  * Every catalog entry: one per icon name, overlaid with each vendor file, plus every part. A
- * file that does not parse, an entry for a name that is no icon, or a bad part is skipped and
+ * file that does not parse, an entry without a valid kind, or a bad part is skipped and
  * reported in `problems` — one broken file never hides the rest of the catalog. Vendors and
  * parts are read in sorted key order (`yamlFiles` sorts by file name; the input's key order is
  * whatever Vite's glob gives, so this sorts explicitly).
@@ -113,11 +121,42 @@ export function mergeCatalog({
     for (const [slug, rawFields] of Object.entries(parsed.data)) {
       const name = `${vendor}/${slug}`;
       const base = entries.get(name);
-      if (!base || !isPlainObject(rawFields)) {
-        problems.push(`${label}: "${slug}" is not an icon of ${vendor}; the entry is ignored.`);
+      if (
+        !isPlainObject(rawFields) ||
+        !SLUG.test(vendor) ||
+        !SLUG.test(slug) ||
+        vendor === "lucide"
+      ) {
+        problems.push(`${label}: "${slug}" needs a valid vendor, slug and fields map.`);
         continue;
       }
-      entries.set(name, { ...base, ...metadata(rawFields), curated: rawFields.curated === true });
+      if (base) {
+        entries.set(name, { ...base, ...metadata(rawFields), curated: rawFields.curated === true });
+        continue;
+      }
+      const fields = rawFields;
+      let icon = str(fields.icon);
+      if (typeof fields.kind !== "string" || !KINDS.includes(fields.kind)) {
+        problems.push(`${label}: "${slug}" needs a valid kind.`);
+        continue;
+      }
+      if (
+        (icon && !iconNames.has(icon)) ||
+        (fields.icon != null && typeof fields.icon !== "string")
+      ) {
+        problems.push(`${label}: "${slug}" has an unknown icon; using the kind glyph.`);
+        icon = undefined;
+      }
+      entries.set(name, {
+        name,
+        vendor,
+        slug,
+        label: slug,
+        ...metadata(fields),
+        icon: icon ?? KIND_ICONS[fields.kind]!,
+        generic: true,
+        curated: fields.curated === true,
+      });
     }
   }
   for (const vendor of Object.keys(parts).sort()) {

@@ -6,7 +6,7 @@
  */
 import * as catalog from "../../catalog-fs.mjs";
 
-const VENDOR = { type: "string", description: 'An icon pack, e.g. "aws", "qlik".' };
+const VENDOR = { type: "string", description: 'A catalog vendor, e.g. "aws", "qlik".' };
 
 async function iconNames(ctx) {
   return (await ctx.bridge.load()).ICON_NAMES;
@@ -21,6 +21,7 @@ function brief(e) {
     ...(e.kind ? { kind: e.kind } : {}),
     ...(e.tags.length > 0 ? { tags: e.tags } : {}),
     icon: e.icon,
+    ...(e.generic ? { generic: true } : {}),
     ...(e.part ? { part: e.part } : {}),
   };
 }
@@ -80,8 +81,8 @@ export const catalogTools = [
   {
     name: "catalog_missing",
     description:
-      "The fill loop's worklist: entries of one pack that are not curated and lack a " +
-      "description or docs, in slug order. Returns { vendor, total, missing: [{ slug, name, label }] } — " +
+      "The fill loop's worklist: entries of one vendor that are not curated and lack a " +
+      "description or docs, in slug order. Returns { vendor, total, missing: [{ slug, name, label, generic? }] } — " +
       "`label` is the icon file's name, often not the official product name.",
     inputSchema: {
       type: "object",
@@ -106,8 +107,9 @@ export const catalogTools = [
   {
     name: "catalog_update",
     description:
-      `Write metadata for up to ${catalog.MAX_BATCH} icons of one pack into catalog/<vendor>.yaml ` +
-      "(curated: false). Curated entries are skipped, never overwritten. Each docs URL is " +
+      `Write metadata for up to ${catalog.MAX_BATCH} entries of one vendor into catalog/<vendor>.yaml ` +
+      "(curated: false). Slugs without their own icon become generic entries: kind is required, icon is optional and must exist. " +
+      "A new vendor requires create_vendor: true. Curated entries are skipped, never overwritten. Each docs URL is " +
       "fetched; an unreachable one is kept and marked docs_unverified. Returns { vendor, " +
       "written, skippedCurated, docsUnverified, rejected: [{ slug, reason }] } — fix and resend " +
       "the rejected ones.",
@@ -115,12 +117,20 @@ export const catalogTools = [
       type: "object",
       properties: {
         vendor: VENDOR,
+        create_vendor: {
+          type: "boolean",
+          description: "Explicitly allow a new vendor file. Default false.",
+        },
         entries: {
           type: "array",
           items: {
             type: "object",
             properties: {
-              slug: { type: "string", description: "From catalog_missing." },
+              slug: { type: "string", description: "Existing or new lowercase product slug." },
+              icon: {
+                type: "string",
+                description: "Optional existing icon name; otherwise the kind glyph is used.",
+              },
               name: {
                 type: "string",
                 description: 'The official product name, e.g. "AWS Lambda".',
@@ -133,7 +143,11 @@ export const catalogTools = [
                 type: "string",
                 description: "The vendor's official documentation URL (https).",
               },
-              kind: { type: "string", enum: catalog.KINDS },
+              kind: {
+                type: "string",
+                enum: catalog.KINDS,
+                description: "Required for a new slug without a shipped icon.",
+              },
               tags: { type: "array", items: { type: "string" } },
               aliases: { type: "array", items: { type: "string" } },
             },
@@ -145,6 +159,10 @@ export const catalogTools = [
       required: ["vendor", "entries"],
       additionalProperties: false,
     },
-    handler: ({ vendor, entries }) => catalog.update(vendor, entries),
+    handler: async ({ vendor, entries, create_vendor }, ctx) =>
+      catalog.update(vendor, entries, {
+        createVendor: create_vendor,
+        iconNames: await iconNames(ctx),
+      }),
   },
 ];
