@@ -109,7 +109,7 @@ export {
 } from "./chart-datapoint-layer";
 // Legacy legend component (backward compatibility)
 export { ChartLegend, type ChartLegendProps, type LegendItem } from "./chart-legend";
-export { ChartLegendHoverProvider, useChartLegendHover } from "./chart-legend-hover";
+export { ChartLegendHoverProvider, useChartLegendHover } from "./legend/legend-hover";
 export { ChartLoadingLabel, type ChartLoadingLabelProps } from "./chart-loading-label";
 export {
   type ChartPhase,
@@ -294,10 +294,7 @@ export {
   ProfitLossLegend,
   type ProfitLossLegendProps,
 } from "./profit-loss-legend";
-export {
-  ProfitLossLegendHoverProvider,
-  useProfitLossLegendHover,
-} from "./profit-loss-legend-hover";
+export { ProfitLossLegendHoverProvider, useProfitLossLegendHover } from "./legend/legend-hover";
 export {
   PROFIT_LOSS_NEGATIVE_COLOR,
   PROFIT_LOSS_POSITIVE_COLOR,

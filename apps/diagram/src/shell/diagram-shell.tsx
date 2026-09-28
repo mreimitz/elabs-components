@@ -18,6 +18,7 @@ import {
   SidebarProvider,
   SkipLink,
 } from "@elabs-ai/components-ui";
+import { useCatalogSync } from "../catalog/catalog-sync"; // DG-26
 import { navigate, useRoute, type Route } from "../routes/use-hash";
 import { useLiveReload } from "../workspace/live-reload";
 import { useAutosave } from "../workspace/use-autosave";
@@ -74,6 +75,7 @@ const SHELL_LABELS = {
 export function ShellServices() {
   useAutosave();
   useLiveReload();
+  useCatalogSync(); // DG-26
   return null;
 }
 

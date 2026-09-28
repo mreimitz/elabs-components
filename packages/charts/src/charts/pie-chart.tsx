@@ -32,7 +32,7 @@ import { useResolvedChartProps } from "./use-resolved-chart-props";
 import { type ChartLegendEntry, type ChartPalette, resolvePalette } from "./chart-context";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
-import { useSharedLegendHoveredKey } from "./legend/shared-legend-hover";
+import { useSharedLegendHoveredKey } from "./legend/legend-hover";
 // Labels — RM-110
 import { useChartAutoSummary } from "./chart-a11y";
 import {

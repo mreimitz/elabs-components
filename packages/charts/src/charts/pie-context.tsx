@@ -1,9 +1,17 @@
 "use client";
 
-import type { Transition } from "motion/react";
-import { createContext, type ReactNode, type RefObject, useContext, useMemo } from "react";
+import type { ReactNode } from "react";
+import {
+  type ArcChartHoverContextValue,
+  type ArcChartStableContextValue,
+  arcChartStableKeys,
+  createArcChartContexts,
+  defaultArcChartColors,
+  useArcChartHover,
+  useArcChartSlices,
+  useArcChartStable,
+} from "./arc-chart-context";
 import { type ChartDatapointTarget, padDatapointRect } from "./chart-datapoint-layer";
-import { resolvePalette } from "./chart-context";
 
 // CSS variable references for pie chart theming
 export const pieCssVars = {
@@ -27,11 +35,11 @@ export const pieCssVars = {
 };
 
 /**
- * Default slice colours: the categorical palette through `resolvePalette`
- * (RM-186), uncapped — the family has always cycled all twelve series colours
- * (`--chart-1` … `--chart-12`), so it asks for them `explicit`ly.
+ * Default slice colours: the categorical palette, uncapped — all twelve
+ * series colours (`--chart-1` … `--chart-12`). Same contents as
+ * `defaultRingColors`, in its own array.
  */
-export const defaultPieColors: string[] = resolvePalette("categorical", 12, { explicit: true });
+export const defaultPieColors: string[] = [...defaultArcChartColors];
 
 export interface PieData {
   /** Display label for the slice */
@@ -89,19 +97,12 @@ export function pieDatapointTarget(
   };
 }
 
-export interface PieHoverContextValue {
-  hoveredIndex: number | null;
-  setHoveredIndex: (index: number | null) => void;
-}
+export type PieHoverContextValue = ArcChartHoverContextValue;
 
-export interface PieStableContextValue {
-  // Data
-  data: PieData[];
+export interface PieStableContextValue extends ArcChartStableContextValue<PieData> {
   arcs: PieArcData[];
 
   // Dimensions
-  size: number;
-  center: number;
   outerRadius: number;
   innerRadius: number;
   padAngle: number;
@@ -110,29 +111,8 @@ export interface PieStableContextValue {
   // Hover effect
   hoverOffset: number;
 
-  // Animation state
-  animationKey: number;
-  isLoaded: boolean;
-  enterTransition?: Transition;
-  enterStaggerScale: number;
-
-  // Container ref for portals
-  containerRef: RefObject<HTMLDivElement | null>;
-
-  // Computed values
-  totalValue: number;
-
-  // Get color for a slice index
-  getColor: (index: number) => string;
-
   // Get fill for a slice index (supports patterns/gradients)
   getFill: (index: number) => string;
-
-  /**
-   * Studio geometry scrub — skip Motion path morphing and use plain SVG paths.
-   * @default false
-   */
-  geometryScrubbing: boolean;
 
   /** Precomputed slice paths during geometry scrub (one per arc). */
   scrubSlicePaths: readonly string[] | null;
@@ -143,96 +123,51 @@ export interface PieStableContextValue {
 
 export type PieContextValue = PieStableContextValue & PieHoverContextValue;
 
-const PieStableContext = createContext<PieStableContextValue | null>(null);
-const PieHoverContext = createContext<PieHoverContextValue | null>(null);
+const PIE_CONTEXTS = createArcChartContexts<PieStableContextValue>(
+  "Pie",
+  arcChartStableKeys<PieStableContextValue>()(
+    "data",
+    "arcs",
+    "size",
+    "center",
+    "outerRadius",
+    "innerRadius",
+    "padAngle",
+    "cornerRadius",
+    "hoverOffset",
+    "animationKey",
+    "isLoaded",
+    "enterTransition",
+    "enterStaggerScale",
+    "containerRef",
+    "totalValue",
+    "getColor",
+    "getFill",
+    "geometryScrubbing",
+    "scrubSlicePaths",
+    "locale",
+  ),
+);
 
 export function PieProvider({ children, value }: { children: ReactNode; value: PieContextValue }) {
-  const stable = useMemo<PieStableContextValue>(
-    () => ({
-      data: value.data,
-      arcs: value.arcs,
-      size: value.size,
-      center: value.center,
-      outerRadius: value.outerRadius,
-      innerRadius: value.innerRadius,
-      padAngle: value.padAngle,
-      cornerRadius: value.cornerRadius,
-      hoverOffset: value.hoverOffset,
-      animationKey: value.animationKey,
-      isLoaded: value.isLoaded,
-      enterTransition: value.enterTransition,
-      enterStaggerScale: value.enterStaggerScale,
-      containerRef: value.containerRef,
-      totalValue: value.totalValue,
-      getColor: value.getColor,
-      getFill: value.getFill,
-      geometryScrubbing: value.geometryScrubbing,
-      scrubSlicePaths: value.scrubSlicePaths,
-      locale: value.locale,
-    }),
-    [
-      value.data,
-      value.arcs,
-      value.size,
-      value.center,
-      value.outerRadius,
-      value.innerRadius,
-      value.padAngle,
-      value.cornerRadius,
-      value.hoverOffset,
-      value.animationKey,
-      value.isLoaded,
-      value.enterTransition,
-      value.enterStaggerScale,
-      value.containerRef,
-      value.totalValue,
-      value.getColor,
-      value.getFill,
-      value.geometryScrubbing,
-      value.scrubSlicePaths,
-      value.locale,
-    ],
-  );
-
-  const hover = useMemo<PieHoverContextValue>(
-    () => ({
-      hoveredIndex: value.hoveredIndex,
-      setHoveredIndex: value.setHoveredIndex,
-    }),
-    [value.hoveredIndex, value.setHoveredIndex],
-  );
-
+  const { stable, hover } = useArcChartSlices(PIE_CONTEXTS, value);
   return (
-    <PieStableContext.Provider value={stable}>
-      <PieHoverContext.Provider value={hover}>{children}</PieHoverContext.Provider>
-    </PieStableContext.Provider>
+    <PIE_CONTEXTS.stable.Provider value={stable}>
+      <PIE_CONTEXTS.hover.Provider value={hover}>{children}</PIE_CONTEXTS.hover.Provider>
+    </PIE_CONTEXTS.stable.Provider>
   );
 }
 
 export function usePieStable(): PieStableContextValue {
-  const context = useContext(PieStableContext);
-  if (!context) {
-    throw new Error(
-      "usePieStable must be used within a PieProvider. " +
-        "Make sure your component is wrapped in <PieChart>.",
-    );
-  }
-  return context;
+  return useArcChartStable(PIE_CONTEXTS);
 }
 
 export function usePieHover(): PieHoverContextValue {
-  const context = useContext(PieHoverContext);
-  if (!context) {
-    throw new Error(
-      "usePieHover must be used within a PieProvider. " +
-        "Make sure your component is wrapped in <PieChart>.",
-    );
-  }
-  return context;
+  return useArcChartHover(PIE_CONTEXTS);
 }
 
 export function usePie(): PieContextValue {
   return { ...usePieStable(), ...usePieHover() };
 }
 
-export default PieStableContext;
+export default PIE_CONTEXTS.stable;

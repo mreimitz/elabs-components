@@ -34,8 +34,9 @@ server is an MCP server named `atlas` (`http://localhost:5180/mcp`); the tools b
 - `compose_set` — set or remove (`null`) keys on a node/zone id, `flow:<from>-><to>` or `""`.
 - `compose_add_nodes` — append nodes to a zone (`into`) or to the top-level `nodes:`.
 - `compose_add_flows` — append flows to `flows:` in the shortest form.
-- `catalog_search` — find an icon or part by product name, alias or tag; use its `icon`.
-- `catalog_get` — one catalog entry and a ready-to-paste node (`yaml`).
+- `catalog_search` — find an icon or part by product name, alias or tag; use its `name` as
+  `ref: catalog/<name>`.
+- `catalog_get` — one catalog entry and a ready-to-paste reference node (`yaml`).
 - `catalog_missing` / `catalog_update` — the `fill-catalog` prompt's loop; nothing else.
 
 ## Conventions
@@ -43,8 +44,10 @@ server is an MCP server named `atlas` (`http://localhost:5180/mcp`); the tools b
 - Ids: a letter, then letters, digits, `_` or `-`; unique across zones and nodes.
 - Top-level zones need `owner:` (`customer`, `saas`, `hosted` or `partner`).
 - `type: external` nodes sit outside every zone.
-- Icons are `vendor/name` from the icon packs (e.g. `aws/lambda`) or `lucide/<name>` (e.g.
-  `lucide/users`).
+- Nodes are reference-first: `ref: catalog/<pack>/<entry>` (from `catalog_search`) supplies
+  title, icon, type, subtitle and badges; write a key only where this diagram needs a
+  different value. `icon: lucide/<glyph>` (e.g. `lucide/users`) is for a custom node with no
+  catalog item — glyphs are never a catalog reference.
 
 ## Do not
 

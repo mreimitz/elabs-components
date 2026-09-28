@@ -23,38 +23,37 @@ zones:
             children:
               - id: postgres-rds
                 type: datastore
-                icon: aws/rds
+                ref: catalog/aws/rds
                 title: Postgres (RDS)
                 subtitle: OLTP source
               - id: msk
                 type: queue
-                icon: aws/managed-streaming-for-apache-kafka
+                ref: catalog/aws/managed-streaming-for-apache-kafka
                 title: Amazon MSK
                 subtitle: Kafka
               - id: dbx-jobs
-                icon: databricks/databricks
+                ref: catalog/databricks/jobs
                 title: Databricks jobs
                 subtitle: Classic compute
           - id: nat
-            icon: aws/virtual-private-cloud
+            icon: aws/virtual-private-cloud # a stand-in: a NAT gateway, not the VPC, so no ref (maintainer, 2026-09-27)
             title: NAT gateway
             subtitle: Egress
       - id: s3-landing
         type: datastore
-        icon: aws/simple-storage-service
+        ref: catalog/aws/simple-storage-service
         title: S3 — landing
         subtitle: Object storage
       - id: glue
-        icon: aws/glue
-        title: AWS Glue
+        ref: catalog/aws/glue
         subtitle: ETL
       - id: s3-curated
         type: datastore
-        icon: aws/simple-storage-service
+        ref: catalog/aws/simple-storage-service
         title: S3 — curated
         subtitle: Object storage
       - id: iam
-        icon: aws/identity-and-access-management
+        ref: catalog/aws/identity-and-access-management
         title: IAM
         subtitle: Identity
   - id: databricks
@@ -64,7 +63,7 @@ zones:
     title: Databricks (SaaS)
     children:
       - id: dbx-workspace
-        icon: databricks/workspace
+        ref: catalog/databricks/workspace
         title: Databricks workspace
         subtitle: Control plane
   - id: snowflake
@@ -74,12 +73,11 @@ zones:
     title: Snowflake (SaaS)
     children:
       - id: snow-db
-        type: datastore
-        icon: snowflake/snowflake
+        ref: catalog/snowflake/database
         title: Snowflake DB
         subtitle: Storage
       - id: snow-wh
-        icon: snowflake/warehouse
+        ref: catalog/snowflake/warehouse
         title: Snowflake warehouse
         subtitle: Compute
 
@@ -90,13 +88,12 @@ nodes:
     title: Okta
     subtitle: SSO
   - id: qlik-cloud
-    icon: qlik/cloud
+    ref: catalog/qlik/cloud
     title: Qlik Cloud
     subtitle: SaaS
   - id: salesforce
     type: external
-    icon: salesforce/salesforce
-    title: Salesforce
+    ref: catalog/salesforce/salesforce
     subtitle: SaaS
     tone: info
 

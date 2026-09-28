@@ -7,6 +7,7 @@ import {
   CATALOG_REF_ROOT,
   ID_RE,
   REF_RE,
+  SEGMENT_RE,
   WORKSPACE_REF_ROOT,
   refForm,
 } from "./ids";
@@ -81,21 +82,58 @@ function badRef(ref: string): { message: string; suggestion?: string } | null {
 
   const form = refForm(ref);
   if (form === "diagram") {
-    // The root is right ("ws"); a segment, or the lack of one, is not.
+    // The root is right ("ws"); a segment, or the lack of one, is not. One message per cause
+    // (review round 0 F4), the first bad segment wins.
     const rest = ref === WORKSPACE_REF_ROOT ? "" : ref.slice(WORKSPACE_REF_ROOT.length + 1);
-    return rest === ""
-      ? {
-          message: `"${ref}" needs at least one folder or file after "ws": ws/<folder>/…/<file name>.`,
-        }
-      : {
-          message:
-            `"${ref}" names a folder or file the workspace itself would refuse: a name cannot ` +
-            `be empty or blank, be "." or "..", or start with "_" or ".".`,
-        };
+    if (rest === "") {
+      return {
+        message: `"${ref}" needs at least one folder or file after "ws": ws/<folder>/…/<file name>.`,
+      };
+    }
+    const segments = rest.split("/");
+    const badIndex = segments.findIndex((segment) => !SEGMENT_RE.test(segment));
+    const bad = badIndex === -1 ? undefined : segments[badIndex];
+    // review round 1 F2/F3 (verify-r1) — only the first segment after "ws" is the trash
+    // folder; the same name deeper in the path is an ordinary (reserved-prefix) segment.
+    if (bad === "_trash" && badIndex === 0) {
+      return { message: `"${ref}" is in the trash; restore the diagram before referencing it.` };
+    }
+    if (bad === undefined || bad === "" || bad.trim() === "") {
+      return {
+        message: `"${ref}" has an empty or blank folder/file name; a reference cannot skip a segment.`,
+      };
+    }
+    if (bad === "." || bad === "..") {
+      return {
+        message: `"${ref}" has a "${bad}" segment; a reference names an exact path, never "." or "..".`,
+      };
+    }
+    // review round 1 F3 (verify-r1) / F2 (review-r1) — a leading/trailing space is the real
+    // cause; name it instead of falling through to the generic "bad character" message.
+    if (bad !== bad.trim()) {
+      return {
+        message: `"${ref}" names "${bad}", which starts or ends with a space; the workspace trims names.`,
+      };
+    }
+    if (bad.startsWith("_")) {
+      return {
+        message: `"${ref}" names "${bad}", which starts with "_" (reserved, like _trash); a reference cannot use it.`,
+      };
+    }
+    if (bad.startsWith(".")) {
+      return {
+        message: `"${ref}" names "${bad}", which starts with "." (hidden); a reference cannot use it.`,
+      };
+    }
+    return {
+      message: `"${ref}" names "${bad}", which has a character the workspace does not accept in a name.`,
+    };
   }
   if (form === "catalog") {
+    const lower = ref.toLowerCase();
     return {
       message: `"${ref}" is not a valid catalog reference: write catalog/<pack>/<entry>, lowercase (catalog/aws/rds).`,
+      ...(lower !== ref && REF_RE.test(lower) && { suggestion: lower }),
     };
   }
 
@@ -160,12 +198,15 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
   const useHint = (rec: unknown, path: string, i: ArchIssue): ArchIssue => {
     if (i.code !== "unknown-prop" || !isRecord(rec) || i.path !== joinPath(path, "use")) return i;
     const old = rec.use;
+    // review round 0 F6 — `suggestion` replaces the VALUE at the issue's own path (the "use"
+    // key); fixing this means writing a different KEY ("ref"), which a value-only suggestion
+    // cannot express, so the concrete fix is folded into the message instead.
+    const hint = typeof old === "string" ? ` Try: ref: ${WORKSPACE_REF_ROOT}/${old}` : "";
     return {
       ...i,
       message:
         '"use" is now "ref": write ref: ws/<folder>/…/<file name> for another diagram, or ' +
-        "ref: catalog/<pack>/<entry> for a catalog item.",
-      ...(typeof old === "string" ? { suggestion: `${WORKSPACE_REF_ROOT}/${old}` } : {}),
+        `ref: catalog/<pack>/<entry> for a catalog item.${hint}`,
     };
   };
   const check = (def: Parameters<typeof validateProps>[0], rec: unknown, path: string) => {
@@ -292,7 +333,14 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         // DG-26
         ...(ref !== undefined && {
           ref,
-          unwritten: SUPPLIED_KEYS.filter((k) => !(k in entry)),
+          // review round 1 N4 — a scalar key left blank (`title:` with no value, or
+          // `title: ""`) still counts as "not written": the reference's value shows exactly
+          // as when the key is absent. `badges: []` stays deliberately written (§2.2,
+          // dialect-v1.md) — an array is never "blank" the same way a scalar is.
+          unwritten: SUPPLIED_KEYS.filter((k) => {
+            const value = (entry as Record<string, unknown>)[k];
+            return !(k in entry) || (k !== "badges" && (value === null || value === ""));
+          }),
         }),
         expand: pick<boolean>(entry, "expand", bad),
         // end DG-26
