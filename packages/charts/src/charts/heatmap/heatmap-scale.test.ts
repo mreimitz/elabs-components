@@ -84,6 +84,16 @@ describe("dotRadius", () => {
     expect(dotRadius(5, 0, 10)).toBe(0);
     expect(dotRadius(5, 10, 0)).toBe(0);
   });
+
+  // RM-204 fix round (P2 item 4): a NaN `value`/`maxAbs`/`maxRadius` must
+  // propagate to NaN like ordinary floating-point math, not clamp to 0 —
+  // `areaRadius`'s own NaN guard (built for ITS callers, where `max`/`rMax`
+  // "no data" really does mean draw nothing) does not apply to this one.
+  it("propagates NaN rather than clamping to 0 (base parity)", () => {
+    expect(dotRadius(NaN, 100, 10)).toBeNaN();
+    expect(dotRadius(50, NaN, 10)).toBeNaN();
+    expect(dotRadius(50, 100, NaN)).toBeNaN();
+  });
 });
 
 describe("continuousInk", () => {
