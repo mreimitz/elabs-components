@@ -38,8 +38,9 @@ its own.
 
 Layout: the top bar already renders the page's one `<h1>` ("Home", `shell/top-bar.tsx`'s
 breadcrumb); Home renders no `<h1>` of its own (round 0 shipped a second, `sr-only` one — review
-finding F3/F11, fixed: two `<h1>Home</h1>` elements is two landmarks for the same page to a
-screen reader, not one hidden extra). Section headings ("Recent", "Folders", "Components") are
+finding F3/F11, fixed: two `<h1>Home</h1>` elements gives a screen reader two identical top-level
+headings for one page, not one hidden extra — headings are not landmarks). Section headings
+("Recent", "Folders", "Components") are
 plain `<Heading level={2}>` in `<section aria-labelledby>`; no marketing copy anywhere on the
 page.
 
@@ -169,8 +170,8 @@ kind="error"` + Retry pattern as the sidebar's own `TreeLoadError`), read by all
 
 Round 1 (`brand-ui-reviewer` + a verify pass) found one must-fix and several should-fix defects,
 all in scope; addressed in the commit that follows this doc update (evidence in
-`.evidence/home/fix-r1/`). Two logic modules were split out of view files while fixing these
-(`conventions/logic-modules`); everything else is a same-file fix.
+`.evidence/home/fix-r1/`). Two React-free logic modules were split out of view files while fixing
+these; everything else is a same-file fix.
 
 - **Wrong toast on "New from template" when the open tab had unsaved edits.** Both start-from
   flows used to call `workspaceActions.open()` as part of "create", so a failed open (the
@@ -245,4 +246,56 @@ fetch runs, and `agent-browser`'s `network route --abort` did not intercept this
 in this session; the fix is verified by code reading (`home-view.tsx`'s `treeFailed`,
 `ComponentsPanel`'s early `null` return, `TemplatePicker`'s `tree`/`treeError` branch), not by a
 screenshot of the failure state, the same limitation the round-0 verify pass already recorded for
-`empty-workspace-state`.
+`empty-workspace-state`. (Correction, round 2: the failure state can in fact be driven live, without
+server-side fault injection, by setting the store directly — `await
+import("/src/workspace/workspace-store.ts")` then `workspaceStore.set({ tree: null, treeError:
+"…" })` — and round 2's own verify pass did exactly that.)
+
+## Review round 2 — fixes
+
+Round 2 (`brand-ui-reviewer` + a verify pass) found four should-fix defects and several nits, all
+in scope; addressed on `diagram/home-followups` (branched from `diagram/home` after its merge to
+`main`), evidence in `.evidence/home-followups/fix-r0/`.
+
+- **The Connect an LLM snippets were unreadable at dialog width.** The Claude Desktop JSON hid its
+  server URL behind a horizontal scrollbar most platforms hide; the wrapped Claude Code command
+  used `break-all`, which split words mid-token. `DialogContent` is now `size="xl"`; `SnippetBlock`
+  (`src/home/connect-dialog.tsx`) always wraps (`whitespace-pre-wrap break-words`) instead of ever
+  scrolling — readability wins over preserving the JSON's original indentation — and its now-unused
+  `role="region"`/`tabIndex` scroll-region markup and `wrap` prop were dropped.
+- **Two copies of the same template read identically everywhere.** Round 1 added a folder line to
+  the Used-in popover, but that cannot help when two copies land in the same folder (the common
+  case). `templates.ts`'s new `titleWithCopySuffix(text, n)` rewrites a copy's own top-level
+  `title:` line — appending `" (copy)"` for the first copy, `" (copy 2)"` for the second, matching
+  the number `createUniqueFile` gives the file name — as a single-line string replace, so every
+  other line (including comments) is byte-for-byte unchanged; the template file itself is never
+  touched. `copyTemplate` (`src/home/start-from.tsx`) now writes with this per-attempt title
+  directly rather than calling `createUniqueFile`, since each retry needs its own copy number
+  baked into the text before the write. Recent, Folders and the Used-in popover all read the
+  file's title from the tree, so all three now differ without further changes; the popover's
+  title line also dropped its fixed `w-64` and `truncate` in favour of `line-clamp-2 break-words`
+  so a longer title is not cut off.
+- **Section headings did not outrank the items inside them.** Home's three `<Heading level={2}>`
+  section titles ("Recent", "Folders", "Components") explicitly set `size="subtitle"` — the same
+  rung `RecentCard`'s own `<h3>` title uses. Dropped the override so the `h2`s fall back to
+  `Heading`'s default rung for their level ("title"), which now visibly outranks the card titles
+  beneath them.
+- **Code comments and this doc cited a lint rule and a decision document that do not exist.**
+  `` `conventions/logic-modules` `` was never a real rule id, and "DECISIONS 2026-09-28" was never
+  a real document; both were replaced with a plain description of the same fact ("no React
+  import", "created on first write if it does not exist"). "R1 review" (ambiguous with "R1" the
+  release scope box used elsewhere in these same files) is now written out as "review round 1".
+- **Nits fixed alongside the above:** the three sections no longer render their headings over
+  nothing while the tree has failed to load (`home-view.tsx` now hides all three behind the one
+  `TreeErrorPanel`, not just their bodies); Folders' row titles wrap onto a second line instead of
+  being cut off at narrow widths (`truncate` → `line-clamp-2 break-words` in `folder-list.tsx`);
+  the "Used in N diagrams" trigger now carries an at-rest underline and a `ChevronDown` icon so
+  colour is not its only cue apart from the static "Not used yet" line, and a taller hit target
+  (`min-h-6`).
+- **Not fixed / accepted as-is:** moving keyboard focus to the Recent heading when a failed tree
+  load recovers (today it drops to `<body>`) was left for a later pass — it needs its own
+  imperative focus wiring between `TreeErrorPanel` and `HomeView`, not a one-line fix. Running the
+  `ref:` scan's captured text through the dialect's own `refFileOf` (so a match inside a quoted
+  string or block scalar cannot resolve to a component that does not exist) and copying a
+  template's thumbnail alongside a fresh copy were both left as-is; neither is a defect users can
+  see today.

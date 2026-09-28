@@ -1,9 +1,9 @@
 /**
  * DG-23 — Home's Folders section (R1 scope box, kept). A read-only view of the same tree DG-22's
  * sidebar manages: `buildTree` is reused so the two never disagree, but the row chrome is not —
- * `SidebarMenuSub`/`SidebarMenuSubButton` paint in the `--sidebar-*` tokens (findings §4) and
- * carry file-management actions (rename, move, trash) that belong to the sidebar, not to a
- * launch surface. This list only opens a file; managing the tree stays in the rail.
+ * `SidebarMenuSub`/`SidebarMenuSubButton` paint in the `--sidebar-*` tokens, wrong for a page on
+ * the canvas surface, and carry file-management actions (rename, move, trash) that belong to the
+ * sidebar, not to a launch surface. This list only opens a file; managing the tree stays in the rail.
  */
 import { Folder, FileText } from "lucide-react";
 import { toHash } from "../routes/use-hash";
@@ -28,9 +28,9 @@ function FolderRows({ entries, level }: FolderRowsProps) {
       {entries.map((entry) =>
         entry.kind === "folder" ? (
           <li key={entry.path}>
-            <div className="flex items-center gap-2 py-1 text-body font-medium text-foreground">
-              <Folder aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
-              <span className="truncate">{entry.name}</span>
+            <div className="flex items-start gap-2 py-1 text-body font-medium text-foreground">
+              <Folder aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+              <span className="min-w-0 line-clamp-2 break-words">{entry.name}</span>
             </div>
             <FolderRows entries={entry.children} level={level + 1} />
           </li>
@@ -38,10 +38,13 @@ function FolderRows({ entries, level }: FolderRowsProps) {
           <li key={entry.path}>
             <a
               href={toHash({ kind: "doc", path: entry.path })}
-              className="flex items-center gap-2 rounded-md py-1 text-body text-foreground hover:text-primary-text focus-ring"
+              className="flex items-start gap-2 rounded-md py-1 text-body text-foreground hover:text-primary-text focus-ring"
             >
-              <FileText aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
-              <span className="truncate">{entry.title}</span>
+              <FileText
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+              />
+              <span className="min-w-0 line-clamp-2 break-words">{entry.title}</span>
             </a>
           </li>
         ),
