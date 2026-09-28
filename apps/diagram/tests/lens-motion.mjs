@@ -49,6 +49,9 @@ try {
                 p: s.position,
                 moving: s.animating,
                 cameras: viewports.map((v) => v.style.transform),
+                nodeGeometry: [
+                  ...document.querySelectorAll("[data-lens-pane] .react-flow__node"),
+                ].map((node) => [node.style.transform, node.style.width, node.style.height]),
                 sourceVisible: [
                   ...document.querySelectorAll("[data-lens-pane] .react-flow__renderer"),
                 ].some(
@@ -102,11 +105,21 @@ try {
           moving.every((f) => f.cameras[0] === f.cameras[1]),
           "independent cameras during morph",
         );
-      if (reducedMotion === "reduce")
+      if (reducedMotion === "reduce") {
         assert(
           data.every((f) => !f.ghostVisible),
           "reduced-motion geometry moved",
         );
+        const initial = moving[0];
+        for (const frame of moving) {
+          assert.deepEqual(frame.cameras, initial.cameras, "reduced-motion camera moved");
+          assert.deepEqual(
+            frame.nodeGeometry,
+            initial.nodeGeometry,
+            "reduced-motion node geometry moved",
+          );
+        }
+      }
       assert(moving.length > 0, `transition skipped: ${scenario}`);
       if (scenario === "reverse") {
         assert(

@@ -1,5 +1,5 @@
 /** Isolated real-browser lens checks. DIAGRAM_URL, PLAYWRIGHT_MODULE, LENS_EVIDENCE_DIR. */
-/* global document, performance, setTimeout */
+/* global document, performance, setTimeout, getComputedStyle */
 import assert from "node:assert/strict";
 import process from "node:process";
 import console from "node:console";
@@ -33,7 +33,18 @@ async function lens(page, action) {
 async function settled(page, target) {
   for (let i = 0; i < 120; i++) {
     const state = await lens(page);
-    if (!state.animating && state.lens === target) return;
+    if (!state.animating && state.lens === target) {
+      await page.waitForFunction((target) => {
+        const pane = document.querySelector(`[data-lens-pane="${target}"]`);
+        const renderer = pane?.querySelector(".react-flow__renderer");
+        return (
+          pane &&
+          getComputedStyle(pane).visibility === "visible" &&
+          (!renderer || getComputedStyle(renderer).opacity === "1")
+        );
+      }, target);
+      return;
+    }
     await page.waitForTimeout(25);
   }
   throw new Error(`Lens did not settle on ${target}`);
@@ -269,6 +280,14 @@ try {
   assert((await lens(page)).lens === "visual");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(200);
+  // Reload the route after presentation: the in-memory history fixture has no workspace
+  // path, so presentation's route restoration can still have a document load in flight.
+  await page.reload();
+  await page
+    .locator('[data-lens-pane="visual"] .react-flow__node')
+    .first()
+    .waitFor({ state: "attached" });
+  await settled(page, "visual");
   for (const [text, title] of [
     ["", "Nothing to draw yet"],
     ["title: [", "The text is not a diagram"],
