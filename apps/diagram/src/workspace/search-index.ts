@@ -1,7 +1,7 @@
 /**
- * DG-sidebar-search — the workspace search index (maintainer 2026-09-28: "it should search
- * and filter the entire workspace", by NAMES AND CONTENTS — a diagram is found by its title
- * or file name, and also by what is drawn inside it: box names, ids, icons, descriptions).
+ * Sidebar search (maintainer request 2026-09-28: "it should search and filter the entire
+ * workspace"), by NAMES AND CONTENTS — a diagram is found by its title, its file name or its
+ * folder path, and also by what is drawn inside it: box names, ids, icons, descriptions.
  *
  * Built from the workspace tree plus one read per file, cached by mtime so a rebuild after a
  * change reads only what changed (the shape DG-23's old `home/search.ts` planned — see
@@ -146,13 +146,17 @@ export async function buildIndex(tree: WorkspaceTree, read: ReadText): Promise<I
       const hit = cache.get(file.path);
       if (hit && hit.mtime === file.mtime) return hit;
       let text = "";
+      let readOk = true;
       try {
         text = (await read(file.path)).text;
       } catch {
-        // Unreadable (gone between /tree and the read): a name-only entry until the next event.
+        // Unreadable (gone between /tree and the read, or a transient error): a name-only entry
+        // for this build, and NOT cached — the next rebuild retries the read rather than
+        // repeating this failure until the file's mtime happens to change.
+        readOk = false;
       }
       const entry = buildEntry(file, text);
-      cache.set(file.path, entry);
+      if (readOk) cache.set(file.path, entry);
       return entry;
     }),
   );
@@ -257,7 +261,7 @@ interface Candidate {
   field: MatchField;
   text: string;
   /** Which of `entry.boxes` this came from — lets `matchEntry` prefer a box's own title over
-   * its id when both match (n1). */
+   * its id when both match. */
   boxIndex?: number;
 }
 
@@ -310,21 +314,23 @@ function scoreField(candidate: Candidate, words: readonly string[]): FieldHit | 
   return { field, text, boxIndex, weight, words: words_, ranges: mergeRanges(ranges) };
 }
 
-/** Every other searchable string on `entry`: its file name, its ancestor folders' names, and
- * each box's id, ref/component, title, subtitle, icon and description — each tagged with the
- * box it came from (`boxIndex`), so a box's id and its own title are never confused for two
- * different boxes' matches. */
+/** Every other searchable string on `entry`: its file name (with extension), its full path (so
+ * a folder-and-file query like "examples/lakehouse" or the header breadcrumb's own text also
+ * finds it), its ancestor folders' names, and each box's id, ref/component, title, subtitle,
+ * icon and description — each tagged with the box it came from (`boxIndex`), so a box's id and
+ * its own title are never confused for two different boxes' matches. */
 function candidatesOf(entry: IndexEntry, ancestorFolders: readonly string[]): Candidate[] {
-  const list: Candidate[] = [
-    { field: "fileName", text: entry.stem },
-    ...ancestorFolders.map((name) => ({ field: "folder" as const, text: name })),
-  ];
+  const list: Candidate[] = [{ field: "fileName", text: entry.fileName }];
+  // Root-level files: `entry.path` already equals `entry.fileName`, so a second candidate
+  // would only duplicate the one above.
+  if (entry.folder !== "") list.push({ field: "fileName", text: entry.path });
+  list.push(...ancestorFolders.map((name) => ({ field: "folder" as const, text: name })));
   if (entry.description) list.push({ field: "description", text: entry.description });
   entry.boxes.forEach((box, boxIndex) => {
     // id, ref and component are separate candidates (not `id ?? ref ?? component`): a v1
     // reference node (DG-26) always carries an id ALONGSIDE its `ref:`, and the maintainer's
     // "found by its icon" promise must keep working once catalog refs replace `icon:` — so the
-    // ref itself has to stay searchable even though the same box also has an id (m1).
+    // ref itself has to stay searchable even though the same box also has an id.
     if (box.id) list.push({ field: "id", text: box.id, boxIndex });
     if (box.ref) list.push({ field: "ref", text: box.ref, boxIndex });
     if (box.component) list.push({ field: "ref", text: box.component, boxIndex });
@@ -337,7 +343,7 @@ function candidatesOf(entry: IndexEntry, ancestorFolders: readonly string[]): Ca
 }
 
 /** How many of `hit`'s words are NOT already covered by the row's own title — the words that
- * actually explain why a row with no title match showed up (s5). */
+ * actually explain why a row with no title match showed up. */
 function uncoveredByTitle(hit: FieldHit, titleWords: ReadonlySet<number>): number {
   let count = 0;
   hit.words.forEach((word) => {
@@ -353,8 +359,8 @@ function uncoveredByTitle(hit: FieldHit, titleWords: ReadonlySet<number>): numbe
  * some word matches nowhere. Otherwise: `titleMatch` (no second line needed) or `reason`, the
  * single best other field to show ("Box: Snowflake"), picked by how many words it covers that
  * the title itself does NOT already show, then by how many words it covers, then by weight —
- * so a two-word query is explained by the word the title does not already reveal (s5), and a
- * box's own title is shown over its id when both match it (n1).
+ * so a two-word query is explained by the word the title does not already reveal, and a
+ * box's own title is shown over its id when both match it.
  */
 export function matchEntry(
   entry: IndexEntry,
