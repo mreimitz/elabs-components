@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import process from "node:process";
 import console from "node:console";
+import { URL } from "node:url";
 import { mkdir, writeFile } from "node:fs/promises";
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? "playwright");
 const url = process.env.DIAGRAM_URL ?? "http://localhost:5415";
