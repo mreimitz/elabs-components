@@ -20,6 +20,7 @@ import { FIT_MIN_ZOOM, useDiagramLayout } from "../layout/use-diagram-layout";
 import { motionMs } from "../motion";
 import { isZoneNode } from "../nodes/zone-data";
 import { useZoneAutofit } from "../nodes/use-zone-autofit";
+import { layoutReadyActions } from "./layout-ready-store";
 import type { ArchDiagram, NodeStyle } from "../spec/dialect";
 import type { ArchCompileView } from "../spec/compile/compile-arch";
 import type { FlowSpec, FlowSpecDirection, ReactFlowGraph } from "../spec/flow-spec";
@@ -40,7 +41,8 @@ import { withCompositeMock } from "../fixtures/composite-mock"; // DG-20
 import { ARCH_NODE_TYPE, type ArchNodeData } from "../nodes/arch-node-data"; // DG-20
 
 import { focusEditor } from "../shell/focus"; // DG-22 review
-import { modeActions, overrideDocKey, useDocMode } from "../shell/mode-store"; // DG-22 review
+import { modeActions, useDocMode } from "../shell/mode-store"; // DG-22 review
+import { overrideDocKey } from "../state/override-key";
 import { useRoute } from "../routes/use-hash"; // view overrides (maintainer 2026-09-27): the share id
 
 import {
@@ -71,8 +73,8 @@ const CANVAS_LABELS = {
   layoutFailed: "The diagram could not be laid out",
   layoutFailedHint: "The layout engine failed. Reload the page to try again.",
   stale: "Showing the last valid diagram",
-  // fix-r0 F4 (review-r0): view mode/presenting keep `use-canvas-interaction.ts`'s edit-mode
-  // node sentence from claiming a keyboard user can move or delete what is now read-only.
+  // View mode/presenting keep `use-canvas-interaction.ts`'s edit-mode node sentence from
+  // claiming a keyboard user can move or delete what is now read-only.
   readOnlyNodeDescription:
     "Press Enter or Space to select this node. Press ? to show its details. Press Escape to cancel.",
   readOnlyEdgeDescription: "Press Enter or Space to select this edge. Press Escape to cancel.",
@@ -97,8 +99,8 @@ const CANVAS_LABELS = {
  * out here would strand the canvas at `EDITABLE_PROPS`' value after an edit-to-view switch
  * instead of locking it down (this bit `nodesConnectable` once already — see `EDITABLE_PROPS`).
  *
- * fix-r0 F7 (review-r0): the same gotcha applies to `deleteProps`/`layoutProps`' own handlers
- * (`onBeforeDelete`, `onNodeDragStop`, `onSelectionDragStop`) — those slices are left OUT of
+ * The same gotcha applies to `deleteProps`/`layoutProps`' own handlers (`onBeforeDelete`,
+ * `onNodeDragStop`, `onSelectionDragStop`) — those slices are left OUT of
  * `waveProps` below in view mode/presenting, never merely overridden, so their edit-mode
  * function values would otherwise strand themselves in React Flow's store across an
  * edit-to-view switch. `deleteKeyCode: null` and `nodesDraggable: false` already block the
@@ -113,8 +115,8 @@ const READ_ONLY_PROPS = {
   onBeforeDelete: async () => false,
   onNodeDragStop: () => {},
   onSelectionDragStop: () => {},
-  // fix-r0 F4 (review-r0): `mergeCanvasProps` replaces a plain-object slice wholesale (it only
-  // composes same-named FUNCTIONS), so this whole object wins over `interactionProps`' own
+  // `mergeCanvasProps` replaces a plain-object slice wholesale (it only composes same-named
+  // FUNCTIONS), so this whole object wins over `interactionProps`' own
   // `ariaLabelConfig` in view mode/presenting — `CanvasShell` then spreads it over its own
   // branded defaults, so every other key (zoom, minimap, …) still reads normally.
   ariaLabelConfig: {
@@ -245,15 +247,16 @@ function TechnicalCanvasPane({ presenting = false }: CanvasPaneProps) {
   const overrideKey = overrideDocKey(path, route.kind === "doc" ? route.share : undefined);
   const fileDirection = spec?.layout.direction;
   const fileNodeStyle = ast?.nodeStyle;
-  // fix-r0 F5: no sync effect — `effectiveViewValue`/`activeOverrideValue` derive staleness
-  // (the override's own recorded `basis` vs. `fileDirection`/`fileNodeStyle` right now) on
-  // every read, so there is nothing to keep in step here.
+  // A stale override (the file's own value moved on since this viewer set it, even a round
+  // trip back to what it was) is dropped for good by `view-overrides-store.ts`'s own
+  // subscription to this store, at the moment it happens — never read here, and never a sync
+  // effect scoped to this component staying mounted.
   const overrides = useViewOverrides(overrideKey);
   const effectiveDirection = effectiveViewValue(viewing, overrides.direction, fileDirection);
-  const nodeStyleOverride = activeOverrideValue(viewing, overrides.nodeStyle, fileNodeStyle);
-  // fix-r0 F1: what `DiagramCanvas`'s `laidOutView` effect compares to decide a node-style
-  // change needs a re-layout — a VALUE, never `shownGraph`'s identity (that changes on every
-  // compile, override or not; see that effect's own comment for the bug this caused).
+  const nodeStyleOverride = activeOverrideValue(viewing, overrides.nodeStyle);
+  // What `DiagramCanvas`'s `laidOutView` effect compares to decide a node-style change needs a
+  // re-layout — a VALUE, never `shownGraph`'s identity (that changes on every compile, override
+  // or not; see that effect's own comment).
   const effectiveNodeStyle = effectiveViewValue(viewing, overrides.nodeStyle, fileNodeStyle);
   // DG-20 step 8: the review-only composite mock (`?composite-mock`); the view-only node-style
   // override redraws every node that inherits the diagram's default (`applyViewNodeStyle`).
@@ -326,6 +329,7 @@ function TechnicalCanvasPane({ presenting = false }: CanvasPaneProps) {
     // A loaded document starts a fresh canvas: first-layout path, loading state, new fit.
     <ReactFlowProvider key={loadCount}>
       <DiagramCanvas
+        path={path}
         graph={shownGraph}
         spec={spec}
         view={view}
@@ -337,8 +341,8 @@ function TechnicalCanvasPane({ presenting = false }: CanvasPaneProps) {
         // above returned early otherwise); `effectiveDirection` only reads as `undefined`
         // before the first compile has one, which cannot be true past that guard.
         direction={effectiveDirection ?? spec.layout.direction}
-        // fix-r0 F1: same effective value the node-style toggle actually shows, so the
-        // re-layout effect can watch IT change, not the graph's identity.
+        // Same effective value the node-style toggle actually shows, so the re-layout
+        // effect can watch IT change, not the graph's identity.
         nodeStyle={effectiveNodeStyle}
       />
     </ReactFlowProvider>
@@ -346,6 +350,8 @@ function TechnicalCanvasPane({ presenting = false }: CanvasPaneProps) {
 }
 
 interface DiagramCanvasProps {
+  /** For `layout-ready-store.ts`: which document's layout this pane's `status` answers for. */
+  path: string | null;
   graph: ReactFlowGraph;
   spec: FlowSpec;
   view: ArchCompileView;
@@ -355,7 +361,7 @@ interface DiagramCanvasProps {
   /** view-mode direction (maintainer 2026-09-27): what the canvas lays out with right now —
    * the file's own direction, or this viewer's own override (never the file's spec object). */
   direction: FlowSpecDirection;
-  /** fix-r0 F1: the effective node style (file's own, or this viewer's override) as a VALUE —
+  /** The effective node style (file's own, or this viewer's override) as a VALUE —
    * `laidOutView` below compares this, never `graph`'s identity, to catch a card/icon change
    * that needs a re-layout but left `structure` alone. */
   nodeStyle: NodeStyle | undefined;
@@ -403,6 +409,7 @@ function collapsedOnCanvas(nodes: readonly Node[]): string[] {
 }
 
 function DiagramCanvas({
+  path,
   graph,
   spec,
   view,
@@ -485,13 +492,12 @@ function DiagramCanvas({
   // in the same render: the effect above already staged and re-laid the graph out for that (an
   // edit-mode toggle changes both at once).
   //
-  // fix-r0 F1 (review-r0): this used to compare `graph`'s object IDENTITY, meant to catch a
-  // node-style override changing `canvas-pane.tsx`'s `shownGraph` memo with no new compile. But
-  // `shownGraph` gets a new identity on every compile regardless — a plain words-only edit that
-  // changes neither direction nor node style still produced a "changed" `graph`, so every edit
-  // re-laid the whole canvas out and threw away the user's pan/zoom. Comparing the effective
-  // VALUES here instead means an ordinary text edit (same direction, same node style) is a
-  // true no-op for this effect, exactly like the main compile effect above already is.
+  // Compares the effective VALUES, never `graph`'s identity: `shownGraph` gets a new identity
+  // on every compile regardless of whether direction or node style changed, so comparing
+  // identity would re-lay the whole canvas out (and throw away the user's pan/zoom) on a plain
+  // words-only edit too. Comparing values instead means an ordinary text edit (same direction,
+  // same node style) is a true no-op for this effect, exactly like the main compile effect
+  // above already is.
   const laidOutView = useRef({ direction, nodeStyle, structure });
   useEffect(() => {
     const last = laidOutView.current;
@@ -521,8 +527,17 @@ function DiagramCanvas({
       const pane = paneRef.current?.querySelector<HTMLElement>(".react-flow");
       return pane ? chromeFitPadding(pane, laid, limits) : undefined;
     },
+    // The only writer of `layout-ready-store.ts`: `use-autosave.ts`'s thumbnail waits for this
+    // before reading the canvas, so it never captures a layout mid-flight. Written at the event
+    // that settles the layout itself, not mirrored from `status` after the fact.
+    onSettled: (settledStatus) => layoutReadyActions.setReady(path, settledStatus === "ready"),
   });
   useZoneAutofit(nodes, setNodes);
+  // This pane unmounting (a document closed, or the visual lens swapping it out) leaves no
+  // stale "ready" behind for a path nothing is drawing any more.
+  useEffect(() => {
+    return () => layoutReadyActions.setReady(path, false);
+  }, [path]);
 
   // Orientation (maintainer 2026-09-27, concept §5): an ⌥-click on a visual-lens box sets
   // `frameNodeIds` and switches to technical (`lens-store.ts`); once this pane is ready, frame

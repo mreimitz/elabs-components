@@ -2,7 +2,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@elabs-ai/components-ui";
 
 export interface WithTooltipProps {
-  /** The control's accessible name AND its tooltip text, from one string. */
+  /** The control's accessible name AND its tooltip's main line, from one string. */
   label: string;
   /** One control that renders a DOM element and forwards its ref and props. */
   children: ReactElement;

@@ -13,6 +13,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { createStore } from "../state/create-store";
 import { diagramStore, editActions, useDiagram } from "../state/diagram-store";
+import { docKey } from "../state/override-key";
 import { navigate, parseRoute } from "../routes/use-hash";
 import { useWorkspace, workspaceActions, workspaceStore } from "../workspace/workspace-store";
 import { focusWorkspace } from "./focus"; // DG-22 review
@@ -32,9 +33,6 @@ export interface OpenDoc {
   /** Unsaved: autosave is pending, failed, or held by a disk conflict (only the shown tab). */
   dirty: boolean;
 }
-
-/** The mode key of a document that is no workspace file (an old share link). */
-export const SHARED_DOC_KEY = "#shared";
 
 /** Plan §3.4: the editor slides in at 40 % of the workspace. */
 export const EDITOR_WIDTH_DEFAULT = 40;
@@ -96,24 +94,6 @@ export const modeStore = createStore<ModeState>({
 /** Read one slice (a field or a primitive, never a new object: see `useDiagram`). */
 export function useMode<T>(select: (state: ModeState) => T): T {
   return useSyncExternalStore(modeStore.subscribe, () => select(modeStore.get()));
-}
-
-/** A document's mode key. */
-export function docKey(path: string | null): string {
-  return path ?? SHARED_DOC_KEY;
-}
-
-/**
- * The per-viewer view-overrides key (`view-overrides-store.ts`) for a document: the workspace
- * path, or — unlike `docKey`, which folds every path-less document into one `SHARED_DOC_KEY` —
- * a share link's OWN content id, so opening a second shared diagram in the same tab never
- * inherits the first one's view-only direction or node style (review-r0). A path-less,
- * share-less document (a bare `#present`) still falls back to `SHARED_DOC_KEY`: there is
- * nothing to tell two of those apart by.
- */
-export function overrideDocKey(path: string | null, share: string | undefined): string {
-  if (path !== null) return path;
-  return share !== undefined ? `share:${share}` : SHARED_DOC_KEY;
 }
 
 /** The mode of the document the tab shows. */
@@ -273,7 +253,7 @@ export const modeActions = {
   /**
    * A file or folder moved (rename, drag, "Move to"): tabs and modes follow it, and so does
    * any open view-mode override (direction, node style) — a rename must not read as "reset my
-   * view choice" (review-r0).
+   * view choice".
    */
   moved(from: string, to: string) {
     const follow = (p: string) => (isAt(p, from) ? to + p.slice(from.length) : p);
@@ -289,12 +269,18 @@ export const modeActions = {
     }
   },
 
-  /** A file or folder is about to be trashed: its tabs close. */
+  /**
+   * A file or folder is about to be trashed: its tabs close, and so does any open view-mode
+   * override on record for it (or for a file under it) — nothing left to apply an override
+   * TO once the file is gone, and a later file at the same path (an undo of the trash, a new
+   * file with the same name) must not inherit a stranger's stale choice.
+   */
   closeTabsAt(path: string) {
     modeStore
       .get()
       .openPaths.filter((p) => isAt(p, path))
       .forEach((p) => modeActions.closeTab(p));
+    viewOverrideActions.forgetAt(path);
   },
 
   /** "Replace my edits" answered: open the pending document, or stay. */
