@@ -12,6 +12,10 @@ These source contracts supersede the older implementation snapshots later in thi
 - `src/workspace/component-loader.ts` preloads reference files before publishing a document; `component-sync.ts` recompiles on dependency changes. Navigation and revision checks prevent obsolete reads from replacing the current document.
 - `src/editor/endpoint-metadata.ts` reads the current buffer with catalog inheritance. `reference-endpoints.ts` adds qualified inner IDs even when the instance is collapsed, with bounded candidate traversal and prefix-directed lookup. Providers recheck model, version, cancellation and read-only state after asynchronous work.
 
+- `catalog_update` explicitly creates unknown vendors only with `create_vendor: true`. Entries may omit an icon and inherit a glyph from `kind`; explicit generic icons are supported. `generic: true` identifies missing dedicated product marks. Catalog writes validate the whole batch before writing and preserve curated entries. Browser bundled merging and server merging follow the same precedence.
+
+- `#v/<workspace-path>` renders a local, read-only compiled snapshot. It mounts no shell editing services, uses `watchPath` on the shared ref-counted workspace event connection, and retains the last valid picture while reporting invalid input. Optional light/dark view themes are scoped without changing saved editor preferences. MCP `view` URLs derive from the guarded request origin, retaining the actual server port.
+
 ## How to work a DG item (for any agent tier)
 
 1. Read the item file, this document, and `2026-09-26-plan.md` §2 (D1–D14).

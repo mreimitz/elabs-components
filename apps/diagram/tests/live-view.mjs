@@ -247,13 +247,18 @@ try {
     const match = (url) =>
       new URL(url).pathname === "/api/workspace/file" &&
       new URL(url).searchParams.get("path") === slowPath;
-    await page.route(match, async (route) => {
-      const response = await route.fetch();
-      held = true;
-      await gate;
-      await route.fulfill({ response });
-      handled = true;
-    });
+    // Hold exactly one obsolete response; SSE may legitimately issue another read.
+    await page.route(
+      match,
+      async (route) => {
+        const response = await route.fetch();
+        held = true;
+        await gate;
+        await route.fulfill({ response });
+        handled = true;
+      },
+      { times: 1 },
+    );
     await page.evaluate((path) => {
       location.hash = `#v/${path}`;
     }, slowPath);

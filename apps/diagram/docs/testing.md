@@ -39,6 +39,8 @@ node --test scripts/tests/endpoint-metadata.test.mjs
 node --test scripts/tests/reference-endpoints.test.mjs
 node --test scripts/tests/node-details.test.mjs
 node --test scripts/tests/component-resolver.test.mjs
+node --test scripts/tests/catalog-generic.test.mjs
+node --test scripts/tests/live-view-url.test.mjs
 node scripts/tests/reference-browser.mjs
 for title_form in block anchored aliased flow anchored-multiline; do
   ATLAS_TITLE_FORM="$title_form" node scripts/tests/home-browser.mjs
@@ -49,6 +51,9 @@ node tests/lens-navigation.mjs
 node tests/editor-completions.mjs
 node tests/details-card.mjs
 node tests/component-references.mjs
+node tests/catalog-generic.mjs
+node tests/live-view.mjs
+node tests/live-view-shell.mjs
 node scripts/check-view-mode.mjs
 node tests/lens-recovery.mjs
 node tests/lens-motion.mjs
@@ -69,7 +74,11 @@ node tests/lens-motion.mjs
 | Lens interactions     | Shipped diagrams, routing geometry, read-only write/history guards, keyboard drill-down, refit and export.                             |
 | Lens motion           | First switch, resize, reversal, shared camera, persistent controls and reduced motion, with frame measurements.                        |
 
+`CATALOG_EVIDENCE` saves real MCP catalog creation/update results, both theme/phone cases and axe scans. These checks create temporary catalog vendor files and verify that SSE refreshes do not reload the page or create duplicate stores.
+
 `DETAILS_EVIDENCE` and `COMPONENT_EVIDENCE` save detail-card and workspace-reference browser results. Detail-card checks cover measured description expansion, safe links, empty overrides, read-only interaction and axe at desktop/phone widths in both themes. Component checks exercise live referenced-file changes, stale navigation guards and actual MCP rejection without partial writes.
+
+`LIVE_EVIDENCE` saves live-picture construction, invalid/missing recovery, reference refresh and theme/phone checks. The shell companion checks retained dirty text, unload protection, external-change conflicts and cancellation of post-unmount thumbnail work. Run both after changing the shared SSE connection or autosave lifecycle.
 
 `EDITOR_EVIDENCE` saves completion screenshots and results. `ATLAS_EVIDENCE` saves Home/reference screenshots. `SEARCH_EVIDENCE_DIR`, `VIEW_EVIDENCE` and `LENS_EVIDENCE_DIR` save the respective stream's artifacts. Choose separate output folders. The development routes `#dev/spec-check` and `#dev/lens-check` expose the specification and lens fixtures; fixture counts grow as regressions are added.
 
