@@ -1,5 +1,12 @@
 import { MarkerType, Position, getSmoothStepPath } from "@elabs-ai/components-flow";
-import { LANE_PADDING, type Rect, type VisualLayout } from "./lane-layout";
+import {
+  LANE_GAP,
+  LANE_HEADER_HEIGHT,
+  LANE_PADDING,
+  LANE_WIDTH,
+  type Rect,
+  type VisualLayout,
+} from "./lane-layout";
 import { LANE_TITLE, type VisualFlow, type VisualLens } from "./visual-model";
 import {
   VISUAL_BOX_TYPE,
@@ -106,6 +113,59 @@ function edgePath(from: Rect, to: Rect, offsetOverride?: number, yNudge = 0): st
   return path;
 }
 
+/**
+ * M3 (review round 1): `anchors()`/`edgePath()` above only ever anchor at each box's own edge
+ * — correct for an adjacent-lane or same-lane pair, but a flow whose lanes are not adjacent
+ * (e.g. Sources straight to Targets, past Customer VPC) drew a straight line from one box's
+ * edge to the other's, running directly through every box and member row the line's lane
+ * column happened to cross.
+ *
+ * The lane grid (`lane-layout.ts`) has one band that is empty in EVERY lane regardless of its
+ * content: between the lane header (`LANE_HEADER_HEIGHT`) and the first box
+ * (`LANE_HEADER_HEIGHT + LANE_PADDING`) — no title text reaches that far down, and no box
+ * starts before it. A skip-lane flow exits its source box sideways into ITS OWN lane's side
+ * gutter (mirroring the same-lane dogleg's `SAME_LANE_EDGE_OFFSET`, always empty — one box
+ * column per lane), rises or drops to that shared header gutter, crosses every intervening
+ * lane through it (still clear of every box there, by the same margin), then drops into the
+ * target's own side gutter and its edge — six points, never inside a box's rect at any x.
+ */
+const SKIP_LANE_CHANNEL_Y = LANE_HEADER_HEIGHT + LANE_PADDING / 2;
+/** Multiple concurrent skip-lane flows stagger off this row so they do not overlap each
+ * other; `LANE_HEADER_HEIGHT`..`LANE_HEADER_HEIGHT + LANE_PADDING` is 16 px of headroom, and a
+ * handful of flows step through it 3 px at a time (`SAME_LANE_EDGE_STEP`'s own idea, reused). */
+const SKIP_LANE_CHANNEL_STEP = 3;
+/** How far into a lane's own side gutter a skip-lane flow's vertical run sits — the same
+ * shape as `SAME_LANE_EDGE_OFFSET`, kept a touch smaller so it never nears the LANE_GAP the
+ * lane's title-less lower gutter borders. */
+const SKIP_LANE_SIDE_GUTTER = LANE_PADDING - 4;
+
+/** True lane distance between two rects, by lane COLUMN index (not raw x, which the same-lane
+ * dogleg's own offset already perturbs) — every lane is `LANE_WIDTH + LANE_GAP` apart, and a
+ * box's own `x` always carries exactly one `LANE_PADDING` past its lane's start. */
+function laneIndexOf(rect: Rect): number {
+  return Math.round((rect.x - LANE_PADDING) / (LANE_WIDTH + LANE_GAP));
+}
+
+function skipLanePath(from: Rect, to: Rect, channelY: number): string {
+  const forward = to.x >= from.x;
+  const fromMidY = from.y + from.height / 2;
+  const toMidY = to.y + to.height / 2;
+  const fromEdgeX = forward ? from.x + from.width : from.x;
+  const toEdgeX = forward ? to.x : to.x + to.width;
+  const fromGutterX = forward
+    ? fromEdgeX + SKIP_LANE_SIDE_GUTTER
+    : fromEdgeX - SKIP_LANE_SIDE_GUTTER;
+  const toGutterX = forward ? toEdgeX - SKIP_LANE_SIDE_GUTTER : toEdgeX + SKIP_LANE_SIDE_GUTTER;
+  return [
+    `M ${fromEdgeX} ${fromMidY}`,
+    `L ${fromGutterX} ${fromMidY}`,
+    `L ${fromGutterX} ${channelY}`,
+    `L ${toGutterX} ${channelY}`,
+    `L ${toGutterX} ${toMidY}`,
+    `L ${toEdgeX} ${toMidY}`,
+  ].join(" ");
+}
+
 export interface VisualGraph {
   nodes: (LanePanelNodeType | CapabilityBoxNodeType)[];
   edges: VisualFlowEdgeType[];
@@ -202,18 +262,39 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
       });
   }
 
+  // M3: a flow whose two boxes are more than one lane apart routes through the header gutter
+  // instead of `edgePath()`'s straight box-to-box line. Concurrent skip-lane flows stagger off
+  // `SKIP_LANE_CHANNEL_Y`, sorted by id for a stable order, same idea as `sameLaneOffset` above.
+  const skipLaneFlows: VisualFlow[] = [];
+  for (const flow of lens.flows) {
+    const from = rectOf.get(flow.from);
+    const to = rectOf.get(flow.to);
+    if (!from || !to) continue;
+    if (Math.abs(laneIndexOf(from) - laneIndexOf(to)) > 1) skipLaneFlows.push(flow);
+  }
+  const skipLaneChannel = new Map<string, number>();
+  [...skipLaneFlows]
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .forEach((flow, index) => {
+      skipLaneChannel.set(flow.id, SKIP_LANE_CHANNEL_Y + index * SKIP_LANE_CHANNEL_STEP);
+    });
+
   const edges: VisualFlowEdgeType[] = lens.flows
     .map((flow: VisualFlow) => {
       const from = rectOf.get(flow.from);
       const to = rectOf.get(flow.to);
       if (!from || !to) return null;
+      const channelY = skipLaneChannel.get(flow.id);
       const edge: VisualFlowEdgeType = {
         id: flow.id,
         source: flow.from,
         target: flow.to,
         type: VISUAL_FLOW_EDGE_TYPE,
         data: {
-          path: edgePath(from, to, sameLaneOffset.get(flow.id), crossPairNudge.get(flow.id)),
+          path:
+            channelY !== undefined
+              ? skipLanePath(from, to, channelY)
+              : edgePath(from, to, sameLaneOffset.get(flow.id), crossPairNudge.get(flow.id)),
           solid: flow.kind === "data",
           bidirectional: flow.bidirectional,
         },
