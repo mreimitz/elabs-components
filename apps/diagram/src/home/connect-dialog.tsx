@@ -16,7 +16,6 @@ import {
   DialogTitle,
   DialogTrigger,
   Text,
-  cn,
   useCopyToClipboard,
 } from "@elabs-ai/components-ui";
 import { Check, Copy, Plug } from "lucide-react";
@@ -48,20 +47,19 @@ export const CONNECT_LABELS = {
 
 interface SnippetBlockProps {
   text: string;
-  label: string;
   copyLabel: string;
-  /** A one-line command: wrap it instead of scrolling, so the whole thing is readable without
-   *  a horizontal scrollbar most platforms hide (R1 review). The JSON block stays unwrapped —
-   *  wrapping would fight its own indentation. */
-  wrap?: boolean;
 }
 
 /**
- * A multi-line block with its own named copy button (`CommandChip` only copies one line). When
- * the clipboard is unavailable, it selects its own text instead — a manual copy takes one
- * keystroke — the same fallback `CommandChip` offers.
+ * A multi-line block with its own named copy button (`CommandChip` only copies one line). Always
+ * wraps (`whitespace-pre-wrap break-words`) instead of scrolling: a fixed-width dialog can always
+ * fit an arbitrarily long command or URL by wrapping, but a horizontal scrollbar most platforms
+ * hide cannot, so readable text beats preserved JSON indentation. Nothing here scrolls, so there
+ * is no `role="region"`/`tabIndex` scroll-region pattern to add. When the clipboard is unavailable,
+ * it selects its own text instead: a manual copy then takes one keystroke, the same fallback
+ * `CommandChip` offers.
  */
-function SnippetBlock({ text, label, copyLabel, wrap = false }: SnippetBlockProps) {
+function SnippetBlock({ text, copyLabel }: SnippetBlockProps) {
   const { copied, copy } = useCopyToClipboard();
   // `Text`'s ref types to its default element; it renders a <div> here (`as="div"`).
   const textRef = useRef<HTMLParagraphElement>(null);
@@ -81,14 +79,8 @@ function SnippetBlock({ text, label, copyLabel, wrap = false }: SnippetBlockProp
           ref={textRef}
           variant="code"
           as="div"
-          role="region"
-          aria-label={label}
-          tabIndex={0}
           translate="no"
-          className={cn(
-            "min-w-0 flex-1 focus-ring-inset",
-            wrap ? "whitespace-pre-wrap break-all" : "overflow-x-auto whitespace-pre",
-          )}
+          className="min-w-0 flex-1 whitespace-pre-wrap break-words"
         >
           {text}
         </Text>
@@ -122,7 +114,7 @@ export function ConnectDialog() {
           {CONNECT_LABELS.trigger}
         </Button>
       </DialogTrigger>
-      <DialogContent size="lg">
+      <DialogContent size="xl">
         <DialogHeader>
           <DialogTitle>{CONNECT_LABELS.title}</DialogTitle>
           <DialogDescription>{CONNECT_LABELS.description}</DialogDescription>
@@ -139,15 +131,8 @@ export function ConnectDialog() {
             description={CONNECT_LABELS.claudeCodeDescription}
           >
             {/* SnippetBlock, not CommandChip: the command is longer than the dialog is wide, and
-                CommandChip always truncates it (no way to read what is about to run). `wrap`:
-                a scrollbar most platforms hide left the rest of the command unreadable (R1
-                review) — this one line wraps instead. */}
-            <SnippetBlock
-              text={CLAUDE_CODE_COMMAND}
-              label={CONNECT_LABELS.claudeCode}
-              copyLabel={CONNECT_LABELS.copyClaudeCode}
-              wrap
-            />
+                CommandChip always truncates it (no way to read what is about to run). */}
+            <SnippetBlock text={CLAUDE_CODE_COMMAND} copyLabel={CONNECT_LABELS.copyClaudeCode} />
           </DialogSection>
           <DialogSection
             title={CONNECT_LABELS.claudeDesktop}
@@ -155,7 +140,6 @@ export function ConnectDialog() {
           >
             <SnippetBlock
               text={CLAUDE_DESKTOP_CONFIG}
-              label={CONNECT_LABELS.claudeDesktop}
               copyLabel={CONNECT_LABELS.copyClaudeDesktopConfig}
             />
           </DialogSection>
