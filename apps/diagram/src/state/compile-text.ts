@@ -11,6 +11,7 @@ import { checkText, type DiagramIssue } from "../spec/check-text";
 import { createArchRegistry } from "../spec/compile/registry";
 import { toReactFlow, type FlowSpec, type ReactFlowGraph } from "../spec/flow-spec";
 import { ICON_NAMES } from "../icons/icon-names";
+import { currentComponentFiles } from "./component-files";
 import { currentCatalog } from "../catalog/catalog-bundle"; // DG-26
 
 export type { DiagramIssue, IssueStage } from "../spec/check-text";
@@ -34,7 +35,7 @@ export interface CompiledDiagram {
 
 export function compileText(
   text: string,
-  sources: ReferenceSources = { catalog: currentCatalog() }, // DG-26
+  sources: ReferenceSources = { catalog: currentCatalog(), files: currentComponentFiles() }, // DG-26
 ): CompiledDiagram {
   const checked = checkText(text, ICON_NAMES, sources);
   const graph = checked.spec

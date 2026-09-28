@@ -3,6 +3,7 @@
  * (`server/spec-bridge.mjs`). Everything here must stay free of React, the DOM and
  * `lucide-react`: the MCP tools run it in Node. Add an export here, never a React module.
  */
+import { loadComponentFiles, type LoadFile } from "./spec/compose/resolver";
 import { checkText } from "./spec/check-text";
 import { catalogLookupOf, type CatalogRefEntry } from "./spec/dialect/catalog-refs"; // DG-26
 import { ICON_NAMES } from "./icons/icon-names";
@@ -47,4 +48,18 @@ export { ICON_NAMES };
  */
 export function checkDiagram(text: string, catalog?: readonly CatalogRefEntry[]) {
   return checkText(text, ICON_NAMES, catalog ? { catalog: catalogLookupOf(catalog) } : {});
+}
+
+/** Resolve workspace references before validating or accepting any MCP write. */
+export async function checkDiagramResolved(
+  text: string,
+  loadFile: LoadFile,
+  catalog?: readonly CatalogRefEntry[],
+) {
+  const initial = checkDiagram(text, catalog);
+  const files = initial.ast ? await loadComponentFiles(initial.ast, loadFile) : new Map();
+  return checkText(text, ICON_NAMES, {
+    files,
+    catalog: catalog ? catalogLookupOf(catalog) : undefined,
+  });
 }

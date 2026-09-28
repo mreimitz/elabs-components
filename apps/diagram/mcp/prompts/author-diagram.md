@@ -102,3 +102,11 @@ notes:
 
 Rules: one idea per zone; 5–25 nodes; every node inside the zone that owns it; `type: external`
 nodes sit outside every zone; label flows with what moves (data, protocol), not with verbs only.
+
+Workspace diagram references use `ref: ws/<folder>/<file>` (the `.yaml` extension is optional).
+The referenced file must exist and be a valid diagram; cycles and more than eight nested
+references are rejected by validation and every write tool. Unwritten title, icon and
+description inherit from the referenced diagram. Dotted flow endpoints such as
+`tenant.database` must name existing inner ids. To change an inner node, edit its own file;
+`compose_set` on `tenant.database` intentionally refuses. A parent flow such as
+`flow:tenant.database->warehouse` remains editable in the parent.

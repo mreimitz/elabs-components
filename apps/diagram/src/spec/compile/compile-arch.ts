@@ -3,6 +3,7 @@
  * silently skips what the dialect stage already reported (unknown endpoints, unknown or
  * non-zone parents, unknown note targets), so one mistake is reported once. React-free.
  */
+import type { ComponentTable } from "../compose/resolver";
 import type {
   ArchDiagram,
   ArchNodeSpec,
@@ -96,7 +97,7 @@ export type CompiledCompositeData = CompiledNodeData & {
   component: string;
   /** Inner ids this file's flows name, first-use order (plan §4.2: "the ports needed by inner-targeted flows"). */
   ports?: string[];
-  /** Inner node count (Part 2). */
+  /** Number of nodes inside the referenced diagram. */
   count?: number;
   /**
    * `type:` as written on the node, only when it overrides the default ("service"); kept for
@@ -105,11 +106,17 @@ export type CompiledCompositeData = CompiledNodeData & {
   overrideType?: ArchNodeType;
   /** The reference is broken; `subtitle` says why in words (N11). */
   broken?: true;
-  /** The referenced file is not loaded yet (always in Part 1a; until the load lands in Part 2). */
+  /** The referenced file is not loaded yet. */
   pending?: true;
 };
-/** Words on a composite (N11: never colour alone). Part 2 adds the other reasons. */
-export const COMPOSITE_LABELS = { badPath: "Not a diagram path: " } as const;
+/** Broken references always have a written reason, not only a destructive tone. */
+export const COMPOSITE_LABELS = {
+  badPath: "Not a diagram path: ",
+  missing: "Missing: ",
+  invalid: "Cannot read: ",
+  cycle: "References itself: ",
+  "too-deep": "Nested too deep: ",
+} as const;
 
 export interface ArchCompileView {
   /**
@@ -201,7 +208,7 @@ function zonesParentFirst(zones: readonly ArchZoneSpec[]): ArchZoneSpec[] {
     .map((entry) => entry.zone);
 }
 
-export function compileArch(ast: ArchDiagram): ArchCompileResult {
+export function compileArch(ast: ArchDiagram, components?: ComponentTable): ArchCompileResult {
   const manual = ast.layout === "manual";
   const taken = new Set<string>();
   const zones = firstById(ast.zones, taken);
@@ -307,6 +314,7 @@ export function compileArch(ast: ArchDiagram): ArchCompileResult {
     if (isDiagramRef(node)) {
       const ref = node.ref as string;
       const file = refFileOf(ref);
+      const entry = file ? components?.get(file) : undefined;
       const data: CompiledCompositeData = compact({
         ...nodeData(node),
         component: file ?? ref,
@@ -318,7 +326,20 @@ export function compileArch(ast: ArchDiagram): ArchCompileResult {
               tone: "destructive" as const,
               broken: true as const,
             }
-          : { pending: true as const }),
+          : !entry
+            ? { pending: true as const }
+            : entry.status === "ok"
+              ? {
+                  title: node.unwritten?.includes("title") ? entry.title : node.title,
+                  icon: node.unwritten?.includes("icon") ? entry.icon : node.icon,
+                  description: node.description ?? entry.description,
+                  count: entry.count,
+                }
+              : {
+                  subtitle: `${COMPOSITE_LABELS[entry.status]}${ref}`,
+                  tone: "destructive" as const,
+                  broken: true as const,
+                }),
       });
       add(
         compact({

@@ -1,3 +1,4 @@
+import { COMPONENT_ROWS } from "./component-checks";
 import {
   Heading,
   StatusBadge,
@@ -718,6 +719,7 @@ export function SpecCheckView() {
   const passed =
     ROWS.filter((r) => r.pass).length +
     PAIRS.filter((p) => p.pass).length +
+    COMPONENT_ROWS.filter((r) => r.pass).length +
     TITLE_SUFFIX_ROWS.filter((r) => r.pass).length +
     WORKSPACE_ROWS.filter((r) => r.pass).length +
     UPGRADE_ROWS.filter((r) => r.pass).length +
@@ -727,6 +729,7 @@ export function SpecCheckView() {
   const total =
     ROWS.length +
     PAIRS.length +
+    COMPONENT_ROWS.length +
     TITLE_SUFFIX_ROWS.length +
     WORKSPACE_ROWS.length +
     UPGRADE_ROWS.length +
@@ -824,6 +827,29 @@ export function SpecCheckView() {
         </TableBody>
       </Table>
 
+      <Table className="mt-6">
+        <TableCaption>{SPEC_CHECK_LABELS.components}</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{SPEC_CHECK_LABELS.check}</TableHead>
+            <TableHead>{SPEC_CHECK_LABELS.result}</TableHead>
+            <TableHead>{SPEC_CHECK_LABELS.detail}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {COMPONENT_ROWS.map((row) => (
+            <TableRow key={row.name} data-pass={row.pass}>
+              <TableCell>{row.name}</TableCell>
+              <TableCell>
+                <StatusBadge status={row.pass ? "complete" : "failed"}>
+                  {row.pass ? "Pass" : "Fail"}
+                </StatusBadge>
+              </TableCell>
+              <TableCell>{row.detail}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
       <Table className="mt-6">
         <TableCaption>{SPEC_CHECK_LABELS.titleSuffix}</TableCaption>
         <TableHeader>
@@ -1037,6 +1063,7 @@ export function SpecCheckView() {
 
 /** Captions and column titles for the DG-26 tables, in one place (`conventions/i18n-strings`). */
 const SPEC_CHECK_LABELS = {
+  components: "Workspace reference resolution",
   fixtures: "Dialect fixtures (v0 and v1)",
   titleSuffix: "Template copy titles keep every valid YAML title form",
   titleForm: "Title form",

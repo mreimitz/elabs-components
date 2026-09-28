@@ -8,6 +8,7 @@
  * returns the edited code. Load lazily, per call — never inside `configureServer` itself,
  * where the server is not listening yet.
  */
+import { read } from "./workspace-fs.mjs";
 import { readAll } from "./catalog-fs.mjs"; // DG-26 (1b): catalog references need the catalog
 
 /** Served path of the surface module (root-relative, like a browser import). */
@@ -39,7 +40,17 @@ export function createSpecBridge(server) {
    */
   async function check(text) {
     const surface = await load();
-    return surface.checkDiagram(text, await catalogEntries());
+    return surface.checkDiagramResolved(
+      text,
+      async (path) => {
+        try {
+          return await read(path);
+        } catch (error) {
+          return error.status === 404 ? null : { error: error.message };
+        }
+      },
+      await catalogEntries(),
+    );
   }
 
   /**
@@ -84,7 +95,10 @@ export function createSpecBridge(server) {
     if (!checked.ok) {
       const lines = checked.issues
         .filter((i) => i.severity === "error")
-        .map((i) => `- ${i.line ? `line ${i.line}: ` : ""}${i.message} (${i.code} at ${i.path})`);
+        .map(
+          (i) =>
+            `- ${i.line ? `line ${i.line}: ` : ""}${i.message} (${i.code}${i.path ? ` at ${i.path}` : ""})`,
+        );
       throw new Error(`Nothing was written: the YAML has errors.\n${lines.join("\n")}`);
     }
     return checked.issues;

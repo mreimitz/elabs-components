@@ -54,7 +54,7 @@ export function checkText(
   if (!checked.ast) {
     return { ast: null, spec: null, view: null, origin: {}, issues, ok: false };
   }
-  const { spec, view, origin } = compileArch(checked.ast);
+  const { spec, view, origin } = compileArch(checked.ast, checked.components);
   const specIssues = validateFlowSpec(spec, ARCH_DEFINITIONS);
   if (specIssues.length > 0) {
     // DG-09's `checkArchYaml` does not return its source map; parse once more to put a
