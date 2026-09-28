@@ -20,7 +20,7 @@ import type { VisualLens } from "../visual/visual-model";
  * own header note), so `deriveVisualLens` gets the same treatment as the dialect: every shipped
  * example AND template, compiled, derived twice, and checked here instead of in a `*.test.ts`
  * file (F17, review round 1: the first version of this page only globbed `examples/`, so a
- * template-only regression — e.g. the M3 skip-lane routing this same round added — had no
+ * template-only regression, such as the M3 skip-lane routing this same round added, had no
  * fixture at all here).
  *
  * Two things this page checks, per document:
