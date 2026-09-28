@@ -906,7 +906,8 @@ function DiagramCanvas({
         <div
           ref={paneRef}
           className={cn(
-            "@container h-full w-full transition-opacity duration-base ease-standard",
+            "@container h-full w-full",
+            snapshot.current ? "transition-opacity duration-base ease-standard" : "transition-none",
             (!shown || changingComposite) && "opacity-0",
           )}
           inert={!shown || changingComposite}
