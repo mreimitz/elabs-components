@@ -1,26 +1,24 @@
 "use client";
 
-/**
- * legend-hover.tsx — the one legend-hover context.
- *
- * Three kinds of legend hover reach a chart's marks, each in its own slot so
- * they never overwrite one another:
- *
- * - `series` — a container's own legend: the hovered series index and its
- *   setter (`ChartLegendHoverProvider` / `useChartLegendHover`). Marks dim
- *   every other series.
- * - `sharedKey` — one legend above many plots (#610): a faceted `AutoChart`
- *   hovers a series `dataKey` (or a pie slice label) down to every panel
- *   (`SharedLegendHoverProvider` / `useSharedLegendHoveredKey`). A
- *   container's own legend hover always wins; the shared key applies only
- *   while the container's own is empty.
- * - `profitLoss` — `ProfitLossLegend`'s hovered sign entry
- *   (`ProfitLossLegendHoverProvider` / `useProfitLossLegendHover`).
- *
- * A provider sets only its own slot and passes the others through from the
- * nearest outer provider, so nesting behaves exactly as three independent
- * contexts would. Outside every provider each hook reports "nothing hovered".
- */
+// legend-hover.tsx — the legend-hover contexts.
+//
+// Three kinds of legend hover reach a chart's marks:
+//
+// - series — a container's own legend: the hovered series index and its
+//   setter (`ChartLegendHoverProvider` / `useChartLegendHover`). Marks dim
+//   every other series.
+// - shared key — one legend above many plots: a faceted `AutoChart` hovers a
+//   series `dataKey` (or a pie slice label) down to every panel
+//   (`SharedLegendHoverProvider` / `useSharedLegendHoveredKey`). A container's
+//   own legend hover always wins; the shared key applies only while the
+//   container's own is empty.
+// - profit/loss — `ProfitLossLegend`'s hovered sign entry
+//   (`ProfitLossLegendHoverProvider` / `useProfitLossLegendHover`).
+//
+// Each kind is its own React context, made by one factory (`createHoverSlot`),
+// so a hook subscribes to its own kind only: a change of one never re-renders
+// a reader of another, and a provider needs nothing from the providers around
+// it. Outside its provider each hook reports "nothing hovered".
 
 import { createContext, type ReactNode, useContext, useMemo } from "react";
 
@@ -33,24 +31,28 @@ interface ProfitLossLegendHoverContextValue {
   hoveredIndex: number | null;
 }
 
-interface LegendHoverState {
-  series: ChartLegendHoverContextValue | null;
-  sharedKey: string | null;
-  profitLoss: ProfitLossLegendHoverContextValue | null;
+/** One independent hover context: its provider and the hook that reads it. */
+function createHoverSlot<T>(fallback: T) {
+  const Context = createContext<T>(fallback);
+  function useSlot(): T {
+    return useContext(Context);
+  }
+  return { Provider: Context.Provider, useSlot };
 }
 
-const NOTHING_HOVERED: LegendHoverState = { series: null, sharedKey: null, profitLoss: null };
-
-const LegendHoverContext = createContext<LegendHoverState>(NOTHING_HOVERED);
-
-const NO_SERIES_HOVER: ChartLegendHoverContextValue = {
+// Marked pure so a bundle that reads one kind of hover drops the other two.
+const SERIES_HOVER = /* @__PURE__ */ createHoverSlot<ChartLegendHoverContextValue>({
   hoveredIndex: null,
   setHoveredIndex: () => {
     /* noop outside ChartLegendHoverProvider */
   },
-};
+});
 
-const NO_PROFIT_LOSS_HOVER: ProfitLossLegendHoverContextValue = { hoveredIndex: null };
+const SHARED_KEY_HOVER = /* @__PURE__ */ createHoverSlot<string | null>(null);
+
+const PROFIT_LOSS_HOVER = /* @__PURE__ */ createHoverSlot<ProfitLossLegendHoverContextValue>({
+  hoveredIndex: null,
+});
 
 export function ChartLegendHoverProvider({
   hoveredIndex,
@@ -61,24 +63,21 @@ export function ChartLegendHoverProvider({
   onHoverChange: (index: number | null) => void;
   children: ReactNode;
 }) {
-  const outer = useContext(LegendHoverContext);
   const value = useMemo(
-    () => ({ ...outer, series: { hoveredIndex, setHoveredIndex: onHoverChange } }),
-    [outer, hoveredIndex, onHoverChange],
+    () => ({ hoveredIndex, setHoveredIndex: onHoverChange }),
+    [hoveredIndex, onHoverChange],
   );
-  return <LegendHoverContext.Provider value={value}>{children}</LegendHoverContext.Provider>;
+  return <SERIES_HOVER.Provider value={value}>{children}</SERIES_HOVER.Provider>;
 }
 
 export function useChartLegendHover(): ChartLegendHoverContextValue {
-  return useContext(LegendHoverContext).series ?? NO_SERIES_HOVER;
+  return SERIES_HOVER.useSlot();
 }
 
 /**
  * Carries the key a shared (grid-level) legend is hovering down to every
  * panel: a series `dataKey` for line/area/bar panels, a slice LABEL for pie
  * panels (pie slices are keyed by category, not series).
- *
- * Internal: not exported from the package entry point.
  */
 export function SharedLegendHoverProvider({
   hoveredKey,
@@ -87,14 +86,12 @@ export function SharedLegendHoverProvider({
   hoveredKey: string | null;
   children: ReactNode;
 }) {
-  const outer = useContext(LegendHoverContext);
-  const value = useMemo(() => ({ ...outer, sharedKey: hoveredKey }), [outer, hoveredKey]);
-  return <LegendHoverContext.Provider value={value}>{children}</LegendHoverContext.Provider>;
+  return <SHARED_KEY_HOVER.Provider value={hoveredKey}>{children}</SHARED_KEY_HOVER.Provider>;
 }
 
-/** The key a shared (grid-level) legend is hovering, or `null`. Internal. */
+/** The key a shared (grid-level) legend is hovering, or `null`. */
 export function useSharedLegendHoveredKey(): string | null {
-  return useContext(LegendHoverContext).sharedKey;
+  return SHARED_KEY_HOVER.useSlot();
 }
 
 export function ProfitLossLegendHoverProvider({
@@ -104,11 +101,10 @@ export function ProfitLossLegendHoverProvider({
   hoveredIndex: number | null;
   children: ReactNode;
 }) {
-  const outer = useContext(LegendHoverContext);
-  const value = useMemo(() => ({ ...outer, profitLoss: { hoveredIndex } }), [outer, hoveredIndex]);
-  return <LegendHoverContext.Provider value={value}>{children}</LegendHoverContext.Provider>;
+  const value = useMemo(() => ({ hoveredIndex }), [hoveredIndex]);
+  return <PROFIT_LOSS_HOVER.Provider value={value}>{children}</PROFIT_LOSS_HOVER.Provider>;
 }
 
 export function useProfitLossLegendHover(): ProfitLossLegendHoverContextValue {
-  return useContext(LegendHoverContext).profitLoss ?? NO_PROFIT_LOSS_HOVER;
+  return PROFIT_LOSS_HOVER.useSlot();
 }

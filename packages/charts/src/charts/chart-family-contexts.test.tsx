@@ -1,5 +1,5 @@
 import { act, render, renderHook } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { useBarChartContext } from "./bar-chart-context";
@@ -141,7 +141,7 @@ describe("chart context: family fields", () => {
   });
 });
 
-describe("legend hover: one context, three independent slots", () => {
+describe("legend hover: three independent contexts from one factory", () => {
   it("reports nothing hovered outside every provider", () => {
     const { result } = renderHook(() => ({
       series: useChartLegendHover(),
@@ -154,7 +154,7 @@ describe("legend hover: one context, three independent slots", () => {
     expect(result.current.profitLoss).toEqual({ hoveredIndex: null });
   });
 
-  it("a provider sets only its own slot; nesting in any order keeps the others", () => {
+  it("a provider sets only its own kind; nesting in any order keeps the others", () => {
     const onHover = vi.fn();
     const wrapper = ({ children }: { children: ReactNode }) => (
       <SharedLegendHoverProvider hoveredKey="revenue">
@@ -195,6 +195,48 @@ describe("legend hover: one context, three independent slots", () => {
     );
     expect(result.current.series.hoveredIndex).toBe(3);
     expect(result.current.shared).toBeNull();
+  });
+
+  it("a hover change of one kind never re-renders a reader of another kind", () => {
+    const renders = { series: 0, shared: 0, profitLoss: 0 };
+    const SeriesReader = memo(function SeriesReader() {
+      useChartLegendHover();
+      renders.series++;
+      return null;
+    });
+    const SharedReader = memo(function SharedReader() {
+      useSharedLegendHoveredKey();
+      renders.shared++;
+      return null;
+    });
+    const ProfitLossReader = memo(function ProfitLossReader() {
+      useProfitLossLegendHover();
+      renders.profitLoss++;
+      return null;
+    });
+    const onHover = () => {};
+    const tree = (series: number | null, shared: string | null, profitLoss: number | null) => (
+      <ProfitLossLegendHoverProvider hoveredIndex={profitLoss}>
+        <SharedLegendHoverProvider hoveredKey={shared}>
+          <ChartLegendHoverProvider hoveredIndex={series} onHoverChange={onHover}>
+            <SeriesReader />
+            <SharedReader />
+            <ProfitLossReader />
+          </ChartLegendHoverProvider>
+        </SharedLegendHoverProvider>
+      </ProfitLossLegendHoverProvider>
+    );
+    const { rerender } = render(tree(null, null, null));
+    expect(renders).toEqual({ series: 1, shared: 1, profitLoss: 1 });
+
+    rerender(tree(1, null, null));
+    expect(renders).toEqual({ series: 2, shared: 1, profitLoss: 1 });
+
+    rerender(tree(1, null, 0));
+    expect(renders).toEqual({ series: 2, shared: 1, profitLoss: 2 });
+
+    rerender(tree(1, "revenue", 0));
+    expect(renders).toEqual({ series: 2, shared: 2, profitLoss: 2 });
   });
 });
 
