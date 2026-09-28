@@ -92,6 +92,49 @@ const COMPONENT = field.object({
 });
 // end DG-26
 
+const STORY = field.object({
+  fields: {
+    autoplay: field.boolean({
+      description:
+        "Reserved preference. Start playback with Play; stories never start automatically.",
+    }),
+    steps: field.array({
+      required: true,
+      max: 100,
+      of: field.object({
+        fields: {
+          title: field.string({ required: true, min: 1 }),
+          targets: field.array({
+            required: true,
+            min: 1,
+            max: 100,
+            of: field.string({ min: 1 }),
+            description:
+              "Node, zone, diagram instance, qualified inner id, or an existing flow expression.",
+          }),
+          text: field.string({
+            description: "Markdown narration; raw HTML and images are not rendered.",
+          }),
+          duration: field.number({ min: 1, max: 300, default: 8, unit: "s" }),
+          callouts: field.array({
+            max: 20,
+            of: field.object({
+              fields: {
+                at: field.string({
+                  required: true,
+                  min: 1,
+                  description: "Node or zone endpoint id, including qualified inner ids.",
+                }),
+                text: field.string({ required: true, min: 1 }),
+              },
+            }),
+          }),
+        },
+      }),
+    }),
+  },
+});
+
 export interface RootInput {
   diagram: "1" | 1 | "0" | 0;
   title?: string;
@@ -109,7 +152,16 @@ export interface RootInput {
   notes?: readonly { at: string; text: string }[];
   // DG-26
   component?: Record<string, unknown>;
-  story?: Record<string, unknown>;
+  story?: {
+    autoplay?: boolean;
+    steps: readonly {
+      title: string;
+      targets: readonly string[];
+      text?: string;
+      duration?: number;
+      callouts?: readonly { at: string; text: string }[];
+    }[];
+  };
   visual?: Record<string, unknown>;
   // end DG-26
 }
@@ -160,7 +212,7 @@ export const ROOT_DEF = defineComponent<RootInput>()({
     }),
     // DG-26
     component: COMPONENT,
-    story: OPEN_ENTRY, // DG-31 replaces it with its definition
+    story: STORY,
     visual: OPEN_ENTRY, // DG-36 replaces it with its definition
     // end DG-26
   },

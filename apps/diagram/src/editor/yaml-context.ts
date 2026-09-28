@@ -111,6 +111,57 @@ export function yamlContext(text: string, offset: number): YamlContext | null {
   const colon = colons.find((at) => at >= segment);
   const prefixStart = segment + (line.slice(segment).match(/^\s*(?:-\s+)?/)?.[0].length ?? 0);
   const rawKey = line.slice(prefixStart, colon ?? comment).trim();
+  // A story target is one scalar, even when it contains an arrow or is quoted. Resolve
+  // its structural path before interpreting shorthand flows or mapping keys.
+  if (colon === undefined) {
+    const from = prefixStart;
+    const scalarQuote = line[from] === "'" || line[from] === '"' ? (line[from] as "'" | '"') : "";
+    let to = comment;
+    if (scalarQuote) {
+      for (let i = from + 1; i < comment; i++) {
+        if (scalarQuote === '"' && line[i] === "\\") {
+          i++;
+          continue;
+        }
+        if (line[i] === scalarQuote) {
+          if (scalarQuote === "'" && line[i + 1] === "'") {
+            i++;
+            continue;
+          }
+          to = i + 1;
+          break;
+        }
+      }
+    } else if (flow) {
+      const end = line.slice(from, comment).search(/[,}\]]/);
+      if (end >= 0) to = from + end;
+    }
+    while (to > from && /\s/.test(line[to - 1]!)) to--;
+    const structural = markerPath(
+      text.slice(0, lineStart + from) + MARKER + text.slice(lineStart + to),
+    );
+    const path = structural?.path;
+    if (
+      path?.[0] === "story" &&
+      path[1] === "steps" &&
+      path[3] === "targets" &&
+      path.length === 5 &&
+      cursor >= from &&
+      cursor <= to
+    ) {
+      return {
+        kind: "value",
+        key: "targets",
+        path,
+        prefix: line.slice(from + (scalarQuote ? 1 : 0), cursor).replace(/["']$/, ""),
+        from: lineStart + from,
+        to: lineStart + to,
+        quote: scalarQuote,
+        flow,
+        siblings: [],
+      };
+    }
+  }
   // Shorthand flows: never offer endpoint ids inside a label after the colon.
   const arrow = /(<->|->|<-)/.exec(line.slice(prefixStart, colon ?? comment));
   if (arrow && (colon === undefined || cursor <= colon)) {

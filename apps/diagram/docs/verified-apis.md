@@ -2,7 +2,7 @@
 
 Verified against `main` @ cec46c39 on 2026-09-26 by reading the source. **Every DG item imports exactly these names.** If a name below is missing when you run `typecheck:local`, the library changed: stop, re-verify in the source file named here, and report — do not guess a replacement.
 
-## Current Atlas contracts — verified 2026-09-28
+## Current Atlas contracts — verified 2026-09-29
 
 These source contracts supersede the older implementation snapshots later in this document.
 
@@ -24,6 +24,9 @@ These source contracts supersede the older implementation snapshots later in thi
 - `src/spec/compose/ports.ts` decorates architecture edges with collision-safe `in:inner:<id>` / `out:inner:<id>` handles. The generic FlowSpec adapter retains its normal port contract. `followZoneDirection` preserves named handles, and `useDiagramLayout` supplies their measured React Flow bounds to ELK. Named rows stay on the left/right sides in both layout directions. React Flow's edge endpoints use the outward handle faces; ELK routes are snapped to those live ends by `fitRoute`.
 - `#d/<parent-path>&into=tenant.nested` identifies a chain of actual reference instances. `resolveDrillTarget` validates each segment against the current component snapshot. Inspection compiles the referenced file in its own React Flow provider while retaining the parent editor, store and tab. `openDoc(path, { mode: "edit" })` is the explicit save/conflict-aware path for opening that source as an editable document.
 
+- `ArchDiagram.story` is typed as `ArchStorySpec` with normalized `ArchStoryStep` entries. `src/story/resolve-story.ts` resolves qualified endpoints and flow expressions against the same bounded component snapshot used for diagram validation. `ArchCompileView.story` carries resolved steps, ordered edge-follow targets, transient expansion IDs and callouts. Unknown or ambiguous targets suppress the complete story and produce positioned issues in browser and MCP validation.
+- Story authoring uses generated schema keys plus the `story step` snippet. `src/editor/story-completions.ts` derives flow expressions from the current buffer and omits ambiguous parallel flows. Target completion replaces one scalar in inline or block lists, including quotes, and preserves neighboring values/comments.
+
 ## How to work a DG item (for any agent tier)
 
 1. Read the item file, this document, and `2026-09-26-plan.md` §2 (D1–D14).
@@ -32,6 +35,8 @@ These source contracts supersede the older implementation snapshots later in thi
 4. Never install a dependency the item does not list.
 5. "Done" = every Acceptance line proven with a screenshot/recording from the running dev server (`pnpm --filter @elabs-ai/diagram dev`, http://localhost:5180). Typecheck-green is not done.
 6. When the library lacks something: write it into `docs/findings/DG-NN-<topic>.md` (what, where you needed it, proposed API), work around it in the app with a `// P4: library gap — <what>` comment, and continue.
+
+- `src/story/use-story-session.ts` binds playback to the current document/source and keeps expansion temporary. `story-store.ts` owns step/progress and play-once state. `use-story-camera.ts` cancels work by generation, waits for measured geometry and the committed viewport before readiness, and relinquishes camera control after user gestures. Ending restores the pre-story viewport after the original projection returns; drill-down receives that original camera directly. `use-story-room.ts` observes dynamic legend/navigation membership and size to keep the caption clear of controls.
 
 ## tokens — `@elabs-ai/components-tokens`
 
@@ -616,10 +621,10 @@ import { useReducedMotion } from "@elabs-ai/components-tokens"; // index.ts L15;
 //   io/export-menu.tsx: ExportMenu L161, ExportMenuItems L180
 // DG-18 — interaction/interaction-store.ts: CardOpener L13, InteractionState L15, CARD_OPEN_DELAY_MS L23,
 //     CARD_CLOSE_DELAY_MS L25, ZoneHandlers L35, interactionActions L42, useInteraction L84
-//   interaction/steps.ts: WalkFlow L9, WalkStep L18, walkSteps L28, litNodeIds L58
+//   Walkthrough resolution now lives in story/resolve-story.ts (DG-31).
 //   interaction/presentation-mode.ts: PRESENT_PARAM L7, isPresenting L17, presentingHash L22, editingHash L28,
 //     enterPresentation L36, exitPresentation L40, markPresented L45, takePresentReturn L50
-//   interaction/details-card.tsx: detailKind L34, DetailsCard L72 · interaction/step-player.tsx: StepPlayer L58
+//   interaction/details-card.tsx: detailKind L34, DetailsCard L72 · story/story-bar.tsx: StoryBar (DG-31)
 //   interaction/use-canvas-interaction.ts: DIMMED L24, collapseAllZones L60, expandAllZones L69, useCanvasInteraction L100
 //   interaction/canvas-overlays.tsx: InteractionOverlays L26 · interaction/interaction-controls.tsx: InteractionControls L34,
 //     InteractionMenuItems L79 · interaction/presentation-view.tsx: PresentationView L17

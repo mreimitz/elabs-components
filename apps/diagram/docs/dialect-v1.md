@@ -12,7 +12,7 @@ pipeline, the zones/nodes/flows/styles/notes keys, ids and positions unchanged f
 | Key         | Where      | Type                                        | Default | Example                                 |
 | ----------- | ---------- | ------------------------------------------- | ------- | --------------------------------------- |
 | `component` | root       | `{ icon?, description?, extensionPoints? }` | none    | `component: { description: A tenant. }` |
-| `story`     | root       | open object (DG-31 defines it)              | none    | `story: {}`                             |
+| `story`     | root       | `{ steps, autoplay? }` (Stories)            | none    | `story: { steps: [] }`                  |
 | `visual`    | root       | open object (DG-36 defines it)              | none    | `visual: {}`                            |
 | `docs`      | zone, node | string (a URL)                              | none    | `docs: https://cloud.qlik.com/docs`     |
 | `status`    | zone, node | enum: `ok`, `degraded`, `down`, `planned`   | none    | `status: degraded`                      |
@@ -20,8 +20,8 @@ pipeline, the zones/nodes/flows/styles/notes keys, ids and positions unchanged f
 | `expand`    | node       | boolean; only on a diagram reference        | `false` | `expand: true`                          |
 
 `component` marks and describes a diagram meant to be referenced by another one (its icon and
-one-sentence description, shown where the reference collapses). `story` and `visual` are
-carried but not yet read by anything in R1 — later items (DG-31, DG-36) define their shape.
+one-sentence description, shown where the reference collapses). `story` defines a guided
+walkthrough (§3). `visual` is an open object consumed by the visual lens.
 `docs` and `status` appear in node details. Status is authored on the node; catalog references
 can supply description and documentation when those fields are unwritten (§2.2). The details
 reader resolves that catalog metadata without adding fields to the source YAML. Any
@@ -186,6 +186,49 @@ ids. `expand` reveals additional references, and `collapse` takes precedence ove
 history or dirty state. Manual layout still wins. `view.inner` maps imported graph ids to
 `{ component, id }` in their own source diagram; these addresses are navigation metadata,
 not writable parent origins.
+
+## Stories
+
+An explicit story takes precedence over the numbered `step:` fields on flows. Without a
+`story` key, those numbers still create an implicit walkthrough in ascending order. Explicit
+`story: { steps: [] }` disables the walkthrough.
+
+```yaml
+story:
+  steps:
+    - title: Capture an order
+      targets: [orders-db, cdc]
+      text: The **Orders DB** publishes changes to the CDC connector.
+      duration: 8
+    - title: Deliver the event
+      targets: ["cdc -> topics", "topics -> clickpipes"]
+      text: Kafka retains the event; ClickPipes consumes it.
+      callouts: [{ at: clickpipes, text: Encrypted ingestion }]
+```
+
+Each step requires a nonblank `title` and at least one target. `text` supports paragraphs,
+bold/emphasis, inline code and safe HTTP(S)/email links. HTML and media syntax stay literal
+text. `duration` defaults to eight seconds and accepts finite values from 1 to 300. A story has at
+most 100 steps; each step has at most 100 targets and 20 callouts. A callout requires a
+nonblank endpoint `at` and nonblank `text`.
+
+Targets name nodes, zones, diagram instances or qualified inner IDs such as `tenant.qca`.
+Flow expressions use `->`, `<-` or `<->` and must resolve to an existing flow with that
+direction. An expression matching parallel flows is ambiguous and is rejected. Unknown
+endpoints, invalid traversal through a catalog item and unavailable nested references produce
+positioned errors. A malformed story never falls back to a partial or implicit story.
+
+Playback starts only through the story controls. `autoplay` remains a readable boolean for
+compatibility; `true` produces an informational message that Play is required. Play runs once,
+then stops at the last step. There is no kiosk loop. Scrubbing pauses and seeks within the
+current step. Node or mixed targets are framed together; flow-only targets are followed in
+written order, with equal shares of the step duration. Back arrows are followed in reverse.
+Reduced motion uses instant framing instead of animated camera travel.
+
+Stories use the technical lens. The visual lens offers an explicit action to switch and start
+one. Viewer exploration, transient component expansion and playback do not write the diagram
+or alter undo history. User pan/zoom pauses camera travel; switching documents, lenses or
+nested inspection ends the active story. The pure MCP live view does not run stories.
 
 ## 3. The version rule
 

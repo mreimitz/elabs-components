@@ -5,7 +5,7 @@ import { Minimize2 } from "lucide-react";
 import { useHash } from "../routes/use-hash";
 import { DetailsCard } from "./details-card";
 import { exitPresentation, isPresenting } from "./presentation-mode";
-import { StepPlayer } from "./step-player";
+import { StoryBar } from "../story/story-bar";
 
 /** The overlays' strings, in one place (`conventions/i18n-strings`). */
 const OVERLAY_LABELS = {
@@ -41,7 +41,7 @@ export function InteractionOverlays({ nodes }: InteractionOverlaysProps) {
   return (
     <>
       <DetailsCard nodes={nodes} />
-      <StepPlayer />
+      <StoryBar />
       {presenting ? (
         <Panel position="bottom-center" data-diagram-export="exclude">
           <ExitButton />

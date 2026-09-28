@@ -12,7 +12,6 @@ import type { CanvasProps } from "../panes/canvas-props";
 import { keepSelection } from "../state/pipeline";
 import { detailKind } from "./node-details";
 import { interactionActions, useInteraction } from "./interaction-store";
-import { litNodeIds } from "./steps";
 
 /** The attribute a dimmed node (wrapper div) or flow (path, label) carries. */
 export const DIMMED = "data-dimmed";
@@ -126,15 +125,16 @@ export interface CanvasInteractionOptions {
   nodes: readonly Node[];
   setNodes: Dispatch<SetStateAction<Node[]>>;
   setEdges: Dispatch<SetStateAction<Edge[]>>;
+  litNodes?: ReadonlySet<string> | null;
 }
 
 export function useCanvasInteraction({
   nodes,
   setNodes,
   setEdges,
+  litNodes = null,
 }: CanvasInteractionOptions): CanvasProps {
   const { getNodes, getEdges, getNode } = useReactFlow();
-  const step = useInteraction((s) => s.step);
   const cardId = useInteraction((s) => s.card?.id ?? null);
 
   // Zone folds go through the app's fold (zone-folds.ts) on the live graph, like the header
@@ -155,14 +155,14 @@ export function useCanvasInteraction({
   // frame the lit nodes). Re-run on every node change: a re-layout, a patch or a fold's
   // snapshot restore can bring back nodes without the attribute (or with a stale one).
   useEffect(() => {
-    const lit = step === null ? null : litNodeIds(getEdges(), step);
+    const lit = litNodes;
     setNodes((live) => {
       const next = live.map((node) =>
         withDimmed(node, lit !== null && !isZoneNode(node) && !lit.has(node.id)),
       );
       return next.some((node, index) => node !== live[index]) ? keepSelection(next, live) : live;
     });
-  }, [step, nodes, getEdges, setNodes]);
+  }, [litNodes, nodes, setNodes]);
 
   // A card whose node was removed or folded away closes.
   useEffect(() => {

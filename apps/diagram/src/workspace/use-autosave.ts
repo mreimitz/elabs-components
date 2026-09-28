@@ -1,3 +1,4 @@
+import { storyStore } from "../story/story-store";
 import { compositeOverrides } from "../interaction/composite-state";
 import { parseRoute } from "../routes/use-hash";
 /**
@@ -115,6 +116,7 @@ export function installAutosave(): () => void {
     const route = parseRoute(window.location.hash);
     return (
       (route.kind === "doc" && Boolean(route.into?.length)) ||
+      storyStore.get().index !== null ||
       compositeOverrides.has(path, currentMode() !== "edit") ||
       (currentMode() !== "edit" && viewOverrideActions.hasOverride(path))
     );
@@ -226,6 +228,7 @@ export function installAutosave(): () => void {
   });
   const unsubscribeOverrides = viewOverrideActions.subscribe(retryIfUnblocked);
   const unsubscribeComposites = compositeOverrides.subscribe(retryIfUnblocked);
+  const unsubscribeStory = storyStore.subscribe(retryIfUnblocked);
   window.addEventListener("hashchange", retryIfUnblocked);
   const unsubscribeLens = lensStore.subscribe(retryIfUnblocked);
   // Entering edit mode also ends `blockedByOverride` (it is gated on mode, not just an
@@ -238,6 +241,7 @@ export function installAutosave(): () => void {
     unsubscribe();
     unsubscribeOverrides();
     unsubscribeComposites();
+    unsubscribeStory();
     window.removeEventListener("hashchange", retryIfUnblocked);
     unsubscribeLens();
     unsubscribeMode();

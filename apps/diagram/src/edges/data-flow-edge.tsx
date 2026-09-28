@@ -14,7 +14,8 @@ import { EdgeLabelCluster } from "./edge-label-cluster";
 import { KIND_STROKE, KIND_STROKE_WIDTH, resolveDash, resolveLineStyle } from "./edge-style";
 import { fitRoute, polylineMidpoint, roundedOrthogonalPath, type EndBox } from "./route-path";
 import { isZoneNode, resolveEdgeEnds } from "./zone-endpoint";
-import { useInteraction } from "../interaction/interaction-store"; // DG-18
+import { useContext } from "react";
+import { StoryHighlightContext } from "../story/highlight-context";
 
 /** Corner radius of the orthogonal path, in flow px. */
 const CORNER_RADIUS = 8;
@@ -110,9 +111,13 @@ export function DataFlowEdge(props: EdgeProps<DataFlowEdgeType>) {
   const reducedMotion = useFlowMotionReduced();
   // DG-18: the step walk-through draws the current step's flows wider (width, not colour:
   // `--flow-edge-strong` already means `access`) and dims every other flow.
-  const walkStep = useInteraction((s) => s.step);
-  const lit = walkStep !== null && data.step === walkStep;
-  const dimmed = walkStep !== null && !lit;
+  const highlighted = useContext(StoryHighlightContext);
+  const lit =
+    highlighted !== null &&
+    (highlighted.has(id) ||
+      (id.startsWith("flow-group-proxy__") &&
+        [...highlighted].some((edgeId) => id.endsWith(`__${edgeId}`))));
+  const dimmed = highlighted !== null && !lit;
   const sourceNode = useInternalNode(source);
   const targetNode = useInternalNode(target);
   // The separate zones a lifted route stops at (`route.via`); `""` matches no node.

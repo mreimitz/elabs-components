@@ -22,6 +22,7 @@ import {
   type ArchFlowSpec,
   type ArchNodeSpec,
   type ArchStyleSpec,
+  type ArchStorySpec,
   type ArchZoneSpec,
   type DialectVersion,
   type NodeStatus,
@@ -468,6 +469,53 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
       : [],
   );
 
+  // Reject the whole malformed story rather than silently playing a partial sequence.
+  // Keep explicit presence so an invalid or deliberately empty story cannot fall back to flow steps.
+  let story: ArchStorySpec | undefined;
+  if (Object.hasOwn(raw, "story")) {
+    story = { steps: [] };
+    if (!rootBad.has("story") && isRecord(raw.story) && Array.isArray(raw.story.steps)) {
+      const before = issues.length;
+      const nonblank = (value: string, path: string) => {
+        if (!value.trim()) issues.push(issue("out-of-range", path, "Use a nonblank string."));
+      };
+      const steps = raw.story.steps.map((value, index) => {
+        const item = value as Rec;
+        const path = `story.steps[${index}]`;
+        nonblank(item.title as string, `${path}.title`);
+        (item.targets as string[]).forEach((target, at) =>
+          nonblank(target, `${path}.targets[${at}]`),
+        );
+        const duration = (item.duration as number | undefined) ?? 8;
+        if (!Number.isFinite(duration))
+          issues.push(
+            issue(
+              "out-of-range",
+              `${path}.duration`,
+              "Duration must be finite, from 1 to 300 seconds.",
+            ),
+          );
+        return {
+          path,
+          title: item.title as string,
+          targets: item.targets as string[],
+          text: item.text as string | undefined,
+          duration,
+          callouts: ((item.callouts as Rec[] | undefined) ?? []).map((callout, at) => {
+            const childPath = `${path}.callouts[${at}]`;
+            nonblank(callout.at as string, `${childPath}.at`);
+            nonblank(callout.text as string, `${childPath}.text`);
+            return { path: childPath, at: callout.at as string, text: callout.text as string };
+          }),
+        };
+      });
+      story = {
+        autoplay: raw.story.autoplay as boolean | undefined,
+        steps: issues.length === before ? steps : [],
+      };
+    }
+  }
+
   return {
     ast: {
       version: DIALECT_VERSION,
@@ -486,7 +534,7 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
       notes,
       // DG-26
       component: pick(raw, "component", rootBad),
-      story: pick(raw, "story", rootBad),
+      story,
       visual: pick(raw, "visual", rootBad),
       // end DG-26
     },

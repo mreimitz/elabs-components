@@ -98,7 +98,7 @@ export function useDrillCamera(
     });
   }, [here, ready, key, root, setViewport, fitView, getNodes, pane, chain]);
   return useCallback(
-    async (id: string) => {
+    async (id: string, returnViewport?: Viewport) => {
       const current = parseRoute(window.location.hash);
       if (current.kind !== "doc" || (current.into?.join(".") ?? "") !== key) return;
       const node = getNode(id);
@@ -114,11 +114,17 @@ export function useDrillCamera(
       const requested = ++generation;
       const load = diagramStore.get().loadCount;
       frames.set(frameKey(current.path, chain), {
-        viewport: getViewport(),
+        viewport: returnViewport ?? getViewport(),
         focus: id,
         valid: true,
       });
       interactionActions.closeCard();
+      // Ending a story can collapse temporary instance geometry. Navigate using its saved
+      // parent camera instead of starting a tween that the simultaneous re-layout cancels.
+      if (returnViewport) {
+        navigate({ ...current, into: [...chain, ...id.split(".")] });
+        return;
+      }
       await fitBounds(
         {
           ...internal.internals.positionAbsolute,

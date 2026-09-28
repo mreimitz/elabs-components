@@ -88,8 +88,69 @@
     },
     "story": {
       "type": "object",
-      "properties": {},
-      "additionalProperties": true
+      "properties": {
+        "autoplay": {
+          "type": "boolean",
+          "description": "Reserved preference. Start playback with Play; stories never start automatically."
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "callouts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "at": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Node or zone endpoint id, including qualified inner ids."
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["at", "text"],
+                  "additionalProperties": false
+                },
+                "maxItems": 20
+              },
+              "duration": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 300,
+                "default": 8
+              },
+              "targets": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 1,
+                "maxItems": 100,
+                "description": "Node, zone, diagram instance, qualified inner id, or an existing flow expression."
+              },
+              "text": {
+                "type": "string",
+                "description": "Markdown narration; raw HTML and images are not rendered."
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": ["targets", "title"],
+            "additionalProperties": false
+          },
+          "maxItems": 100
+        }
+      },
+      "required": ["steps"],
+      "additionalProperties": false
     },
     "styles": {
       "type": "object",

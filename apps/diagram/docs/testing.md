@@ -35,6 +35,10 @@ export DIAGRAM_URL="$ATLAS_URL"
 node --test scripts/tests/reference-regressions.test.mjs
 node --test scripts/tests/home-titles.test.mjs
 node --test scripts/tests/yaml-context.test.mjs
+node --test scripts/tests/story-completions.test.mjs
+node --test scripts/tests/story-dialect.test.mjs
+node --test scripts/tests/story-runtime.test.mjs
+node --test scripts/tests/story-markdown.test.mjs
 node --test scripts/tests/endpoint-metadata.test.mjs
 node --test scripts/tests/reference-endpoints.test.mjs
 node --test scripts/tests/node-details.test.mjs
@@ -57,6 +61,10 @@ node tests/component-references.mjs
 node tests/inline-expansion.mjs
 node tests/composite-interactions.mjs
 node tests/composite-ports.mjs
+node tests/story-interactions.mjs
+STORY_MOTION=1 node tests/story-interactions.mjs
+node tests/story-room.mjs
+node tests/story-example.mjs
 node tests/catalog-generic.mjs
 node tests/live-view.mjs
 node tests/live-view-shell.mjs
@@ -88,11 +96,13 @@ node tests/lens-motion.mjs
 
 `INLINE_EVIDENCE` saves the expanded-template checks in both themes at desktop and phone widths. They use disposable copies, verify original parent/component hashes, and exercise imported-content write guards and the manual-layout fallback. Run them after changing compiler origins or manual-layout interactions.
 
+`STORY_EVIDENCE` saves story playback, keyboard, temporary expansion and camera checks. Run `story-interactions.mjs` once normally for the reduced-motion theme/phone matrix and once with `STORY_MOTION=1` for real camera animation. `story-example.mjs` records the shipped six-step ClickHouse example, verifies flow following and checks unchanged source bytes. `STORY_ROOM_EVIDENCE` saves `story-room.mjs` checks for expanded legends and navigation at 390, 900 and 1440 pixels; this runner needs `PLAYWRIGHT_MODULE` to resolve `@playwright/test`, including its `expect` export. Choose a separate evidence folder for each run. Run navigation and editor regressions after changing the playback lifecycle.
+
 `COMPOSITE_EVIDENCE` saves real expansion and nested inspection checks, including parent text/model/history preservation and child write refusal. `PORT_EVIDENCE` saves exact SVG endpoint comparisons against named handles in both layout directions and themes. Wait for visible, laid-out nodes before measuring geometry; edge routes can appear before staged nodes become visible.
 
 `LIVE_EVIDENCE` saves live-picture construction, invalid/missing recovery, reference refresh and theme/phone checks. The shell companion checks retained dirty text, unload protection, external-change conflicts and cancellation of post-unmount thumbnail work. Run both after changing the shared SSE connection or autosave lifecycle.
 
-`EDITOR_EVIDENCE` saves completion screenshots and results. `ATLAS_EVIDENCE` saves Home/reference screenshots. `SEARCH_EVIDENCE_DIR`, `VIEW_EVIDENCE` and `LENS_EVIDENCE_DIR` save the respective stream's artifacts. Choose separate output folders. The development routes `#dev/spec-check` and `#dev/lens-check` expose the specification and lens fixtures; fixture counts grow as regressions are added.
+`EDITOR_EVIDENCE` saves completion screenshots and results, including story snippets, schema keys and quoted flow-target completion in inline and block lists. `ATLAS_EVIDENCE` saves Home/reference screenshots. `SEARCH_EVIDENCE_DIR`, `VIEW_EVIDENCE` and `LENS_EVIDENCE_DIR` save the respective stream's artifacts. Choose separate output folders. The development routes `#dev/spec-check` and `#dev/lens-check` expose the specification and lens fixtures; fixture counts grow as regressions are added.
 
 Run motion measurements without concurrent builds or other browser suites on the same machine. Record source-ready preparation separately from a switch requested during document loading, and retain the full request-to-settle time for that loading case. A smooth tween does not establish that the first click responds promptly.
 

@@ -1,5 +1,5 @@
 /**
- * DG-18 — the interactive layer's view state: the details card and the step walk-through.
+ * DG-18 — the interactive layer's view state: the details card and zone folds.
  * View-only (plan D9): nothing here is ever written to the text, and a reload forgets it.
  *
  * The top bar's "Collapse all" / "Expand all" sit outside the canvas's `ReactFlowProvider`,
@@ -15,8 +15,6 @@ export type CardOpener = "pointer" | "keyboard";
 export interface InteractionState {
   /** The node whose details card is open. */
   card: { id: string; by: CardOpener } | null;
-  /** The step being walked through (a flow's `step:` number), or `null`. */
-  step: number | null;
 }
 
 /** Hover this long before the card opens: a pointer crossing the canvas opens nothing. */
@@ -24,7 +22,7 @@ export const CARD_OPEN_DELAY_MS = 500;
 /** Grace period to move the pointer from the node onto the card. */
 export const CARD_CLOSE_DELAY_MS = 150;
 
-const store = createStore<InteractionState>({ card: null, step: null });
+const store = createStore<InteractionState>({ card: null });
 let timer: ReturnType<typeof setTimeout> | undefined;
 
 function later(ms: number, run: () => void): void {
@@ -61,9 +59,6 @@ export const interactionActions = {
   closeCard(): void {
     clearTimeout(timer);
     if (store.get().card !== null) store.set({ card: null });
-  },
-  setStep(step: number | null): void {
-    if (store.get().step !== step) store.set({ step });
   },
   /** The canvas hook's registration; the returned function unregisters. */
   registerZones(next: ZoneHandlers): () => void {

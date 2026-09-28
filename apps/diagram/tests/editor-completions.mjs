@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { checkProviderLifecycle } from "./editor-provider-lifecycle.mjs";
+import { checkStoryAuthoring } from "./editor-story-authoring.mjs";
 const require = createRequire(new URL("../../home/package.json", import.meta.url));
 const { chromium, expect } = require("@playwright/test");
 const base = process.env.DIAGRAM_URL ?? "http://localhost:5410";
@@ -283,6 +284,8 @@ try {
     results.push(
       `${theme}: component reference snippet at root creates nodes without colliding with component metadata`,
     );
+    const storyChecks = await checkStoryAuthoring({ page, prepare, accept, state, selectedText });
+    results.push(...storyChecks.map((result) => `${theme}: ${result}`));
     const lifecycle = await checkProviderLifecycle(page);
     assert.equal(lifecycle.length, 6);
     results.push(

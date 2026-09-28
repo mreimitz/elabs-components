@@ -3,6 +3,8 @@
  * silently skips what the dialect stage already reported (unknown endpoints, unknown or
  * non-zone parents, unknown note targets), so one mistake is reported once. React-free.
  */
+import { resolveStory } from "../../story/resolve-story";
+import type { ResolvedStory } from "../../story/types";
 import { expandInstances, type InnerSource } from "../compose/inline";
 import type { ArchIssue } from "../dialect/issues";
 import type { ComponentTable } from "../compose/resolver";
@@ -127,6 +129,7 @@ export const COMPOSITE_LABELS = {
 } as const;
 
 export interface ArchCompileView {
+  story: ResolvedStory;
   /** Imported node/zone/flow ids map to their own source diagram, never an editable origin. */
   inner?: Record<string, InnerSource>;
   /**
@@ -478,6 +481,7 @@ export function compileArch(
     issues: expanded?.issues ?? [],
     spec,
     view: compact({
+      story: resolveStory(ast, components),
       inner: expanded?.inner.size ? Object.fromEntries(expanded.inner) : undefined,
       collapsed,
       noteAnchors,

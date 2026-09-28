@@ -1,3 +1,4 @@
+import { StoryBar } from "../story/story-bar";
 import {
   memo,
   useCallback,
@@ -169,6 +170,7 @@ function VisualFlow({ paneRef, ast, built, source }: VisualFlowProps) {
       proOptions={{ hideAttribution: true }}
     >
       <LensChrome lens="visual">
+        <StoryBar visual />
         <TitleBlock title={ast.title} description={ast.description} meta={source} />
         <DiagramLegend mode="auto" />
         <CanvasNavigation />

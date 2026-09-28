@@ -162,6 +162,25 @@ export interface ArchComponentSpec {
   extensionPoints?: readonly Record<string, unknown>[];
 }
 
+export interface ArchStoryCallout {
+  path: string;
+  at: string;
+  text: string;
+}
+export interface ArchStoryStep {
+  path: string;
+  title: string;
+  targets: readonly string[];
+  text?: string;
+  /** Seconds, normalized to 8 when absent. */
+  duration: number;
+  callouts: readonly ArchStoryCallout[];
+}
+export interface ArchStorySpec {
+  autoplay?: boolean;
+  steps: readonly ArchStoryStep[];
+}
+
 export interface ArchDiagram {
   version: typeof DIALECT_VERSION;
   /** What the file said ("0" or "1"); `version` above is always the dialect this app writes. */
@@ -183,8 +202,8 @@ export interface ArchDiagram {
   notes: ArchNoteSpec[];
   /** Describes this diagram as a reusable reference (plan §4.2). */
   component?: ArchComponentSpec;
-  /** DG-31 defines it; open in R1. */
-  story?: Record<string, unknown>;
+  /** Explicit empty steps suppress the numbered-flow shortcut. */
+  story?: ArchStorySpec;
   /** DG-36 defines it; open in R1. */
   visual?: Record<string, unknown>;
 }

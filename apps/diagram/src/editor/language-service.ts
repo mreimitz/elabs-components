@@ -11,6 +11,7 @@ import { endpointMetadata, type EndpointMetadata } from "./endpoint-metadata";
 import { referenceEndpoints } from "./reference-endpoints";
 import { currentComponentFiles } from "../state/component-files";
 import { schemasAt, type Schema } from "./yaml-schema";
+import { storyFlowCompletions, STORY_STEP_SNIPPET } from "./story-completions";
 export { schemasAt } from "./yaml-schema";
 
 type MonacoApi = Parameters<NonNullable<CodeEditorProps["onMount"]>>[1];
@@ -155,9 +156,11 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
           sortText: `${value.toLowerCase().startsWith(prefix) ? "0" : "1"}${value}`,
         });
       };
-      if (context.kind === "key" && context.path.includes("targets")) {
+      if (context.path[0] === "story" && context.path.includes("targets")) {
         for (const endpoint of endpoints(text, prefix))
           add(endpoint.id, endpoint.title, kind.Reference, endpointDocumentation(endpoint));
+        for (const flow of storyFlowCompletions(text))
+          add(flow.value, flow.label ?? "Story flow target", kind.Reference);
       } else if (
         context.kind === "key" &&
         typeof context.path.at(-1) === "number" &&
@@ -188,6 +191,31 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
             const item = suggestions.find((item) => item.label === key);
             if (item && !hasColon) item.insertText += ": ";
           }
+        const atStoryRoot = context.path.length === 0 && !context.siblings.includes("story");
+        const atStory =
+          context.path.length === 1 &&
+          context.path[0] === "story" &&
+          !context.siblings.includes("steps");
+        const atStoryStep =
+          context.path.length === 3 && context.path[0] === "story" && context.path[1] === "steps";
+        if (
+          (atStoryRoot || atStory || atStoryStep) &&
+          (!prefix || "story step".startsWith(prefix))
+        ) {
+          const body = atStoryRoot
+            ? `story:\n  steps:\n    - ${STORY_STEP_SNIPPET.replaceAll("\n", "\n      ")}`
+            : atStory
+              ? `steps:\n  - ${STORY_STEP_SNIPPET.replaceAll("\n", "\n    ")}`
+              : STORY_STEP_SNIPPET.replaceAll("\n", "\n  ");
+          suggestions.push({
+            label: "story step",
+            kind: kind.Snippet,
+            detail: "Insert a story step",
+            insertText: body,
+            range,
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          });
+        }
         const container = context.path.filter((p) => typeof p === "string").at(-1);
         for (const snippet of SNIPPETS) {
           const atRoot = context.path.length === 0 && !context.siblings.includes(snippet.path);
