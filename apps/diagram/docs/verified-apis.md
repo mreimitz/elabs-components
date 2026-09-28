@@ -16,6 +16,11 @@ These source contracts supersede the older implementation snapshots later in thi
 
 - `#v/<workspace-path>` renders a local, read-only compiled snapshot. It mounts no shell editing services, uses `watchPath` on the shared ref-counted workspace event connection, and retains the last valid picture while reporting invalid input. Optional light/dark view themes are scoped without changing saved editor preferences. MCP `view` URLs derive from the guarded request origin, retaining the actual server port.
 
+- `neededFiles(ast, files)` discovers missing reference files with a per-call shallowest-depth map and parsed-file cache. A shared dependency is revisited only when a shorter path can reveal additional descendants within the eight-level limit. No parsed state survives between calls, so changed file contents are observed on the next snapshot.
+
+- `src/spec/compose/inline.ts` exports `expandInstances(ast, table, expand?, collapse?)`. The sets contain instance IDs; collapse takes precedence over authored or temporary expansion, and a manual root stays collapsed. Projection leaves the authored AST unchanged, prefixes imported IDs/classes, and records each imported node/zone/flow in `inner`. Expansion reserves each complete child diagram against a 1,000-element budget and an eight-level depth limit; a child that exceeds either remains collapsed with `expand-limit`.
+- `compileArch(ast, components?, { expand?, collapse? })` returns the projected graph alongside the original authored origin mapping. Imported descendants have no editable origin and carry `data.inner`; the instance wrapper retains the parent node's origin. `checkText` and `compileText` pass the same temporary sets through their reference-source options. `entryOf` therefore returns no editable entry for imported content.
+
 ## How to work a DG item (for any agent tier)
 
 1. Read the item file, this document, and `2026-09-26-plan.md` §2 (D1–D14).
