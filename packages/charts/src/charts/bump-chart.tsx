@@ -65,10 +65,10 @@ import {
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
 import { useChartFormatters, useChartValueFormatter } from "./chart-formatters";
-// Reuses the dumbbell "slope" collision-avoidance pass — see spaceSlopeLabels'
-// own docblock. One shared implementation is what stops the two charts'
-// "no overlapping end labels" guarantees from drifting apart.
-import { spaceSlopeLabels } from "./dumbbell-chart";
+// Shared with Dumbbell's "slope" variant — see spaceSlopeLabels' own docblock.
+// One implementation is what stops the two charts' "no overlapping end
+// labels" guarantees from drifting apart.
+import { spaceSlopeLabels } from "./labels/space-slope-labels";
 import { profitLossColor } from "./profit-loss-line";
 import { ChartTooltipBox, type ChartTooltipRect } from "./tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "./tooltip/tooltip-content";

@@ -17,6 +17,7 @@ import { useSvgId } from "./svg-id";
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { type ChartStatFlowFormat, defaultChartStatFlowFormat } from "./chart-stat-flow";
+import { findThresholdBand } from "./threshold-band";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { HaloText } from "../marks/halo-text";
 import { PieCenterShell } from "./pie-center-shell";
@@ -133,10 +134,8 @@ function resolveThresholdBand(
   value: number,
   thresholds: readonly GaugeThreshold[],
 ): string | undefined {
-  if (thresholds.length === 0) return undefined;
   const sorted = [...thresholds].sort((a, b) => a.value - b.value);
-  const hit = sorted.find((t) => value <= t.value);
-  return (hit ?? sorted[sorted.length - 1])?.label;
+  return findThresholdBand(value, sorted, (t) => t.value)?.label;
 }
 
 /**

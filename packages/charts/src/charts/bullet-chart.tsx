@@ -26,6 +26,7 @@ import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { HaloText } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps } from "./chart-a11y";
 import { ChartMessagesScope, useChartTranslate } from "./chart-messages";
+import { findThresholdBand } from "./threshold-band";
 import { type ChartPalette, resolvePalette } from "./chart-context";
 import { useChartValueSetFormatter } from "./chart-formatters";
 import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
@@ -217,11 +218,7 @@ function niceDomain(domain: [number, number]): [number, number] {
 /** The band `value` falls in — the first band whose `to` is `>= value`, or the last (open-ended,
  *  top) band once `value` exceeds every threshold. `undefined` when `bands` is empty. */
 export function findBulletBand(value: number, bands: BulletBand[]): BulletBand | undefined {
-  if (bands.length === 0) return undefined;
-  for (const band of bands) {
-    if (value <= band.to) return band;
-  }
-  return bands[bands.length - 1];
+  return findThresholdBand(value, bands, (band) => band.to);
 }
 
 export interface DescribeBulletChartInput {
