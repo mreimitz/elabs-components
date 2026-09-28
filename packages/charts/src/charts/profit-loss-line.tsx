@@ -7,7 +7,7 @@ import { useCallback, useId, useMemo } from "react";
 import { useChart, useChartStable } from "./chart-context";
 import { type CurveAlias, type CurveFactory, resolveCurve } from "./curve-types";
 import { type FadeEdges, fadeGradientStops, resolveFadeSides } from "./fade-edges";
-import { useProfitLossLegendHover } from "./profit-loss-legend-hover";
+import { useProfitLossLegendHover } from "./legend/legend-hover";
 import { splitProfitLossSegments } from "./profit-loss-segments";
 
 export const PROFIT_LOSS_POSITIVE_COLOR = "var(--success)";

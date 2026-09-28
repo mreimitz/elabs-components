@@ -49,7 +49,7 @@ import type { ChartRevealOn } from "./chart-reveal-clip";
 // Legend engine — RM-118
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { findAxisValueFormat, lastLegendValue, legendWantsValues } from "./legend/legend-values";
-import { useSharedLegendHoveredKey } from "./legend/shared-legend-hover";
+import { useSharedLegendHoveredKey } from "./legend/legend-hover";
 import { Line, type LineProps } from "./line";
 import type { ChartNavigatorProps } from "./navigator/types"; // Navigator — RM-140
 import { SeriesFocusTargets } from "./series-focus-targets";
