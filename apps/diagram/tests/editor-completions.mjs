@@ -163,6 +163,26 @@ try {
     await accept("target", `${header}    title: Target\nflows:\n  - source -> target`);
     results.push(`${theme}: shorthand arrow offers endpoint ids automatically`);
 
+    const collapsed =
+      'diagram: "1"\nnodes:\n  - id: source\n  - id: tenant\n    ref: ws/components/qlik-cloud-tenant\n    expand: false\n';
+    await prepare(collapsed);
+    await expect
+      .poll(() =>
+        page.evaluate(async () => {
+          const { currentComponentFiles } = await window.__completionModule(
+            "/src/state/component-files.ts",
+          );
+          return currentComponentFiles().has("components/qlik-cloud-tenant.yaml");
+        }),
+      )
+      .toBe(true);
+    await prepare(`${collapsed}flows:\n  - source -> tenant.qt`);
+    await page.keyboard.press("Control+Space");
+    await accept("tenant.qtdi", `${collapsed}flows:\n  - source -> tenant.qtdi`);
+    results.push(
+      `${theme}: collapsed diagram references complete their real qualified inner endpoints`,
+    );
+
     const reference = 'diagram: "1"\nnodes:\n  - id: database\n    ref: catalog/aws/rds\n';
     await prepare(`${reference}flows:\n  - from: data`);
     await page.keyboard.press("Control+Space");

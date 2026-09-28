@@ -8,6 +8,8 @@ import { diagramStore } from "../state/diagram-store";
 import { workspaceStore } from "../workspace/workspace-store";
 import { yamlContext } from "./yaml-context";
 import { endpointMetadata, type EndpointMetadata } from "./endpoint-metadata";
+import { referenceEndpoints } from "./reference-endpoints";
+import { currentComponentFiles } from "../state/component-files";
 import { schemasAt, type Schema } from "./yaml-schema";
 export { schemasAt } from "./yaml-schema";
 
@@ -33,13 +35,16 @@ function catalogDocumentation(entry: CatalogEntry) {
   };
 }
 /** Parse the current buffer, rather than waiting for a successful debounced compile. */
-function endpoints(text: string): EndpointMetadata[] {
+function endpoints(text: string, query = ""): EndpointMetadata[] {
   const state = diagramStore.get();
-  return endpointMetadata(
+  const catalog = catalogService.state().entries;
+  const local = endpointMetadata(
     text,
-    catalogService.state().entries,
+    catalog,
     state.compiledText === text ? state.compiled.graph?.nodes : undefined,
   );
+  const resolved = referenceEndpoints(text, catalog, currentComponentFiles(), ICON_NAMES, query);
+  return [...new Map([...local, ...resolved].map((entry) => [entry.id, entry])).values()];
 }
 function endpointDocumentation(endpoint: EndpointMetadata) {
   const icon = endpoint.icon ? catalogService.get(endpoint.icon)?.iconPath : undefined;
@@ -151,7 +156,7 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
         });
       };
       if (context.kind === "key" && context.path.includes("targets")) {
-        for (const endpoint of endpoints(text))
+        for (const endpoint of endpoints(text, prefix))
           add(endpoint.id, endpoint.title, kind.Reference, endpointDocumentation(endpoint));
       } else if (
         context.kind === "key" &&
@@ -238,7 +243,7 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
           );
         }
       } else if (context.kind === "endpoint" || ENDPOINT_KEYS.has(context.key)) {
-        for (const endpoint of endpoints(text))
+        for (const endpoint of endpoints(text, prefix))
           add(endpoint.id, endpoint.title, kind.Reference, endpointDocumentation(endpoint));
       } else {
         for (const schema of schemasAt(context.path, text)) {
@@ -299,7 +304,7 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
           : schemasAt(context.path, text);
       const endpoint =
         context.kind === "endpoint" || context.key === "id" || ENDPOINT_KEYS.has(context.key)
-          ? endpoints(text).find((item) => item.id === value)
+          ? endpoints(text, value).find((item) => item.id === value)
           : undefined;
       const file =
         context.key === "ref" && value.startsWith("ws/")
