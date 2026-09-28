@@ -12,6 +12,7 @@
 
 import { defaultScatterColors, resolveColorBy } from "./chart-context";
 import { areaRadius } from "../marks/area-radius";
+import type { LegendItemShape } from "./legend/chart-legend-item";
 import { type SeriesMarkerShape, seriesMarkerShape } from "./series-pattern";
 
 // ── Size (`sizeKey`) ─────────────────────────────────────────────────────────
@@ -83,11 +84,9 @@ export interface ScatterColorByConfig {
   colors?: Readonly<Record<string, string>>;
 }
 
-export interface ScatterEncodingLegendItem {
-  label: string;
-  color?: string;
-  shape?: SeriesMarkerShape;
-}
+/** One scatter encoding key row: `label` always set; `color` and `shape` optional. */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- kept an interface so consumers can still merge declarations into it
+export interface ScatterEncodingLegendItem extends LegendItemShape<"label", "color" | "shape"> {}
 
 export interface ScatterColorByResolution {
   /** `undefined` → the caller's own fill (colorBy had nothing usable for this row). */

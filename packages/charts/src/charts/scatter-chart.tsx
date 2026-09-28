@@ -26,7 +26,7 @@ import {
   resolvePalette,
   type SeriesPaletteSlots,
 } from "./chart-context";
-import { ChartLegendHoverProvider } from "./chart-legend-hover";
+import { ChartLegendHoverProvider } from "./legend/legend-hover";
 import type { ChartPhase, ChartStatus } from "./chart-phase";
 import { type ContainerLegendProp, useContainerLegend } from "./legend/use-container-legend";
 import { Scatter, type ScatterProps } from "./scatter";

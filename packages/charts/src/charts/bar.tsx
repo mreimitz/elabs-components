@@ -32,7 +32,8 @@ import {
 } from "./chart-datapoint-layer";
 import { useChartValueSetFormatter } from "./chart-formatters";
 import type { ChartValueFormat } from "./value-format";
-import { useChartLegendHover } from "./chart-legend-hover";
+import { useBarChartContext } from "./bar-chart-context";
+import { useChartLegendHover } from "./legend/legend-hover";
 import { ChartSelectionMark, resolveMarkPaint, useChartSelection } from "./chart-selection";
 import { transitionWithDelay } from "./motion-utils";
 import { useHighDecoration } from "./use-high-decoration";
@@ -489,8 +490,6 @@ const BarInner = memo(function BarInner({
     stackOffsets,
     stackMode,
     stackExtents,
-    barColorOf,
-    barCrossInset = 0,
     stackGap: chartStackGap,
     animationDuration,
     enterTransition,
@@ -498,6 +497,7 @@ const BarInner = memo(function BarInner({
     revealHeld = false,
     chartPhase,
   } = useChart();
+  const { barColorOf, barCrossInset = 0 } = useBarChartContext();
   // RM-164: this Bar's own `stackGap` wins over the chart's.
   const stackGap = stackGapProp ?? chartStackGap ?? 0;
 
