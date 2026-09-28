@@ -750,7 +750,18 @@ export interface ChartContextValue
  */
 export type ChartStableContextValue = Omit<ChartContextValue, keyof ChartHoverContextValue>;
 
-const ChartStableContext = createContext<ChartStableContextValue | null>(null);
+/**
+ * What the raw stable context actually carries: the stable slice without the
+ * Bar and Composed fields, which live in their own sub-contexts. Only
+ * `useChartStable()` merges those back in; a direct reader of the raw context
+ * can therefore not read one by mistake and get `undefined`.
+ */
+type ChartStableCommons = Omit<
+  ChartStableContextValue,
+  keyof BarChartContextValue | keyof ComposedChartContextValue
+>;
+
+const ChartStableContext = createContext<ChartStableCommons | null>(null);
 const ChartHoverContext = createContext<ChartHoverContextValue | null>(null);
 
 /**
@@ -766,7 +777,7 @@ export function ChartProvider({
   children: ReactNode;
   value: ChartContextValue;
 }) {
-  const stable = useMemo<ChartStableContextValue>(
+  const stable = useMemo<ChartStableCommons>(
     () => ({
       data: value.data,
       renderData: value.renderData,
@@ -907,7 +918,7 @@ export function useChartStable(): ChartStableContextValue {
   // The family fields are read back onto the one stable value, so a caller
   // sees the same fields it always has; identity changes only when one of
   // the three slices does.
-  const context = useMemo(
+  const context = useMemo<ChartStableContextValue | null>(
     () => (commons ? { ...commons, ...bar, ...composed } : null),
     [commons, bar, composed],
   );
