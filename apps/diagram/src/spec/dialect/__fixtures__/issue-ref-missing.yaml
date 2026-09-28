@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v1.schema.json
+diagram: "1"
+nodes:
+  - id: a
+    ref: catalog/aws/rdss
+  - id: b
+    ref: catalog/lucide/users
+# expect: ref-missing @ 5:10
+# expect: ref-missing @ 7:10

@@ -414,7 +414,7 @@
           "type": "string",
           "minLength": 1,
           "description": "What this node is: catalog/<pack>/<entry> for a catalog item (catalog/aws/rds), or ws/<folder>/<file name> for another diagram. Keys written beside it override what it supplies.",
-          "pattern": "^(?:catalog/[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*|ws(?:/(?!_)(?!\\.)(?=[^/]*[^/\\s])[^/]+)+)$"
+          "pattern": "^(?:catalog/[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*|ws(?:/(?!_)(?!\\.)[^/\\\\\\s\\x00-\\x1f](?:[^/\\\\\\x00-\\x1f]*[^/\\\\\\s\\x00-\\x1f])?)+)$"
         },
         "status": {
           "enum": ["ok", "degraded", "down", "planned"],
@@ -496,7 +496,7 @@
           "type": "string",
           "minLength": 1,
           "description": "What this node is: catalog/<pack>/<entry> for a catalog item (catalog/aws/rds), or ws/<folder>/<file name> for another diagram. Keys written beside it override what it supplies.",
-          "pattern": "^(?:catalog/[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*|ws(?:/(?!_)(?!\\.)(?=[^/]*[^/\\s])[^/]+)+)$"
+          "pattern": "^(?:catalog/[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9-]*|ws(?:/(?!_)(?!\\.)[^/\\\\\\s\\x00-\\x1f](?:[^/\\\\\\x00-\\x1f]*[^/\\\\\\s\\x00-\\x1f])?)+)$"
         },
         "status": {
           "enum": ["ok", "degraded", "down", "planned"],

@@ -23,10 +23,11 @@ topic): {{path}}
 ## Loop
 
 1. `workspace_tree` — see what exists; do not overwrite someone else's diagram.
-2. Find icons: every node's `icon:` is `vendor/name` from the icon packs (aws, azure, gcp, k8s,
-   qlik, snowflake, databricks, clickhouse, salesforce, sap, microsoft, oracle) or a generic
-   `lucide/<name>` (server, database, users, user, globe, cloud, lock, shield, network, …). Use
-   `catalog_search` when it is listed; otherwise guess and let validation suggest the nearest name.
+2. Find what each node is: `catalog_search`, then write `ref: catalog/<name>` (title, icon,
+   type, subtitle and badges come with it); add `title:`/`subtitle:` only where this diagram
+   needs other words. A node with no catalog item is custom: `icon: lucide/<glyph>` (server,
+   database, users, user, globe, cloud, lock, shield, network, …) plus `title:`. A
+   `ref-missing` error on validation suggests the nearest name.
 3. Write the YAML, then `spec_validate`. Fix every error; read the warnings (an `unknown-icon`
    warning may carry a `suggestion`: the nearest known name). An `unsupported-version` error
    means the file is in a newer dialect than this Atlas reads: leave it alone.
@@ -60,22 +61,22 @@ zones: # boundaries; nest with children:
         title: On-premises data center
         children:
           - id: erp # a node: anything without children
-            icon: sap/s4hana
-            title: SAP S/4HANA
-            subtitle: ERP
+            ref: catalog/sap/s4hana # title, icon, type, subtitle, badges come from the catalog
+            subtitle: ERP # written only because this diagram wants other words
           - id: mssql
             type: datastore # service (default) | actor | datastore | queue | external | note
-            icon: microsoft/sql-server
-            title: SQL Server 2022
-            badges: [pii]
+            ref: catalog/microsoft/sql-server
+            badges: [pii] # a written key always overrides what the reference supplies
+          - id: grafana # no catalog item for this one: stays custom
+            icon: lucide/activity
+            title: Grafana
   - id: qlik
     owner: saas
     provider: qlik # an icon pack: the zone shows its logo
     title: Qlik Cloud (EU)
     children:
       - id: qca
-        icon: qlik/cloud
-        title: Qlik Cloud Analytics
+        ref: catalog/qlik/cloud
         docs: https://cloud.qlik.com/docs # link to the product's documentation
         status: ok # ok | degraded | down | planned — shown on the details card
       - id: tenant
