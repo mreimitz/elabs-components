@@ -242,3 +242,112 @@ pass's time budget; the likely source is `LensMorphOverlay`'s `capturePlan()`, w
 one extra pass of `getBoundingClientRect` reads for the fallback lane ghosts added this pass,
 on top of the zone/box ghost reads it already did. Everything after that first frame is
 unchanged from the original build's own measurement (16.67 ms avg / 16.8 ms max).
+
+## Round-1 and round-2 review fixes (this pass)
+
+maintainer 2026-09-27/28. A second orchestrator review pass found four must-fixes (M1–M4),
+seven should-fixes (S1–S7) against the round-0 build, plus a verifier pass's own MF-1…5,
+SF-1…6 and PRE-1. This pass (`diagram/lens-switch`, worktree build) first merged
+`origin/main` (`512d76e9`) — the sibling `diagram/view-direction` slice had landed view-mode
+read-only (per-viewer direction/card, never saved) in the meantime — then fixed the write-leak
+and rendering items below. Checked in Chromium through `agent-browser` against a worktree dev
+server (port 5351), plus source inspection where the CLI itself became unreliable (see
+Problems below).
+
+**Write-leak class, closed and proven with a real sha log
+(`apps/diagram/.evidence/lens-switch/fix-r2/write-path-sha-log.md`, gitignored):**
+
+- **MF-1** — the autosave thumbnail gated only on `position >= 1` (visual, settled), not also
+  on the TECHNICAL lens being both settled and at position 0; a thumbnail could still capture
+  mid-transition. Now requires `lens.lens !== "technical" || lens.position !== 0` before
+  skipping — i.e. only skips when truly clear of the technical, settled state.
+- **SF-1** — the top-bar Undo/Redo BUTTONS had their own `aria-disabled` logic, separate from
+  the keyboard shortcut's `state/history.ts` gate; a click could still undo/redo while the
+  visual lens showed. Both now share one `canUseHistory()` export, used by the keyboard
+  handler AND `DocumentControls`' button `onClick`s. Verified: a direct `.click()` on the
+  (visually disabled) Undo/Redo buttons in edit+visual mode left the file sha unchanged.
+- **New this pass, found while closing the above** — the Inspector's `EntryForm` could still
+  write a TECHNICAL node's fields while the visual lens showed, if that node had been selected
+  before switching lenses (selection state persists across the lens toggle by design, since
+  both panes stay mounted). Fixed via `SchemaFormProvider`'s own public `disabled` prop
+  (`packages/ui`, no `packages/` edit needed) plus a guard at the top of `onChange`. Verified
+  two ways: the field reports `is enabled: false` (a real user could not reach it), and a
+  forced write via the CLI still left the file sha unchanged.
+
+**Morph choreography (S10):**
+
+- **MF-3** (partial) — the ghost overlay held full opacity from ~64% of the transition through
+  settlement, then unmounted in one commit, reading as a "pop" the maintainer's ruling
+  explicitly forbids. `overlayOpacity` now ramps down over the Dress sub-phase, mirroring the
+  gather-in ramp. Does **not** address the separately-flagged chrome-blinking-mid-flight issue
+  (SF-2) — deferred, not fixed this pass.
+- **Item 2 (first-frame hitch)** — investigated the task's own hypothesis ("lens store updates
+  before hash write / defer hash write"). `shell/lens-store.ts`'s `setLens` now defers the
+  (cosmetic) `window.location.hash` write by one `requestAnimationFrame`, off the critical path
+  that mounts `LensMorphOverlay`. Measured before/after
+  (`apps/diagram/.evidence/lens-switch/fix-r2/frame-time-log.md`): **the hitch is unchanged**
+  (66–117 ms across three runs, same shape as round 0's ~66.7 ms) — the hypothesis was wrong,
+  or at least insufficient; `capturePlan`'s own `getBoundingClientRect` reads remain the more
+  likely dominant cost, per round 0's own suspicion, not chased further. The fix is kept (a
+  real, small reduction in what shares the first frame) but is **not** claimed to have solved
+  the hitch. Every measured run still clears the ≥95%-of-frames-≤16.9ms bar (98.3–98.9%), and
+  mid-flight reversal re-verified clean (89 frames, settles correctly, no console errors).
+
+**Rendering (M3, M4, S2, S5, S6, S7):**
+
+- **M3** — a flow spanning more than one lane (e.g. Sources straight to Targets) drew a
+  straight line through every intervening box. `build-visual-graph.ts` now routes it through
+  each lane's header gutter (`LANE_HEADER_HEIGHT`..`+LANE_PADDING`, empty in every lane
+  regardless of content), staggering concurrent skip-lane flows a few px apart. Verified
+  visually on `templates/qlik-cloud-customer-landscape.yaml` (a real 4-lane document, not a
+  synthetic fixture): a Salesforce→tenant flow crosses two intervening lanes cleanly above
+  every box's title bar (`.evidence/lens-switch/fix-r2/template-qlik-landscape-visual-light-1440.png`).
+- **M4** — flow arrowheads had no explicit token colour, falling back to the SVG default
+  (black in some themes, near-invisible in others). `markerEnd`/`markerStart` now carry
+  `color: "var(--muted-foreground)"`.
+- **S2** — two DIFFERENT cross-lane box pairs at the same y drew their flows as one shared
+  line. `crossPairGroup`/`crossPairNudge` steps each pair's line out from the shared column,
+  same idea as round 0's F13 same-lane fix.
+- **S5** — a capability box used `zoneFill(0, owner)`, pricing it as if it sat directly on
+  `--canvas` (the same root a top-level zone nests into), when it actually nests one level
+  inside its (already-muted) lane panel — a customer box landed on the exact same fill as its
+  lane, no visible cue. Now `zoneFill(1, owner)`, with the resulting `capped` flag threaded
+  through instead of a hardcoded aside-only flag.
+- **S6** — a box's accessible name had no way to convey its lane (lane panels are not tab
+  stops); `CapabilityBoxData.laneTitle` is now populated and folded into the name. Verified via
+  the accessibility snapshot: `"AWS account — Contains: S3 — landing, AWS Glue, S3 — curated.
+Customer managed. Customer VPC. Option/Alt-click…"`.
+- **S7** — a single-member box whose title IS that member's title printed the title twice
+  (header + the one member row). The header now carries that member's own icon and the
+  redundant row is skipped. Verified: `"Databricks jobs. Customer managed. Customer VPC."` with
+  no second "Databricks jobs" line beneath it.
+
+**F17 — `#dev/lens-check` only proved "derives, doesn't crash, deterministic," never
+correctness, and only on `workspace/examples/`, never `workspace/templates/`:**
+
+Now also globs `workspace/templates/*.yaml` (6 documents total, 4 examples + 2 templates), and
+runs a new structural-invariants pass on every one of them — referential integrity (every
+box's lane, every flow's endpoints, resolve to real ids), F9's actor exemption from aside
+boxes, and F6/F7's kind-scoped bidirectional merge — restated as generic checks instead of
+only the six hand-written synthetic fixtures. All 6 documents pass all of it
+(`.evidence/lens-switch/fix-r2/dev-lens-check-structural*.png`).
+
+### Known gaps, honestly not closed this pass
+
+- **SF-2** (chrome blinking mid-transition) — not fixed, not re-investigated; time budget went
+  to the write-leak class and the rendering should-fixes instead.
+- **The first-frame stall** (item 2) — investigated and one hypothesis ruled out (see above);
+  the stall itself remains.
+- **Full example/template screenshot sweep** — light-theme visual-lens screenshots exist for
+  all 4 examples and 1 of 2 templates; dark-theme exists only for `lakehouse-aws`. Not a
+  correctness gap found, just a coverage gap against the "light+dark, every example and
+  template" ask.
+- **A commit-hygiene deviation**: the MF-1/SF-1/inspector fixes above were made to the working
+  tree before `git commit --no-edit` closed the `origin/main` merge, so they ended up bundled
+  into the merge commit (`512d76e9`) rather than their own logical commit. Not re-split (no
+  history rewrites, per this task's hard rules) — disclosed here instead.
+- **`agent-browser` tooling instability**: mid-pass, the CLI session queue backed up behind a
+  `drag` call on a non-draggable node and had to be closed and restarted under a new session
+  name. A live drag-attempt on a capability box could not be completed as a result; verified
+  instead at the source (`nodesDraggable={false}` unconditionally on the entire visual pane,
+  not gated by any runtime condition).
