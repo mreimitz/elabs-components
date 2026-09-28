@@ -99,6 +99,10 @@ export function useStoryKeys(keys: StoryKeys): void {
 const TEXT_ENTRY =
   "input, textarea, select, [contenteditable]:not([contenteditable='false']), .monaco-editor";
 const OVERLAY = "[role=dialog], [role=alertdialog], [role=menu], [role=listbox]";
+/** The sidebar's own mobile sheet (`data-mobile="true"`, `packages/ui` `Sidebar`) — "/" reaches
+ * the search box from inside it exactly as it does from the desktop's persistent sidebar; every
+ * OTHER `role=dialog` (rename, trash-confirm, the palette) still blocks it. */
+const MOBILE_SIDEBAR_SHEET = '[data-mobile="true"]';
 /** Arrow keys already mean something here (moving nodes, roving focus, sliders). */
 const ARROW_OWNERS =
   ".react-flow, [role=tablist], [role=radiogroup], [role=toolbar], [role=slider], [role=menu]";
@@ -163,7 +167,7 @@ export function onShellKeyDown(event: KeyboardEvent): void {
   // Nordic: Shift+7) — the letter shortcuts below stay Shift-free. No `doc` requirement: the
   // search box lives in the rail, shown on every route.
   if (event.key === "/") {
-    if (closestOf(event.target, OVERLAY)) return;
+    if (closestOf(event.target, OVERLAY) && !closestOf(event.target, MOBILE_SIDEBAR_SHEET)) return;
     event.preventDefault();
     searchActions.requestFocus();
     return;
