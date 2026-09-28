@@ -206,13 +206,21 @@ function replaceValue(text: string, info: MapInfo, own: KeyInfo, value: WriteVal
   }
   const [start, rawEnd] = own.value;
   const end = trimEnd(text, start, rawEnd);
+  // A collapsed empty value (`key:` with nothing at all after it — no space, straight to a
+  // newline or a trailing `# comment`) still gets a zero-length range here, sitting wherever
+  // the value would start. Every other empty form (`key: `, `key: null`, `key: ""`) already has
+  // a real space on at least one side; this one might have none on either side, so the
+  // replacement brings its own where the source doesn't.
+  const collapsed = start === rawEnd;
+  const noLeadGap = collapsed && text[start - 1] === ":";
+  const noTrailGap = collapsed && text[end] !== undefined && !/\s/.test(text[end] as string);
   const first = text[start];
   const scalar = !isList(value) && typeof value !== "object";
   if (scalar || first === "[" || first === "{") {
     return {
       from: start,
       to: end,
-      insert: yamlValue(value, info.flow, styleAt(text, start, end, info.flow)),
+      insert: `${noLeadGap ? " " : ""}${yamlValue(value, info.flow, styleAt(text, start, end, info.flow))}${noTrailGap ? " " : ""}`,
     };
   }
   // A block list or map becomes a flow one on the key's line.

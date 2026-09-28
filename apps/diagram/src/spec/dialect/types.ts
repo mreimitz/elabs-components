@@ -57,6 +57,18 @@ export type NodeStatus = (typeof NODE_STATUS)[number];
 export const SUPPLIED_KEYS = ["title", "subtitle", "icon", "type", "badges"] as const;
 export type SuppliedKey = (typeof SUPPLIED_KEYS)[number];
 
+/**
+ * Whether a `SuppliedKey`'s raw value on a node counts as written — the value a reference
+ * will not fill in. YAML null (the key present with no value, e.g. `title:`) is always
+ * unwritten, same as the key's outright absence. An explicit `""` is a deliberate override
+ * that draws nothing, the same as `badges: []`; it never falls back to the reference's value.
+ * One check, shared by `normalize.ts` (what `unwritten` lists) and `upgrade.ts` (what the
+ * reference-first migration may still need to pin).
+ */
+export function isSuppliedKeyWritten(entry: Record<string, unknown>, key: SuppliedKey): boolean {
+  return key in entry && entry[key] !== null;
+}
+
 export interface Point {
   x: number;
   y: number;

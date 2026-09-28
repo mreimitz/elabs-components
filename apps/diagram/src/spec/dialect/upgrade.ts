@@ -9,7 +9,13 @@ import { normalizeArch } from "./normalize"; // DG-26 (1b.8)
 import { suppliedBy, type CatalogLookup, type Supplied } from "./catalog-refs"; // DG-26 (1b.8)
 import { CATALOG_REF_ROOT } from "./ids"; // DG-26 (review round 0 F3)
 import { renameEntryKey, setEntryKeys, valueAt, type WriteValue } from "./write-back";
-import { DIALECT_VERSION, READ_VERSIONS, SUPPLIED_KEYS, type DialectVersion } from "./types";
+import {
+  DIALECT_VERSION,
+  isSuppliedKeyWritten,
+  READ_VERSIONS,
+  SUPPLIED_KEYS,
+  type DialectVersion,
+} from "./types";
 
 export type UpgradeReason =
   | "yaml-error"
@@ -65,9 +71,11 @@ export function upgradeText(text: string): UpgradeResult {
 // not a known catalog name (a glyph is never one, Ruling 7); when the written icon equals the
 // entry's own icon or name, rename `icon:` to `ref:` in place (keeps the line, position and any
 // comment); otherwise add `ref:` after `id:` and keep `icon:` as a deliberate override; then
-// drop title/subtitle/type/badges/description/docs whose written value equals what the entry
-// now supplies, unless the key's own line or the line above carries a comment. Comments, blank
-// lines, every other node and the file's layout stay byte-identical.
+// drop title/subtitle/type/badges whose written value equals what the entry now supplies,
+// unless the key's own line or the line above carries a comment. `description` and `docs` are
+// never dropped even when they match: nothing reads a reference's `description`/`docs` yet
+// (DG-25 will), so dropping one today would blank a hover card with nothing to put it back.
+// Comments, blank lines, every other node and the file's layout stay byte-identical.
 
 /** node id → the catalog name to use (`"aws/glue"`), or `"custom"` to leave the node as it is. */
 export type RefChoices = Readonly<Record<string, string>>;
@@ -75,7 +83,7 @@ export type RefChoices = Readonly<Record<string, string>>;
 export interface RefFirstChange {
   id: string;
   ref: string;
-  /** title/subtitle/type/badges/description/docs removed because the reference now supplies the same value. */
+  /** title/subtitle/type/badges removed because the reference now supplies the same value. */
   dropped: readonly string[];
   /**
    * title/type written, matching what the node already drew (its id, or "service"), because
@@ -123,7 +131,7 @@ export interface RefFirstResult {
 const sameList = (a: readonly string[] | undefined, b: readonly string[] | undefined) =>
   a !== undefined && b !== undefined && a.length === b.length && a.every((v, i) => v === b[i]);
 
-const SUPPLIED_DROP_KEYS = ["title", "subtitle", "type", "badges", "description", "docs"] as const;
+const SUPPLIED_DROP_KEYS = ["title", "subtitle", "type", "badges"] as const;
 
 function rawEntryOf(raw: unknown, path: string): Record<string, unknown> | undefined {
   const value = valueAt(raw, path);
@@ -210,16 +218,20 @@ export function refFirstText(
     }
     const supplied: Supplied = suppliedBy(entry, catalog);
 
-    // review round 1 F1 (verify-r1) — a key the node never wrote would start drawing the
-    // reference's value once `ref:` lands (`resolveCatalogRefs` fills every SUPPLIED_KEY the
-    // node's `unwritten` names); every drawing stays identical (maintainer ruling
-    // 2026-09-27). `title` and `type` always have a value to pin (the id / "service"
-    // fallback, `normalize.ts`); `subtitle`, `icon` and `badges` do not — there is no written
-    // value that means "no value" — so a node needing one of those is left custom instead.
+    // review round 1 F1 (verify-r1) — an unwritten key (`isSuppliedKeyWritten`, types.ts:
+    // missing, or YAML null; never an explicit "", which is a written override) would start
+    // drawing the reference's value once `ref:` lands (`resolveCatalogRefs` fills every
+    // SUPPLIED_KEY the node's `unwritten` names); every drawing stays identical (maintainer
+    // ruling 2026-09-27). `title` and `type` always have a value to pin (the id / "service"
+    // fallback, `normalize.ts`), unless that fallback value is itself "" (impossible today,
+    // since an id and "service" are never blank, but a pinned "" would become a written
+    // override of its own instead of preserving "no value"); `subtitle`, `icon` and `badges`
+    // never have a written value that means "no value" at all. Either way, a node needing one
+    // of those is left custom.
     const pin: Record<string, WriteValue> = {};
     let unsafe: string | undefined;
     for (const key of SUPPLIED_KEYS) {
-      if (key in entryRaw) continue; // written: the drop loop below decides whether it stays
+      if (isSuppliedKeyWritten(entryRaw, key)) continue; // the drop loop below decides whether it stays
       const after = supplied[key];
       if (after === undefined) continue; // nothing would change
       const before = node[key];
@@ -227,7 +239,7 @@ export function refFirstText(
         ? sameList(before as readonly string[] | undefined, after as readonly string[])
         : before === after;
       if (same) continue;
-      if (key === "title" || key === "type") pin[key] = before as WriteValue;
+      if ((key === "title" || key === "type") && before !== "") pin[key] = before as WriteValue;
       else unsafe = key;
     }
     if (unsafe !== undefined) {
@@ -255,7 +267,9 @@ export function refFirstText(
     out = renamed;
     const pinned = Object.keys(pin);
     if (pinned.length > 0) {
-      const withPins = setEntryKeys(out, node.path, pin, { after: "id" });
+      // Anchor on "ref" (just inserted above), not "id": the default written order is "id"
+      // then "ref", so a pin belongs after "ref", not between it and "id".
+      const withPins = setEntryKeys(out, node.path, pin, { after: "ref" });
       if (withPins === null)
         return {
           text: out,
