@@ -56,35 +56,54 @@ RM-204 had not landed on `main` when this finished, so there was nothing of it t
   Families still hand `ChartProvider` one value; the provider routes those ten fields into the
   two sub-providers, and `Bar`, `BarXAxis`, `BarYAxis` and `SeriesBar` read their sub-context
   directly. `useChart()` and `useChartStable()` merge the sub-contexts back in, memoised, so
-  every field a consumer read before is still there.
+  every field a consumer read before is still there. The raw stable context itself is typed
+  as the shared fields only, so an internal reader of it cannot reach a Bar or Composed field
+  and silently get `undefined`.
 - One legend row type, `legend/chart-legend-item.ts` (77 lines, internal). `LegendItem`,
   `LegendItemData`, `PieLegendItem`, `ScatterEncodingLegendItem` and `ChartLegendEntry` stay
   exported **interfaces** (not the type aliases this file first planned), each extending a
   projection of the one type with exactly its old required/optional fields, so declaration
   merging still works.
-- One hover context, `legend/legend-hover.tsx` (114 lines), with three slots (`series`,
-  `sharedKey`, `profitLoss`); each provider sets its own slot and passes the others through.
-  Deleted: `chart-legend-hover.tsx` (41), `legend/shared-legend-hover.tsx` (44),
-  `profit-loss-legend-hover.tsx` (28).
+- One hover module, `legend/legend-hover.tsx` (110 lines): the series, shared-key and
+  profit/loss hovers are three independent contexts made by one small factory
+  (`createHoverSlot`), so each hook subscribes to its own kind only and a provider needs
+  nothing from the ones around it — values and render cost are those of the three separate
+  contexts it replaces. Deleted: `chart-legend-hover.tsx` (41), `legend/shared-legend-hover.tsx`
+  (44), `profit-loss-legend-hover.tsx` (28). A first version put the three kinds in one
+  context object; review measured that a change of one kind woke every reader of the others
+  (a memoised `LineChart` under a series hover provider went from 7 to 57 fiber renders per
+  hover change), so it was replaced before merge.
 - `arc-chart-context.tsx` (139 lines, internal): the one stable/hover shape, providers and
   guarded hooks for `PieChart` and `RingChart`. `pie-context.tsx` 238 → 173, `ring-context.tsx`
   218 → 155; every public name, guard message and signature kept. `defaultPieColors` and
   `defaultRingColors` are two separate arrays spread from one list, so mutating one never
   changes the other.
-- Diff against `main`: 33 files, +1597 / −518. Of the additions, 894 are tests (a 613-line
-  compile-time compatibility test captured before any change, and an 11-test runtime file);
-  production code is +703 / −518. This item added seams, not savings: the source is
-  about 185 lines longer.
+- Diff against `main` (packages only): 33 files, +1482 / −520. Of the additions, 775 are
+  tests (a 452-line compile-time compatibility test whose reference types were captured
+  before any change, and a 323-line, 12-test runtime file); production code is +707 / −520.
+  This item added seams, not savings: the source is about 187 lines longer.
 
 **Proof.**
 
-- Compile-time: `legend/legend-and-context-compat.test-d.ts` holds verbatim copies of every
-  old public shape (the five legend types, the chart/pie/ring context, stable and hover types)
+- Compile-time: `legend/legend-and-context-compat.test-d.ts` holds reference copies of every
+  public shape (the five legend types, the chart/pie/ring context, stable and hover types)
   and asserts mutual assignability, hook return types, provider props, narrow marker unions,
-  and a declaration-merge probe into each legend interface.
-- Runtime: `chart-family-contexts.test.tsx`, 11 tests (field routing, identity stability, a
-  nested provider shadowing the outer one, hover slot independence, separate colour arrays,
-  guard messages).
+  and a declaration-merge probe into each legend interface. A consumer-side probe compiled
+  against the published declarations (strict, with and without `exactOptionalPropertyTypes`)
+  prints the same types for base and head.
+- Runtime: `chart-family-contexts.test.tsx`, 12 tests (field routing, identity stability, a
+  nested provider shadowing the outer one, hover values and nesting, memoised readers of each
+  hover kind not re-rendering when another kind changes, separate colour arrays, guard
+  messages).
+- Render cost (fiber renders per hover change, a React DevTools-hook counter in jsdom), base →
+  head: memoised `LineChart` with `SeriesMarkers` under `ChartLegendHoverProvider` 7 → 7;
+  memoised `LineChart` with `ProfitLossLine` under `ProfitLossLegendHoverProvider` 11 → 11;
+  memoised `BarChart` under a profit/loss provider 2 → 2; memoised `PieChart` 2 → 2. Every
+  other probed phase (mount, parent re-render, in-chart legend hover, faceted `AutoChart`
+  shared legend) is equal too, except one that is lower: a series hover change under a
+  profit/loss provider re-renders a profit/loss reader in base (its provider built a new value
+  every render) and not in head (4 renders instead of 5). A nine-case nesting matrix of all
+  three providers reads identical values in base and head.
 - Markup, every story of Bar, Composed, Line, Area, Pie, Ring, Scatter, Waterfall,
   ChartLegend, AutoChart, Candlestick, DensityScatter, Dumbbell, Funnel, Radar, Treemap and
   Unit, light and dark, after the entrance settles: base against head 562 of 592 identical;
@@ -92,9 +111,14 @@ RM-204 had not landed on `main` when this finished, so there was nothing of it t
   the two base runs or never settle (loading stories); the other 5 were each traced: two
   print a measured timing readout (`bin + upload 2.4 ms` vs `2.3 ms`), three differ only in
   `cursor: crosshair` vs `cursor: default`, which flips run to run in 6 stories between the
-  two base runs as well.
-- Screenshots (11 stories × 380/600/900 px × light/dark, after settle): 66 of 66 pixel-
-  identical base against head, kept in `apps/diagram/.evidence/rm-203/`.
+  two base runs as well. After the hover contexts were made independent again, the families
+  that read legend hover (Line, Area, Bar, Pie, Composed, Scatter, Candlestick, ChartLegend,
+  AutoChart) were run again, light and dark: 369 of 384 identical to base; the 15 others are
+  6 loading stories that never settle and 9 that differ only in the same cursor flip (6 of
+  them also differ between the two base runs).
+- Screenshots (after settle, 380/600/900 px, light/dark): 66 of 66 pixel-identical base
+  against head for 11 stories, and 54 of 54 again for the 9 legend-hover stories after the
+  hover fix; kept in `apps/diagram/.evidence/rm-203/`.
 - Dist `.d.ts`: the export lists are identical (1286 names in the main entry, 224 in
   `./test`). The `./test` entry has exactly the same lines in a different order. In the main
   entry 1493 of 1527 declarations are textually identical; of the other 34: 8 are the
@@ -110,16 +134,27 @@ RM-204 had not landed on `main` when this finished, so there was nothing of it t
   Two module header comments that had leaked into the published declarations while this was
   built were turned into line comments before the final build.
 - Mutation checks, each failing as expected and then restored: removing either merge memo,
-  aliasing the two colour arrays, dropping the sub-contexts from the merge, a hover provider
-  replacing the outer slots, and turning a legend interface back into a type alias.
-- Bytes (published dist, minified, dependencies external), base → head: BarChart-only
-  298,723 → 299,221 B (+498, the two nested providers and their memos), PieChart-only
-  79,408 → 79,319 B, RingChart-only 46,255 → 46,147 B.
-- Gates: charts typecheck and lint (0 errors, 72 warnings, none in touched files), charts
-  tests 195 files / 4,176 passed / 8 skipped, the six charts check rules at baseline,
-  `pnpm build` 15/15, tree-shake check, `pnpm gen:check`, `pnpm check:changed` (charts, ai,
-  process, home). The generated component count drops from 105 to 104 for charts because
-  two public hover modules became one; the export list does not change.
+  aliasing the two colour arrays, dropping the sub-contexts from the merge, putting the three
+  hover kinds back into one context object (the render-isolation test fails: every reader
+  re-renders), and turning a legend interface back into a type alias. A direct read of a Bar
+  or Composed field off the raw stable context now fails to compile (TS2339).
+- Bytes: one bundle per exported `*Chart` container, minified, built from the published dist
+  with every package external (esbuild `packages: "external"`, tree-shaking on), base → head.
+  11 of 26 containers are unchanged. The 15 that changed: AreaChart +513, BarChart +513,
+  LineChart +513, ComposedChart +643, ScatterChart +608, CandlestickChart +608,
+  WaterfallChart +555, BumpChart +596, DumbbellChart +478, ChoroplethChart +474,
+  LiveLineChart +440, AutoChart +337, TreeChart +2 (module order only), PieChart −48,
+  RingChart −108; the two legend hover providers alone +68. Every chart that mounts
+  `ChartProvider` pays for the two nested sub-providers, their memoised slices and the merge
+  memos; the Pie and Ring bundles shrink from the shared arc context. The three hover
+  factory calls are marked pure, so a chart that reads one kind of hover does not bundle the
+  others.
+- Gates (final): charts typecheck and lint (0 errors, 72 warnings, none in touched files),
+  charts tests 195 files / 4,177 passed / 8 skipped, the six charts check rules at baseline,
+  tree-shake check, `pnpm gen:check`, `pnpm check:changed` (charts, ai, process, home; 15/15
+  tasks). `pnpm build` 15/15 ran before the hover fix. The generated component count drops
+  from 105 to 104 for charts because two public hover modules became one; the export list
+  does not change.
 
 **Left as it is, on purpose.**
 
