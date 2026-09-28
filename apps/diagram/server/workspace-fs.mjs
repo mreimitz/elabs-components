@@ -1,6 +1,5 @@
 /**
- * DG-21 — the Atlas workspace on disk (plan V5, V6, §3, §9.1–9.2). Pure Node ESM, no
- * dependencies, no HTTP: the Vite dev middleware (`workspace-plugin.mjs`) and, later, the MCP
+ * DG-21 — the Atlas workspace on disk (plan V5, V6, §3, §9.1–9.2). Node ESM, no HTTP: the Vite dev middleware (`workspace-plugin.mjs`) and, later, the MCP
  * server (DG-35, plan §11) call the same functions, so both get the same safety.
  *
  * Safety rules, enforced here and nowhere else:
@@ -18,6 +17,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import process from "node:process";
+import { parseDocument } from "yaml";
 
 const run = promisify(execFile);
 
@@ -60,19 +60,17 @@ export function thumbPathOf(rel) {
   return rel.replace(DIAGRAM_FILE, THUMB_SUFFIX);
 }
 
-/** `title:` of a diagram, read with a regex (no YAML parser server-side); `null` when absent. */
+/** Read the top-level string title using the same YAML rules as the editor. Invalid or
+ * non-string titles fall back to the file name; never expose raw block-scalar syntax. */
 export function titleOf(text) {
-  const match = /^title:[ \t]*(.*)$/m.exec(text);
-  if (!match) return null;
-  let value = match[1].trim();
-  if (value.startsWith('"')) {
-    value = value.replace(/^"((?:[^"\\]|\\.)*)".*$/, "$1").replace(/\\(.)/g, "$1");
-  } else if (value.startsWith("'")) {
-    value = value.replace(/^'((?:[^']|'')*)'.*$/, "$1").replace(/''/g, "'");
-  } else {
-    value = value.replace(/\s+#.*$/, "");
+  try {
+    const doc = parseDocument(text);
+    if (doc.errors.length > 0) return null;
+    const title = doc.get("title");
+    return typeof title === "string" ? title.trim() || null : null;
+  } catch {
+    return null;
   }
-  return value.trim() || null;
 }
 
 let realRoot;

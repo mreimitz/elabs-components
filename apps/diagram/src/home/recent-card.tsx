@@ -73,10 +73,11 @@ export function RecentCard({ path, title, mtime, hasThumb, level = 3 }: RecentCa
             className="after:absolute after:inset-0 after:rounded-lg focus-visible:outline-none focus-visible:after:focus-ring-static"
           >
             {base}
+            {marker !== null ? <span className="sr-only"> {marker}</span> : null}
           </a>
         </Heading>
         {marker !== null ? (
-          <Text variant="meta" tone="muted" className="shrink-0">
+          <Text variant="meta" tone="muted" className="shrink-0" aria-hidden="true">
             {marker}
           </Text>
         ) : null}

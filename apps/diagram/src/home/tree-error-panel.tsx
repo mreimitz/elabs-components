@@ -8,7 +8,7 @@ import { useState } from "react";
 import { Button, StatePanel } from "@elabs-ai/components-ui";
 import { workspaceActions } from "../workspace/workspace-store";
 
-/** In one place (`conventions/i18n-strings`); matches the sidebar tree's own wording. */
+/** The Home and template-picker failure labels, in one place. */
 const TREE_ERROR_LABELS = {
   title: "Could not load the workspace",
   hint: "The workspace could not be read from the dev server.",

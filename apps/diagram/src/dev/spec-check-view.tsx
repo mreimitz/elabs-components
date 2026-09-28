@@ -201,6 +201,19 @@ const TITLE_SUFFIX_CASES: readonly {
     mustContain: ["description: hi"],
   },
   {
+    name: "single-quoted with comment",
+    before: "title: 'Customer''s landscape' # keep\ndescription: hi\n",
+    n: 2,
+    mustContain: ["# keep", "description: hi"],
+  },
+  {
+    name: "double-quoted with comment",
+    before: 'title: "Say \\"hi\\"" # keep\ndescription: hi\n',
+    n: 2,
+    mustContain: ["# keep", "description: hi"],
+  },
+  { name: "null title", before: "title: ~\ndescription: hi\n", n: 1, mustContain: [] },
+  {
     name: "block literal (|)",
     before: "title: |\n  Multi\n  line\ndescription: hi\n",
     n: 2,
@@ -233,7 +246,19 @@ interface TitleSuffixRow {
 }
 
 function runTitleSuffixCases(): TitleSuffixRow[] {
-  return TITLE_SUFFIX_CASES.map(({ name, before, n, mustContain }) => {
+  const shipped = Object.entries(
+    import.meta.glob<string>("../../workspace/templates/*.yaml", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    }),
+  ).map(([path, before]) => ({
+    name: path.split("/").at(-1) ?? path,
+    before,
+    n: 2,
+    mustContain: [],
+  }));
+  return [...TITLE_SUFFIX_CASES, ...shipped].map(({ name, before, n, mustContain }) => {
     const after = titleWithCopySuffix(before, n);
     const beforeTitle = parseDocument(before).get("title");
     const hasTitle = typeof beforeTitle === "string";
@@ -243,12 +268,18 @@ function runTitleSuffixCases(): TitleSuffixRow[] {
       return { name, pass, detail: pass ? "unchanged" : "text changed with no title to suffix" };
     }
     const suffix = n <= 1 ? " (copy)" : ` (copy ${n})`;
-    const expected = beforeTitle + suffix;
+    const expected = beforeTitle.replace(/\n+$/, "") + suffix;
     const afterDoc = parseDocument(after);
     const parses = afterDoc.errors.length === 0;
     const actualTitle = afterDoc.get("title");
     const titleOk = parses && actualTitle === expected;
-    const otherOk = mustContain.every((s) => after.includes(s));
+    const beforeOther = parseDocument(before).toJS();
+    const afterOther = afterDoc.toJS();
+    delete beforeOther.title;
+    delete afterOther.title;
+    const otherOk =
+      mustContain.every((s) => after.includes(s)) &&
+      JSON.stringify(beforeOther) === JSON.stringify(afterOther);
     const pass = parses && titleOk && otherOk;
     const detail = pass
       ? "ok"

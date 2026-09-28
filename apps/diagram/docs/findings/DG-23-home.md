@@ -299,7 +299,8 @@ in scope; addressed on `diagram/home-followups` (branched from `diagram/home` af
   "Home follow-ups, second pass" below). Running the `ref:` scan's captured text through the
   dialect's own `refFileOf` (so a match inside a quoted string or block scalar cannot resolve to a
   component that does not exist) and copying a template's thumbnail alongside a fresh copy were
-  both left as-is; neither is a defect users can see today.
+  both left as-is. A fresh copy visibly shows "No preview yet" until its own thumbnail is
+  captured; that temporary placeholder is accepted.
 
 ## Home follow-ups, second pass
 
@@ -314,12 +315,14 @@ above had landed), evidence in `.evidence/home-copies/fix-r0/`.
   had the suffix land inside the comment instead of the title. Editing the CST token directly
   keeps every other byte of the file untouched (checked against both shipped templates: exactly
   one line changes) and lets `yaml` re-escape the new value correctly for whichever quoting style
-  the title already used.
+  the title already used. The server reads titles with the YAML parser too, so block scalars
+  and escaped quotes have the same labels in the picker and the workspace. Trailing block-scalar
+  newlines are removed before appending the marker; null and non-string titles stay unchanged.
 - **The copy marker survives truncation.** `splitCopySuffix` (`src/home/templates.ts`) splits a
   title into its base text and a trailing `(copy)`/`(copy N)` marker; `RecentCard`, `FolderList`,
   the Used-in popover and the open-document tab strip all render the marker as its own
   non-shrinking part instead of letting `line-clamp`/`truncate` cut it off along with the rest of
-  a long title.
+  a long title. Recent link and heading names include the full marker for assistive technology.
 - **Focus after a Retry recovers.** `TreeErrorPanel` takes an optional `onRecovered` callback,
   called once `workspaceActions.refreshTree()` resolves; `HomeView` uses it to move focus to the
   Recent heading (`tabIndex={-1}`) instead of leaving it to drop to `<body>` when the panel
@@ -327,9 +330,11 @@ above had landed), evidence in `.evidence/home-copies/fix-r0/`.
   dialog); at Home's page level, where the sections' own `h2`s are hidden while it shows, it is
   now `h2` so it sits directly under the page's `h1`.
 - **Nits fixed alongside the above:** `copyTemplate` now calls `createUniqueFile` (extended to take
-  a name-and-attempt-number function, not just a fixed string) instead of re-implementing its
+  text or a function of the attempt number) instead of re-implementing its
   numbering loop; the Connect dialog's "Selected — press Ctrl+C or ⌘C to copy" status now clears
   itself a few seconds after a fallback copy, rather than staying on screen indefinitely once a
   later copy (from either snippet) has moved on; `tree-error-panel.tsx`'s header comment now
   describes the one page-level panel Home actually renders, not one per section; `templateFiles`'s
   doc comment now says it also matches a diagram nested under a `templates/` subfolder.
+  The error hint now says the workspace could not be read, including when the server answers
+  with an error status.

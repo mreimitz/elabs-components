@@ -76,7 +76,7 @@ function UsedIn({ entry }: { entry: ComponentEntry }) {
         </button>
       </PopoverTrigger>
       {/* `collisionPadding` keeps it off the viewport edge at narrow widths (`top-bar.tsx` uses
-          the same 8px, `docs/findings/DG-14-inspector-write-back.md`). */}
+          the same 8px). */}
       <PopoverContent align="start" collisionPadding={8} aria-labelledby={headingId}>
         <Text id={headingId} variant="caption" tone="muted" className="mb-2">
           {COMPONENTS_LABELS.usedInHeading(entry.title)}

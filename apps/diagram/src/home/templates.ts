@@ -3,7 +3,7 @@
  * turns this into UI, `recents.ts` imports `TEMPLATES_FOLDER` so "a template is never a recent" has
  * one definition, not two literals.
  */
-import { CST, Parser } from "yaml";
+import { CST, Parser, parseDocument } from "yaml";
 import type { WorkspaceFile } from "../workspace/client";
 import { topLevelDescription } from "./yaml-field";
 
@@ -48,6 +48,8 @@ export function templateDescription(text: string): string {
  * a scalar) — the same as before, nothing to suffix.
  */
 export function titleWithCopySuffix(text: string, n: number): string {
+  const parsed = parseDocument(text);
+  if (parsed.errors.length > 0 || typeof parsed.get("title") !== "string") return text;
   const suffix = n <= 1 ? " (copy)" : ` (copy ${n})`;
   const tokens = [...new Parser().parse(text)];
   const doc = tokens.find((token): token is CST.Document => token.type === "document");
@@ -57,7 +59,7 @@ export function titleWithCopySuffix(text: string, n: number): string {
   const valueToken = item?.value;
   const scalar = valueToken ? CST.resolveAsScalar(valueToken) : null;
   if (!valueToken || !scalar) return text;
-  CST.setScalarValue(valueToken, scalar.value + suffix, { afterKey: true });
+  CST.setScalarValue(valueToken, scalar.value.replace(/\n+$/, "") + suffix, { afterKey: true });
   return tokens.map((token) => CST.stringify(token)).join("");
 }
 
