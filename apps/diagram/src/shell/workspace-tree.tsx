@@ -16,6 +16,7 @@
  */
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -23,6 +24,7 @@ import {
   type DragEvent,
   type MouseEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
 import {
   ChevronRight,
@@ -245,7 +247,17 @@ function filterEntries(
 }
 
 /** Where the query's words sit in `text`, bold + underlined (never colour alone — WCAG 1.4.1). */
-function HighlightedText({ text, ranges }: { text: string; ranges: readonly MatchRange[] }) {
+function HighlightedText({
+  text,
+  ranges,
+  firstMatchRef,
+}: {
+  text: string;
+  ranges: readonly MatchRange[];
+  /** A ref onto the FIRST range's own `<strong>` — `useTitleMatchHidden` below reads its
+   * rendered position; every other caller leaves this unset. */
+  firstMatchRef?: RefObject<HTMLElement | null>;
+}) {
   if (ranges.length === 0) return <>{text}</>;
   const parts: ReactNode[] = [];
   let cursor = 0;
@@ -254,6 +266,7 @@ function HighlightedText({ text, ranges }: { text: string; ranges: readonly Matc
     parts.push(
       <strong
         key={index}
+        ref={index === 0 ? firstMatchRef : undefined}
         className="font-semibold text-sidebar-foreground underline decoration-2 underline-offset-2"
       >
         {text.slice(range.start, range.end)}
@@ -265,43 +278,59 @@ function HighlightedText({ text, ranges }: { text: string; ranges: readonly Matc
   return <>{parts}</>;
 }
 
-/** Chars of context kept before the first match when windowing a matched field's second line
- * (`MatchLine`, below) — kept tiny: the line's own field label (`TREE_LABELS.matchField`) already
- * takes up a fixed share of the narrow column a nested row leaves for it (`MatchLine` gives the
- * label its own non-shrinking span so at least it is never itself cut), and a long lead here
- * would push the match back out past what is left. The row's own title is never windowed this
- * way — see the file row further down. */
-const SNIPPET_LEAD = 2;
-
 /**
- * `text`, windowed to start just before its first match when that would otherwise sit past
- * where `truncate`'s end-ellipsis can reach — `truncate` only trims the END, so a long prefix
- * (a nested folder path, a late word in a description) would otherwise hide the match entirely.
- * Ranges come back re-based to the windowed text. Only for the "what matched" second line: the
- * row's own title is shown in full and highlighted instead, never windowed.
+ * `text` split at its first match: `lead` (everything before it, never shown highlighted) and
+ * `rest` (the match itself plus everything after — re-based ranges for `HighlightedText`).
+ * `MatchText` below gives the two pieces different CSS truncation instead of windowing the
+ * string to a fixed lead: a long `lead` must never cost the match its own visibility, but a
+ * `lead` that already fits must never be chopped either.
  */
-function windowText(
+function splitAtMatch(
   text: string,
   ranges: readonly MatchRange[],
-): { text: string; ranges: MatchRange[] } {
-  const first = ranges[0];
-  if (!first || first.start <= SNIPPET_LEAD) return { text, ranges: [...ranges] };
-  const from = first.start - SNIPPET_LEAD;
-  const shift = from - 1; // "…" takes index 0 of the windowed text.
+): { lead: string; rest: string; restRanges: MatchRange[] } {
+  const at = ranges[0]?.start ?? 0;
   return {
-    text: `…${text.slice(from)}`,
-    ranges: ranges.map((range) => ({ start: range.start - shift, end: range.end - shift })),
+    lead: text.slice(0, at),
+    rest: text.slice(at),
+    restRanges: ranges.map((range) => ({ start: range.start - at, end: range.end - at })),
   };
 }
 
-/** A matched field's second-line text: windowed around its first match, highlighted, with the
- * full, un-windowed text in `title=` for a hover reveal. */
-function MatchText({ text, ranges }: { text: string; ranges: readonly MatchRange[] }) {
-  if (ranges.length === 0) return <>{text}</>;
-  const windowed = windowText(text, ranges);
+/**
+ * A matched field's second-line text, laid out (not windowed to a fixed lead) so the match is
+ * always visible and nothing that fits is ever cut: `rest` (the match and everything after it)
+ * keeps its own start and only ever loses its END, same as any other `truncate`; `lead`
+ * (everything before the match) shrinks FIRST and loses its own START instead, so what survives
+ * of it sits right next to the match. `shrink-[9999]` on `lead` against `rest`'s plain `shrink`
+ * starves `lead` of space before `rest` in the flexbox shrink algorithm — only once `lead` has
+ * hit its `min-w-0` floor does any further shortage fall onto `rest`. `lead` losing its START
+ * (rather than its end, which `text-overflow: ellipsis` does by default) uses the classic
+ * flipped-direction trick: `text-overflow: ellipsis` always trims the END of a box in the box's
+ * OWN direction, so wrapping the still-LTR text in a `dir="rtl"` box moves that trimmed end to
+ * the visual left; the nested `<bdi dir="ltr">` keeps the characters themselves in reading order.
+ * The full, un-windowed text sits in `title=` for a hover reveal.
+ */
+function MatchText({
+  text,
+  ranges,
+  className,
+}: {
+  text: string;
+  ranges: readonly MatchRange[];
+  className?: string;
+}) {
+  const { lead, rest, restRanges } = splitAtMatch(text, ranges);
   return (
-    <span title={text}>
-      <HighlightedText text={windowed.text} ranges={windowed.ranges} />
+    <span className={cn("flex min-w-0", className)} title={text}>
+      {lead !== "" ? (
+        <span dir="rtl" className="min-w-0 shrink-[9999] truncate">
+          <bdi dir="ltr">{lead}</bdi>
+        </span>
+      ) : null}
+      <span className="min-w-0 shrink truncate">
+        <HighlightedText text={rest} ranges={restRanges} />
+      </span>
     </span>
   );
 }
@@ -309,16 +338,25 @@ function MatchText({ text, ranges }: { text: string; ranges: readonly MatchRange
 /**
  * A matching file's second line: what matched, when the title alone does not already show it
  * (either a different field, or the title's own match sitting past what its truncated first line
- * can display — the file row below builds that case as a `reason`-shaped value too). The field
- * label gets its own `shrink-0` span so the value's `truncate` never eats into it, leaving the
- * value the rest of the row's own width to window around the match in. The visible line is
- * windowed for space and so `aria-hidden`; an `sr-only` span carries the same field, in full, so
- * the row's accessible name never starts mid-word on the windowed fragment's own leading "…" —
- * skipped for a title match, whose full text is already the row's own first line.
+ * can display — the file row below builds that case as a `reason`-shaped value too). A second,
+ * different-field `reason2` (a multi-word query whose words land in two different fields, e.g.
+ * "grafana okta") joins the same line, separated by "·", so neither word's match goes unexplained.
+ * The field label(s) get their own `shrink-0` span so the value's own truncation never eats into
+ * them. The visible line can still end up windowed by space and so is `aria-hidden`; an
+ * `sr-only` span carries every field, in full, so the row's accessible name never starts mid-word
+ * on a windowed fragment's own leading "…" — skipped for a title match, whose full text is
+ * already the row's own first line.
  */
-function MatchLine({ reason }: { reason: EntryMatch["reason"] }) {
+function MatchLine({
+  reason,
+  reason2,
+}: {
+  reason: EntryMatch["reason"];
+  reason2?: EntryMatch["reason2"];
+}) {
   if (!reason) return null;
   const label = TREE_LABELS.matchField[reason.field];
+  const label2 = reason2 ? TREE_LABELS.matchField[reason2.field] : undefined;
   return (
     <>
       <span
@@ -326,32 +364,80 @@ function MatchLine({ reason }: { reason: EntryMatch["reason"] }) {
         className="flex min-w-0 gap-1 text-meta text-sidebar-muted-foreground"
       >
         <span className="shrink-0">{label}:</span>
-        <span className="min-w-0 truncate">
-          <MatchText text={reason.text} ranges={reason.ranges} />
-        </span>
+        <MatchText text={reason.text} ranges={reason.ranges} className="flex-1" />
+        {reason2 ? (
+          <>
+            <span className="shrink-0">·</span>
+            <span className="shrink-0">{label2}:</span>
+            <MatchText text={reason2.text} ranges={reason2.ranges} className="flex-1" />
+          </>
+        ) : null}
       </span>
       {reason.field === "title" ? null : (
         <span className="sr-only">
           {label}: {reason.text}
+          {reason2 ? `; ${label2}: ${reason2.text}` : ""}
         </span>
       )}
     </>
   );
 }
 
-/** How far into a title a match can start and still be visible once `truncate` clips the row's
- * first line — conservative, favouring the deepest folder nesting the tree allows (the narrowest
- * column a title ever gets), since this only decides whether the title needs a second line, not
- * how the title itself renders. Past it, the title's own highlight is still in the DOM (screen
- * readers still get the full text either way) but visually cut off, so the row would otherwise
- * show no evidence at all for why it matched. */
-const TITLE_VISIBLE_CHARS = 16;
+/**
+ * Whether a title's own first match sits past what the row's truncated title line can still
+ * show, measured from the rendered DOM rather than guessed from a character count — a nested
+ * row's usable width differs by rail width, sheet width and folder depth, none of them a fixed
+ * number of characters. `titleRef` goes on the title's own `truncate` span, `matchRef` on the
+ * first highlighted range inside it (`HighlightedText`'s `firstMatchRef`); a `ResizeObserver` on
+ * the title re-measures on every rail resize, sheet width or density change. Falls back to the
+ * width-independent rule "the match does not start at the very first character" only when no
+ * width can be read at all (not yet laid out, or a DOM without real layout, e.g. tests) — still
+ * never a character count, just index 0 or not.
+ */
+function useTitleMatchHidden(
+  active: boolean,
+  matchStart: number | undefined,
+): {
+  titleRef: RefObject<HTMLSpanElement | null>;
+  matchRef: RefObject<HTMLElement | null>;
+  hidden: boolean;
+} {
+  const titleRef = useRef<HTMLSpanElement>(null);
+  const matchRef = useRef<HTMLElement>(null);
+  const fallback = matchStart !== undefined && matchStart > 0;
+  const [hidden, setHidden] = useState(fallback);
 
-/** Would the first of a title's own match ranges sit past what a truncated title can still show?
- * `undefined` (no title match, or an empty query) never does. */
-function titleMatchHidden(ranges: readonly MatchRange[] | undefined): boolean {
-  const first = ranges?.[0];
-  return first !== undefined && first.start > TITLE_VISIBLE_CHARS;
+  useLayoutEffect(() => {
+    if (!active) {
+      setHidden(false);
+      return;
+    }
+    const title = titleRef.current;
+    const match = matchRef.current;
+    if (!title || !match) {
+      setHidden(fallback);
+      return;
+    }
+    const measure = () => {
+      const width = title.clientWidth;
+      if (width === 0) {
+        // No real layout box to read (a collapsed ancestor, or a DOM with no layout at all —
+        // jsdom in tests never reports a size): trust the width-independent rule instead of a 0.
+        setHidden(fallback);
+        return;
+      }
+      // `truncate`'s ellipsis itself still covers roughly one glyph's worth of the box's end;
+      // a match ending past that point would have the ellipsis drawn over it either way.
+      const ellipsisAllowance = parseFloat(getComputedStyle(title).fontSize) || 0;
+      setHidden(match.offsetLeft + match.offsetWidth > width - ellipsisAllowance);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(title);
+    return () => observer.disconnect();
+  }, [active, fallback]);
+
+  return { titleRef, matchRef, hidden };
 }
 
 // ── Dialog state, shared by every row and the root menu ───────────────────────────────
@@ -549,6 +635,21 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
   const { folders, shown, collapsed, onToggle, onOpenFile, filtering, matches } = rest;
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropping, setDropping] = useState(false);
+  const match = matches.get(entry.path);
+  // The title itself is highlighted too when it is where the query matched. Only while
+  // filtering: an empty query never touches the plain title.
+  const titleRanges = filtering ? match?.titleRanges : undefined;
+  const firstTitleRange = titleRanges?.[0];
+  // A `reason` (another field explains the match) always wins the second line regardless of the
+  // title, so only a title-only match ever needs the DOM measured (`useTitleMatchHidden` is a
+  // hook and so, same as `useState` above, runs on every render of this row — harmless for a
+  // folder row or a file row with a `reason`, since `active` below is `false` for both).
+  const checkTitleHidden = !match?.reason && firstTitleRange !== undefined;
+  const {
+    titleRef,
+    matchRef,
+    hidden: titleHidden,
+  } = useTitleMatchHidden(checkTitleHidden, firstTitleRange?.start);
   const onContextMenu = (event: MouseEvent) => {
     event.preventDefault();
     setMenuOpen(true);
@@ -559,20 +660,18 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
 
   if (entry.kind === "file") {
     const active = entry.path === shown;
-    const match = matches.get(entry.path);
-    // The title itself is highlighted too when it is where the query matched. Only while
-    // filtering: an empty query never touches the plain title.
-    const titleRanges = filtering ? match?.titleRanges : undefined;
-    // What explains the match, on a second line: another field's `reason`, or — when the title
-    // is the whole match but its own highlight sits past what the truncated first line can show
-    // — the title itself, windowed the same way any other field's match is (`MatchLine`,
-    // `titleMatchHidden`). A title match that IS visible needs no second line: the highlighted
-    // title above already shows it.
+    // What explains the match, on a second line: another field's `reason` (paired with a second
+    // `reason2` when a multi-word query's words land in two different fields — "grafana okta"),
+    // or — when the title is the whole match but its own highlight sits past what the truncated
+    // first line can show — the title itself, laid out the same way any other field's match is
+    // (`MatchLine`, `useTitleMatchHidden`). A title match that IS fully visible needs no second
+    // line: the highlighted title above already shows it.
     const secondLine =
       match?.reason ??
-      (titleMatchHidden(titleRanges)
+      (checkTitleHidden && titleHidden
         ? { field: "title" as const, text: entry.title, ranges: titleRanges! }
         : undefined);
+    const secondLine2 = match?.reason ? match.reason2 : undefined;
     return (
       <SidebarMenuSubItem>
         <div className="group/tree-row relative">
@@ -600,10 +699,14 @@ function TreeItem({ entry, ...rest }: Omit<TreeRowsProps, "entries"> & { entry: 
                     the full title stays in this link's own `title=` above (a hover reveal) and
                     in its accessible name (the link's visible text). The match evidence lives on
                     the second line instead, where it is windowed around the match (`MatchLine`). */}
-                <span className="truncate">
-                  <HighlightedText text={entry.title} ranges={titleRanges ?? []} />
+                <span ref={titleRef} className="truncate">
+                  <HighlightedText
+                    text={entry.title}
+                    ranges={titleRanges ?? []}
+                    firstMatchRef={checkTitleHidden ? matchRef : undefined}
+                  />
                 </span>
-                <MatchLine reason={secondLine} />
+                <MatchLine reason={secondLine} reason2={secondLine2} />
               </span>
             </a>
           </SidebarMenuSubButton>

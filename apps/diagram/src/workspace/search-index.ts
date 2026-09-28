@@ -220,6 +220,11 @@ export interface EntryMatch {
   titleRanges?: MatchRange[];
   /** The best other field to show as "what matched", when `titleMatch` is false. */
   reason?: FieldMatch;
+  /** A SECOND field, when `reason` alone still does not cover every query word — a multi-word
+   * query whose words land in two different fields ("grafana okta": `Box: Grafana` alone would
+   * leave "okta" unexplained). `undefined` whenever `reason` already covers every word the title
+   * itself does not. */
+  reason2?: FieldMatch;
 }
 
 /** Every occurrence of the (already-normalized) `word` in `haystack`, as original indices. */
@@ -360,7 +365,9 @@ function uncoveredByTitle(hit: FieldHit, titleWords: ReadonlySet<number>): numbe
  * single best other field to show ("Box: Snowflake"), picked by how many words it covers that
  * the title itself does NOT already show, then by how many words it covers, then by weight —
  * so a two-word query is explained by the word the title does not already reveal, and a
- * box's own title is shown over its id when both match it.
+ * box's own title is shown over its id when both match it. When `reason` still leaves a word
+ * neither it nor the title covers (two words landing in two different fields — "grafana okta"),
+ * `reason2` is the best field for the leftover word(s), by the same ranking.
  */
 export function matchEntry(
   entry: IndexEntry,
@@ -398,10 +405,28 @@ export function matchEntry(
     );
     if (nicer) best = nicer;
   }
+  // Words `best` and the title between them still leave uncovered: a second word landed in a
+  // different field entirely, so `best` alone would silently drop it from the "what matched" line.
+  const stillUncovered = words
+    .map((_, index) => index)
+    .filter((index) => !titleWords.has(index) && !best.words.has(index));
+  let reason2: FieldMatch | undefined;
+  if (stillUncovered.length > 0) {
+    const runnersUp = hits
+      .filter((hit) => hit !== best && stillUncovered.some((index) => hit.words.has(index)))
+      .sort(
+        (a, b) =>
+          stillUncovered.filter((index) => b.words.has(index)).length -
+            stillUncovered.filter((index) => a.words.has(index)).length || b.weight - a.weight,
+      );
+    const second = runnersUp[0];
+    if (second) reason2 = { field: second.field, text: second.text, ranges: second.ranges };
+  }
   return {
     titleMatch: false,
     titleRanges,
     reason: { field: best.field, text: best.text, ranges: best.ranges },
+    reason2,
   };
 }
 
