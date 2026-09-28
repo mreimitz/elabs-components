@@ -1,4 +1,5 @@
-import { MarkerType } from "@elabs-ai/components-flow";
+// Keep pure graph construction independent of the UI barrel and its browser-only assets.
+import { MarkerType } from "@xyflow/react";
 import {
   LANE_HEADER_HEIGHT,
   LANE_PADDING,
@@ -7,7 +8,7 @@ import {
   type Rect,
   type VisualLayout,
 } from "./lane-layout";
-import { LANE_TITLE, type VisualFlow, type VisualLens } from "./visual-model";
+import { type VisualFlow, type VisualLens } from "./visual-model";
 import {
   VISUAL_BOX_TYPE,
   VISUAL_FLOW_EDGE_TYPE,
@@ -25,10 +26,15 @@ function routedPath(
   count: number,
   gap: number,
   skipIndex: number,
-): string {
+  dataTop: number,
+  fromControl: boolean,
+  toControl: boolean,
+  sourceFraction: number,
+  targetFraction: number,
+): { path: string; labelX: number; labelY: number; labelMaxWidth: number } {
   const fraction = (index + 1) / (count + 1);
-  const sourceY = from.y + 12 + fraction * (from.height - 24);
-  const targetY = to.y + 12 + fraction * (to.height - 24);
+  const sourceY = from.y + 12 + sourceFraction * (from.height - 24);
+  const targetY = to.y + 12 + targetFraction * (to.height - 24);
   const sameLane = from.x === to.x;
   const forward = to.x > from.x;
   const sourceX = sameLane || forward ? from.x + from.width : from.x;
@@ -39,7 +45,34 @@ function routedPath(
   const targetColumn =
     sameLane || !forward ? targetX + offset : targetX - gap - 2 * LANE_PADDING + offset;
   let points: [number, number][];
-  if (sameLane || Math.abs(to.x - from.x) <= from.width + 2 * LANE_PADDING + gap + 1) {
+  if (fromControl || toControl) {
+    const control = fromControl ? from : to;
+    const other = fromControl ? to : from;
+    const start: [number, number] = [
+      control.x + control.width * fraction,
+      control.y + control.height,
+    ];
+    const corridor = dataTop - gap + 8 + fraction * (gap - 16);
+    if (fromControl && toControl) {
+      points = [
+        start,
+        [start[0], corridor],
+        [to.x + to.width * fraction, corridor],
+        [to.x + to.width * fraction, to.y + to.height],
+      ];
+    } else {
+      const sideX = other.x + other.width + LANE_PADDING + 8 + fraction * (gap - 16);
+      const sideY = other.y + 12 + fraction * (other.height - 24);
+      points = [
+        start,
+        [start[0], corridor],
+        [sideX, corridor],
+        [sideX, sideY],
+        [other.x + other.width, sideY],
+      ];
+      if (!fromControl) points.reverse();
+    }
+  } else if (sameLane || Math.abs(to.x - from.x) <= from.width + 2 * LANE_PADDING + gap + 1) {
     points = [
       [sourceX, sourceY],
       [sourceColumn, sourceY],
@@ -47,7 +80,7 @@ function routedPath(
       [targetX, targetY],
     ];
   } else {
-    const channelY = LANE_HEADER_HEIGHT + 8 + skipIndex * 8;
+    const channelY = dataTop + LANE_HEADER_HEIGHT + 8 + skipIndex * 8;
     points = [
       [sourceX, sourceY],
       [sourceColumn, sourceY],
@@ -57,7 +90,20 @@ function routedPath(
       [targetX, targetY],
     ];
   }
-  return points.map(([x, y], n) => `${n === 0 ? "M" : "L"} ${x} ${y}`).join(" ");
+  const segments = points.slice(1).map((to, i) => ({ from: points[i]!, to }));
+  const horizontal = segments.filter(({ from, to }) => from[1] === to[1]);
+  const chosen = (horizontal.length ? horizontal : segments).sort(
+    (a, b) =>
+      Math.abs(b.to[0] - b.from[0]) +
+      Math.abs(b.to[1] - b.from[1]) -
+      (Math.abs(a.to[0] - a.from[0]) + Math.abs(a.to[1] - a.from[1])),
+  )[0]!;
+  return {
+    path: points.map(([x, y], n) => `${n === 0 ? "M" : "L"} ${x} ${y}`).join(" "),
+    labelX: (chosen.from[0] + chosen.to[0]) / 2,
+    labelY: (chosen.from[1] + chosen.to[1]) / 2,
+    labelMaxWidth: Math.max(0, Math.abs(chosen.to[0] - chosen.from[0]) - 12),
+  };
 }
 
 export interface VisualGraph {
@@ -74,13 +120,17 @@ export interface VisualGraph {
  */
 export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): VisualGraph {
   const nodes: (LanePanelNodeType | CapabilityBoxNodeType)[] = [];
+  const portFraction = (box: string, flow: VisualFlow) => {
+    const incident = lens.flows.filter((item) => item.from === box || item.to === box);
+    return (incident.indexOf(flow) + 1) / (incident.length + 1);
+  };
   for (const { lane, rect } of layout.lanes) {
     nodes.push({
       id: `lane:${lane.id}`,
       type: VISUAL_LANE_TYPE,
       position: { x: rect.x, y: rect.y },
       style: { width: rect.width, height: rect.height },
-      data: { title: lane.title },
+      data: { title: lane.title, role: lane.role },
       draggable: false,
       selectable: false,
       connectable: false,
@@ -100,7 +150,10 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
         members: box.members,
         aside: box.aside ?? false,
         owner: box.owner,
-        laneTitle: LANE_TITLE[box.lane],
+        laneTitle: lens.lanes.find((lane) => lane.id === box.lane)?.title ?? box.lane,
+        processes: box.processes,
+        sub: box.sub,
+        provider: box.provider,
       },
       draggable: false,
       selectable: false,
@@ -126,16 +179,23 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
         // to box:dbx-jobs"), which means nothing to a screen-reader user and exposes an
         // implementation detail besides. `edgesFocusable={false}` keeps these out of the tab
         // order, but a virtual cursor can still land on the `role="img"` group RF renders.
-        ariaLabel: `${flow.kind === "data" ? "Data flow" : "Flow"} ${flow.bidirectional ? "between" : "from"} ${fromTitle}${flow.bidirectional ? " and " : " to "}${toTitle}`,
+        ariaLabel: `${flow.kind === "data" ? "Data flow" : "Flow"} ${flow.bidirectional ? "between" : "from"} ${fromTitle}${flow.bidirectional ? " and " : " to "}${toTitle}${flow.label ? `. ${flow.label}` : ""}${flow.process ? `. Process: ${flow.process}` : ""}`,
         data: {
-          path: routedPath(
+          ...routedPath(
             from,
             to,
             index,
             lens.flows.length,
             laneGap(lens),
             skipLaneFlowIds(lens).indexOf(flow.id),
+            layout.dataTop,
+            lens.boxes.find((box) => box.id === flow.from)?.controlPlane ?? false,
+            lens.boxes.find((box) => box.id === flow.to)?.controlPlane ?? false,
+            portFraction(flow.from, flow),
+            portFraction(flow.to, flow),
           ),
+          label: flow.label,
+          process: flow.process,
           solid: flow.kind === "data",
           bidirectional: flow.bidirectional,
         },

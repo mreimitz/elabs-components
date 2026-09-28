@@ -31,7 +31,8 @@ import { modeActions, useDocMode } from "../shell/mode-store";
 import type { ArchDiagram } from "../spec/dialect";
 import { useDiagram } from "../state/diagram-store";
 import { buildVisualGraph } from "../visual/build-visual-graph";
-import { deriveVisualLens } from "../visual/derive-visual";
+import { visualSnapshot } from "../visual/snapshot";
+import type { VisualLens } from "../visual/visual-model";
 import { layoutVisualLens } from "../visual/lane-layout";
 import { visualEdgeTypes, visualNodeTypes } from "../visual/visual-node-types";
 
@@ -85,7 +86,7 @@ function issueVersion(message: string): string {
 interface VisualFlowProps {
   paneRef: RefObject<HTMLDivElement | null>;
   ast: ArchDiagram;
-  built: { nodes: Node[]; edges: Edge[]; lens: ReturnType<typeof deriveVisualLens> };
+  built: { nodes: Node[]; edges: Edge[]; lens: VisualLens };
   source: string;
 }
 
@@ -189,7 +190,7 @@ export const VisualCanvasPane = memo(function VisualCanvasPane() {
 
   const built = useMemo(() => {
     if (!ast) return null;
-    const lens = deriveVisualLens(ast);
+    const lens = visualSnapshot(ast).lens;
     const layout = layoutVisualLens(lens);
     return { ...buildVisualGraph(lens, layout), lens };
   }, [ast]);

@@ -22,6 +22,9 @@ import {
   NODE_STATUS,
   NODE_STYLES,
   NODE_TYPES,
+  VISUAL_ROLES,
+  type VisualRole,
+  type ArchVisualSpec,
   ZONE_KINDS,
   ZONE_OWNERS,
   type ArchNodeType,
@@ -135,6 +138,50 @@ const STORY = field.object({
   },
 });
 
+const VISUAL_IDS = field.array({ max: 1000, of: field.string({ min: 1 }) });
+const VISUAL = field.object({
+  fields: {
+    controlPlane: VISUAL_IDS,
+    hide: VISUAL_IDS,
+    lanes: field.array({
+      max: 100,
+      of: field.object({
+        fields: {
+          id: field.string({ required: true, min: 1 }),
+          role: field.enum({ required: true, values: VISUAL_ROLES }),
+          title: field.string({ required: true, min: 1 }),
+          of: VISUAL_IDS,
+        },
+      }),
+    }),
+    boxes: field.array({
+      max: 1000,
+      of: field.object({
+        fields: {
+          id: field.string({ required: true, min: 1 }),
+          lane: field.string({ required: true, min: 1 }),
+          title: field.string({ required: true, min: 1 }),
+          members: field.array({ required: true, min: 1, max: 1000, of: field.string({ min: 1 }) }),
+          processes: field.array({ max: 20, of: field.string({ min: 1 }) }),
+          sub: VISUAL_IDS,
+          aside: field.boolean(),
+        },
+      }),
+    }),
+    flows: field.array({
+      max: 2000,
+      of: field.object({
+        fields: {
+          from: field.string({ required: true, min: 1 }),
+          to: field.string({ required: true, min: 1 }),
+          process: field.string({ min: 1 }),
+          label: field.string(),
+        },
+      }),
+    }),
+  },
+});
+
 export interface RootInput {
   diagram: "1" | 1 | "0" | 0;
   title?: string;
@@ -162,7 +209,7 @@ export interface RootInput {
       callouts?: readonly { at: string; text: string }[];
     }[];
   };
-  visual?: Record<string, unknown>;
+  visual?: ArchVisualSpec;
   // end DG-26
 }
 
@@ -213,7 +260,7 @@ export const ROOT_DEF = defineComponent<RootInput>()({
     // DG-26
     component: COMPONENT,
     story: STORY,
-    visual: OPEN_ENTRY, // DG-36 replaces it with its definition
+    visual: VISUAL,
     // end DG-26
   },
   codeOnly: [],
@@ -225,6 +272,7 @@ export interface ZoneInput extends HeaderGroupProps {
   kind?: ZoneKind;
   owner?: ZoneOwner;
   provider?: string;
+  role?: VisualRole;
   icon?: string;
   class?: readonly string[];
   collapsed?: boolean;
@@ -246,6 +294,10 @@ export const ZONE_DEF = defineComponent<ZoneInput>()({
     // DG-14: `tier: "essential"` puts a field before the inspector's "Advanced" disclosure.
     kind: field.enum({ values: ZONE_KINDS, default: "generic", tier: "essential" }),
     owner: field.enum({ values: ZONE_OWNERS, tier: "essential" }),
+    role: field.enum({
+      values: VISUAL_ROLES,
+      description: "Visual lane role; inherited by nested zones.",
+    }),
     provider: field.string({
       description: "Vendor key, e.g. aws, azure, qlik.",
       tier: "essential",

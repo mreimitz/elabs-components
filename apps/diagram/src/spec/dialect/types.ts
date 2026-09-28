@@ -26,6 +26,42 @@ export const ZONE_KINDS = [
   "trust-boundary",
   "generic",
 ] as const;
+export const VISUAL_ROLES = [
+  "sources",
+  "customer-managed",
+  "customer-vpc",
+  "vendor-cloud",
+  "targets",
+] as const;
+export type VisualRole = (typeof VISUAL_ROLES)[number];
+export interface ArchVisualLane {
+  id: string;
+  role: VisualRole;
+  title: string;
+  of?: readonly string[];
+}
+export interface ArchVisualBox {
+  id: string;
+  lane: string;
+  title: string;
+  members: readonly string[];
+  processes?: readonly string[];
+  sub?: readonly string[];
+  aside?: boolean;
+}
+export interface ArchVisualFlow {
+  from: string;
+  to: string;
+  process?: string;
+  label?: string;
+}
+export interface ArchVisualSpec {
+  lanes?: readonly ArchVisualLane[];
+  boxes?: readonly ArchVisualBox[];
+  flows?: readonly ArchVisualFlow[];
+  hide?: readonly string[];
+  controlPlane?: readonly string[];
+}
 export const ZONE_OWNERS = ["customer", "saas", "hosted", "partner"] as const;
 export const FLOW_KINDS = ["data", "request", "access", "control", "network"] as const;
 export const FLOW_STYLES = ["solid", "dashed", "dotted"] as const;
@@ -85,6 +121,7 @@ export interface ArchZoneSpec {
   kind: ZoneKind;
   owner?: ZoneOwner;
   provider?: string;
+  role?: VisualRole;
   title: string;
   subtitle?: string;
   description?: string;
@@ -204,6 +241,6 @@ export interface ArchDiagram {
   component?: ArchComponentSpec;
   /** Explicit empty steps suppress the numbered-flow shortcut. */
   story?: ArchStorySpec;
-  /** DG-36 defines it; open in R1. */
-  visual?: Record<string, unknown>;
+  /** Optional authored structure for the visual lens. */
+  visual?: ArchVisualSpec;
 }

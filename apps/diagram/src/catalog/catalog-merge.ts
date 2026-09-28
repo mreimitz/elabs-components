@@ -72,6 +72,7 @@ function metadata(fields: Record<string, unknown>) {
     typeof fields.kind === "string" && KINDS.includes(fields.kind) ? fields.kind : undefined;
   return {
     ...(str(fields.name) ? { label: str(fields.name) } : {}),
+    ...(str(fields.capability) ? { capability: str(fields.capability) } : {}),
     ...(str(fields.description) ? { description: str(fields.description) } : {}),
     ...(str(fields.docs) ? { docs: str(fields.docs) } : {}),
     ...(kind ? { kind: kind as ArchNodeType } : {}),

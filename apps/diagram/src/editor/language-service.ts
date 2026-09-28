@@ -11,6 +11,7 @@ import { endpointMetadata, type EndpointMetadata } from "./endpoint-metadata";
 import { referenceEndpoints } from "./reference-endpoints";
 import { currentComponentFiles } from "../state/component-files";
 import { schemasAt, type Schema } from "./yaml-schema";
+import { visualIds } from "./visual-completions";
 import { storyFlowCompletions, STORY_STEP_SNIPPET } from "./story-completions";
 export { schemasAt } from "./yaml-schema";
 
@@ -102,7 +103,8 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
         context.key === "icon" ||
         context.kind === "endpoint" ||
         ENDPOINT_KEYS.has(context.key) ||
-        context.path.includes("targets")
+        context.path.includes("targets") ||
+        context.path[0] === "visual"
       )
         await catalogService.ready();
       if (
@@ -156,7 +158,22 @@ export function registerDiagramLanguage(editor: MonacoCodeEditor, monaco: Monaco
           sortText: `${value.toLowerCase().startsWith(prefix) ? "0" : "1"}${value}`,
         });
       };
-      if (context.path[0] === "story" && context.path.includes("targets")) {
+      const visual = context.path[0] === "visual";
+      if (
+        visual &&
+        (context.kind !== "key" || typeof context.path.at(-1) === "number") &&
+        ["members", "sub", "of", "hide", "controlPlane"].includes(context.key)
+      ) {
+        for (const endpoint of endpoints(text, prefix))
+          add(endpoint.id, endpoint.title, kind.Reference, endpointDocumentation(endpoint));
+      } else if (
+        visual &&
+        context.kind !== "key" &&
+        (context.key === "lane" || ["from", "to"].includes(context.key))
+      ) {
+        for (const entry of visualIds(text, context.key === "lane" ? "lanes" : "boxes"))
+          add(entry.id, entry.title, kind.Reference);
+      } else if (context.path[0] === "story" && context.path.includes("targets")) {
         for (const endpoint of endpoints(text, prefix))
           add(endpoint.id, endpoint.title, kind.Reference, endpointDocumentation(endpoint));
         for (const flow of storyFlowCompletions(text))

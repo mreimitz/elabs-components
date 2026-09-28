@@ -1,15 +1,3 @@
-/**
- * The visual lens's own vocabulary (maintainer 2026-09-27, "the switch from technical to
- * visual"). A coarser-grain view of the same technical diagram: lanes group zones by role,
- * boxes group nodes, flows aggregate edges. React-free — `derive-visual.ts` builds it from
- * the dialect AST; `src/panes/visual-canvas-pane.tsx` is the only consumer that touches React.
- *
- * Scope for this slice (see `docs/2026-09-27-visual-lens-concept.md` for the fuller model this
- * narrows): no `visual:` YAML block (everything is derived, never authored or materialized), no
- * style profiles or hero vendor (S1/S3 — colour is by `owner` only), no catalog `capability`
- * field (a box with more than one member is titled by its shared parent zone, or a plain kind
- * label when the members share no zone).
- */
 import type { ZoneOwner } from "../spec/dialect";
 
 /**
@@ -38,9 +26,10 @@ export const LANE_TITLE: Record<LaneRole, string> = {
 };
 
 export interface VisualLane {
-  id: LaneRole;
+  id: string;
   role: LaneRole;
   title: string;
+  of?: readonly string[];
 }
 
 export interface VisualBoxMember {
@@ -52,11 +41,15 @@ export interface VisualBoxMember {
 
 export interface VisualBox {
   id: string;
-  lane: LaneRole;
+  lane: string;
   title: string;
   members: VisualBoxMember[];
   /** Rule 6: a network/access-only fold, drawn as a lighter, secondary box. */
   aside?: boolean;
+  processes?: readonly string[];
+  sub?: readonly string[];
+  controlPlane?: boolean;
+  provider?: string;
   /** No hero this slice (S1/S3): boxes colour by the owner of their members' zone. */
   owner: ZoneOwner | "unowned";
 }
@@ -70,9 +63,12 @@ export interface VisualFlow {
   to: string;
   kind: VisualFlowKind;
   bidirectional: boolean;
+  label?: string;
+  process?: string;
 }
 
 export interface VisualLens {
+  hidden?: readonly string[];
   lanes: VisualLane[];
   boxes: VisualBox[];
   flows: VisualFlow[];

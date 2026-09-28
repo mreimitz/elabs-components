@@ -17,6 +17,7 @@ export interface CatalogEntry {
   slug: string;
   /** Display name: the catalog's `name`, else the index label. */
   label: string;
+  capability?: string;
   description?: string;
   docs?: string;
   /** The YAML `type:` a node of this entry defaults to (the dialect's own union). */

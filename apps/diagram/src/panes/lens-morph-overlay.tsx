@@ -4,8 +4,9 @@ import type { ArchDiagram } from "../spec/dialect";
 import { lensStore, registerLensPreparation } from "../shell/lens-store";
 import { isLayoutReady } from "./layout-ready-store";
 import { diagramStore, useDiagram } from "../state/diagram-store";
-import { deriveVisualLens } from "../visual/derive-visual";
-import { LANE_TITLE, type LaneRole, type VisualBox, type VisualLens } from "../visual/visual-model";
+import { visualSnapshot } from "../visual/snapshot";
+import { layoutVisualLens } from "../visual/lane-layout";
+import { type VisualBox, type VisualLens } from "../visual/visual-model";
 
 /** Technical members gather into capability boxes in graph coordinates. Both live panes and
  * the overlay use the same interpolated camera, with real content at each endpoint. */
@@ -72,14 +73,15 @@ function laneForZone(
   zoneId: string,
   ast: ArchDiagram,
   nodeToBox: Map<string, VisualBox>,
-): LaneRole | undefined {
-  const counts = new Map<LaneRole, number>();
+): string | undefined {
+  const counts = new Map<string, number>();
   for (const id of zoneDescendantIds(zoneId, ast)) {
     const box = nodeToBox.get(id);
     if (!box) continue;
-    counts.set(box.lane, (counts.get(box.lane) ?? 0) + 1);
+    const lane = box.controlPlane ? "@control-plane" : box.lane;
+    counts.set(lane, (counts.get(lane) ?? 0) + 1);
   }
-  let best: LaneRole | undefined;
+  let best: string | undefined;
   let bestCount = 0;
   for (const [lane, count] of counts) {
     if (count > bestCount) {
@@ -169,7 +171,8 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
     if (id) visRect.set(id, rectFrom(el, containerRect, toCamera));
   }
 
-  const lens: VisualLens = deriveVisualLens(ast);
+  const lens: VisualLens = visualSnapshot(ast).lens;
+  const renderedLanes = layoutVisualLens(lens).lanes.map(({ lane }) => lane);
   const nodeToBox = new Map<string, VisualBox>();
   for (const box of lens.boxes) for (const member of box.members) nodeToBox.set(member.id, box);
 
@@ -218,7 +221,7 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
   }
 
   const zones: ZoneGhost[] = [];
-  const zonedLanes = new Set<LaneRole>();
+  const zonedLanes = new Set<string>();
   for (const zone of ast.zones) {
     if (zone.parent !== undefined) continue;
     const from = techRect.get(zone.id);
@@ -228,25 +231,31 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
     const to = visRect.get(`lane:${lane}`);
     if (!to) continue;
     zonedLanes.add(lane);
-    zones.push({ id: zone.id, fromTitle: zone.title, toTitle: LANE_TITLE[lane], from, to });
+    zones.push({
+      id: zone.id,
+      fromTitle: zone.title,
+      toTitle: renderedLanes.find((item) => item.id === lane)?.title ?? lane,
+      from,
+      to,
+    });
   }
   // A lane with no matching top-level zone (e.g. "Sources" built only from actors/network
   // nodes) would have no ghost at all and just pop in at the very end. It gets one too, growing
   // from the union of ITS boxes' own technical rects instead of a zone's — same gather/dress
   // timeline, no zone title to cross-fade from.
-  for (const lane of lens.lanes) {
-    if (zonedLanes.has(lane.role)) continue;
-    const to = visRect.get(`lane:${lane.role}`);
+  for (const lane of renderedLanes) {
+    if (zonedLanes.has(lane.id)) continue;
+    const to = visRect.get(`lane:${lane.id}`);
     if (!to) continue;
     const memberRects = lens.boxes
-      .filter((box) => box.lane === lane.role)
+      .filter((box) => (box.controlPlane ? "@control-plane" : box.lane) === lane.id)
       .flatMap((box) => box.members.map((member) => techRect.get(member.id)))
       .filter((rect): rect is Rect => rect !== undefined);
     if (memberRects.length === 0) continue;
     zones.push({
-      id: `lane:${lane.role}`,
+      id: `lane:${lane.id}`,
       fromTitle: "",
-      toTitle: LANE_TITLE[lane.role],
+      toTitle: lane.title,
       from: unionRect(memberRects),
       to,
     });

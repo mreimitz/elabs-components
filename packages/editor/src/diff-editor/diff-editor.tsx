@@ -118,6 +118,7 @@ export const DiffEditor = forwardRef<MonacoDiffEditor | null, DiffEditorProps>(f
     if (!container) return;
     let cancelled = false;
     let instance: MonacoDiffEditor | null = null;
+    let viewModel: monaco.editor.IDiffEditorViewModel | null = null;
     let originalModel: monaco.editor.ITextModel | null = null;
     let modifiedModel: monaco.editor.ITextModel | null = null;
 
@@ -133,7 +134,8 @@ export const DiffEditor = forwardRef<MonacoDiffEditor | null, DiffEditorProps>(f
       });
       originalModel = monacoApi.editor.createModel(original, language);
       modifiedModel = monacoApi.editor.createModel(modified, language);
-      instance.setModel({ original: originalModel, modified: modifiedModel });
+      viewModel = instance.createViewModel({ original: originalModel, modified: modifiedModel });
+      instance.setModel(viewModel);
       // Theme is applied by the effect below once `setEditor` runs.
       setEditor(instance);
       onMountRef.current?.(instance, monacoApi);
@@ -141,6 +143,10 @@ export const DiffEditor = forwardRef<MonacoDiffEditor | null, DiffEditorProps>(f
 
     return () => {
       cancelled = true;
+      // Own the view model explicitly: its disposal cancels pending worker diffs before
+      // the text models disappear. Widget detachment alone may release it asynchronously.
+      instance?.setModel(null);
+      viewModel?.dispose();
       instance?.dispose();
       originalModel?.dispose();
       modifiedModel?.dispose();

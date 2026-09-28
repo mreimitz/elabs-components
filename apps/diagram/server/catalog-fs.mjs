@@ -110,6 +110,7 @@ function metadata(fields) {
   const kind = KINDS.includes(fields.kind) ? fields.kind : undefined;
   return {
     ...(str(fields.name) ? { label: str(fields.name) } : {}),
+    ...(str(fields.capability) ? { capability: str(fields.capability) } : {}),
     ...(str(fields.description) ? { description: str(fields.description) } : {}),
     ...(str(fields.docs) ? { docs: str(fields.docs) } : {}),
     ...(kind ? { kind } : {}),
@@ -340,7 +341,13 @@ export async function missing(vendor, iconNames, { limit = MAX_BATCH, after } = 
   await assertVendor(vendor);
   const { entries } = await readAll(iconNames);
   const open = entries
-    .filter((e) => e.vendor === vendor && !e.part && !e.curated && (!e.description || !e.docs))
+    .filter(
+      (e) =>
+        e.vendor === vendor &&
+        !e.part &&
+        !e.curated &&
+        (!e.description || !e.docs || !e.capability),
+    )
     .sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
   const next = typeof after === "string" ? open.filter((e) => e.slug > after) : open;
   return {
@@ -372,6 +379,15 @@ async function assertVendor(vendor, createVendor = false) {
 function patchProblem(p, iconNames) {
   if (!p || typeof p.slug !== "string" || !SLUG.test(p.slug))
     return "slug must contain lowercase letters, digits or hyphens";
+  if (
+    p.capability != null &&
+    p.capability !== "" &&
+    (typeof p.capability !== "string" ||
+      !p.capability.trim() ||
+      p.capability.length > 80 ||
+      /[\r\n]/.test(p.capability))
+  )
+    return "capability must be a nonblank single line of at most 80 characters";
   if (p.name != null && typeof p.name !== "string") return "name must be a string";
   if (p.icon != null && p.icon !== "" && (typeof p.icon !== "string" || !iconNames.has(p.icon)))
     return `icon "${p.icon}" must be a known icon name`;
@@ -507,6 +523,7 @@ export async function update(vendor, patches, { createVendor = false, iconNames 
       const entry = entryMap(doc, p.slug);
       setField(doc, entry, "name", p.name);
       setField(doc, entry, "description", p.description);
+      setField(doc, entry, "capability", p.capability);
       setField(doc, entry, "docs", p.docs);
       setField(doc, entry, "kind", p.kind);
       setField(doc, entry, "tags", p.tags);

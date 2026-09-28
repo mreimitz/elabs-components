@@ -16,6 +16,8 @@ export interface CatalogRefEntry {
   label: string;
   icon: string;
   kind?: ArchNodeType;
+  capability?: string;
+  tags?: readonly string[];
   description?: string;
   docs?: string;
   docsUnverified?: boolean;

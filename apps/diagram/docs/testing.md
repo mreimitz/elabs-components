@@ -35,6 +35,9 @@ export DIAGRAM_URL="$ATLAS_URL"
 node --test scripts/tests/reference-regressions.test.mjs
 node --test scripts/tests/home-titles.test.mjs
 node --test scripts/tests/yaml-context.test.mjs
+node --test scripts/tests/visual-core.test.mjs
+node --test scripts/tests/visual-layout.test.mjs
+node --test scripts/tests/visual-completions.test.mjs
 node --test scripts/tests/story-completions.test.mjs
 node --test scripts/tests/story-dialect.test.mjs
 node --test scripts/tests/story-runtime.test.mjs
@@ -56,6 +59,9 @@ node tests/sidebar-search.mjs
 node tests/tab-bar.mjs
 node tests/lens-navigation.mjs
 node tests/editor-completions.mjs
+node tests/visual-authoring.mjs
+node tests/visual-mcp.mjs
+node tests/diff-editor-lifecycle.mjs
 node tests/details-card.mjs
 node tests/component-references.mjs
 node tests/inline-expansion.mjs
@@ -111,3 +117,5 @@ Browser checks complement independent review. Inspect affected surfaces at deskt
 When a browser check reads a store directly, import the exact module URL loaded by Vite, including its update query, and assert the current document identity first. A bare import after a hot update can create a separate store instance. Await asynchronous predicates explicitly. Both lens renderers can remain mounted during a transition, so scope canvas locators to the intended lens and wait for its actual visible state. Set up saved edits in the technical lens with Edit enabled.
 
 `NAVIGATION_EVIDENCE` saves cold-load screenshots and navigation results. These checks deliberately do not toggle lenses to normalize the initial render. They delay file responses to prove that obsolete reads cannot replace the selected document.
+
+The diff lifecycle check stresses rapid preview closure while a normal YAML editor remains mounted. The local Monaco 0.55.1 patch keeps global hover and markdown services at the standalone service lifetime; it is a repository dependency repair, separate from the published DiffEditor view-model cancellation fix.

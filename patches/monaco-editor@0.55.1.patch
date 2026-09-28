@@ -1,0 +1,29 @@
+diff --git a/esm/vs/editor/standalone/browser/standaloneCodeEditor.js b/esm/vs/editor/standalone/browser/standaloneCodeEditor.js
+index a9b149568285c24ee534af2214f8b6a5a3e17638..3351aad9a0cefe3ea35f35e296e84da6ab478fbf 100644
+--- a/esm/vs/editor/standalone/browser/standaloneCodeEditor.js
++++ b/esm/vs/editor/standalone/browser/standaloneCodeEditor.js
+@@ -3,7 +3,7 @@ import { Disposable, DisposableStore, toDisposable } from '../../../base/common/
+ import { ICodeEditorService } from '../../browser/services/codeEditorService.js';
+ import { CodeEditorWidget } from '../../browser/widget/codeEditor/codeEditorWidget.js';
+ import { InternalEditorAction } from '../../common/editorAction.js';
+-import { StandaloneKeybindingService, updateConfigurationService } from './standaloneServices.js';
++import { StandaloneServices, StandaloneKeybindingService, updateConfigurationService } from './standaloneServices.js';
+ import { IStandaloneThemeService } from '../common/standaloneTheme.js';
+ import { MenuRegistry, MenuId } from '../../../platform/actions/common/actions.js';
+ import { ICommandService, CommandsRegistry } from '../../../platform/commands/common/commands.js';
+@@ -77,9 +77,12 @@ let StandaloneCodeEditor = class StandaloneCodeEditor extends CodeEditorWidget {
+             this._standaloneKeybindingService = null;
+         }
+         createAriaDomNode(options.ariaContainerElement);
+-        setHoverDelegateFactory((placement, enableInstantHover) => instantiationService.createInstance(WorkbenchHoverDelegate, placement, { instantHover: enableInstantHover }, {}));
+-        setBaseLayerHoverDelegate(hoverService);
+-        markdownRendererService.setDefaultCodeBlockRenderer(instantiationService.createInstance(EditorMarkdownCodeBlockRenderer));
++        // These factories are global. A diff editor's child service is disposed with its
++        // widget, while other editors may create hovers or markdown blocks afterward.
++        const globalInstantiationService = StandaloneServices.get(IInstantiationService);
++        setHoverDelegateFactory((placement, enableInstantHover) => globalInstantiationService.createInstance(WorkbenchHoverDelegate, placement, { instantHover: enableInstantHover }, {}));
++        setBaseLayerHoverDelegate(StandaloneServices.get(IHoverService));
++        markdownRendererService.setDefaultCodeBlockRenderer(globalInstantiationService.createInstance(EditorMarkdownCodeBlockRenderer));
+     }
+     addCommand(keybinding, handler, context) {
+         if (!this._standaloneKeybindingService) {

@@ -58,6 +58,7 @@ import type { DiagramDirection } from "../layout/run-elk";
 import type { NodeStyle } from "../spec/dialect";
 // Wave 3: one import line per item under its marker; blank lines keep parallel merges clean.
 
+import { VisualLayoutControls, VisualLayoutMenuItem } from "../visual/visual-layout-controls";
 import { LayoutControls, LayoutMenuItems } from "../layout/layout-controls"; // DG-15
 
 import { DocumentControls, DocumentMenuItems } from "../io/document-controls"; // DG-16
@@ -297,6 +298,10 @@ export function TopBar() {
           {/* Wave 3: LayoutControls owns the layout dialogs, so it stays mounted when its
             controls are not shown (view mode, the compact bar). */}
           {edit && !compact ? null : <LayoutControls disabled={disabled} compact />}
+          <VisualLayoutControls
+            compact={compact || !edit || !onDoc}
+            disabled={disabled || lensDisabled}
+          />
 
           {compact ? null : counts}
           {edit && !compact ? <InspectorToggle open={inspectorOpen} /> : null}
@@ -986,6 +991,7 @@ function DiagramOptionsMenu({
             </DropdownMenuCheckboxItem>
 
             <LayoutMenuItems disabled={disabled} />
+            <VisualLayoutMenuItem disabled={disabled || lensDisabled} />
           </>
         ) : (
           <>

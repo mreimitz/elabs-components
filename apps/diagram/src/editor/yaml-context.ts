@@ -142,16 +142,19 @@ export function yamlContext(text: string, offset: number): YamlContext | null {
     );
     const path = structural?.path;
     if (
-      path?.[0] === "story" &&
-      path[1] === "steps" &&
-      path[3] === "targets" &&
-      path.length === 5 &&
+      path &&
+      ((path[0] === "story" && path[1] === "steps" && path[3] === "targets" && path.length === 5) ||
+        (path[0] === "visual" &&
+          typeof path.at(-1) === "number" &&
+          ["members", "sub", "of", "hide", "controlPlane", "processes"].includes(
+            String(path.at(-2)),
+          ))) &&
       cursor >= from &&
       cursor <= to
     ) {
       return {
         kind: "value",
-        key: "targets",
+        key: String(path.at(-2)),
         path,
         prefix: line.slice(from + (scalarQuote ? 1 : 0), cursor).replace(/["']$/, ""),
         from: lineStart + from,

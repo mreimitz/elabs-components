@@ -30,6 +30,7 @@ export const ISSUE_SEVERITY = {
   "zone-endpoint": "info",
   "duplicate-step": "warning",
   "unknown-story-target": "error",
+  "invalid-visual": "error",
   "ambiguous-story-target": "error",
   "story-autoplay-reserved": "info",
   "unknown-class": "warning",

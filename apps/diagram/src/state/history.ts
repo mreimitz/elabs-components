@@ -112,6 +112,15 @@ function restore(text: string, focus: boolean) {
 }
 
 export const historyActions = {
+  /** Isolate a reviewed structured edit from typing, disk refresh and the next edit. */
+  transaction(edit: () => boolean): boolean {
+    lastChange = Number.NEGATIVE_INFINITY;
+    try {
+      return edit();
+    } finally {
+      lastChange = Number.NEGATIVE_INFINITY;
+    }
+  },
   /** `focus`: move keyboard focus to what the step brought back (keyboard use). */
   undo(focus = false): boolean {
     if (!canUseHistory()) return false;

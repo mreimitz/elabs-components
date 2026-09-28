@@ -1,4 +1,5 @@
 /** Cross-reference checks on the normalized AST. Pure: no DOM, no fetch, no JSON imports. React-free. */
+import { resolveVisual } from "../../visual/resolve-visual";
 import { resolveStory } from "../../story/resolve-story";
 import type { ComponentTable } from "../compose/resolver";
 import { MAX_COMPONENT_DEPTH } from "../compose/resolver";
@@ -320,5 +321,6 @@ export function validateArch(
   });
 
   out.push(...resolveStory(ast, components).issues);
+  if (ast.visual) out.push(...resolveVisual(ast, { components }).issues);
   return out;
 }

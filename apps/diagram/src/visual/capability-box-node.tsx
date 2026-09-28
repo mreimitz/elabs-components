@@ -1,5 +1,5 @@
 import { Handle, Position, type NodeProps } from "@elabs-ai/components-flow";
-import { HoverCard, HoverCardContent, HoverCardTrigger, cn } from "@elabs-ai/components-ui";
+import { HoverCard, HoverCardContent, HoverCardTrigger, Badge, cn } from "@elabs-ai/components-ui";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Network } from "lucide-react";
@@ -75,7 +75,7 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
     : `${data.title}${titles.length > 1 || titles[0] !== data.title ? ` — ${contains}` : ""}`;
   // The lane joins the name — a screen-reader user has no other way to tell a box's lane, since
   // lane panels are not tab stops (`visual-canvas-pane.tsx`).
-  const accessibleName = `${label}${ownerLabel ? `. ${ownerLabel}` : ""}. ${data.laneTitle}.`;
+  const accessibleName = `${label}${ownerLabel ? `. ${ownerLabel}` : ""}. ${data.laneTitle}.${data.processes?.length ? ` Processes: ${data.processes.join(", ")}.` : ""}`;
 
   // React Flow's own edge-position lookup needs a handle on both ends to place an edge at
   // all (its internal `getEdgePosition`, xyflow error #008) even though `VisualFlowEdge`
@@ -153,6 +153,15 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
             ) : null}
             <span className="min-w-0 truncate">{data.title}</span>
           </span>
+          {data.processes?.length ? (
+            <span data-slot="visual-processes" className="grid grid-cols-2 gap-1">
+              {data.processes.map((process) => (
+                <Badge key={process} variant="outline" className="justify-center truncate">
+                  {process}
+                </Badge>
+              ))}
+            </span>
+          ) : null}
           {data.owner === "unowned" ? (
             <span className="text-meta text-muted-foreground">{BOX_LABELS.unowned}</span>
           ) : null}
@@ -168,7 +177,10 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
                 <span
                   key={member.id}
                   data-member-id={member.id}
-                  className="flex min-w-0 items-center gap-1.5"
+                  className={cn(
+                    "flex min-w-0 items-center gap-1.5",
+                    data.sub?.includes(member.id) && "rounded-sm border border-current px-1",
+                  )}
                 >
                   <ArchMark icon={member.icon} size={16} variant="mono" className="shrink-0" />
                   <span className="text-meta min-w-0 truncate">{member.title}</span>

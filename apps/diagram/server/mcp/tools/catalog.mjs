@@ -17,6 +17,7 @@ function brief(e) {
   return {
     name: e.name,
     label: e.label,
+    ...(e.capability ? { capability: e.capability } : {}),
     ...(e.description ? { description: e.description } : {}),
     ...(e.kind ? { kind: e.kind } : {}),
     ...(e.tags.length > 0 ? { tags: e.tags } : {}),
@@ -82,7 +83,7 @@ export const catalogTools = [
     name: "catalog_missing",
     description:
       "The fill loop's worklist: entries of one vendor that are not curated and lack a " +
-      "description or docs, in slug order. Returns { vendor, total, missing: [{ slug, name, label, generic? }] } — " +
+      "description, docs or capability, in slug order. Returns { vendor, total, missing: [{ slug, name, label, generic? }] } — " +
       "`label` is the icon file's name, often not the official product name.",
     inputSchema: {
       type: "object",
@@ -142,6 +143,11 @@ export const catalogTools = [
               docs: {
                 type: "string",
                 description: "The vendor's official documentation URL (https).",
+              },
+              capability: {
+                type: "string",
+                maxLength: 80,
+                description: "Concise English capability name for visual grouping.",
               },
               kind: {
                 type: "string",

@@ -216,7 +216,7 @@ test("curated YAML aliases are protected and complete generics leave the missing
   sandbox(async ({ put, write, text, disk }) => {
     await put(
       "fresh",
-      'original: &protected {name: Checked, kind: service, curated: true}\nalias: *protected\nflag: {name: Flag, kind: service, curated: &checked true}\nflag-alias: {name: Also checked, kind: service, curated: *checked}\ncomplete: {name: Complete, kind: queue, description: Done, docs: "https://example.com/docs"}\n',
+      'original: &protected {name: Checked, kind: service, curated: true}\nalias: *protected\nflag: {name: Flag, kind: service, curated: &checked true}\nflag-alias: {name: Also checked, kind: service, curated: *checked}\ncomplete: {name: Complete, kind: queue, capability: Messaging, description: Done, docs: "https://example.com/docs"}\n',
     );
     const before = await text("fresh");
     const result = await write("fresh", [patch("alias"), patch("flag-alias")]);
@@ -244,4 +244,27 @@ test("generic missing pagination uses the same ordering as its cursor", () =>
     }
     assert.deepEqual(seen, slugs.sort());
     assert.equal((await disk.missing("fresh", iconNames, { limit: 1, after })).missing.length, 0);
+  }));
+test("capability update validates atomically, matches bundled metadata and completes the fill worklist", () =>
+  sandbox(async ({ write, disk, text }) => {
+    const bad = await write("fresh", [patch("bad", { capability: " \n " })], {
+      createVendor: true,
+    });
+    assert.equal(bad.rejected.length, 1);
+    assert.equal(bad.written.length, 0);
+    await write("fresh", [patch("queue", { capability: "Messaging" })], { createVendor: true });
+    const live = await disk.readAll(iconNames);
+    const bundled = browser.mergeCatalog({
+      index,
+      iconNames,
+      vendors: { fresh: await text("fresh") },
+      parts: {},
+    });
+    assert.deepEqual(bundled.entries, live.entries);
+    assert.equal(live.entries.find((e) => e.name === "fresh/queue").capability, "Messaging");
+    await write("fresh", [patch("queue", { capability: null })]);
+    assert.equal(
+      (await disk.readAll(iconNames)).entries.find((e) => e.name === "fresh/queue").capability,
+      undefined,
+    );
   }));

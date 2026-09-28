@@ -312,6 +312,7 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
         kind: pick(entry, "kind", bad) ?? "generic",
         owner: pick(entry, "owner", bad),
         provider: pick(entry, "provider", bad),
+        role: pick(entry, "role", bad),
         collapsed: pick<boolean>(entry, "collapsed", bad) ?? false,
         direction: pick(entry, "direction", bad),
       });

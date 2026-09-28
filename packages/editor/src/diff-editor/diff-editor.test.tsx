@@ -16,13 +16,21 @@ const h = vi.hoisted(() => {
     models.push(m);
     return m;
   });
+  const viewModel = {
+    model: null as { original: MockModel; modified: MockModel } | null,
+    dispose: vi.fn(),
+  };
   const diff = {
+    createViewModel: vi.fn((model: { original: MockModel; modified: MockModel }) => {
+      viewModel.model = model;
+      return viewModel;
+    }),
     setModel: vi.fn(),
     getModel: vi.fn(() => ({ original: models[0], modified: models[1] })),
     updateOptions: vi.fn(),
     dispose: vi.fn(),
   };
-  return { models, createModel, diff, createDiffEditor: vi.fn(() => diff) };
+  return { models, createModel, diff, viewModel, createDiffEditor: vi.fn(() => diff) };
 });
 
 vi.mock("monaco-editor", () => ({
@@ -56,10 +64,11 @@ describe("DiffEditor", () => {
     expect(h.createDiffEditor).toHaveBeenCalledTimes(1);
     expect(h.createModel).toHaveBeenNthCalledWith(1, "a", "typescript");
     expect(h.createModel).toHaveBeenNthCalledWith(2, "b", "typescript");
-    expect(h.diff.setModel).toHaveBeenCalledWith({
+    expect(h.diff.createViewModel).toHaveBeenCalledWith({
       original: h.models[0],
       modified: h.models[1],
     });
+    expect(h.diff.setModel).toHaveBeenCalledWith(h.viewModel);
   });
 
   it("names both sides and keeps the names through every option update", async () => {
@@ -91,6 +100,15 @@ describe("DiffEditor", () => {
     await flush();
     const [original, modified] = h.models;
     unmount();
+    expect(h.diff.setModel).toHaveBeenLastCalledWith(null);
+    expect(h.viewModel.dispose).toHaveBeenCalledTimes(1);
+    const detach = h.diff.setModel.mock.invocationCallOrder.at(-1)!;
+    const cancel = h.viewModel.dispose.mock.invocationCallOrder[0]!;
+    const disposeEditor = h.diff.dispose.mock.invocationCallOrder[0]!;
+    expect(detach).toBeLessThan(cancel);
+    expect(cancel).toBeLessThan(disposeEditor);
+    expect(disposeEditor).toBeLessThan(original!.dispose.mock.invocationCallOrder[0]!);
+    expect(disposeEditor).toBeLessThan(modified!.dispose.mock.invocationCallOrder[0]!);
     expect(h.diff.dispose).toHaveBeenCalledTimes(1);
     expect(original!.dispose).toHaveBeenCalledTimes(1);
     expect(modified!.dispose).toHaveBeenCalledTimes(1);
