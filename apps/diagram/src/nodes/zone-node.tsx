@@ -1,3 +1,4 @@
+import { useCompositeActions, COMPOSITE_UI } from "../interaction/composite-actions";
 import { useCallback, type ComponentType } from "react";
 import { useStore, type ReactFlowState } from "@xyflow/react";
 import {
@@ -136,18 +137,24 @@ function useZoneNesting(parentId: string | undefined, owner: ZoneOwner): ZoneNes
  */
 export function ZoneNode({ id, data, selected, parentId, isConnectable }: NodeProps<ZoneNodeType>) {
   const { getNodes, getEdges, setNodes, setEdges, updateNodeData } = useReactFlow();
+  const compositeActions = useCompositeActions();
   // The same signal `canvas-pane.tsx`'s `READ_ONLY_PROPS` sets `nodesDraggable` false from, so
   // a zone's resize handles never show and a corner drag never resizes it in view mode — the
   // maintainer's three allowed view-mode changes are direction, node style and lens, nothing on
   // the canvas itself. Read straight from the React Flow store rather than threading a prop
   // through `NodeProps`, same pattern `useZoneNesting` above already uses.
-  const resizable = useStore((state: ReactFlowState) => state.nodesDraggable);
+  const resizable =
+    useStore((state: ReactFlowState) => state.nodesDraggable) && !data.inner && !data.component;
   // What `useFlowGroups().toggleCollapse` did, through the app's fold (zone-folds.ts).
   const toggle = useCallback(() => {
+    if (data.component) {
+      if (!compositeActions?.disabledReason) compositeActions?.toggle(id);
+      return;
+    }
     const graph = toggleZone({ nodes: getNodes(), edges: getEdges() }, id);
     setNodes(graph.nodes);
     setEdges(graph.edges);
-  }, [getNodes, getEdges, setNodes, setEdges, id]);
+  }, [getNodes, getEdges, setNodes, setEdges, id, data.component, compositeActions]);
   const count = useDirectChildCount(id);
   const collapsed = data.collapsed ?? false;
   const Glyph = KIND_GLYPH[data.kind];
@@ -266,7 +273,13 @@ export function ZoneNode({ id, data, selected, parentId, isConnectable }: NodePr
             {count}
           </span>
         ) : null}
+        {data.component && compositeActions?.viewerOnly ? (
+          <Badge variant="outline">{COMPOSITE_UI.viewer}</Badge>
+        ) : null}
         <IconButton
+          disabled={Boolean(
+            data.component && (!compositeActions || compositeActions.disabledReason),
+          )}
           aria-expanded={!collapsed}
           label={collapsed ? `Expand ${data.title}` : `Collapse ${data.title}`}
           icon={
@@ -278,6 +291,7 @@ export function ZoneNode({ id, data, selected, parentId, isConnectable }: NodePr
             "nodrag shrink-0 transition-opacity",
             MOTION_CLASS.fast,
             !collapsed &&
+              !data.component &&
               "opacity-0 group-focus-within/arch-zone:opacity-100 group-hover/arch-zone:opacity-100 focus-visible:opacity-100",
           )}
           onClick={toggle}

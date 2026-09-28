@@ -22,6 +22,10 @@ export type ZoneOwner = "customer" | "saas" | "hosted" | "partner";
 
 export interface ZoneData extends Record<string, unknown> {
   title: string;
+  /** Expanded workspace reference, whose root still belongs to the parent document. */
+  component?: string;
+  count?: number;
+  inner?: true;
   subtitle?: string;
   kind: ZoneKind;
   owner: ZoneOwner;

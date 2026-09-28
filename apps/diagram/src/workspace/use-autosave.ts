@@ -1,3 +1,5 @@
+import { compositeOverrides } from "../interaction/composite-state";
+import { parseRoute } from "../routes/use-hash";
 /**
  * DG-21 — autosave (plan V6: the file is the truth). 800 ms after the last change to the
  * editor text, the open file is written through `PUT /api/workspace/file`, whether or not the
@@ -109,8 +111,14 @@ export function installAutosave(): () => void {
   // override recorded earlier for this document — gated on mode, not just presence, or an
   // override set once in the session (from an earlier view-mode visit to this doc) would
   // suppress every later edit-mode thumbnail refresh.
-  const blockedByOverride = (path: string) =>
-    currentMode() !== "edit" && viewOverrideActions.hasOverride(path);
+  const blockedByOverride = (path: string) => {
+    const route = parseRoute(window.location.hash);
+    return (
+      (route.kind === "doc" && Boolean(route.into?.length)) ||
+      compositeOverrides.has(path, currentMode() !== "edit") ||
+      (currentMode() !== "edit" && viewOverrideActions.hasOverride(path))
+    );
+  };
 
   // Only the settled technical lens is safe to publish. A moving camera or a blend of
   // technical and visual nodes must never become the document's persisted preview.
@@ -217,6 +225,8 @@ export function installAutosave(): () => void {
     timer = dirty ? setTimeout(() => void save(), AUTOSAVE_DELAY_MS) : undefined;
   });
   const unsubscribeOverrides = viewOverrideActions.subscribe(retryIfUnblocked);
+  const unsubscribeComposites = compositeOverrides.subscribe(retryIfUnblocked);
+  window.addEventListener("hashchange", retryIfUnblocked);
   const unsubscribeLens = lensStore.subscribe(retryIfUnblocked);
   // Entering edit mode also ends `blockedByOverride` (it is gated on mode, not just an
   // override's presence) — without this, a thumbnail skipped in view mode stayed stale until
@@ -227,6 +237,8 @@ export function installAutosave(): () => void {
     disposed = true;
     unsubscribe();
     unsubscribeOverrides();
+    unsubscribeComposites();
+    window.removeEventListener("hashchange", retryIfUnblocked);
     unsubscribeLens();
     unsubscribeMode();
     ++thumbGeneration;

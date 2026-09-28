@@ -98,7 +98,12 @@ export function useMode<T>(select: (state: ModeState) => T): T {
 
 /** The mode of the document the tab shows. */
 export function currentMode(): DocMode {
-  if (parseRoute(window.location.hash).kind === "view" || documentNavigationPending())
+  const route = parseRoute(window.location.hash);
+  if (
+    route.kind === "view" ||
+    (route.kind === "doc" && route.into?.length) ||
+    documentNavigationPending()
+  )
     return "view";
   return modeStore.get().modes[docKey(diagramStore.get().path)] ?? "view";
 }
@@ -155,7 +160,8 @@ function setTabs(openPaths: string[]) {
 export const modeActions = {
   /** View or edit the shown document. Edit opens the inspector too (plan §3.4); view closes it. */
   setMode(mode: DocMode) {
-    if (documentNavigationPending()) return;
+    const route = parseRoute(window.location.hash);
+    if (documentNavigationPending() || (route.kind === "doc" && route.into?.length)) return;
     const key = docKey(diagramStore.get().path);
     const { modes } = modeStore.get();
     if ((modes[key] ?? "view") !== mode) {

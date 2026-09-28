@@ -1,3 +1,4 @@
+import { useRoute } from "../routes/use-hash";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   CodeEditor,
@@ -84,6 +85,8 @@ function toMarkers(monacoApi: MonacoApi, issues: readonly DiagramIssue[]) {
  * text, the issues list below it, and selection kept in step with the canvas.
  */
 export function EditorPane() {
+  const route = useRoute();
+  const drilling = route.kind === "doc" && Boolean(route.into?.length);
   const hintId = useId();
   const text = useDiagram((s) => s.text);
   const compiled = useDiagram((s) => s.compiled);
@@ -210,7 +213,7 @@ export function EditorPane() {
           onMount={onMount}
           language="yaml"
           height="100%"
-          readOnly={lensLocked}
+          readOnly={lensLocked || drilling}
           ariaLabel="Diagram YAML"
           ariaInvalid={!compiled.ok}
           // P4: library gap — CodeEditor has no disclosed way to Tab out (Tab indents) and
