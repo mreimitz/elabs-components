@@ -44,7 +44,7 @@ import { diagramActions, editActions, useDiagram } from "../state/diagram-store"
 import { overrideDocKey } from "../state/override-key";
 import { folderOf, useWorkspace } from "../workspace/workspace-store";
 import { lensActions, useLens, type Lens } from "./lens-store"; // maintainer 2026-09-27 (lens switch)
-import { modeActions, useDocMode, useMode } from "./mode-store";
+import { fileTitle, modeActions, useDocMode, useMode } from "./mode-store";
 import { WithTooltip } from "./with-tooltip";
 // view mode overrides (maintainer 2026-09-27)
 import {
@@ -382,7 +382,7 @@ function TitleCrumbs({ route }: { route: Route }) {
     // still read "Catalog", matching the grid the page shows for it.
     heading = route.vendor ? (route.entry ?? route.vendor) : TOP_BAR_LABELS.catalog;
   } else if (route.kind === "settings") heading = TOP_BAR_LABELS.settings;
-  else heading = route.name;
+  else heading = route.kind === "view" ? fileTitle(route.path) : route.name;
   return (
     <Breadcrumb aria-label={TOP_BAR_LABELS.location} className="min-w-0">
       <BreadcrumbList className="min-w-0 flex-nowrap">

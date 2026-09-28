@@ -110,3 +110,9 @@ description inherit from the referenced diagram. Dotted flow endpoints such as
 `tenant.database` must name existing inner ids. To change an inner node, edit its own file;
 `compose_set` on `tenant.database` intentionally refuses. A parent flow such as
 `flow:tenant.database->warehouse` remains editable in the parent.
+
+Open the returned `view` URL in your browser as soon as you have a path and keep it open.
+Look after each write and fix what you see. The live picture updates when this file or its
+referenced diagrams change. For a known screenshot background append `&theme=light` or
+`&theme=dark`; the viewer never edits the YAML. If it says `not drawn`, fix the reported
+validation problem and watch the next successful picture replace the last good one.

@@ -82,6 +82,7 @@ export async function thumbnailPng(picture: Picture): Promise<string> {
  * Also keeps `workspaceStore.dirty` and `current` in step with the document.
  */
 export function installAutosave(): () => void {
+  let disposed = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let thumbTimer: ReturnType<typeof setTimeout> | undefined;
   let lastThumbAt = 0;
@@ -177,6 +178,8 @@ export function installAutosave(): () => void {
     timer = undefined;
     const path = diagramStore.get().path;
     const outcome = await workspaceActions.saveNow();
+    // Cleanup may flush an existing edit; its old canvas and toast host no longer belong here.
+    if (disposed) return;
     if (outcome.kind === "saved") {
       failed = false;
       scheduleThumb(outcome.path, outcome.text);
@@ -221,6 +224,7 @@ export function installAutosave(): () => void {
   const unsubscribeMode = modeStore.subscribe(retryIfUnblocked);
 
   return () => {
+    disposed = true;
     unsubscribe();
     unsubscribeOverrides();
     unsubscribeLens();

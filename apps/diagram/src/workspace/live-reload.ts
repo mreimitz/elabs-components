@@ -124,54 +124,91 @@ async function checkOpenFile(path: string, mtime: number | undefined) {
   }
 }
 
-/** Open the stream; returns the cleanup. Idempotent per call (StrictMode mounts twice). */
+/** One transport, shared by shell services and standalone pictures. */
+const streamOpenListeners = new Set<() => void>();
+let shared: { source: EventSource; users: number } | null = null;
+function acquireStream(): () => void {
+  if (!shared) {
+    const source = new EventSource(WORKSPACE_EVENTS_URL);
+    shared = { source, users: 0 };
+    sources.add(source);
+    for (const type of named.keys()) attach(source, type);
+    let opened = false;
+    source.onopen = () => {
+      streamOpenListeners.forEach((listener) => listener());
+      if (opened) reopenListeners.forEach((listener) => listener());
+      opened = true;
+    };
+    source.onmessage = (message: MessageEvent<string>) => {
+      let event: WorkspaceEvent;
+      try {
+        event = JSON.parse(message.data) as WorkspaceEvent;
+      } catch {
+        return;
+      }
+      listeners.forEach((listener) => listener(event));
+    };
+  }
+  const owned = shared;
+  owned.users += 1;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    owned.users -= 1;
+    if (owned.users === 0) {
+      sources.delete(owned.source);
+      owned.source.close();
+      if (shared === owned) shared = null;
+    }
+  };
+}
+
+/** Observe a file and reconnects without mounting a document tab, autosave or toast behavior. */
+export function watchPath(path: string, onChange: () => void): () => void {
+  const offEvent = onWorkspaceEvent((event) => {
+    if (event.path === path) onChange();
+  });
+  // Catch writes between the first GET and connection establishment, as well as reconnects.
+  streamOpenListeners.add(onChange);
+  const release = acquireStream();
+  return () => {
+    offEvent();
+    streamOpenListeners.delete(onChange);
+    release();
+  };
+}
+
+/** The shell adds its tree/conflict behavior to the shared transport. */
 export function startLiveReload(): () => void {
-  const source = new EventSource(WORKSPACE_EVENTS_URL);
-  sources.add(source);
-  for (const type of named.keys()) attach(source, type);
   let refresh: ReturnType<typeof setTimeout> | undefined;
-  let opened = false;
   const refreshSoon = () => {
     clearTimeout(refresh);
-    // A failure lands in the store's `treeError`, which the tree shows with Retry.
     refresh = setTimeout(
       () => void workspaceActions.refreshTree().catch(() => {}),
       REFRESH_DELAY_MS,
     );
   };
-  // DG-22 review: read the tree now, not only once the stream opens (a stream that never
-  // opens left the tree loading for good). An open within the delay shares this read.
   refreshSoon();
-  source.onopen = () => {
-    // A reconnect (the dev server restarted) may have missed events: catch up once.
-    if (opened) {
-      reopenListeners.forEach((listener) => listener());
-      const path = workspaceStore.get().current?.path;
-      if (path) void checkOpenFile(path, undefined);
-    }
-    opened = true;
+  const offReopen = onWorkspaceReopen(() => {
+    const path = workspaceStore.get().current?.path;
+    if (path) void checkOpenFile(path, undefined);
     refreshSoon();
-  };
-  source.onmessage = (message: MessageEvent<string>) => {
-    let event: WorkspaceEvent;
-    try {
-      event = JSON.parse(message.data) as WorkspaceEvent;
-    } catch {
-      return;
-    }
+  });
+  const offEvent = onWorkspaceEvent((event) => {
     if (event.path === workspaceStore.get().current?.path && event.type !== "addDir") {
       if (event.type === "unlink") void checkOpenFile(event.path, undefined);
-      else if (event.type === "add" || event.type === "change") {
+      else if (event.type === "add" || event.type === "change")
         void checkOpenFile(event.path, event.mtime);
-      }
     }
     refreshSoon();
-    listeners.forEach((listener) => listener(event));
-  };
+  });
+  const release = acquireStream();
   return () => {
     clearTimeout(refresh);
-    sources.delete(source);
-    source.close();
+    offEvent();
+    offReopen();
+    release();
   };
 }
 

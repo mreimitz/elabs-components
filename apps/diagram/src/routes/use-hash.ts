@@ -39,6 +39,7 @@ const STEP_PARAM = "step";
 
 export type Route =
   | { kind: "home" }
+  | { kind: "view"; path: string; theme?: "light" | "dark" }
   | {
       kind: "doc";
       /**
@@ -109,6 +110,12 @@ export function parseRoute(hash: string): Route {
   };
   const head = parts.find((part) => !part.includes("=") && part !== PRESENT_PARAM) ?? "";
 
+  if (head.startsWith("v/") && head.length > 2) {
+    const theme = parts
+      .find((part) => part === "theme=light" || part === "theme=dark")
+      ?.slice(6) as "light" | "dark" | undefined;
+    return { kind: "view", path: decodePath(head.slice(2)), ...(theme ? { theme } : {}) };
+  }
   if (head.startsWith(DOC_PREFIX) && head.length > DOC_PREFIX.length) {
     return { kind: "doc", path: decodePath(head.slice(DOC_PREFIX.length)), ...flags };
   }
@@ -144,6 +151,8 @@ export function toHash(route: Route): string {
   switch (route.kind) {
     case "home":
       return "#home";
+    case "view":
+      return `#v/${encodePath(route.path)}${route.theme ? `&theme=${route.theme}` : ""}`;
     case "doc": {
       const params = [
         ...(route.present ? [PRESENT_PARAM] : []),

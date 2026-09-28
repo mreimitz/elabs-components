@@ -98,7 +98,8 @@ export function useMode<T>(select: (state: ModeState) => T): T {
 
 /** The mode of the document the tab shows. */
 export function currentMode(): DocMode {
-  if (documentNavigationPending()) return "view";
+  if (parseRoute(window.location.hash).kind === "view" || documentNavigationPending())
+    return "view";
   return modeStore.get().modes[docKey(diagramStore.get().path)] ?? "view";
 }
 

@@ -13,6 +13,7 @@
  * keeps per-client state). No CORS headers: `local-guard.mjs` refuses foreign origins
  * before anything runs.
  */
+import { URL } from "node:url";
 import { Buffer } from "node:buffer";
 import { refuseNonLocal } from "../local-guard.mjs";
 import { handleMessage } from "./handler.mjs";
@@ -85,9 +86,13 @@ export function createMcpMiddleware(ctx) {
           error: { code: -32600, message: "Invalid Request" },
         });
       }
-      const responses = (await Promise.all(messages.map((m) => handleMessage(m, ctx)))).filter(
-        Boolean,
-      );
+      const responses = (
+        await Promise.all(
+          messages.map((m) =>
+            handleMessage(m, { ...ctx, origin: new URL(`http://${req.headers.host}`).origin }),
+          ),
+        )
+      ).filter(Boolean);
       if (responses.length === 0) {
         res.writeHead(202);
         return res.end();
