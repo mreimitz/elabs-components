@@ -3,7 +3,7 @@
  * `connect-info.ts`, which copies `mcp/README.md` (DG-35): the endpoint, the Claude Code
  * command, the Claude Desktop `mcp-remote` config, and the prompts the server actually serves.
  */
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Button,
   CommandChip,
@@ -50,6 +50,9 @@ interface SnippetBlockProps {
   copyLabel: string;
 }
 
+/** How long the "Selected — press Ctrl+C…" status stays before clearing itself. */
+const SELECT_FALLBACK_TIMEOUT_MS = 4000;
+
 /**
  * A multi-line block with its own named copy button (`CommandChip` only copies one line). Always
  * wraps (`whitespace-pre-wrap break-words`) instead of scrolling: a fixed-width dialog can always
@@ -57,13 +60,20 @@ interface SnippetBlockProps {
  * hide cannot, so readable text beats preserved JSON indentation. Nothing here scrolls, so there
  * is no `role="region"`/`tabIndex` scroll-region pattern to add. When the clipboard is unavailable,
  * it selects its own text instead: a manual copy then takes one keystroke, the same fallback
- * `CommandChip` offers.
+ * `CommandChip` offers. That status clears itself after `SELECT_FALLBACK_TIMEOUT_MS` — otherwise
+ * it would stay on screen indefinitely once the person has moved on (e.g. to copy the other
+ * snippet in this dialog instead).
  */
 function SnippetBlock({ text, copyLabel }: SnippetBlockProps) {
   const { copied, copy } = useCopyToClipboard();
   // `Text`'s ref types to its default element; it renders a <div> here (`as="div"`).
   const textRef = useRef<HTMLParagraphElement>(null);
   const [selectedManually, setSelectedManually] = useState(false);
+  useEffect(() => {
+    if (!selectedManually) return;
+    const timer = window.setTimeout(() => setSelectedManually(false), SELECT_FALLBACK_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+  }, [selectedManually]);
   const onCopy = () => {
     void copy(text).then((ok) => {
       setSelectedManually(!ok);
