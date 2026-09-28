@@ -566,7 +566,8 @@ export function moveEntry(text: string, path: string, into: string | null): stri
  * zone's `"<zone path>.children"`. Each item is a YAML block-sequence item written at
  * column 0 (`- id: x\n  title: X\n`); it lands after the list's last item at that item's
  * indent, as `moveEntry` places a moved entry. A missing list is created after its
- * holder's last key. `null` when the list is written inline (`flows: []`) or the holder is
+ * holder's last key. An empty inline sequence becomes a block list, preserving its comment.
+ * `null` when a populated list is written inline or the holder is
  * not there — the caller then says so instead of guessing.
  */
 export function appendEntries(
@@ -589,6 +590,29 @@ export function appendEntries(
     if (!last) return null;
     at = last.end;
     indent = last.indent;
+  } else if (Array.isArray(list) && list.length === 0) {
+    const holder = mapAt(sourceMap, holderPath);
+    const own = holder?.keys.find((entry) => entry.key === key);
+    if (!holder || holder.flow || !own?.value) return null;
+    const [from, to] = own.value;
+    // An anchor or alias may be shared elsewhere; expanding it would change another field.
+    if (
+      !/^[ \t]*$/.test(text.slice(own.keyEnd + 1, from)) ||
+      !/^\[[ \t]*\]$/.test(text.slice(from, to))
+    )
+      return null;
+    const keyIndent = own.keyStart - lineStart(text, own.keyStart);
+    const end = nextLine(text, to);
+    const eol = text.includes("\r\n") ? "\r\n" : "\n";
+    const block = items
+      .map((item) => reindent(item.endsWith("\n") ? item : `${item}\n`, keyIndent + 2))
+      .join("")
+      .replace(/\r?\n/g, eol);
+    const lead = end === text.length && !text.endsWith("\n") ? eol : "";
+    return applyEdits(text, [
+      { from, to, insert: "" },
+      { from: end, to: end, insert: lead + block },
+    ]);
   } else if (list === undefined || list === null) {
     const holder = mapAt(sourceMap, holderPath);
     const first = holder?.keys[0];

@@ -16,10 +16,12 @@ import {
   TabsTrigger,
   cn,
   toast,
+  Toaster,
   useIsMobile,
 } from "@elabs-ai/components-ui";
 import { DiagramShell, ShellServices } from "./shell/diagram-shell";
 import { EditorPane } from "./panes/editor-pane";
+import { LiveView } from "./panes/live-view";
 import { CanvasPane } from "./panes/canvas-pane";
 import { InspectorPane } from "./panes/inspector-pane"; // DG-14
 import { navigate, parseRoute, useRoute, type Route } from "./routes/use-hash";
@@ -87,6 +89,7 @@ export function routeLabel(route: Route): string {
       return APP_LABELS.settings;
     case "dev":
       return route.name;
+    case "view":
     case "doc":
       return route.path ? fileTitle(route.path) : APP_LABELS.appName;
   }
@@ -516,6 +519,8 @@ function DevRoute({ name }: { name: string }) {
 
 function RouteView({ route }: { route: Route }) {
   switch (route.kind) {
+    case "view":
+      return <LiveView key={route.path} path={route.path} theme={route.theme} />;
     case "dev":
       return <DevRoute name={route.name} />;
     case "doc":
@@ -565,7 +570,12 @@ export function App() {
   useDocumentTitle(route);
   return (
     <>
-      <ShellServices />
+      {route.kind !== "view" ? (
+        <>
+          <Toaster />
+          <ShellServices />
+        </>
+      ) : null}
       <RouteView route={route} />
     </>
   );

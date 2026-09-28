@@ -36,6 +36,7 @@ import type { ZoneOwner } from "../nodes/zone-data";
 
 export interface DiagramLegendProps {
   mode: LegendMode;
+  interactive?: boolean;
 }
 
 /**
@@ -249,7 +250,7 @@ function ProvidersSection({ providers }: { providers: string[] }) {
  * are told apart by border STYLE and edge kinds by marker/dash, which a colour swatch
  * cannot show, so this component builds its rows from `ui` parts instead of `Legend`.
  */
-export function DiagramLegend({ mode }: DiagramLegendProps) {
+export function DiagramLegend({ mode, interactive = true }: DiagramLegendProps) {
   const nodes = useNodes();
   const edges = useEdges();
   // Every example load remounts the canvas and this legend; the session keeps the choice.
@@ -276,6 +277,25 @@ export function DiagramLegend({ mode }: DiagramLegendProps) {
     spec.providers.length;
   const open = choice ?? (wide && entries <= MAX_OPEN_ENTRIES);
 
+  if (!interactive)
+    return (
+      <Panel data-slot="diagram-legend" position="bottom-left" className={FLOATING_SURFACE}>
+        <Text variant="meta" className="font-medium">
+          {LABELS.trigger}
+        </Text>
+        <div className="mt-2 flex flex-col gap-3">
+          {hasOwners ? <OwnersSection owners={spec.owners} /> : null}
+          {hasEdges ? (
+            <EdgesSection
+              edgeKinds={spec.edgeKinds}
+              hasSteps={spec.hasSteps}
+              secure={spec.secure}
+            />
+          ) : null}
+          {hasProviders ? <ProvidersSection providers={spec.providers} /> : null}
+        </div>
+      </Panel>
+    );
   return (
     <Panel
       data-slot="diagram-legend"

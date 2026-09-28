@@ -4,6 +4,7 @@
  * comments included. Each tool reads the file, edits the text, validates, and writes with
  * the mtime it read (a change in between answers "changed on disk").
  */
+import { viewUrl } from "../view-url.mjs";
 import * as workspace from "../../workspace-fs.mjs";
 import { PATH, readDiagram } from "./workspace.mjs";
 
@@ -81,7 +82,12 @@ async function editFile(path, ctx, edit, hintIds) {
   const warnings = await ctx.bridge.assertValid(next);
   const written = await workspace.write(path, next, { base: file.mtime });
   const hints = hintIds && hintIds.length > 0 ? await ctx.bridge.refHints(next, hintIds) : [];
-  return { ...written, warnings, ...(hints.length > 0 && { hints }) };
+  return {
+    ...written,
+    warnings,
+    view: viewUrl(ctx, written.path),
+    ...(hints.length > 0 && { hints }),
+  };
 }
 
 /** `""` → the top level; `flow:a->b` → that flow; any other string → the zone or node id. */

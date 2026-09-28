@@ -11,9 +11,7 @@ import "./index.css";
 import { App } from "./app";
 // DG-04: registers every vendored icon (public/icons/index.json) as a ServiceLogo mark.
 import { registerIconPacks } from "./icons/register-packs";
-// DG-14: one toast host for wave 3 (DG-16 and DG-17 both toast), mounted here so they
-// build in parallel.
-import { Toaster } from "@elabs-ai/components-ui";
+import { parseRoute } from "./routes/use-hash";
 // DG-16: the text history, the unload guard and share links.
 import { guardUnload } from "./io/files";
 import { loadSharedDoc } from "./io/share-url";
@@ -35,8 +33,6 @@ function render() {
         ]}
         defaultTheme="light"
       >
-        {/* Before <App />: its effects run first, so a toast from App's first effects shows. */}
-        <Toaster />
         <App />
       </ThemeProvider>
     </StrictMode>,
@@ -47,8 +43,11 @@ function render() {
 // starts after it, so the shared document is where Undo stops.
 void loadSharedDoc().then(() => {
   installHistory();
-  window.addEventListener("keydown", onHistoryKeyDown);
+  window.addEventListener("keydown", (event) => {
+    if (parseRoute(window.location.hash).kind !== "view") onHistoryKeyDown(event);
+  });
   guardUnload(() => {
+    // A standalone picture is clean, but opening one must not discard retained unsaved text.
     const { text, loadedText } = diagramStore.get();
     return text !== loadedText;
   });

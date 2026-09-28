@@ -42,6 +42,8 @@ const EDITOR_OPTIONS = {
   quickSuggestions: { other: true, strings: true, comments: false },
   suggestOnTriggerCharacters: true,
   wordBasedSuggestions: "off",
+  // YAML has no document-highlight provider; avoid its unused delayed work during disposal.
+  occurrencesHighlight: "off",
 } as const;
 
 /** Element ranges per compile, built on first use (a cursor move or a canvas selection). */

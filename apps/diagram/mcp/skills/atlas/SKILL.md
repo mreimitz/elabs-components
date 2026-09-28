@@ -16,8 +16,8 @@ server is an MCP server named `atlas` (`http://localhost:5180/mcp`); the tools b
 3. `spec_validate` the text; fix every error, read the warnings.
 4. `diagram_create` a new file, or `diagram_write` an existing one with `base` = the `mtime`
    from `diagram_read`.
-5. The user looks at the diagram in the open Atlas tab (`#d/<path>`); the tab redraws the open
-   file after every write.
+5. Open the returned `view` URL in your browser as soon as you have a path and keep it open.
+   Look after each write and fix what you see; the picture redraws without an editor or controls.
 6. Fix what reads badly with `compose_set` / `compose_add_nodes` / `compose_add_flows`.
 
 ## Tools

@@ -4,6 +4,7 @@
  * mtime conflicts) the app's `/api/workspace` routes call. The open app tab hears every
  * write over the SSE channel and live-reloads (DG-21).
  */
+import { viewUrl } from "../view-url.mjs";
 import * as workspace from "../../workspace-fs.mjs";
 
 export const PATH = {
@@ -31,7 +32,13 @@ export const workspaceTools = [
       "List the Atlas workspace: every folder, and every diagram with its title, kind " +
       "(diagram or component), mtime and size. Call this first to find a diagram's path.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
-    handler: () => workspace.list(),
+    handler: async (_, ctx) => {
+      const tree = await workspace.list();
+      return {
+        ...tree,
+        files: tree.files.map((file) => ({ ...file, view: viewUrl(ctx, file.path) })),
+      };
+    },
   },
   {
     name: "diagram_read",
@@ -44,9 +51,9 @@ export const workspaceTools = [
       required: ["path"],
       additionalProperties: false,
     },
-    handler: async ({ path }) => {
+    handler: async ({ path }, ctx) => {
       const file = await readDiagram(path);
-      return { path: file.path, mtime: file.mtime, text: file.text };
+      return { path: file.path, mtime: file.mtime, text: file.text, view: viewUrl(ctx, file.path) };
     },
   },
   {
@@ -81,7 +88,7 @@ export const workspaceTools = [
       }
       const warnings = await ctx.bridge.assertValid(text);
       const written = await workspace.write(path, text, { base });
-      return { ...written, warnings };
+      return { ...written, warnings, view: viewUrl(ctx, written.path) };
     },
   },
   {
@@ -109,7 +116,7 @@ export const workspaceTools = [
     handler: async ({ path, text }, ctx) => {
       const warnings = await ctx.bridge.assertValid(text);
       const written = await workspace.write(path, text, { exclusive: true });
-      return { ...written, warnings };
+      return { ...written, warnings, view: viewUrl(ctx, written.path) };
     },
   },
   {
@@ -123,7 +130,10 @@ export const workspaceTools = [
       required: ["from", "to"],
       additionalProperties: false,
     },
-    handler: ({ from, to }) => workspace.move(from, to, { overwrite: false }),
+    handler: async ({ from, to }, ctx) => {
+      const moved = await workspace.move(from, to, { overwrite: false });
+      return { ...moved, view: viewUrl(ctx, moved.to) };
+    },
   },
   {
     name: "diagram_trash",

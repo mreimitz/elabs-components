@@ -42,11 +42,11 @@ Not verified yet: no Claude Desktop session has connected this way so far.
 
 ## A first session
 
-1. Start Atlas and open http://localhost:5180 in a browser to watch the diagrams.
+1. Start Atlas on your chosen local port.
 2. Connect as above; ask for the `author-diagram` prompt with three sentences about your landscape.
-3. The session validates and creates the file; open it in the tab (`#d/<path>`).
+3. The session validates and creates the file. Open the returned `view` URL in your browser and keep it open.
 4. Ask it to fix what reads badly; every write is validated first, nothing broken is saved, and
-   the open tab redraws after each write.
+   the live picture redraws after each write. Look after each write and fix what you see.
 
 ## Tools
 
@@ -76,3 +76,14 @@ included, stays as it was.
 ## Skill
 
 Copy `mcp/skills/atlas/` to `~/.claude/skills/atlas/` for the authoring loop in every session.
+
+## Live pictures
+
+Diagram reads, workspace tree rows, creates, writes, moves and compose edits return a `view`
+URL using the request's local host and port. `#v/<path>` shows only the title, diagram and
+legend. It has no editor, controls, keyboard actions or browser writes. Add `&theme=light` or
+`&theme=dark` for a screenshot without changing your stored theme.
+
+A missing file waits for creation. Invalid text leaves the last good picture visible and
+shows `not drawn: <reason>`. Fixing the file clears that line. Referenced diagram and catalog
+changes also redraw the picture. The viewer fits the picture after changes and resizing.
