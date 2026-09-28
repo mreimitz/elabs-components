@@ -715,8 +715,7 @@ function checkPointLabels(component: string, prop: string, value: unknown, field
 export function assertLabelChildrenContract(children: ReactNode): void {
   Children.forEach(children, (child) => {
     if (!isValidElement(child)) return;
-    const type = child.type as { displayName?: string; name?: string };
-    const name = typeof child.type === "string" ? "" : (type.displayName ?? type.name ?? "");
+    const name = getChartChildComponentName(child);
     const props = child.props as Record<string, unknown>;
     if (name === "Line" || name === "Area") {
       checkSeriesLabel(name, "seriesLabel", props.seriesLabel);

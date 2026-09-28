@@ -28,6 +28,8 @@ import { DEFAULT_Y_AXIS_ID } from "./y-axis-scales";
 import type { YDomain } from "./y-domain-utils";
 import type { Margin } from "./chart-margin";
 import { BarChartContext, type BarChartContextValue, useBarChartSlice } from "./bar-chart-context";
+import { warnChartOnce } from "./chart-breakpoint";
+import { getChartChildComponentName } from "./chart-defs";
 import {
   ComposedChartContext,
   type ComposedChartContextValue,
@@ -167,20 +169,6 @@ function spread(ramp: readonly string[], n: number): string[] {
   return Array.from({ length: n }, (_, i) => ramp[Math.round((i * last) / (n - 1))] as string);
 }
 
-/**
- * Messages already warned about, so a component that re-renders every frame does
- * not re-log every frame. Keyed by the full message, so a DIFFERENT series count
- * still gets its own warning.
- */
-const warnedPaletteMessages = new Set<string>();
-
-function warnOnce(message: string): void {
-  if (process.env.NODE_ENV === "production") return;
-  if (warnedPaletteMessages.has(message)) return;
-  warnedPaletteMessages.add(message);
-  console.warn(message);
-}
-
 /** Options for {@link resolvePalette}. */
 export interface ResolvePaletteOptions {
   /**
@@ -229,7 +217,11 @@ export function resolvePalette(
       return [chartAccentColor, ...spread(chartMonoRamp, n - 1)];
     default: {
       if (n > CATEGORICAL_SOFT_CAP && !options.explicit) {
-        warnOnce(
+        // Keyed by `n` (not a fixed key), so a DIFFERENT series count still gets
+        // its own warning — matching the pre-shared-helper `warnOnce`, which
+        // keyed by the full (n-dependent) message.
+        warnChartOnce(
+          `palette-categorical-soft-cap:${n}`,
           `[brand-ui/charts] ${n} categorical series exceeds the ${CATEGORICAL_SOFT_CAP}-category ` +
             'cap, so the neutral ladder (palette="mono") is used instead. Group the tail into ' +
             'an "Other" series, or pass palette="categorical" explicitly to override.',
@@ -455,9 +447,8 @@ export function resolveSignPalette(palette: ChartPalette): {
 export type SeriesPaletteSlots = Readonly<Record<string, "fill" | "stroke">>;
 
 function seriesSlotOf(child: ReactElement, slots: SeriesPaletteSlots): "fill" | "stroke" | null {
-  const type = child.type as { displayName?: string; name?: string } | string;
-  if (typeof type === "string") return null;
-  const name = type.displayName || type.name || "";
+  const name = getChartChildComponentName(child);
+  if (!name) return null;
   const slot = slots[name];
   if (!slot) return null;
   const props = child.props as {

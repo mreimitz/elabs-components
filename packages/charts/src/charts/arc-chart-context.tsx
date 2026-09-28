@@ -22,6 +22,29 @@ export const defaultArcChartColors: string[] = resolvePalette("categorical", 12,
   explicit: true,
 });
 
+/**
+ * A point at `angle` on an arc's MIDPOINT radius (halfway between
+ * `innerRadius` and `outerRadius`), in the arc's own SVG coordinate space —
+ * d3-shape's convention: 0 rad sits at 12 o'clock, increasing clockwise.
+ *
+ * Shared by `pieDatapointTarget` (`pie-context.tsx`) and `ringDatapointTarget`
+ * (`ring-context.tsx`) so a drill-down target's hit box always sits at the
+ * same "half radius" spot on the ring, whichever family drew it — each keeps
+ * its own choice of ANGLE (Pie: the arc's midpoint angle; Ring: a small
+ * offset past the start angle, so a full-circle ring's target doesn't land on
+ * the shared 12 o'clock seam).
+ */
+export function arcMidpointPoint(
+  geometry: { center: number; innerRadius: number; outerRadius: number },
+  angle: number,
+): { x: number; y: number } {
+  const radius = (geometry.innerRadius + geometry.outerRadius) / 2;
+  return {
+    x: geometry.center + Math.sin(angle) * radius,
+    y: geometry.center - Math.cos(angle) * radius,
+  };
+}
+
 export interface ArcChartHoverContextValue {
   hoveredIndex: number | null;
   setHoveredIndex: (index: number | null) => void;
