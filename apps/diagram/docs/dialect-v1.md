@@ -22,9 +22,10 @@ pipeline, the zones/nodes/flows/styles/notes keys, ids and positions unchanged f
 `component` marks and describes a diagram meant to be referenced by another one (its icon and
 one-sentence description, shown where the reference collapses). `story` and `visual` are
 carried but not yet read by anything in R1 — later items (DG-31, DG-36) define their shape.
-`docs`/`status` will be shown on the details card once DG-25 builds it (not yet); they are
-never supplied by a reference (§2). Any unrecognized top-level, zone or node key is still
-`unknown-prop` (a warning), as in v0.
+`docs`/`status` will be shown on the details card once DG-25 builds it (not yet). `status` is
+never supplied by a reference; `docs`, like `description`, comes from the reader when the node
+writes none (§2.2) — neither is copied into the compiled data. Any unrecognized top-level, zone
+or node key is still `unknown-prop` (a warning), as in v0.
 
 ## 2. References
 
@@ -63,9 +64,9 @@ diagram-ref  := "ws" ("/" segment)+           segment: any character except "/",
   capitals, punctuation, unicode all fine (`ws/Demo Banking/landscape`). The last segment is
   the file **name**, not the diagram's `title:`.
 - A value with a sequence YAML would misread — `: ` (colon-space, key syntax), ` #` (space
-  then hash, a comment start — anywhere in the value, not only when leading; review round 1
-  F4), or a leading quote — is written quoted by every writer in this app (`write-back.ts`'s
-  `yamlScalar`); a plain path with spaces needs no quotes of its own.
+  then hash, a comment start anywhere in the value, not only when leading), or a leading quote
+  — is written quoted by every writer in this app (`write-back.ts`'s `yamlScalar`); a plain
+  path with spaces needs no quotes of its own.
 - **Not referenceable in R1:** a `.yml`-extensioned file (the tree lists it, but a `ws/` path
   always resolves to `.yaml`), a dotfile (the tree hides dotfiles), anything under the root
   `_trash` folder (a leading `_` segment is rejected). A `.` or `..` segment (a relative path)
@@ -76,30 +77,29 @@ diagram-ref  := "ws" ("/" segment)+           segment: any character except "/",
 The node's own written key always wins. Below it, only a catalog reference fills anything in
 R1 (a diagram reference's title/icon land in Part 2 — see §2.4):
 
-| Key                                               | Catalog part supplies                                                                          | Catalog icon entry supplies                                        | Node default (no ref, or ref fills nothing) |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------- |
-| `title`                                           | the part's name, else its slug                                                                 | the vendor file's `name`, else the icon index label, else the slug | the node's `id`                             |
-| `subtitle`                                        | the part's own `subtitle`                                                                      | none                                                               | none                                        |
-| `icon`                                            | the part's own `icon`                                                                          | its own `icon`                                                     | the type's glyph, at render                 |
-| `type`                                            | the part's own `kind`, else its icon entry's                                                   | its own `kind` (no vendor file sets one today)                     | `service`                                   |
-| `badges`                                          | the part's own `badges`                                                                        | none                                                               | none                                        |
-| `description`, `docs`                             | shown by the reader (`suppliedBy`, DG-25) when the node writes none — never copied into `data` | (same)                                                             | none                                        |
-| `tone`, `href`, `class`, `text`, `docs`, `status` | never supplied                                                                                 | never supplied                                                     | none                                        |
+| Key                                       | Catalog part supplies                                                                          | Catalog icon entry supplies                                        | Node default (no ref, or ref fills nothing) |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------- |
+| `title`                                   | the part's name, else its slug                                                                 | the vendor file's `name`, else the icon index label, else the slug | the node's `id`                             |
+| `subtitle`                                | the part's own `subtitle`                                                                      | none                                                               | none                                        |
+| `icon`                                    | the part's own `icon`                                                                          | its own `icon`                                                     | the type's glyph, at render                 |
+| `type`                                    | the part's own `kind`, else its icon entry's                                                   | its own `kind` (no vendor file sets one today)                     | `service`                                   |
+| `badges`                                  | the part's own `badges`                                                                        | none                                                               | none                                        |
+| `description`, `docs`                     | shown by the reader (`suppliedBy`, DG-25) when the node writes none — never copied into `data` | (same)                                                             | none                                        |
+| `tone`, `href`, `class`, `text`, `status` | never supplied                                                                                 | never supplied                                                     | none                                        |
 
 - `title`, `subtitle`, `icon`, `type` and `badges` (`SUPPLIED_KEYS`) are filled into the AST
   before validation — only for the keys the node's text does not already have
-  (`node.unwritten`, recorded by the normalizer from the raw entry, not from what the
-  reference happens to supply). A scalar key left blank (`title:` with no value, or
-  `title: ""`) counts as unwritten too (review round 1 N4) — the reference's value shows,
-  same as when the key is absent. Writing `badges: []` on the node keeps it empty; an array is
-  never "blank" the same way, so it is not "unwritten".
+  (`node.unwritten`, recorded by the normalizer from the raw entry via `isSuppliedKeyWritten`,
+  not from what the reference happens to supply). A key left with no value at all (`title:`,
+  YAML null) counts as unwritten, same as the key's absence. An explicit empty value
+  (`subtitle: ""`) is a written override instead: it draws nothing, the same as `badges: []` —
+  neither ever falls back to the reference's value.
 - `description` and `docs` are **not** in `SUPPLIED_KEYS`: they never land in the compiled
-  node's data even when the node writes neither, so the drawing never changes shape. Review
-  round 0 F2 — narrowed from an earlier draft of this section: today only the inspector's
-  `SUPPLIED_KEYS` fields (title, subtitle, icon, type, badges) get the "From the reference: …"
-  help text (§2.3, `1b.6`); `description` and `docs` are not filled into that form at all yet,
-  and the details card does not read a reference's `description`/`docs` either — that is
-  DG-25's own work, not yet built.
+  node's data even when the node writes neither, so the drawing never changes shape. Today
+  only the inspector's `SUPPLIED_KEYS` fields (title, subtitle, icon, type, badges) get the
+  "From the reference: …" help text (§2.3, `1b.6`); `description` and `docs` are not filled
+  into that form at all yet, and the details card does not read a reference's
+  `description`/`docs` either — that is DG-25's own work, not yet built.
 
 ### 2.3 Catalog references (built in Part 1b)
 
@@ -137,13 +137,12 @@ reference — a dotted target there is `unknown-note-target`.
 
 `diagram:` reads `"0"` and `"1"` (`READ_VERSIONS`); this app always **writes** `"1"`
 (`DIALECT_VERSION`). Any other value is `unsupported-version`. **A v0 file is never rewritten
-by opening or saving it** (review round 0 F1, correcting an earlier draft of this section, and
-review round 1 F4, correcting it again): the normalizer (`normalize.ts`) reads a `"0"` or `"1"`
-file directly and draws either the same way — `upgradeText` is never called on open or save; it
-runs only from the migration script below and from `#dev/spec-check`'s own round-trip
-self-test. So a file's first line can still say `"0"` after a session in the app; only a script
-writes to disk, and only when it is run on purpose. Two, mutually exclusive, script modes
-migrate files on disk without opening them (`scripts/upgrade-workspace.mjs`):
+by opening or saving it:** the normalizer (`normalize.ts`) reads a `"0"` or `"1"` file directly
+and draws either the same way — `upgradeText` is never called on open or save; it runs only
+from the migration script below and from `#dev/spec-check`'s own round-trip self-test. So a
+file's first line can still say `"0"` after a session in the app; only a script writes to disk,
+and only when it is run on purpose. Two, mutually exclusive, script modes migrate files on disk
+without opening them (`scripts/upgrade-workspace.mjs`):
 
 ```sh
 # 0 → 1 syntax upgrade (upgradeText): in place, on every *.yaml under the target (default:
@@ -152,13 +151,19 @@ node scripts/upgrade-workspace.mjs [--dry-run] [file-or-folder …]
 
 # Reference-first migration (refFirstText, 1b.9): once, over every *.yaml under the target
 # (default: workspace), skipping _trash — the same walk as the plain upgrade above, not just
-# the files choices names. choices shape: { "<workspace-relative path>": { "<node id>":
-# "<catalog name>" | "catalog/<name>" | "custom" } } (either form of the name works). A node
-# not named in a file's choices falls back to its own written icon as the catalog name to try,
-# so a file with no entry in choices at all is still processed; "custom" (or an icon that is
-# not a catalog name) leaves the node exactly as written. Never run together with a dialect
-# upgrade.
-node scripts/upgrade-workspace.mjs --ref-first --choices <file.json> [--dry-run] [file-or-folder …]
+# the files choices names. Refuses (and fails) a file the plain upgrade above has not
+# touched yet — adding ref: beside diagram: "0" would leave a mixed file. choices shape:
+# { "<workspace-relative path>": { "<node id>": "<catalog name>" | "catalog/<name>" |
+# "custom" } } (either form of the name works). scripts/ref-first-choices.json (committed) is
+# always applied first — it is exactly what migrated the seven shipped workspace files, so a
+# bare --ref-first re-run is a no-op on them; --choices <file.json> merges on top of it, per
+# file and then per node id. A node not named in either is tried against its own written icon
+# as the catalog name; "custom" (or an icon that is not a catalog name) leaves the node exactly
+# as written. Each file reports its own line — a bad choice, a node left custom on purpose, a
+# key pinned to keep the drawing the same, or "<n> references, <n> keys dropped" — and the run
+# fails (without writing anything, on any file) if any file was unreadable or named a choice
+# with no matching node or catalog entry. Never run together with a dialect upgrade.
+node scripts/upgrade-workspace.mjs --ref-first [--choices <file.json>] [--dry-run] [file-or-folder …]
 ```
 
 Both modes preserve every comment and the file's layout exactly except for the keys they
@@ -171,7 +176,7 @@ position is the issue's start.
 
 | Code                 | Severity | Message (template)                                                                                                                                                        | Fixture @ line:col                            |
 | -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `bad-ref`            | error    | One message per cause (`normalize.ts` `badRef()`, review round 0 F4) — see the list below.                                                                                | `issue-bad-ref.yaml` @ 5:10 through 25:10     |
+| `bad-ref`            | error    | One message per cause (`normalize.ts` `badRef()`) — see the list below.                                                                                                   | `issue-bad-ref.yaml` @ 5:10 through 25:10     |
 | `ref-missing`        | error    | `No catalog item "<name>".` (+ `Did you mean "catalog/<near>"?` when one is close) · `"<name>" is an icon with no catalog item; write "icon: <name>" instead of the ref.` | `issue-ref-missing.yaml` @ 5:10 and 7:10      |
 | `inner-flow`         | warning  | `Both ends are inside "<id>"; draw this flow in <ref> instead.`                                                                                                           | `issue-inner-flow.yaml` @ 7:5                 |
 | `expand-not-diagram` | warning  | `"expand" applies only to a node whose ref names a diagram (ws/…); here it does nothing.` (on the key)                                                                    | `issue-expand-not-diagram.yaml` @ 5:5 and 8:5 |
