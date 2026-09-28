@@ -10,7 +10,7 @@ import { foldZone, toggleZone, unfoldZone } from "../layout/zone-folds";
 import { isZoneNode } from "../nodes/zone-data";
 import type { CanvasProps } from "../panes/canvas-props";
 import { keepSelection } from "../state/pipeline";
-import { detailKind } from "./details-card";
+import { detailKind } from "./node-details";
 import { interactionActions, useInteraction } from "./interaction-store";
 import { litNodeIds } from "./steps";
 
