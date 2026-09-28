@@ -21,6 +21,8 @@ import { lensStore, useLens } from "../shell/lens-store";
 import { currentComponentFiles } from "../state/component-files";
 import { catalogVersion } from "../catalog/catalog-bundle";
 import { WithTooltip } from "../shell/with-tooltip";
+import { useResolvedStyle } from "../style/react-style";
+import type { ResolvedStyle } from "../style/types";
 import { visualSnapshot } from "./snapshot";
 import { materializeVisual } from "./materialize";
 
@@ -46,6 +48,7 @@ interface Preview {
   files: ReturnType<typeof currentComponentFiles>;
   catalog: number;
   replace: boolean;
+  styleKey: string;
   error?: string;
 }
 const previewStore = createStore<{ preview: Preview | null }>({ preview: null });
@@ -54,7 +57,7 @@ function editable() {
   const lens = lensStore.get();
   return currentMode() === "edit" && lens.position === 0 && lens.target === "technical";
 }
-function requestPreview() {
+function requestPreview(style: ResolvedStyle) {
   const current = diagramStore.get();
   if (
     !editable() ||
@@ -64,7 +67,7 @@ function requestPreview() {
   )
     return;
   const ast = current.compiled.ast;
-  const derived = visualSnapshot({ ...ast, visual: undefined });
+  const derived = visualSnapshot({ ...ast, visual: undefined }, style.hero, style.visual);
   const problem = derived.issues.find((issue) => issue.severity === "error");
   const result = problem
     ? { ok: false as const, reason: problem.message }
@@ -78,14 +81,16 @@ function requestPreview() {
       files: currentComponentFiles(),
       catalog: catalogVersion(),
       replace: ast.visual !== undefined,
+      styleKey: JSON.stringify([style.hero, style.visual]),
       ...(!result.ok ? { error: result.reason } : {}),
     },
   });
 }
 export function VisualLayoutMenuItem({ disabled = false }: { disabled?: boolean }) {
+  const style = useResolvedStyle(useDiagram((s) => s.drawn.ast));
   const ready = useDiagram((s) => s.compiled.ok && s.compiledText === s.text);
   return (
-    <DropdownMenuItem disabled={disabled || !ready} onSelect={requestPreview}>
+    <DropdownMenuItem disabled={disabled || !ready} onSelect={() => requestPreview(style)}>
       <LayoutTemplate aria-hidden="true" />
       {LABELS.action}
     </DropdownMenuItem>
@@ -100,12 +105,14 @@ export function VisualLayoutControls({
 }) {
   const { preview } = useSyncExternalStore(previewStore.subscribe, previewStore.get);
   const state = useDiagram((s) => s);
+  const style = useResolvedStyle(state.drawn.ast);
   const mode = useDocMode();
   const position = useLens((s) => s.position);
   const mobile = useIsMobile();
   const stale =
     preview !== null &&
-    (state.text !== preview.original ||
+    (preview.styleKey !== JSON.stringify([style.hero, style.visual]) ||
+      state.text !== preview.original ||
       state.path !== preview.path ||
       state.loadCount !== preview.load ||
       currentComponentFiles() !== preview.files ||
@@ -129,7 +136,7 @@ export function VisualLayoutControls({
             size="icon-sm"
             aria-label={LABELS.action}
             disabled={disabled || !state.compiled.ok || state.compiledText !== state.text}
-            onClick={requestPreview}
+            onClick={() => requestPreview(style)}
           >
             <LayoutTemplate aria-hidden="true" />
           </Button>

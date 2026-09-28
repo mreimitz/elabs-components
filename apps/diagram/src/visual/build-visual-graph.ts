@@ -1,4 +1,5 @@
 // Keep pure graph construction independent of the UI barrel and its browser-only assets.
+import type { StyleProfile } from "../style/types";
 import { MarkerType } from "@xyflow/react";
 import {
   LANE_HEADER_HEIGHT,
@@ -118,7 +119,11 @@ export interface VisualGraph {
  * braces beside `VisualCanvasPane`'s canvas-wide read-only props (maintainer 2026-09-27: a
  * view-only lens must never be draggable into "dirty").
  */
-export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): VisualGraph {
+export function buildVisualGraph(
+  lens: VisualLens,
+  layout: VisualLayout,
+  profile?: StyleProfile,
+): VisualGraph {
   const nodes: (LanePanelNodeType | CapabilityBoxNodeType)[] = [];
   const portFraction = (box: string, flow: VisualFlow) => {
     const incident = lens.flows.filter((item) => item.from === box || item.to === box);
@@ -169,6 +174,11 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
       if (!from || !to) return null;
       const fromTitle = titleOf.get(flow.from) ?? flow.from;
       const toTitle = titleOf.get(flow.to) ?? flow.to;
+      const paint =
+        profile && !profile.ground.followTheme
+          ? profile.flows[flow.kind === "data" ? "data" : "control"]
+          : undefined;
+      const arrows = paint?.marker !== "none" && profile?.flows.arrowheads !== "none";
       const edge: VisualFlowEdgeType = {
         id: flow.id,
         source: flow.from,
@@ -205,20 +215,23 @@ export function buildVisualGraph(lens: VisualLens, layout: VisualLayout): Visual
         // gap `edge-style.ts`'s own `edgeMarkers` doc comment warns about. The arrowhead is the
         // only direction cue on these edges, so it takes the same token `VisualFlowEdge` already
         // paints its stroke with.
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          width: 16,
-          height: 16,
-          color: "var(--muted-foreground)",
-        },
-        markerStart: flow.bidirectional
+        markerEnd: arrows
           ? {
               type: MarkerType.ArrowClosed,
               width: 16,
               height: 16,
-              color: "var(--muted-foreground)",
+              color: paint?.stroke ?? "var(--muted-foreground)",
             }
           : undefined,
+        markerStart:
+          arrows && flow.bidirectional && profile?.flows.arrowheads !== "target-only"
+            ? {
+                type: MarkerType.ArrowClosed,
+                width: 16,
+                height: 16,
+                color: paint?.stroke ?? "var(--muted-foreground)",
+              }
+            : undefined,
         zIndex: 2,
       };
       return edge;

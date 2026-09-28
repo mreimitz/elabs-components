@@ -1,3 +1,4 @@
+import type { StyleSelection } from "../../style/types";
 /**
  * Field definitions of the dialect's entities, on the shared ui definition
  * base. One source for the validator (validateProps) and the JSON Schema
@@ -190,6 +191,7 @@ export interface RootInput {
   direction?: Direction;
   nodeStyle?: NodeStyle;
   theme?: string;
+  style?: StyleSelection;
   legend?: (typeof LEGEND_MODES)[number] | readonly LegendPart[];
   layout?: LayoutMode;
   zones?: readonly Record<string, unknown>[];
@@ -234,6 +236,18 @@ export const ROOT_DEF = defineComponent<RootInput>()({
     direction: field.enum({ values: DIRECTIONS, default: "LR" }),
     nodeStyle: field.enum({ values: NODE_STYLES, default: "icon" }),
     theme: field.string({ description: "Brand theme family for the canvas." }),
+    style: field.object({
+      fields: {
+        technical: field.enum({
+          values: ["inherit", "atlas-clean"],
+          description: "Technical drawing profile; inherit uses the workspace or theme selection.",
+        }),
+        visual: field.enum({
+          values: ["inherit", "qlik-marketecture"],
+          description: "Visual drawing profile; inherit uses the workspace or theme selection.",
+        }),
+      },
+    }),
     legend: field.union({
       of: [
         field.enum({ values: LEGEND_MODES }),

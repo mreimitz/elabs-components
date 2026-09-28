@@ -29,6 +29,7 @@ export interface VisualContext {
   components?: ComponentTable;
   hero?: string | null;
   pillVocabulary?: ReadonlySet<string>;
+  pillFromTags?: Readonly<Record<string, string>>;
 }
 export interface ResolvedVisual {
   lens: VisualLens;
@@ -355,12 +356,29 @@ function resolve(
       for (const member of box.members) {
         const node = technical.get(member.id);
         if (node)
-          for (const tag of catalogFor(node)?.tags ?? [])
-            if (vocabulary.has(tag)) processes.add(tag);
+          for (const tag of catalogFor(node)?.tags ?? []) {
+            const process = context.pillFromTags?.[tag] ?? tag;
+            if (vocabulary.has(process)) processes.add(process);
+          }
       }
     if (processes.size) box.processes = [...processes];
-    const member = technical.get(box.members[0]?.id ?? "");
-    box.provider = member ? catalogFor(member)?.vendor : undefined;
+    const providers = box.members.map((member) => {
+      const node = technical.get(member.id);
+      const vendor = node ? catalogFor(node)?.vendor : undefined;
+      if (vendor) return vendor;
+      let entry = memberOf(ast, member.id, context.components).entry;
+      const visited = new Set<string>();
+      while (entry?.parent && !visited.has(entry.parent)) {
+        visited.add(entry.parent);
+        entry = memberOf(ast, entry.parent, context.components).entry;
+        if (entry && "provider" in entry && entry.provider) return entry.provider;
+      }
+      return undefined;
+    });
+    box.provider =
+      providers.length && providers.every((provider) => provider === providers[0])
+        ? providers[0]
+        : undefined;
   }
   for (const box of boxes)
     if (!lanes.some((lane) => lane.id === box.lane)) {

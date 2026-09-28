@@ -169,6 +169,7 @@ export async function list() {
     for (const entry of entries) {
       if (entry.name.startsWith(".") || entry.isSymbolicLink()) continue;
       const rel = dirRel ? `${dirRel}/${entry.name}` : entry.name;
+      if (rel === "atlas.config.yaml") continue;
       const abs = path.join(dirAbs, entry.name);
       if (entry.isDirectory()) {
         if (rel === TRASH) continue;

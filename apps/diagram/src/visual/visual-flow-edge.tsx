@@ -1,3 +1,4 @@
+import { useDiagramStyle } from "../style/react-style";
 import { FlowEdgePath, EdgeLabelRenderer, type EdgeProps } from "@elabs-ai/components-flow";
 import { Badge } from "@elabs-ai/components-ui";
 import type { VisualFlowEdgeType } from "./visual-node-data";
@@ -15,14 +16,19 @@ export function VisualFlowEdge({
   markerStart,
   markerEnd,
 }: EdgeProps<VisualFlowEdgeType>) {
+  const { visual: profile } = useDiagramStyle();
+  const fixed = !profile.ground.followTheme;
+  const paint = profile.flows[data?.solid ? "data" : "control"];
   if (!data) return null;
   return (
     <>
       <FlowEdgePath
         path={data.path}
-        stroke="var(--muted-foreground)"
-        strokeWidth={1.5}
-        strokeDasharray={data.solid ? undefined : "6 4"}
+        stroke={fixed ? paint.stroke : "var(--muted-foreground)"}
+        strokeWidth={fixed ? paint.width : 1.5}
+        strokeDasharray={
+          fixed ? (paint.dash === "none" ? undefined : paint.dash) : data.solid ? undefined : "6 4"
+        }
         selected={selected}
         markerStart={markerStart}
         markerEnd={markerEnd}
@@ -38,8 +44,20 @@ export function VisualFlowEdge({
               transform: `translate(-50%, -50%) translate(${data.labelX}px, ${data.labelY}px)`,
             }}
           >
-            {data.process ? (
-              <Badge variant="outline" className="min-w-0 truncate">
+            {profile.pills.enabled && data.process ? (
+              <Badge
+                variant="outline"
+                className="min-w-0 truncate"
+                style={
+                  fixed
+                    ? {
+                        backgroundColor: profile.pills.fill,
+                        color: profile.pills.text,
+                        borderColor: "transparent",
+                      }
+                    : undefined
+                }
+              >
                 {data.process.toUpperCase()}
               </Badge>
             ) : null}

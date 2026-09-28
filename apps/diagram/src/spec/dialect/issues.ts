@@ -31,6 +31,7 @@ export const ISSUE_SEVERITY = {
   "duplicate-step": "warning",
   "unknown-story-target": "error",
   "invalid-visual": "error",
+  "invalid-style": "error",
   "ambiguous-story-target": "error",
   "story-autoplay-reserved": "info",
   "unknown-class": "warning",

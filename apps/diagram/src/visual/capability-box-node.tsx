@@ -1,5 +1,6 @@
 import { Handle, Position, type NodeProps } from "@elabs-ai/components-flow";
 import { HoverCard, HoverCardContent, HoverCardTrigger, Badge, cn } from "@elabs-ai/components-ui";
+import { useDiagramStyle } from "../style/react-style";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Network } from "lucide-react";
@@ -25,20 +26,12 @@ const BOX_LABELS = {
 
 const UNOWNED_STYLE_AS: ZoneOwner = "hosted";
 
-/**
- * A capability box (`docs/2026-09-27-visual-lens-concept.md` §3 rule 2/6): one or more
- * technical nodes grouped by lane, kind and parent zone. Owner colouring reuses the
- * technical lens's own zone/owner tokens (`zoneVariants`/`zoneBodyVariants`, conventions
- * "existing zone/owner tokens") — no new colour, no hero (S1/S3): customer sits on the muted
- * fill rung, SaaS on the raised rung under its hairline hatch (a texture, not a colour — the
- * second channel WCAG 1.4.1 asks for), hosted and partner stay on the canvas rung under their
- * own dotted/dashed strong border (`zoneVariants`'s own owner axis already carries that).
- * Never interactive as a canvas element (no handles, not draggable, not connectable, not
- * selectable): the one thing it does is the orientation gesture the maintainer asked for —
- * hover/focus names its members, and an Option/Alt-click (or Enter/Space held with Alt)
- * switches to the technical lens framed on them (`docs/2026-09-27-visual-lens-concept.md` §5).
- */
+/** Read-only capability list; Alt-activation frames its members in the technical lens. */
 export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
+  const { visual: profile, hero } = useDiagramStyle();
+  const fixed = !profile.ground.followTheme;
+  const paint =
+    profile.roles[hero && data.provider === hero ? "hero" : data.aside ? "generic" : "other"];
   const [hoverOpen, setHoverOpen] = useState(false);
   const settled = useLens((s) => s.position === 1 && s.target === "visual" && !s.animating);
   const owner = data.owner === "unowned" ? UNOWNED_STYLE_AS : data.owner;
@@ -111,6 +104,19 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
           // vary by state).
           data-slot="capability-box"
           data-aside={data.aside || undefined}
+          data-profile={profile.profile}
+          data-hero={fixed && hero && data.provider === hero ? true : undefined}
+          style={
+            fixed
+              ? {
+                  backgroundColor: paint.fill,
+                  backgroundImage: "none",
+                  color: paint.text,
+                  borderColor: paint.stroke,
+                  borderStyle: "solid",
+                }
+              : undefined
+          }
           onClick={(event) => {
             if (!event.altKey) return;
             lensActions.setLens("technical", { frameNodeIds: data.members.map((m) => m.id) });
@@ -120,8 +126,8 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
             // not a raised card), so it must lose to this button's own resting `shadow-xs` (a
             // box IS a raised card) when `cn()` (tailwind-merge) resolves the conflict by
             // keeping whichever comes LAST.
-            zoneVariants({ owner, kind: "generic", fill, capped }),
-            zoneBodyVariants({ owner }),
+            !fixed && zoneVariants({ owner, kind: "generic", fill, capped }),
+            !fixed && zoneBodyVariants({ owner }),
             // The node is deliberately not selectable/draggable/connectable, so React Flow's
             // own node wrapper (`.react-flow__node`) sets itself `pointer-events: none` — with
             // no ancestor opting back in, a mouse could never hover or click this button at all
@@ -138,6 +144,15 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
           <span
             data-slot="capability-box-title"
             data-member-id={soleMember?.id}
+            style={
+              fixed
+                ? {
+                    fontWeight: profile.boxes.title.weight,
+                    justifyContent: profile.boxes.title.align === "center" ? "center" : "start",
+                    width: "100%",
+                  }
+                : undefined
+            }
             className="text-caption flex min-w-0 items-center gap-1.5 truncate font-medium"
           >
             {data.aside ? <Network aria-hidden="true" className="size-3.5 shrink-0" /> : null}
@@ -148,22 +163,41 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
               // `<span>`, not `display: contents` — the overlay reads its real, laid-out rect,
               // which a contents box never has (it generates none of its own).
               <span className="shrink-0">
-                <ArchMark icon={soleMember.icon} size={14} variant="mono" />
+                <ArchMark
+                  icon={soleMember.icon}
+                  size={14}
+                  variant={fixed ? profile.boxes.items.icon : "mono"}
+                />
               </span>
             ) : null}
             <span className="min-w-0 truncate">{data.title}</span>
           </span>
-          {data.processes?.length ? (
+          {profile.pills.enabled && data.processes?.length ? (
             <span data-slot="visual-processes" className="grid grid-cols-2 gap-1">
               {data.processes.map((process) => (
-                <Badge key={process} variant="outline" className="justify-center truncate">
+                <Badge
+                  key={process}
+                  variant="outline"
+                  className="justify-center truncate"
+                  style={
+                    fixed
+                      ? {
+                          backgroundColor: profile.pills.fill,
+                          color: profile.pills.text,
+                          borderColor: "transparent",
+                        }
+                      : undefined
+                  }
+                >
                   {process}
                 </Badge>
               ))}
             </span>
           ) : null}
           {data.owner === "unowned" ? (
-            <span className="text-meta text-muted-foreground">{BOX_LABELS.unowned}</span>
+            <span className={cn("text-meta", !fixed && "text-muted-foreground")}>
+              {BOX_LABELS.unowned}
+            </span>
           ) : null}
           {/* One row per member — `lane-layout.ts` reserves `BOX_MEMBER_ROW_HEIGHT` per member
               so each is named without a hover, not folded into a single wrapped row of icons.
@@ -177,12 +211,35 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
                 <span
                   key={member.id}
                   data-member-id={member.id}
+                  style={
+                    fixed && data.sub?.includes(member.id)
+                      ? {
+                          borderColor: profile.roles.sub.stroke,
+                          color: profile.roles.sub.text,
+                          backgroundColor:
+                            profile.roles.sub.fill === "none"
+                              ? "transparent"
+                              : profile.roles.sub.fill,
+                        }
+                      : undefined
+                  }
                   className={cn(
                     "flex min-w-0 items-center gap-1.5",
                     data.sub?.includes(member.id) && "rounded-sm border border-current px-1",
                   )}
                 >
-                  <ArchMark icon={member.icon} size={16} variant="mono" className="shrink-0" />
+                  {fixed && profile.boxes.items.bullet === "ring" ? (
+                    <span
+                      aria-hidden="true"
+                      className="size-1.5 shrink-0 rounded-full border border-current"
+                    />
+                  ) : null}
+                  <ArchMark
+                    icon={member.icon}
+                    size={16}
+                    variant={fixed ? profile.boxes.items.icon : "mono"}
+                    className="shrink-0"
+                  />
                   <span className="text-meta min-w-0 truncate">{member.title}</span>
                 </span>
               ))}

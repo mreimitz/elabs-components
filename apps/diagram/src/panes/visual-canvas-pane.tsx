@@ -1,3 +1,4 @@
+import { useDiagramStyle } from "../style/react-style";
 import { StoryBar } from "../story/story-bar";
 import {
   memo,
@@ -181,6 +182,7 @@ function VisualFlow({ paneRef, ast, built, source }: VisualFlowProps) {
 }
 
 export const VisualCanvasPane = memo(function VisualCanvasPane() {
+  const style = useDiagramStyle();
   const blank = useDiagram((s) => s.text.trim() === "");
   const ast = useDiagram((s) => s.drawn.ast);
   const issues = useDiagram((s) => s.drawn.issues);
@@ -190,10 +192,10 @@ export const VisualCanvasPane = memo(function VisualCanvasPane() {
 
   const built = useMemo(() => {
     if (!ast) return null;
-    const lens = visualSnapshot(ast).lens;
+    const lens = visualSnapshot(ast, style.hero, style.visual).lens;
     const layout = layoutVisualLens(lens);
-    return { ...buildVisualGraph(lens, layout), lens };
-  }, [ast]);
+    return { ...buildVisualGraph(lens, layout, style.visual), lens };
+  }, [ast, style.hero, style.visual]);
 
   if (!ast || !built || built.nodes.length === 0) {
     // Mirrors `canvas-pane.tsx`'s empty/error branches: a diagram that fails to parse or
@@ -257,7 +259,9 @@ export const VisualCanvasPane = memo(function VisualCanvasPane() {
   return (
     // `structure` changing means the technical graph reshaped, so the derived lens did too:
     // a fresh provider re-fits, the same way `TechnicalCanvasPane` keys on `loadCount`.
-    <ReactFlowProvider key={structure}>
+    <ReactFlowProvider
+      key={`${structure}:${style.hero ?? "neutral"}:${style.visual.profile}:${style.visual.ground.followTheme}`}
+    >
       <div ref={paneRef} className="@container h-full w-full">
         <VisualFlow
           paneRef={paneRef}

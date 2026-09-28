@@ -152,6 +152,20 @@
       "required": ["steps"],
       "additionalProperties": false
     },
+    "style": {
+      "type": "object",
+      "properties": {
+        "technical": {
+          "enum": ["inherit", "atlas-clean"],
+          "description": "Technical drawing profile; inherit uses the workspace or theme selection."
+        },
+        "visual": {
+          "enum": ["inherit", "qlik-marketecture"],
+          "description": "Visual drawing profile; inherit uses the workspace or theme selection."
+        }
+      },
+      "additionalProperties": false
+    },
     "styles": {
       "type": "object",
       "additionalProperties": {

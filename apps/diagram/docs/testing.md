@@ -119,3 +119,7 @@ When a browser check reads a store directly, import the exact module URL loaded 
 `NAVIGATION_EVIDENCE` saves cold-load screenshots and navigation results. These checks deliberately do not toggle lenses to normalize the initial render. They delay file responses to prove that obsolete reads cannot replace the selected document.
 
 The diff lifecycle check stresses rapid preview closure while a normal YAML editor remains mounted. The local Monaco 0.55.1 patch keeps global hover and markdown services at the standalone service lifetime; it is a repository dependency repair, separate from the published DiffEditor view-model cancellation fix.
+
+## Style profiles and lens integration
+
+Run `node --test scripts/tests/style-profiles.test.mjs` for loader/cascade/config/schema and renderer contract checks. With the isolated server running, `DIAGRAM_URL=http://localhost:5444 node tests/style-mcp.mjs` proves server validation and `DIAGRAM_URL=http://localhost:5444 node tests/style-profiles.mjs` checks actual four-theme paint, read-only switching, mid-morph theme changes and config reload. The browser check temporarily replaces `workspace/atlas.config.yaml` and restores it in `finally`; use only the test checkout. Optional `STYLE_EVIDENCE` saves screenshots and JSON.

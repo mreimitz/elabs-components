@@ -1,3 +1,5 @@
+import { DiagramStyleProvider, useResolvedStyle } from "../style/react-style";
+import { profileVariables } from "../style/profile-paint";
 import { ParticleLayer } from "../particles/particle-layer";
 import {
   CompositeActionContext,
@@ -205,6 +207,8 @@ function applyViewNodeStyle(
 /** Keeps both layouts mounted and shares one camera during the lens morph. Chrome is
  * portaled outside fading content. Technical writes remain locked until fully settled. */
 export function CanvasPane(props: CanvasPaneProps) {
+  const ast = useDiagram((s) => s.drawn.ast);
+  const style = useResolvedStyle(ast);
   const route = useRoute();
   const shownPath = useDiagram((s) => s.path);
   // React Flow owns document-level delete handlers. Lock those during a pending open,
@@ -221,8 +225,10 @@ export function CanvasPane(props: CanvasPaneProps) {
   const technicalRef = useRef<HTMLDivElement>(null);
   const visualRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
+    // Captured morph content belongs to both a document and its effective paint. A theme
+    // change during motion settles at the requested lens before painting the new profile.
     lensActions.settleForDocument();
-  }, [loadCount]);
+  }, [loadCount, style]);
   // Re-read every render, not cached in state: this component already re-renders on every
   // animation frame while `position` moves (`useLens`), so a preference flipped mid-session
   // (taste profile) takes effect on the very next transition without a separate subscription.
@@ -272,42 +278,52 @@ export function CanvasPane(props: CanvasPaneProps) {
   // Composite the pane itself: renderers can mount after layout completes, while this layer
   // exists from the first paint. Opacity is not inherited and chrome is portaled outside it.
   return (
-    <LensChromeTarget.Provider value={chromeTarget}>
-      <div ref={containerRef} data-lens-root className="@container relative h-full w-full">
-        <div
-          ref={technicalRef}
-          data-lens-pane="technical"
-          className="absolute inset-0 focus-ring-inset"
-          tabIndex={-1}
-          style={{ visibility: atVisual ? "hidden" : "visible", opacity: technicalOpacity }}
-          aria-hidden={atVisual || undefined}
-          inert={atVisual || undefined}
-        >
-          <TechnicalCanvasPane
-            {...props}
-            lensLocked={documentPending || (technicalLensLocked && !viewing)}
+    <DiagramStyleProvider value={style}>
+      <LensChromeTarget.Provider value={chromeTarget}>
+        <div ref={containerRef} data-lens-root className="@container relative h-full w-full">
+          <div
+            ref={technicalRef}
+            data-lens-pane="technical"
+            className="absolute inset-0 focus-ring-inset"
+            tabIndex={-1}
+            style={{
+              ...profileVariables(style.technical),
+              visibility: atVisual ? "hidden" : "visible",
+              opacity: technicalOpacity,
+            }}
+            aria-hidden={atVisual || undefined}
+            inert={atVisual || undefined}
+          >
+            <TechnicalCanvasPane
+              {...props}
+              lensLocked={documentPending || (technicalLensLocked && !viewing)}
+            />
+          </div>
+          <div
+            ref={visualRef}
+            data-lens-pane="visual"
+            className="absolute inset-0 focus-ring-inset"
+            tabIndex={-1}
+            style={{
+              ...profileVariables(style.visual),
+              visibility: atTechnical ? "hidden" : "visible",
+              opacity: visualOpacity,
+            }}
+            aria-hidden={!atVisual || undefined}
+            inert={!atVisual || undefined}
+          >
+            <VisualCanvasPane />
+          </div>
+          <LensMorphOverlay
+            key={loadCount}
+            containerRef={containerRef}
+            position={position}
+            active={morphing}
           />
+          <div ref={setChromeTarget} className="pointer-events-none absolute inset-0 z-20" />
         </div>
-        <div
-          ref={visualRef}
-          data-lens-pane="visual"
-          className="absolute inset-0 focus-ring-inset"
-          tabIndex={-1}
-          style={{ visibility: atTechnical ? "hidden" : "visible", opacity: visualOpacity }}
-          aria-hidden={!atVisual || undefined}
-          inert={!atVisual || undefined}
-        >
-          <VisualCanvasPane />
-        </div>
-        <LensMorphOverlay
-          key={loadCount}
-          containerRef={containerRef}
-          position={position}
-          active={morphing}
-        />
-        <div ref={setChromeTarget} className="pointer-events-none absolute inset-0 z-20" />
-      </div>
-    </LensChromeTarget.Provider>
+      </LensChromeTarget.Provider>
+    </DiagramStyleProvider>
   );
 }
 

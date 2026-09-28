@@ -1,5 +1,6 @@
 # Atlas — changelog (one line per fortnight, newest first)
 
+- 2026-09-29 — Two bounded style profiles now resolve from theme, workspace and diagram choices. Qlik visual drawings use navy panels, role accents and accessible capability colors; other themes retain neutral owner styling. Morphs and exports share the effective profile, and theme changes cannot leave stale transition paint.
 - 2026-09-29 — Authored visual layouts now control named lanes, capability boxes, processes, sub-items and the control plane. Component layouts travel with their references; technical connections remain authoritative. Visual layout previews save through an isolated undo step, and IntelliSense completes layout identifiers. Rapid diff-preview closure is safe beside the YAML editor.
 - 2026-09-29 — Workspace creation reports when a file was created but could not be opened, preserving unsaved edits and refreshing the tree. Static preview responses no longer masquerade as YAML. Skipped and overlapping theme transitions clean up safely.
 - 2026-09-29 — Technical flows animate with bounded particles reflecting direction, cadence and flow kind. Pause/Resume and reduced-motion controls work across documents; particles stop in inactive views and stay out of exports and thumbnails. The 60-flow local stress check stayed below 1 ms CPU p95 per draw.

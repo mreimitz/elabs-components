@@ -1,3 +1,4 @@
+import { selectionIssues } from "../../style/resolve-style";
 /** Plain YAML value → normalized ArchDiagram + structural issues. Sugar is expanded here. React-free. */
 import { validateProps, type SpecIssue } from "@elabs-ai/components-ui/definition";
 import { FLOW_DEF, NODE_DEF, ROOT_DEF, STYLE_DEF, ZONE_DEF } from "./definitions";
@@ -226,6 +227,11 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
   };
 
   const rootBad = check(ROOT_DEF, raw, "");
+  if ("style" in raw) {
+    for (const problem of selectionIssues(raw.style, ["style"])) {
+      issues.push(issue("invalid-style", problem.path.join("."), problem.message));
+    }
+  }
   // Lists are read item by item even when one item is bad, so one typo does not
   // turn every flow into unknown-endpoint. Bad items were reported by ROOT_DEF.
   const list = (key: string): readonly unknown[] => {
@@ -526,6 +532,7 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
       direction: pick(raw, "direction", rootBad) ?? "LR",
       nodeStyle: pick(raw, "nodeStyle", rootBad) ?? "icon",
       theme: pick(raw, "theme", rootBad),
+      style: pick(raw, "style", rootBad),
       legend: pick(raw, "legend", rootBad) ?? "auto",
       layout: pick(raw, "layout", rootBad) ?? "auto",
       zones,

@@ -1,3 +1,4 @@
+import type { StyleSelection } from "../../style/types";
 /**
  * Dialect v1 vocabulary (a superset of v0) and the normalized AST. React-free,
  * dependency-free.
@@ -228,6 +229,7 @@ export interface ArchDiagram {
   direction: Direction;
   nodeStyle: NodeStyle;
   theme?: string;
+  style?: StyleSelection;
   legend: LegendSetting;
   layout: LayoutMode;
   /** Every zone, flattened, in document pre-order. */

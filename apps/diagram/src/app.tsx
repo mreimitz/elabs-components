@@ -1,3 +1,4 @@
+import { StyleConfigBridge } from "./style/react-style";
 import { useEffect, useRef, useState, useSyncExternalStore, type ComponentRef } from "react";
 import {
   Button,
@@ -582,6 +583,7 @@ export function App() {
         <>
           <Toaster />
           <ShellServices />
+          <StyleConfigBridge />
         </>
       ) : null}
       <RouteView route={route} />

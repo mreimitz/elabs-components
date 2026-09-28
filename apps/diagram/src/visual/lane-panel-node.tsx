@@ -1,3 +1,4 @@
+import { useDiagramStyle } from "../style/react-style";
 import type { NodeProps } from "@elabs-ai/components-flow";
 import { cn } from "@elabs-ai/components-ui";
 import type { LanePanelNodeType } from "./visual-node-data";
@@ -10,9 +11,23 @@ import type { LanePanelNodeType } from "./visual-node-data";
  * region gets (conventions "Surface separation"). Never interactive: no handles, no drag.
  */
 export function LanePanelNode({ data }: NodeProps<LanePanelNodeType>) {
+  const { visual: profile } = useDiagramStyle();
+  const fixed = !profile.ground.followTheme;
   return (
     <div
       data-slot="lane-panel"
+      style={
+        fixed
+          ? {
+              backgroundColor: profile.roles.zone.fill,
+              borderColor: profile.roles.zone.stroke,
+              borderRadius: profile.zones.radius,
+              borderTopWidth: profile.zones.accentHeight,
+              borderTopColor: profile.zones.accents[data.role],
+              color: profile.roles.zone.text,
+            }
+          : undefined
+      }
       className={cn(
         "h-full w-full rounded-lg border border-border bg-surface-muted",
         "flex flex-col",
@@ -20,6 +35,7 @@ export function LanePanelNode({ data }: NodeProps<LanePanelNodeType>) {
     >
       <div
         data-slot="lane-panel-title"
+        style={fixed ? { color: profile.roles.zone.text } : undefined}
         className="text-meta shrink-0 truncate px-3 py-2 font-medium tracking-wide text-muted-foreground uppercase"
       >
         {data.title}

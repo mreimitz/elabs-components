@@ -1,3 +1,6 @@
+import { profileVariables } from "../style/profile-paint";
+import type { StyleProfile } from "../style/types";
+import { useDiagramStyle } from "../style/react-style";
 import { memo, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { ArchMark } from "../nodes/arch-mark";
 import type { ArchDiagram } from "../spec/dialect";
@@ -111,6 +114,7 @@ interface BoxGhost {
 }
 
 interface ZoneGhost {
+  targetPaint?: CSSProperties;
   id: string;
   fromTitle: string;
   toTitle: string;
@@ -131,6 +135,10 @@ interface FlowSegment extends Segment {
 }
 
 interface MorphPlan {
+  technicalBackground: string;
+  visualBackground: string;
+  technicalText: string;
+  visualText: string;
   fromCamera: Camera;
   toCamera: Camera;
   members: MemberGhost[];
@@ -141,7 +149,12 @@ interface MorphPlan {
 }
 
 /** Capture both layouts in graph coordinates; a single camera transforms the whole morph. */
-function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null {
+function capturePlan(
+  container: HTMLElement,
+  ast: ArchDiagram,
+  hero: string | null,
+  profile: StyleProfile,
+): MorphPlan | null {
   const containerRect = container.getBoundingClientRect();
   const technicalViewport = container.querySelector<HTMLElement>(
     '[data-lens-pane="technical"] .react-flow__viewport',
@@ -171,7 +184,7 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
     if (id) visRect.set(id, rectFrom(el, containerRect, toCamera));
   }
 
-  const lens: VisualLens = visualSnapshot(ast).lens;
+  const lens: VisualLens = visualSnapshot(ast, hero, profile).lens;
   const renderedLanes = layoutVisualLens(lens).lanes.map(({ lane }) => lane);
   const nodeToBox = new Map<string, VisualBox>();
   for (const box of lens.boxes) for (const member of box.members) nodeToBox.set(member.id, box);
@@ -220,6 +233,23 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
     });
   }
 
+  const lanePaint = (id: string): CSSProperties | undefined => {
+    const element = container.querySelector<HTMLElement>(
+      `[data-lens-pane="visual"] .react-flow__node[data-id="lane:${CSS.escape(id)}"] [data-slot="lane-panel"]`,
+    );
+    if (!element) return;
+    const computed = getComputedStyle(element);
+    return {
+      backgroundColor: computed.backgroundColor,
+      borderColor: computed.borderColor,
+      borderStyle: computed.borderStyle,
+      borderWidth: computed.borderWidth,
+      borderRadius: computed.borderRadius,
+      borderTopColor: computed.borderTopColor,
+      borderTopWidth: computed.borderTopWidth,
+      borderTopStyle: computed.borderTopStyle as CSSProperties["borderTopStyle"],
+    };
+  };
   const zones: ZoneGhost[] = [];
   const zonedLanes = new Set<string>();
   for (const zone of ast.zones) {
@@ -233,6 +263,7 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
     zonedLanes.add(lane);
     zones.push({
       id: zone.id,
+      targetPaint: lanePaint(lane),
       fromTitle: zone.title,
       toTitle: renderedLanes.find((item) => item.id === lane)?.title ?? lane,
       from,
@@ -254,6 +285,7 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
     if (memberRects.length === 0) continue;
     zones.push({
       id: `lane:${lane.id}`,
+      targetPaint: lanePaint(lane.id),
       fromTitle: "",
       toTitle: lane.title,
       from: unionRect(memberRects),
@@ -288,7 +320,27 @@ function capturePlan(container: HTMLElement, ast: ArchDiagram): MorphPlan | null
     });
   }
 
-  return { fromCamera, toCamera, members, boxes, zones, technicalFlows, visualFlows };
+  // Resolve tokens within their actual pane scope once, never during an animation frame.
+  const paneColor = (pane: Element, value: string): string => {
+    const token = /^var\((--[a-z\d-]+)\)$/.exec(value);
+    return token ? getComputedStyle(pane).getPropertyValue(token[1]!).trim() : value;
+  };
+  return {
+    fromCamera,
+    toCamera,
+    members,
+    boxes,
+    zones,
+    technicalFlows,
+    visualFlows,
+    technicalBackground: paneColor(technicalViewport, "var(--canvas)"),
+    visualBackground: paneColor(
+      visualViewport,
+      profile.ground.followTheme ? "var(--canvas)" : profile.ground.fill,
+    ),
+    technicalText: paneColor(technicalViewport, "var(--foreground)"),
+    visualText: paneColor(visualViewport, "var(--foreground)"),
+  };
 }
 
 function clamp01(x: number): number {
@@ -394,6 +446,11 @@ export const LensMorphOverlay = memo(
     position: number;
     active: boolean;
   }) {
+    const style = useDiagramStyle();
+    const heroRef = useRef(style.hero);
+    heroRef.current = style.hero;
+    const profileRef = useRef(style.visual);
+    profileRef.current = style.visual;
     const ast = useDiagram((s) => s.drawn.ast);
     const astRef = useRef(ast);
     astRef.current = ast;
@@ -410,7 +467,7 @@ export const LensMorphOverlay = memo(
         if (lensStore.get().animating) return;
         timer = setTimeout(() => {
           if (!lensStore.get().animating && astRef.current)
-            setPlan(capturePlan(container, astRef.current));
+            setPlan(capturePlan(container, astRef.current, heroRef.current, profileRef.current));
         }, 80);
       };
       const observer = new MutationObserver(schedule);
@@ -429,7 +486,7 @@ export const LensMorphOverlay = memo(
         observer.disconnect();
         resize.disconnect();
       };
-    }, [containerRef, ast]);
+    }, [containerRef, ast, style.visual, style.hero]);
     useLayoutEffect(() => {
       let mounted = true;
       const unregister = registerLensPreparation(
@@ -458,7 +515,12 @@ export const LensMorphOverlay = memo(
                 isLayoutReady(diagramStore.get().path) &&
                 container.querySelector('[data-lens-pane="visual"] [data-visual-ready="true"]');
               if (ready && stableFrames >= 2) {
-                const next = capturePlan(container, astRef.current);
+                const next = capturePlan(
+                  container,
+                  astRef.current,
+                  heroRef.current,
+                  profileRef.current,
+                );
                 setPlan(next);
                 // Commit the prepared overlay before publishing its first moving frame.
                 requestAnimationFrame(() => resolve(mounted && next !== null));
@@ -535,13 +597,29 @@ export const LensMorphOverlay = memo(
           ? 1 - subProgress(position, DRESS_START, 1)
           : 1;
 
+    const fixedVisual = !style.visual.ground.followTheme;
     return (
       <div
+        data-slot="lens-morph-overlay"
         className="pointer-events-none absolute inset-0 overflow-hidden"
         style={{ opacity: active ? overlayOpacity : 0, visibility: active ? "visible" : "hidden" }}
         aria-hidden="true"
         inert
       >
+        {fixedVisual ? (
+          <>
+            <div
+              data-morph-ground="technical"
+              className="absolute inset-0"
+              style={{ backgroundColor: plan.technicalBackground }}
+            />
+            <div
+              data-morph-ground="visual"
+              className="absolute inset-0"
+              style={{ backgroundColor: plan.visualBackground, opacity: cameraProgress }}
+            />
+          </>
+        ) : null}
         <div
           data-morph-camera
           className="absolute inset-0 origin-top-left"
@@ -567,9 +645,31 @@ export const LensMorphOverlay = memo(
                 y1={seg.y1}
                 x2={seg.x2}
                 y2={seg.y2}
-                stroke="var(--border-strong)"
-                strokeWidth={1.5}
-                strokeDasharray={seg.solid ? undefined : "4 3"}
+                stroke={
+                  fixedVisual
+                    ? seg.solid
+                      ? style.visual.flows.data.stroke
+                      : style.visual.flows.control.stroke
+                    : "var(--border-strong)"
+                }
+                strokeWidth={
+                  fixedVisual
+                    ? seg.solid
+                      ? style.visual.flows.data.width
+                      : style.visual.flows.control.width
+                    : 1.5
+                }
+                strokeDasharray={
+                  fixedVisual
+                    ? seg.solid
+                      ? undefined
+                      : style.visual.flows.control.dash === "none"
+                        ? undefined
+                        : style.visual.flows.control.dash
+                    : seg.solid
+                      ? undefined
+                      : "4 3"
+                }
                 opacity={edgeIn}
               />
             ))}
@@ -577,9 +677,13 @@ export const LensMorphOverlay = memo(
           {plan.zones.map((zone) => (
             <div
               key={zone.id}
+              data-morph-lane={zone.id}
               style={flipStyle(zone.from, zone.to, zoneT)}
               className="relative overflow-hidden rounded-lg border border-border bg-surface-muted"
             >
+              {fixedVisual ? (
+                <div className="absolute inset-0" style={{ ...zone.targetPaint, opacity: zoneT }} />
+              ) : null}
               {/* The frame above scales non-uniformly (a zone's aspect ratio rarely matches its
               lane's) — this layer counter-scales by the inverse from the same origin so the
               title renders at 1:1 the whole time instead of stretching with it. */}
@@ -594,7 +698,10 @@ export const LensMorphOverlay = memo(
                 ) : null}
                 <div
                   className="text-meta absolute inset-x-0 top-0 truncate px-3 py-2 font-medium tracking-wide text-muted-foreground uppercase"
-                  style={{ opacity: subProgress(position, 0.6, 1) }}
+                  style={{
+                    opacity: subProgress(position, 0.6, 1),
+                    color: fixedVisual ? style.visual.roles.zone.text : undefined,
+                  }}
                 >
                   {zone.toTitle}
                 </div>
@@ -602,14 +709,25 @@ export const LensMorphOverlay = memo(
             </div>
           ))}
           {plan.boxes.map((box) => (
-            <div key={box.id} style={{ ...flipStyle(box.from, box.to, gather), opacity: gather }}>
+            <div
+              key={box.id}
+              data-morph-box={box.id}
+              style={{
+                ...profileVariables(style.visual),
+                ...flipStyle(box.from, box.to, gather),
+                opacity: gather,
+              }}
+            >
               <BoxContent element={box.content} textOpacity={textHandoff} />
             </div>
           ))}
           {plan.members.map((member) => (
             <div
               key={member.id}
-              style={{ ...flipStyle(member.from, member.to, gather), opacity: memberOpacity }}
+              style={{
+                ...flipStyle(member.from, member.to, gather),
+                opacity: memberOpacity,
+              }}
               className="overflow-hidden"
             >
               {/* The same `flex items-center gap-1.5` + `ArchMark`/`text-meta` shape
@@ -618,13 +736,22 @@ export const LensMorphOverlay = memo(
               into place, same as the box ghost above carries its title. Counter-scaled by the
               parent's own FLIP tween (`unscaledLabelStyle`) for the same reason a zone/box
               ghost's title is: the icon and text must not stretch with the frame around them. */}
-              <div
-                style={unscaledLabelStyle(member.from, member.to, gather)}
-                className="flex min-w-0 items-center gap-1.5"
-              >
-                <ArchMark icon={member.icon} size={16} variant="mono" className="shrink-0" />
-                <span className="text-meta min-w-0 truncate">{member.title}</span>
-              </div>
+              {(fixedVisual
+                ? [
+                    { id: "technical", color: plan.technicalText, opacity: 1 - cameraProgress },
+                    { id: "visual", color: plan.visualText, opacity: cameraProgress },
+                  ]
+                : [{ id: "neutral" }]
+              ).map(({ id, ...paint }) => (
+                <div
+                  key={id}
+                  style={{ ...unscaledLabelStyle(member.from, member.to, gather), ...paint }}
+                  className="flex min-w-0 items-center gap-1.5"
+                >
+                  <ArchMark icon={member.icon} size={16} variant="mono" className="shrink-0" />
+                  <span className="text-meta min-w-0 truncate">{member.title}</span>
+                </div>
+              ))}
             </div>
           ))}
         </div>
