@@ -1,5 +1,5 @@
 /** Isolated real-browser lens checks. DIAGRAM_URL, PLAYWRIGHT_MODULE, LENS_EVIDENCE_DIR. */
-/* global document, performance */
+/* global document, performance, setTimeout */
 import assert from "node:assert/strict";
 import process from "node:process";
 import console from "node:console";
@@ -25,7 +25,7 @@ async function lens(page, action) {
     const moduleURL = performance
       .getEntriesByType("resource")
       .find((entry) => entry.name.includes("/src/shell/lens-store.ts"))?.name;
-    const { lensStore, lensActions } = await import(moduleURL);
+    const { lensStore, lensActions } = await import(moduleURL ?? "/src/shell/lens-store.ts");
     if (action) lensActions.setLens(action);
     return lensStore.get();
   }, action);
@@ -75,6 +75,19 @@ try {
         await settled(page, "visual");
         const boxes = page.locator('[data-lens-pane="visual"] [data-slot="capability-box"]');
         assert((await boxes.count()) > 0, path);
+        const fit = await page.locator('[data-lens-pane="visual"]').evaluate((pane) => {
+          const frame = pane.getBoundingClientRect();
+          return [...pane.querySelectorAll('[data-slot="capability-box"]')].every((box) => {
+            const rect = box.getBoundingClientRect();
+            return (
+              rect.left >= frame.left - 1 &&
+              rect.right <= frame.right + 1 &&
+              rect.top >= frame.top - 1 &&
+              rect.bottom <= frame.bottom + 1
+            );
+          });
+        });
+        assert(fit, `${path} boxes outside fitted pane`);
         const clipped = await boxes.evaluateAll((elements) =>
           elements
             .filter((element) => element.scrollHeight > element.clientHeight + 2)
@@ -93,6 +106,26 @@ try {
           return visualGeometryIssues(deriveVisualLens(diagramStore.get().drawn.ast));
         });
         assert.deepEqual(geometry, [], `${path} geometry`);
+        for (let index = 0; index < (await boxes.count()); index++) {
+          await page.mouse.move(0, 0);
+          await page.waitForTimeout(180);
+          await boxes.nth(index).hover();
+          const card = page.locator('[data-slot="hover-card-content"][data-state="open"]');
+          await card.waitFor({ state: "visible" });
+          await page.waitForTimeout(120);
+          const rect = await card.boundingBox();
+          assert(
+            rect &&
+              rect.x >= 0 &&
+              rect.y >= 0 &&
+              rect.x + rect.width <= width &&
+              rect.y + rect.height <= 900,
+            `${path} hover ${index} outside viewport`,
+          );
+          assert((await card.textContent()).includes("Contains:"));
+          if (index === 0 && evidence)
+            await page.screenshot({ path: `${evidence}/${width}-${theme}-${name}-hover.png` });
+        }
         results.push({ width, theme, path, boxes: await boxes.count() });
       }
       assert.deepEqual(errors, []);
@@ -116,6 +149,17 @@ try {
   await settled(page, "visual");
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   await page.waitForTimeout(500);
+  // A user zoom remains intentional across resize, then becomes the morph's actual camera.
+  const visualPane = page.locator('[data-lens-pane="visual"] .react-flow');
+  await visualPane.hover({ position: { x: 80, y: 150 } });
+  await page.mouse.wheel(0, -160);
+  await page.waitForTimeout(350);
+  const camera = () =>
+    page.locator('[data-lens-pane="visual"] .react-flow__viewport').getAttribute("style");
+  const zoomed = await camera();
+  await page.setViewportSize({ width: 1180, height: 900 });
+  await page.waitForTimeout(200);
+  assert.equal(await camera(), zoomed, "resize overwrote intentional zoom");
   const guard = await page.evaluate(async () => {
     const module = async (path) =>
       import(
@@ -162,6 +206,47 @@ try {
   await page.keyboard.press("Alt+Enter");
   await settled(page, "technical");
   await page.waitForFunction(() => document.activeElement?.classList.contains("react-flow__node"));
+  const historyGuard = await page.evaluate(async () => {
+    const module = (path) =>
+      import(
+        performance.getEntriesByType("resource").find((entry) => entry.name.includes(path)).name
+      );
+    const { diagramStore, diagramActions } = await module("/src/state/diagram-store.ts");
+    const { historyActions, historyCounts } = await module("/src/state/history.ts");
+    const { lensStore, lensActions } = await module("/src/shell/lens-store.ts");
+    // An in-memory document avoids writing a shipped example while creating real history.
+    diagramActions.loadText(diagramStore.get().text);
+    const { modeActions } = await module("/src/shell/mode-store.ts");
+    modeActions.setMode("edit");
+    diagramActions.setText(diagramStore.get().text + "\n# first history step\n");
+    await new Promise((resolve) => setTimeout(resolve, 550));
+    diagramActions.setText(diagramStore.get().text + "# second history step\n");
+    historyActions.undo();
+    const expected = historyCounts();
+    const text = diagramStore.get().text;
+    const locked = () => {
+      const undo = historyActions.undo(),
+        redo = historyActions.redo();
+      return { undo, redo, counts: historyCounts(), unchanged: diagramStore.get().text === text };
+    };
+    lensActions.setLens("visual");
+    const immediate = locked();
+    while (lensStore.get().animating) await new Promise((resolve) => setTimeout(resolve, 25));
+    const visual = locked();
+    lensActions.setLens("technical");
+    const reversal = locked();
+    while (lensStore.get().animating) await new Promise((resolve) => setTimeout(resolve, 25));
+    const restored = historyActions.redo();
+    return { expected, immediate, visual, reversal, restored };
+  });
+  assert.deepEqual(historyGuard.expected, { undo: 1, redo: 1 });
+  for (const phase of ["immediate", "visual", "reversal"])
+    assert.deepEqual(
+      historyGuard[phase],
+      { undo: false, redo: false, counts: historyGuard.expected, unchanged: true },
+      phase,
+    );
+  assert.equal(historyGuard.restored, true);
   await page.keyboard.press("e");
   await lens(page, "visual");
   await settled(page, "visual");
@@ -184,6 +269,24 @@ try {
   assert((await lens(page)).lens === "visual");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(200);
+  for (const [text, title] of [
+    ["", "Nothing to draw yet"],
+    ["title: [", "The text is not a diagram"],
+  ]) {
+    await page.evaluate(async (text) => {
+      const moduleURL = performance
+        .getEntriesByType("resource")
+        .find((entry) => entry.name.includes("/src/state/diagram-store.ts")).name;
+      const { diagramActions } = await import(moduleURL);
+      diagramActions.loadText(text);
+    }, text);
+    await lens(page, "visual");
+    await settled(page, "visual");
+    await page
+      .locator('[data-lens-pane="visual"]')
+      .getByText(title, { exact: true })
+      .waitFor({ state: "visible" });
+  }
   await page.goto(`${url}/#dev/lens-check`);
   await page.locator("table").first().waitFor();
   assert.equal(await page.locator('[data-pass="false"]').count(), 0);
@@ -193,12 +296,16 @@ try {
   assert.deepEqual(errors, []);
   await context.close();
   console.log(
-    JSON.stringify({ galleries: results.length, guard, picture, errors, writes }, null, 2),
+    JSON.stringify(
+      { galleries: results.length, guard, historyGuard, picture, errors, writes },
+      null,
+      2,
+    ),
   );
   if (evidence)
     await writeFile(
       `${evidence}/functional-checks.json`,
-      JSON.stringify({ results, guard, picture, errors, writes }, null, 2),
+      JSON.stringify({ results, guard, historyGuard, picture, errors, writes }, null, 2),
     );
 } finally {
   await browser.close();

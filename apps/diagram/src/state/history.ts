@@ -114,6 +114,7 @@ function restore(text: string, focus: boolean) {
 export const historyActions = {
   /** `focus`: move keyboard focus to what the step brought back (keyboard use). */
   undo(focus = false): boolean {
+    if (!canUseHistory()) return false;
     const text = past.pop();
     if (text === undefined) return false;
     future.push(current);
@@ -122,6 +123,7 @@ export const historyActions = {
     return true;
   },
   redo(focus = false): boolean {
+    if (!canUseHistory()) return false;
     const text = future.pop();
     if (text === undefined) return false;
     past.push(current);
@@ -130,6 +132,10 @@ export const historyActions = {
     return true;
   },
 };
+
+export function historyCounts(): Counts {
+  return counts.get();
+}
 
 export function useHistoryCounts(): Counts {
   return useSyncExternalStore(counts.subscribe, counts.get);

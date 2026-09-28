@@ -1,10 +1,12 @@
 import { Handle, Position, type NodeProps } from "@elabs-ai/components-flow";
 import { HoverCard, HoverCardContent, HoverCardTrigger, cn } from "@elabs-ai/components-ui";
+import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Network } from "lucide-react";
 import { ArchMark } from "../nodes/arch-mark";
 import { OWNER_LABEL, type ZoneOwner } from "../nodes/zone-data";
 import { zoneBodyVariants, zoneFill, zoneVariants } from "../nodes/zone-variants";
-import { lensActions } from "../shell/lens-store";
+import { lensActions, useLens } from "../shell/lens-store";
 import type { CapabilityBoxNodeType } from "./visual-node-data";
 
 /** The box's strings, in one place (`conventions/i18n-strings`). */
@@ -37,6 +39,8 @@ const UNOWNED_STYLE_AS: ZoneOwner = "hosted";
  * switches to the technical lens framed on them (`docs/2026-09-27-visual-lens-concept.md` §5).
  */
 export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
+  const [hoverOpen, setHoverOpen] = useState(false);
+  const settled = useLens((s) => s.position === 1 && s.target === "visual" && !s.animating);
   const owner = data.owner === "unowned" ? UNOWNED_STYLE_AS : data.owner;
   // A box sits INSIDE its lane panel, which is itself `bg-surface-muted` (`lane-panel-node.tsx`)
   // — `zoneFill(0, owner)` treated the box as if it sat directly on `--canvas`, the same root a
@@ -82,7 +86,12 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
   // precomputed line touches.
   const noHandle = "!h-0 !w-0 !min-w-0 !border-0 !bg-transparent opacity-0";
   return (
-    <HoverCard openDelay={150}>
+    <HoverCard
+      openDelay={150}
+      closeDelay={100}
+      open={settled && hoverOpen}
+      onOpenChange={setHoverOpen}
+    >
       <Handle type="target" position={Position.Left} isConnectable={false} className={noHandle} />
       <Handle type="source" position={Position.Right} isConnectable={false} className={noHandle} />
       <HoverCardTrigger asChild>
@@ -169,11 +178,22 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
           )}
         </button>
       </HoverCardTrigger>
-      <HoverCardContent aria-hidden="true" className="w-64 text-caption">
-        <p className="font-medium">{data.title}</p>
-        <p className="text-muted-foreground">{contains}</p>
-        {ownerLabel ? <p className="text-meta text-muted-foreground mt-1">{ownerLabel}</p> : null}
-      </HoverCardContent>
+      {createPortal(
+        <div className="pointer-events-none">
+          <HoverCardContent
+            aria-hidden="true"
+            collisionPadding={12}
+            className="pointer-events-none w-64 text-caption"
+          >
+            <p className="font-medium">{data.title}</p>
+            <p className="text-muted-foreground">{contains}</p>
+            {ownerLabel ? (
+              <p className="text-meta text-muted-foreground mt-1">{ownerLabel}</p>
+            ) : null}
+          </HoverCardContent>
+        </div>,
+        document.body,
+      )}
     </HoverCard>
   );
 }

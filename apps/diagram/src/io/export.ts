@@ -99,6 +99,13 @@ const CANVAS_WAIT_MS = 10_000;
  */
 export function canvasDrawn(): Promise<void> {
   const ready = () => {
+    const lens = lensStore.get();
+    if (
+      lens.animating ||
+      lens.target !== lens.lens ||
+      lens.position !== (lens.target === "visual" ? 1 : 0)
+    )
+      return false;
     const flow = liveCanvas();
     return flow !== null && flow.closest("[inert]") === null;
   };
@@ -772,14 +779,16 @@ export async function pictureOfCanvas(
   title: string | undefined,
   options: PictureOptions = {},
 ): Promise<Picture> {
-  const flow = liveCanvas();
-  const box = flow ? drawnBox(flow) : null;
-  if (!flow || !box) throw new Error("There is no diagram on the canvas to export.");
   const sandbox = await openSandbox();
   let stage: HTMLElement;
   let size: { width: number; height: number };
   let pseudoCss: string;
   try {
+    await canvasDrawn();
+    const flow = liveCanvas();
+    const box = flow ? drawnBox(flow) : null;
+    if (lensStore.get().animating || !flow || !box)
+      throw new Error("There is no settled diagram on the canvas to export.");
     const staged = stageOf(flow, box, options);
     stage = staged.stage;
     size = staged;

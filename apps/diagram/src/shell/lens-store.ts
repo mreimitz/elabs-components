@@ -1,28 +1,5 @@
-/**
- * The lens switch's state (maintainer 2026-09-27, "the switch from technical to visual"):
- * `technical` (today's diagram) or `visual` (the derived lens, `src/visual/`). View-only —
- * nothing here ever touches `diagram-store`/`workspace-store`, so switching lenses can never
- * write the file, mark it dirty or enter undo (the hard requirement this task starts from: a
- * previous feature leaked a viewer-only view into the saved file).
- *
- * `position` is the transition's one scrubbable tween value, 0 (technical) .. 1 (visual) —
- * `docs/2026-09-27-style-system-concept.md` §7's "single tween `t`, so a mid-flight reverse is
- * continuous": `setLens` only ever changes `target` and lets `position` keep moving from
- * wherever it already is, at a constant rate, so calling it twice in a row (a fast double
- * toggle) reverses smoothly instead of restarting or jumping. `src/panes/canvas-pane.tsx` reads
- * `position` to drive the morph (`lens-morph-overlay.tsx`) and the cross-fade; see those files
- * and `docs/findings/lens-switch-slice.md` for exactly what this transition does and does not
- * do.
- *
- * `setLens` writes the URL with `history.replaceState`, not a `location.hash` assignment: the
- * latter fires `hashchange`, which `routes/use-hash.ts` turns into a full shell re-render (the
- * hash string itself changed, so every `useRoute()`/`useHash()` consumer re-renders even though
- * `parseRoute` ignores `lens=`), landing squarely inside the tween's first frame and stalling
- * it. `replaceState` updates `location.hash` (so a copied link, or a fresh `lensFromHash()` read
- * on reload, still sees it) without dispatching `hashchange` or `popstate`, so a lens switch
- * costs the tween nothing. External hash changes (back/forward, a shared link, any other
- * `navigate()` call) still go through the `hashchange` listener below.
- */
+/** A reversible viewer-only lens tween. Target locks edits immediately; position controls the
+ * shared-camera morph. URL replacement preserves sharing without rerendering the shell. */
 import { useSyncExternalStore } from "react";
 import { prefersReducedMotion } from "../motion";
 import { createStore } from "../state/create-store";
@@ -30,9 +7,7 @@ import { hashWithLens, isVisualLensHash } from "../interaction/lens-mode";
 
 export type Lens = "technical" | "visual";
 
-/** S10's normal-motion duration (the concept's own 700 ms, not the app's token scale — see
- * `motion.ts`'s "one scale" note; this is the one deliberate, documented exception, because
- * the maintainer specified this exact number for this exact signature move). */
+/** Normal-motion choreography duration. */
 const DURATION_MS = 700;
 /** Reduced motion: a short cross-fade, no movement (style-system concept §7). */
 const REDUCED_DURATION_MS = 200;
@@ -138,10 +113,7 @@ export const lensActions = {
       frameKey: options.frameNodeIds ? frameKey + 1 : frameKey,
     });
     ensureAnimating();
-    // `replaceState`, not a `location.hash` assignment (see the header comment above): the
-    // URL still ends up carrying `lens=` for a copied link or a reload, but the write itself
-    // never dispatches `hashchange`, so it costs the tween nothing — no shell re-render shares
-    // the frame this starts animating on.
+    // Avoid hashchange and its full-shell render in the first moving frame.
     const hash = hashWithLens(window.location.hash, next === "visual");
     window.history.replaceState(
       window.history.state,

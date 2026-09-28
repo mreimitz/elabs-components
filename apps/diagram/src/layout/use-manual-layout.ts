@@ -13,7 +13,8 @@ import type { CanvasProps } from "../panes/canvas-props";
 import { focusCanvasElement, focusedCanvasId } from "../panes/focus-canvas";
 import type { ArchCompileView } from "../spec/compile/compile-arch";
 import type { FlowSpec } from "../spec/flow-spec";
-import { diagramActions, editActions } from "../state/diagram-store";
+import { currentMode } from "../shell/mode-store";
+import { diagramStore, diagramActions, editActions } from "../state/diagram-store";
 import { keepSelection } from "../state/pipeline";
 import { layoutBridge } from "./layout-bridge";
 import { manualEdit, type Move, type Placement, type Point } from "./layout-edits";
@@ -129,10 +130,18 @@ export function useManualLayout(spec: FlowSpec, view: ArchCompileView): CanvasPr
             noteAnchors: view.noteAnchors,
             collapse: view.collapsed,
           };
+          const source = diagramStore.get();
           const graph = expandedOf(getNodes(), getEdges());
           void layoutDiagram(graph.nodes, graph.edges, options).then((result) => {
-            if (result.engine === "dagre") return;
-            editActions.applyEdit(manualEdit(placementsOf(result.nodes), [], false));
+            const current = diagramStore.get();
+            if (
+              result.engine === "dagre" ||
+              currentMode() !== "edit" ||
+              current.loadCount !== source.loadCount ||
+              current.text !== source.text
+            )
+              return;
+            if (!editActions.applyEdit(manualEdit(placementsOf(result.nodes), [], false))) return;
             // The fit goes through the layout's own path (DG-12): lay out from the text.
             diagramActions.requestLayout();
           });

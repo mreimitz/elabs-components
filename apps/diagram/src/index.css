@@ -26,21 +26,10 @@
   z-index: 20 !important;
 }
 
-/* `panes/canvas-pane.tsx`'s lens switch: the technical/visual pane wrapper sets
-   `--pane-opacity` (the morph's gather/dress content fade) and `--pane-chrome-opacity` (a
-   plain, always-continuous `1 - position`/`position` cross-fade) as custom properties, not a
-   single inline `opacity`, because the two must animate independently. React Flow renders a
-   `<Panel>` (`TitleBlock`, `DiagramLegend`, `FlowMiniMap`, `ZoomControls`,
-   `InteractionOverlays`) as a SIBLING of `.react-flow__renderer` inside `.react-flow`, not a
-   descendant of it, so scoping the two rules to those two selectors reaches exactly the
-   diagram content and exactly the chrome, never both from one rule. Without this split the
-   chrome fades out with the content during the morph's middle span and the screen goes
-   chromeless — S10 §7 requires the opposite ("chrome stays visible throughout"). */
+/* Chrome is portaled outside these composited content layers. */
 [data-lens-pane] .react-flow__renderer {
   opacity: var(--pane-opacity, 1);
-}
-[data-lens-pane] .react-flow__panel {
-  opacity: var(--pane-chrome-opacity, 1);
+  will-change: opacity;
 }
 @source "../../../packages/ui/src";
 @source "../../../packages/icons/src";

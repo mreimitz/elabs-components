@@ -185,37 +185,8 @@ function applyViewNodeStyle(
   };
 }
 
-/**
- * maintainer 2026-09-27 ("the switch from technical to visual"), morph added per an
- * orchestrator correction the same day — the pane the rest of the app mounts: technical
- * (`TechnicalCanvasPane`, today's implementation, untouched below) or visual
- * (`VisualCanvasPane`, `src/visual/`).
- *
- * Both are ALWAYS mounted (not just while a switch is in flight): that is what lets
- * `docs/2026-09-27-style-system-concept.md` §7's "target layout is computed before the
- * animation starts" hold for real — the hidden side is continuously laid out and fitted in
- * the background, so there is no fresh-mount race to win the instant a switch starts. Normal
- * motion (`!reduced`) fades the two panes' DIAGRAM content out and back in around a middle
- * span where `LensMorphOverlay` owns the screen, flying ghost rectangles from each technical
- * element's on-screen rect to its visual counterpart's (transform/opacity only, one `position`
- * value driving every ghost — see that file). Reduced motion keeps the ORIGINAL plain
- * cross-fade (§7 "reduced motion: a 200 ms cross-fade … no movement") — no overlay, no ghosts,
- * exactly the prior behaviour. `docs/findings/lens-switch-slice.md` has the measured frame
- * times and the honest list of what §7 asks for that the overlay simplifies.
- *
- * The chrome each side draws through React Flow's own `<Panel>` (`TitleBlock`, `DiagramLegend`,
- * `FlowMiniMap`, `ZoomControls`, `InteractionOverlays`) is NOT part of that diagram-content
- * fade: `Panel` renders as a sibling of `.react-flow__renderer`, not a descendant of it, so
- * `index.css`'s `[data-lens-pane] .react-flow__renderer`/`.react-flow__panel` rules can opacity
- * the two independently. Chrome gets its own, always-continuous cross-fade
- * (`--pane-chrome-opacity: 1 - position` / `position`, set below) so the title block, legend,
- * minimap and zoom controls are never both faded out at once the way the diagram content
- * deliberately is during the morph's middle span — S10 §7's "chrome stays visible throughout".
- *
- * Neither side is draggable/connectable/deletable while the other is fading in — a lens
- * switch is not an interactive moment — and the settled, hidden side is `inert` so it takes
- * no focus or hit-testing and is invisible to assistive tech.
- */
+/** Keeps both layouts mounted and shares one camera during the lens morph. Chrome is
+ * portaled outside fading content. Technical writes remain locked until fully settled. */
 export function CanvasPane(props: CanvasPaneProps) {
   const position = useLens((s) => s.position);
   const target = useLens((s) => s.target);
@@ -283,7 +254,6 @@ export function CanvasPane(props: CanvasPaneProps) {
             {
               "--pane-opacity": technicalOpacity,
               visibility: atVisual ? "hidden" : "visible",
-              "--pane-chrome-opacity": 1 - position,
             } as CSSProperties
           }
           aria-hidden={atVisual || undefined}
@@ -300,7 +270,6 @@ export function CanvasPane(props: CanvasPaneProps) {
             {
               "--pane-opacity": visualOpacity,
               visibility: atTechnical ? "hidden" : "visible",
-              "--pane-chrome-opacity": position,
             } as CSSProperties
           }
           aria-hidden={!atVisual || undefined}
