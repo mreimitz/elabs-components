@@ -44,7 +44,7 @@ import { diagramActions, editActions, useDiagram } from "../state/diagram-store"
 import { overrideDocKey } from "../state/override-key";
 import { folderOf, useWorkspace } from "../workspace/workspace-store";
 import { lensActions, useLens, type Lens } from "./lens-store"; // maintainer 2026-09-27 (lens switch)
-import { modeActions, useDocMode } from "./mode-store";
+import { modeActions, useDocMode, useMode } from "./mode-store";
 import { WithTooltip } from "./with-tooltip";
 // view mode overrides (maintainer 2026-09-27)
 import {
@@ -171,15 +171,16 @@ function setViewOverride<K extends "direction" | "nodeStyle">(
 }
 
 /**
- * The Atlas top bar (plan §3.3–3.4). Left: the sidebar trigger and the breadcrumb (folder ›
+ * The document toolbar sits below the tabs. Left: the breadcrumb (folder ›
  * file name, the page's `h1` — a location, never the diagram's title; DG-68). Centre: in view
  * mode the story bar's slot (DG-31), in edit mode direction, node style and layout. Right: the
- * save state, Edit/Done, the zone folds and Present, Export, the theme. Undo/Redo, the
+ * save state, Edit/Done, the zone folds and Present, Export. Undo/Redo, the
  * inspector switch and the problem counts show in edit mode only. Below `COMPACT_BELOW` the
  * controls move into one menu. Off a document (Home, Catalog, Settings) the bar is the
- * breadcrumb and the theme.
+ * breadcrumb. When there are no open tabs, this row also hosts the sidebar and theme controls.
  */
 export function TopBar() {
+  const hasTabs = useMode((s) => s.openPaths.length > 0);
   const route = useRoute();
   const onDoc = route.kind === "doc";
   const edit = useDocMode() === "edit" && onDoc;
@@ -243,9 +244,10 @@ export function TopBar() {
     <TooltipProvider>
       <header
         ref={headerRef}
+        data-slot="diagram-toolbar"
         className="flex h-header items-center gap-2 border-b px-4 [&>*:not(nav)]:shrink-0"
       >
-        <SidebarTrigger />
+        {hasTabs ? null : <SidebarTrigger />}
         <TitleCrumbs route={route} />
         {/* Always mounted (it owns the file input, a dialog and the share-link listener);
             off a document it shows nothing. */}
@@ -311,9 +313,11 @@ export function TopBar() {
         ) : null}
         {/* The library's family layout, as the website shows it: pick the brand, then light,
           dark or system (maintainer ruling 2026-09-27). */}
-        <WithTooltip label={TOP_BAR_LABELS.theme}>
-          <ThemeSwitcher variant="ghost" size="sm" />
-        </WithTooltip>
+        {hasTabs ? null : (
+          <WithTooltip label={TOP_BAR_LABELS.theme}>
+            <ThemeSwitcher variant="ghost" size="sm" />
+          </WithTooltip>
+        )}
       </header>
     </TooltipProvider>
   );

@@ -39,6 +39,7 @@ for title_form in block anchored aliased flow anchored-multiline; do
   ATLAS_TITLE_FORM="$title_form" node scripts/tests/home-browser.mjs
 done
 node tests/sidebar-search.mjs
+node tests/tab-bar.mjs
 node scripts/check-view-mode.mjs
 node tests/lens-recovery.mjs
 node tests/lens-motion.mjs
@@ -51,6 +52,7 @@ node tests/lens-motion.mjs
 | Home Node checks      | YAML title-copy semantics, comments, line endings, template preservation and copy markers.                                        |
 | Home browser          | Real template copies, distinct names across navigation surfaces, Retry focus, clipboard fallback and phone layouts.               |
 | Sidebar search        | Matching names and content, visible evidence at nested widths, sequential queries, keyboard access and folder-state restoration.  |
+| Tab bar               | Tab overflow and selection, responsive visibility, keyboard focus, close confirmation, and sidebar/theme controls.                |
 | View mode             | Personal overrides, external edits, mode changes, mobile canvas, presentation controls and thumbnail readiness.                   |
 | Lens interactions     | Shipped diagrams, routing geometry, read-only write/history guards, keyboard drill-down, refit and export.                        |
 | Lens motion           | First switch, resize, reversal, shared camera, persistent controls and reduced motion, with frame measurements.                   |

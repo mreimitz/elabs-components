@@ -142,8 +142,8 @@ export function DiagramShell({ children }: DiagramShellProps) {
       {/* `h-svh`: a definite height, so the editor/canvas split fills the viewport instead of
           growing the page past it (min-height alone lets content push it 8 px taller). */}
       <SidebarInset className="h-svh">
-        <TopBar />
         <DocTabs />
+        <TopBar />
         <div
           id={WORKSPACE_ID}
           tabIndex={-1}
