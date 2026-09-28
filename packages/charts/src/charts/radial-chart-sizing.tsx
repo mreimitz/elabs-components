@@ -8,14 +8,13 @@ import { ChartParentSize } from "./chart-parent-size";
 import { cn } from "@elabs-ai/components-ui";
 
 /**
- * Shared by `PieChart` and `RingChart`'s root render (handed on from
- * RM-202): both size their inner SVG one of two ways — an explicit
- * `fixedSize`, shrunk by margin with plain JS since nothing measures the
- * DOM, or `ChartParentSize`'s measured content box for responsive sizing —
- * and both wrap either result in the same `ChartPlotRoot` chrome. Each
- * family's own `*ChartInner` differs (radii, seams, labels, …), so it stays
- * a render-prop the caller supplies; this module owns only the branch and
- * the chrome around it.
+ * Shared by `PieChart` and `RingChart`'s root render: both size their inner
+ * SVG one of two ways — an explicit `fixedSize`, shrunk by margin with plain
+ * JS since nothing measures the DOM, or `ChartParentSize`'s measured content
+ * box for responsive sizing — and both wrap either result in the same
+ * `ChartPlotRoot` chrome. Each family's own `*ChartInner` differs (radii,
+ * seams, labels, …), so it stays a render-prop the caller supplies; this
+ * module owns only the branch and the chrome around it.
  */
 export interface RadialChartSizingProps {
   /** An explicit width/height in px; unset falls through to `ChartParentSize`. */
