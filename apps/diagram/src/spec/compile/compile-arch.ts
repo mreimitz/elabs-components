@@ -3,6 +3,8 @@
  * silently skips what the dialect stage already reported (unknown endpoints, unknown or
  * non-zone parents, unknown note targets), so one mistake is reported once. React-free.
  */
+import { expandInstances, type InnerSource } from "../compose/inline";
+import type { ArchIssue } from "../dialect/issues";
 import type { ComponentTable } from "../compose/resolver";
 import type {
   ArchDiagram,
@@ -58,9 +60,13 @@ export type CompiledNodeData = {
   status?: NodeStatus;
   /** The catalog entry name ("aws/glue") once a catalog reference resolved (Part 1b). */
   catalogEntry?: string;
+  inner?: true;
 };
 
 export type CompiledZoneData = {
+  inner?: true;
+  component?: string;
+  count?: number;
   title: string;
   subtitle?: string;
   kind: ZoneKind;
@@ -74,6 +80,7 @@ export type CompiledZoneData = {
 };
 
 export type CompiledFlowData = {
+  inner?: true;
   label?: string;
   kind: FlowKind;
   style?: FlowStyle;
@@ -119,6 +126,8 @@ export const COMPOSITE_LABELS = {
 } as const;
 
 export interface ArchCompileView {
+  /** Imported node/zone/flow ids map to their own source diagram, never an editable origin. */
+  inner?: Record<string, InnerSource>;
   /**
    * Zones the text marks `collapsed: true`. Never written into `data`: collapse is runtime
    * view state (review §4.4), and flow's `expandGroup` can only undo a `collapseGroup` it
@@ -133,6 +142,7 @@ export interface ArchCompileView {
 }
 
 export interface ArchCompileResult {
+  issues: readonly ArchIssue[];
   spec: FlowSpec;
   view: ArchCompileView;
   /** FlowSpec path prefix (`nodes[3]`, `edges[0]`) → dialect path (`zones[0].children[1]`, `flows[2]`), to position flow-spec issues. */
@@ -208,11 +218,26 @@ function zonesParentFirst(zones: readonly ArchZoneSpec[]): ArchZoneSpec[] {
     .map((entry) => entry.zone);
 }
 
-export function compileArch(ast: ArchDiagram, components?: ComponentTable): ArchCompileResult {
-  const manual = ast.layout === "manual";
+export interface ArchCompileOptions {
+  /** Additional instance ids to reveal for this compile only. */
+  expand?: ReadonlySet<string>;
+  /** Viewer overrides take precedence over authored expansion and `expand`. */
+  collapse?: ReadonlySet<string>;
+}
+
+export function compileArch(
+  ast: ArchDiagram,
+  components?: ComponentTable,
+  options: ArchCompileOptions = {},
+): ArchCompileResult {
+  const expanded = components
+    ? expandInstances(ast, components, options.expand, options.collapse)
+    : undefined;
+  const src = expanded?.ast ?? ast;
+  const manual = src.layout === "manual";
   const taken = new Set<string>();
-  const zones = firstById(ast.zones, taken);
-  const archNodes = firstById(ast.nodes, taken);
+  const zones = firstById(src.zones, taken);
+  const archNodes = firstById(src.nodes, taken);
   const zoneIds = new Set(zones.map((z) => z.id));
   const nodeIds = new Set(archNodes.map((n) => n.id));
   const onCycle = zonesOnCycle(zones);
@@ -221,7 +246,7 @@ export function compileArch(ast: ArchDiagram, components?: ComponentTable): Arch
   const origin: Record<string, string> = {};
   const nodes: FlowSpecNode[] = [];
   const add = (node: FlowSpecNode, from: string) => {
-    origin[`nodes[${nodes.length}]`] = from;
+    if (!expanded?.inner.has(node.id)) origin[`nodes[${nodes.length}]`] = from;
     nodes.push(node);
     if (node.parent !== undefined) parentOf.set(node.id, node.parent);
     if (node.position) positionOf.set(node.id, node.position);
@@ -242,6 +267,8 @@ export function compileArch(ast: ArchDiagram, components?: ComponentTable): Arch
   for (const zone of zones) {
     const parent = validParent(zone.id, zone.parent);
     const data: CompiledZoneData = compact({
+      inner: expanded?.inner.has(zone.id) ? true : undefined,
+      ...expanded?.instances.get(zone.id),
       title: zone.title,
       subtitle: zone.subtitle,
       kind: zone.kind,
@@ -268,14 +295,15 @@ export function compileArch(ast: ArchDiagram, components?: ComponentTable): Arch
 
   // DG-26 — the data every node carries (was inline in the node loop); a diagram reference starts from it.
   const nodeData = (node: ArchNodeSpec): CompiledNodeData => {
-    const styled = applyStyles(node.class, ast.styles);
+    const styled = applyStyles(node.class, src.styles);
     const badges = [...new Set([...(node.badges ?? []), ...styled.badges])];
     return compact({
+      inner: expanded?.inner.has(node.id) ? true : undefined,
       title: node.title,
       subtitle: node.subtitle,
       icon: node.icon,
       badges: badges.length > 0 ? badges : undefined,
-      variant: node.type === "note" ? undefined : (node.variant ?? ast.nodeStyle),
+      variant: node.type === "note" ? undefined : (node.variant ?? src.nodeStyle),
       tone: node.tone ?? styled.tone,
       description: node.description,
       href: node.href,
@@ -298,7 +326,7 @@ export function compileArch(ast: ArchDiagram, components?: ComponentTable): Arch
     return null;
   };
   const portsOf = new Map<string, string[]>();
-  for (const flow of ast.flows) {
+  for (const flow of src.flows) {
     for (const end of [flow.from, flow.to]) {
       const found = compositeEnd(end);
       if (!found) continue;
@@ -370,7 +398,7 @@ export function compileArch(ast: ArchDiagram, components?: ComponentTable): Arch
   // Notes — an `arch/note` beside its target, in the target's parent. `note:<n>` cannot
   // collide with a dialect id (the id grammar has no ":", DG-09 ids.ts ID_SOURCE).
   const noteAnchors: Record<string, string> = {};
-  ast.notes.forEach((note, index) => {
+  src.notes.forEach((note, index) => {
     if (!zoneIds.has(note.at) && !nodeIds.has(note.at)) return;
     const id = `note:${index}`;
     noteAnchors[id] = note.at;
@@ -397,7 +425,7 @@ export function compileArch(ast: ArchDiagram, components?: ComponentTable): Arch
   // DG-26 — an end is an id in this file, or `<node>.<inner>` on a collapsed diagram reference.
   const endOf = (end: string) =>
     endpoints.has(end) ? { id: end, inner: undefined } : compositeEnd(end);
-  for (const flow of ast.flows) {
+  for (const flow of src.flows) {
     const from = endOf(flow.from);
     const to = endOf(flow.to);
     if (!from || !to || !endpoints.has(from.id) || !endpoints.has(to.id)) continue;
@@ -407,8 +435,11 @@ export function compileArch(ast: ArchDiagram, components?: ComponentTable): Arch
     const key = `${flow.from}->${flow.to}`;
     const count = (seen.get(key) ?? 0) + 1;
     seen.set(key, count);
+    const id = count === 1 ? key : `${key}#${count}`;
+    const inner = expanded?.inner.has(id) ? true : undefined;
     // A flow's `class:` is passed through only: DG-07's edge data has no tone or badge.
     const data: CompiledFlowData = compact({
+      inner,
       label: flow.label,
       kind: flow.kind,
       style: flow.style,
@@ -423,9 +454,9 @@ export function compileArch(ast: ArchDiagram, components?: ComponentTable): Arch
       innerSource: from.inner,
       innerTarget: to.inner,
     });
-    origin[`edges[${edges.length}]`] = flow.path;
+    if (!inner) origin[`edges[${edges.length}]`] = flow.path;
     edges.push({
-      id: count === 1 ? key : `${key}#${count}`,
+      id,
       source: from.id,
       target: to.id,
       type: FLOW_TYPE_KEY,
@@ -435,19 +466,21 @@ export function compileArch(ast: ArchDiagram, components?: ComponentTable): Arch
 
   const spec: FlowSpec = {
     flow: FLOW_SPEC_VERSION,
-    ...(ast.title !== undefined ? { title: ast.title } : {}),
-    ...(ast.description !== undefined ? { description: ast.description } : {}), // DG-68
-    layout: { engine: manual ? "none" : "elk", direction: ast.direction },
+    ...(src.title !== undefined ? { title: src.title } : {}),
+    ...(src.description !== undefined ? { description: src.description } : {}), // DG-68
+    layout: { engine: manual ? "none" : "elk", direction: src.direction },
     nodes,
     edges,
   };
   return {
+    issues: expanded?.issues ?? [],
     spec,
     view: compact({
+      inner: expanded?.inner.size ? Object.fromEntries(expanded.inner) : undefined,
       collapsed,
       noteAnchors,
-      legend: typeof ast.legend === "string" ? ast.legend : [...ast.legend],
-      theme: ast.theme,
+      legend: typeof src.legend === "string" ? src.legend : [...src.legend],
+      theme: src.theme,
     }),
     origin,
   };

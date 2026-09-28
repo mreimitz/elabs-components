@@ -92,7 +92,7 @@ export function useManualLayout(spec: FlowSpec, view: ArchCompileView): CanvasPr
           ids.includes(node.id) &&
           was !== undefined &&
           (Math.round(was.x) !== Math.round(abs.x) || Math.round(was.y) !== Math.round(abs.y));
-        if (movedIt && !isNote(node)) dragged.set(node.id, abs);
+        if (movedIt && !isNote(node) && node.data.inner !== true) dragged.set(node.id, abs);
       }
       if (dragged.size === 0) {
         before.current = null;

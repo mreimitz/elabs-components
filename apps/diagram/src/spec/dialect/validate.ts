@@ -276,6 +276,18 @@ export function validateArch(
       ),
     );
   }
+  for (const node of ast.nodes) {
+    if (ast.layout === "manual" && node.expand === true && node.ref && refFileOf(node.ref)) {
+      out.push(
+        issue(
+          "expand-ignored",
+          joinPath(node.path, "expand"),
+          'This diagram is drawn collapsed because the diagram around it is arranged by hand ("layout: manual").',
+        ),
+      );
+    }
+  }
+
   // A `type:` written on a diagram reference overrides what the reference supplies (maintainer
   // ruling), but nothing draws that override before Part 2 (the composite renderer is DG-27's).
   // "service" is the normalizer's default, so a value other than "service" can only be written.

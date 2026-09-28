@@ -1,3 +1,4 @@
+import { INLINE_ROWS } from "./inline-checks";
 import { checkText } from "../spec/check-text";
 import { ICON_NAMES } from "../icons/icon-names";
 import type { ComponentFile } from "../spec/compose/resolver";
@@ -31,7 +32,7 @@ const cases: [string, string, Map<string, ComponentFile>, string | null][] = [
     "ref-invalid",
   ],
 ];
-export const COMPONENT_ROWS = cases.map(([name, text, files, code]) => {
+const RESOLVED_ROWS = cases.map(([name, text, files, code]) => {
   const result = checkText(text, ICON_NAMES, { files });
   const data = result.spec?.nodes[0]?.data;
   const pass = code
@@ -43,3 +44,5 @@ export const COMPONENT_ROWS = cases.map(([name, text, files, code]) => {
     detail: result.issues.map((i) => i.code).join(", ") || "Resolved metadata",
   };
 });
+
+export const COMPONENT_ROWS = [...RESOLVED_ROWS, ...INLINE_ROWS];
