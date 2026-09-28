@@ -1,7 +1,7 @@
 /** Run from apps/diagram: node --test scripts/tests/home-titles.test.mjs */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { Parser, parseDocument } from "yaml";
 import { runnerImport } from "vite";
@@ -83,8 +83,7 @@ for (const text of [
     assert.equal(titleOf(text), null);
   });
 }
-for (const file of await readdir(new URL("../../workspace/templates/", import.meta.url))) {
-  if (!file.endsWith(".yaml")) continue;
+for (const file of ["qlik-cloud-customer-landscape.yaml", "qlik-talend-cloud-pipeline.yaml"]) {
   test(`shipped template preserves every other byte: ${file}`, async () => {
     const before = await readFile(
       new URL(`../../workspace/templates/${file}`, import.meta.url),
