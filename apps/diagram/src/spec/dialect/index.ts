@@ -1,10 +1,18 @@
 /** Public surface of the dialect: text in, AST + positioned issues out. React-free. */
+import { resolveCatalogRefs, type CatalogLookup } from "./catalog-refs";
 import { KEY_ANCHORED, type ArchIssue } from "./issues";
 import { normalizeArch } from "./normalize";
 import { parseArchYaml } from "./parse";
 import { locate } from "./source-map";
 import type { ArchDiagram } from "./types";
 import { validateArch } from "./validate";
+
+// DG-26 — what references resolve against. Without a source, references stay as written.
+export interface ReferenceSources {
+  /** Catalog references are filled from it (Part 1b). */
+  catalog?: CatalogLookup;
+  // Part 2 adds: files?: ComponentFiles;
+}
 
 export interface ArchCheckResult {
   /** null when the text is not a diagram at all (YAML error, wrong root, wrong version). */
@@ -15,7 +23,11 @@ export interface ArchCheckResult {
   ok: boolean;
 }
 
-export function checkArchYaml(text: string, iconNames: ReadonlySet<string>): ArchCheckResult {
+export function checkArchYaml(
+  text: string,
+  iconNames: ReadonlySet<string>,
+  sources: ReferenceSources = {},
+): ArchCheckResult {
   const parsed = parseArchYaml(text);
   const found: ArchIssue[] = [...parsed.issues];
   let ast: ArchDiagram | null = null;
@@ -23,6 +35,11 @@ export function checkArchYaml(text: string, iconNames: ReadonlySet<string>): Arc
     const normalized = normalizeArch(parsed.raw, parsed.sourceMap);
     ast = normalized.ast;
     found.push(...normalized.issues);
+    if (ast && sources.catalog) {
+      const filled = resolveCatalogRefs(ast, sources.catalog, iconNames);
+      ast = filled.ast;
+      found.push(...filled.issues);
+    }
     if (ast) found.push(...validateArch(ast, iconNames));
   }
   const issues = found
@@ -41,6 +58,17 @@ export function checkArchYaml(text: string, iconNames: ReadonlySet<string>): Arc
 export { parseArchYaml, type ParsedArchYaml } from "./parse";
 export { normalizeArch } from "./normalize";
 export { validateArch } from "./validate";
+export {
+  catalogLookupOf,
+  resolveCatalogRefs,
+  refHints, // DG-26 (1b.1)
+  suppliedBy,
+  GLYPH_VENDOR,
+  type CatalogLookup,
+  type CatalogRefEntry,
+  type ResolvedCatalogRefs,
+  type Supplied,
+} from "./catalog-refs";
 export {
   ISSUE_SEVERITY,
   type ArchIssue,

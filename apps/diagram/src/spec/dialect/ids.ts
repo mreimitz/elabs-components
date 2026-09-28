@@ -27,13 +27,24 @@ const NAME_SOURCE = "[a-z0-9][a-z0-9-]*"; // the catalog's own names (server/cat
 /** `catalog/<pack>/<entry>`. */
 export const CATALOG_REF_SOURCE = `${CATALOG_REF_ROOT}/${NAME_SOURCE}/${NAME_SOURCE}`;
 /**
+ * A path segment character: anything except "/" (the separator), "\" (the workspace tree
+ * refuses it, and the server's `safe()` would otherwise silently fold it into "/"), and a
+ * control character (review round 0 F5).
+ */
+const SEGMENT_CHAR = "[^/\\\\\\x00-\\x1f]";
+/** `SEGMENT_CHAR` minus whitespace — a segment's own first and last character. */
+const SEGMENT_EDGE = "[^/\\\\\\s\\x00-\\x1f]";
+/**
  * A workspace path segment: what the workspace tree itself accepts (maintainer ruling
  * 2026-09-27: any character except "/" — spaces, capitals, dots and unicode are fine — except
  * no leading "_" (keeps `_trash` out), no leading "." (also excludes "." and ".." on their
- * own, which are never a segment), and no empty or whitespace-only segment. No length bound: a
- * real file or folder name may hold spaces, punctuation or unicode.
+ * own, which are never a segment), and no empty, whitespace-only, or leading/trailing-blank
+ * segment (the tree trims a name on create; review round 0 F12). No length bound: a real file
+ * or folder name may hold spaces, punctuation or unicode in the middle.
  */
-const SEGMENT_SOURCE = "(?!_)(?!\\.)(?=[^/]*[^/\\s])[^/]+";
+export const SEGMENT_SOURCE = `(?!_)(?!\\.)${SEGMENT_EDGE}(?:${SEGMENT_CHAR}*${SEGMENT_EDGE})?`;
+/** `^SEGMENT_SOURCE$` — tests a single already-split segment (normalize.ts `badRef`). */
+export const SEGMENT_RE = new RegExp(`^${SEGMENT_SOURCE}$`);
 /**
  * `ws/<folder>/…/<file name>`: the last segment is the file name. A trailing ".yaml"/".yml"
  * (any case) is legal there — the natural way to copy a real file name — and is stripped in

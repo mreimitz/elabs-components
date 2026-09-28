@@ -11,6 +11,7 @@
  */
 
 import type { PieData } from "./pie-context";
+import type { LegendItemShape } from "./legend/chart-legend-item";
 
 /**
  * `threshold`/`max` are independent gates that both apply when both are set
@@ -110,14 +111,11 @@ export function groupSmallSlices(
   return { data: [...kept, other], foldedCount: foldedCategories.length };
 }
 
-/** A `ChartLegend` item (`LegendItem` shape) with the fields a pie legend needs. */
-export interface PieLegendItem {
-  label: string;
-  value: number;
-  maxValue: number;
-  color: string;
-  seriesIndex: number;
-}
+/** A `ChartLegend` item (`LegendItem` shape) with the fields a pie legend needs, every one set. */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- kept an interface so consumers can still merge declarations into it
+export interface PieLegendItem extends LegendItemShape<
+  "label" | "value" | "maxValue" | "color" | "seriesIndex"
+> {}
 
 export interface PieLegendItemsOptions {
   /** Same fold `PieChart`'s own `groupSmall` prop would apply — keep them identical. */

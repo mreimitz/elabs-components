@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../../../schema/arch-diagram.v1.schema.json
+diagram: "1"
+nodes:
+  - id: glue
+    ref: catalog/aws/glue
+  - id: people
+    ref: catalog/generic/users
+  - id: ch
+    ref: catalog/clickhouse/cloud
+  - id: ch2
+    ref: catalog/clickhouse/cloud
+    title: Analytics DB
+    badges: []
+# expect: none

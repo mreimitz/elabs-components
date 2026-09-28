@@ -24,13 +24,11 @@ zones:
         title: On-premises data center (Vienna)
         children:
           - id: erp
-            icon: sap/s4hana
-            title: SAP S/4HANA
+            ref: catalog/sap/s4hana
             subtitle: ERP
           - id: mssql
             type: datastore
-            icon: microsoft/sql-server
-            title: SQL Server 2022
+            ref: catalog/microsoft/sql-server
             class: [pii]
       - id: azure
         kind: cloud-account
@@ -38,12 +36,11 @@ zones:
         title: Azure subscription
         children:
           - id: gateway
-            icon: qlik/data-gateway
+            ref: catalog/qlik/data-gateway
             title: Qlik Data Gateway – Data Movement
             subtitle: Linux VM, outbound only
       - id: users
-        type: actor
-        icon: lucide/users
+        ref: catalog/generic/users
         title: Business users
   - id: qlik
     owner: saas
@@ -52,10 +49,9 @@ zones:
     direction: LR
     children:
       - id: qca
-        icon: qlik/cloud
-        title: Qlik Cloud Analytics
+        ref: catalog/qlik/cloud
       - id: qtdi
-        icon: qlik/talend-cloud
+        ref: catalog/qlik/talend-cloud
         title: Qlik Talend Data Integration
   - id: snowflake
     owner: saas
@@ -64,7 +60,7 @@ zones:
     children:
       - id: wh
         type: datastore
-        icon: snowflake/warehouse
+        ref: catalog/snowflake/warehouse
         title: ANALYTICS_WH
 
 flows: # string shorthand or object form

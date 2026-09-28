@@ -4,7 +4,7 @@ import type { Transition } from "motion/react";
 import { motion } from "motion/react";
 import { memo, useId, useMemo } from "react";
 import { chartCssVars, resolveSignPalette, useChart, useChartPalette } from "./chart-context";
-import { useChartLegendHover } from "./chart-legend-hover";
+import { useChartLegendHover } from "./legend/legend-hover";
 import { transitionWithDelay } from "./motion-utils";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-pattern";
 import { useHighDecoration } from "./use-high-decoration";

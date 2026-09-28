@@ -34,7 +34,7 @@ export const specTools = [
     },
     handler: async ({ text }, ctx) => {
       const { ok, issues } = await ctx.bridge.validate(text);
-      const { ast } = (await ctx.bridge.load()).checkDiagram(text);
+      const { ast } = await ctx.bridge.check(text); // DG-26 (1b): resolves catalog refs
       return { ok, issues, diagram: ast };
     },
   },

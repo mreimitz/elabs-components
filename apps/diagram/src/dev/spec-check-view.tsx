@@ -10,14 +10,47 @@ import {
   TableRow,
   Text,
 } from "@elabs-ai/components-ui";
+import { BUNDLED_CATALOG, bundledCatalog } from "../catalog/catalog-bundle"; // DG-26 (1b.12)
 import { ICON_NAMES } from "../icons/icon-names"; // DG-10
 import { ARCH_COMPOSITE_TYPE } from "../nodes/arch-node-data"; // DG-26
 import { IssueMessage, SEVERITY_STATUS } from "../panes/issues-panel";
-import { checkArchYaml, type ArchCheckResult, type ArchIssue } from "../spec/dialect";
+import {
+  checkArchYaml,
+  suppliedBy,
+  type ArchCheckResult,
+  type ArchIssue,
+  type Supplied,
+} from "../spec/dialect";
+import { NODE_TYPE_KEY } from "../spec/compile/arch-definitions"; // DG-26 (1b.12)
 import type { CompiledCompositeData } from "../spec/compile/compile-arch"; // DG-26
+import { NODE_DEF } from "../spec/dialect/definitions"; // DG-26 (1b.12)
+import { entryFormSpec, entryFormValues, UNSET } from "../spec/dialect/form-spec"; // DG-26 (1b.12)
 import { upgradeText } from "../spec/dialect/upgrade"; // DG-26
 import { fromReactFlow, toReactFlow } from "../spec/flow-spec"; // DG-10
 import { archRegistry, compileText, type CompiledDiagram } from "../state/compile-text"; // DG-10
+
+/** A compiled `arch/*` node's data carries `catalogEntry` when a `ref:` resolved (DG-26). */
+interface RefData {
+  title?: string;
+  icon?: string;
+  description?: string;
+  badges?: string[];
+  subtitle?: string;
+  catalogEntry?: string;
+}
+const dataOf = (compiled: CompiledDiagram, id: string): RefData | undefined =>
+  compiled.graph?.nodes.find((n) => n.id === id)?.data as RefData | undefined;
+const typeOf = (compiled: CompiledDiagram, id: string): string | undefined =>
+  compiled.graph?.nodes.find((n) => n.id === id)?.type;
+
+/** The node form as the inspector builds it (inspector-pane.tsx:103-108); labels do not affect values. */
+const REF_FORM_OPTIONS = {
+  omit: ["parent", "position"],
+  readOnly: ["id"],
+  advancedLabel: "Advanced",
+  unsetLabel: "Not set",
+} as const;
+const REF_FORM_SPEC = entryFormSpec(NODE_DEF, REF_FORM_OPTIONS);
 
 /** Every fixture as raw text, keyed by its path ("../spec/dialect/__fixtures__/valid-min.yaml"). */
 const FIXTURES = import.meta.glob<string>(
@@ -81,7 +114,8 @@ function runFixtures(): FixtureRow[] {
       const expected = [...text.matchAll(EXPECT)]
         .map((m) => (m[1] ?? "").trim())
         .filter((e) => e !== "none");
-      const result = checkArchYaml(text, ICON_NAMES);
+      const sources = { catalog: bundledCatalog() }; // DG-26 (1b.12) — deterministic, never live
+      const result = checkArchYaml(text, ICON_NAMES, sources);
       const actual = result.issues.map(label);
       // DG-26 — every pinned suggestion must land on the issue with that exact label.
       const expectedSuggestions = [...text.matchAll(EXPECT_SUGGESTION)].map(
@@ -90,7 +124,7 @@ function runFixtures(): FixtureRow[] {
       const suggestionsOk = expectedSuggestions.every(
         ([lbl, want]) => result.issues.find((i) => label(i) === lbl)?.suggestion === want,
       );
-      const compiled = compileText(text); // DG-10
+      const compiled = compileText(text, sources); // DG-10
       const roundTrip = roundTrips(compiled); // DG-10
       const pass =
         JSON.stringify([...actual].sort()) === JSON.stringify([...expected].sort()) &&
@@ -146,6 +180,16 @@ const WORKSPACE_SHAPE: Record<string, readonly [nodes: number, edges: number]> =
   "templates/qlik-cloud-customer-landscape.yaml": [18, 10], // 17 ids + 1 note; 10 flows
   "templates/qlik-talend-cloud-pipeline.yaml": [28, 13],
 };
+/** Nodes whose `ref:` resolved to a catalog entry (`data.catalogEntry` set), per file (1b.12). */
+const WORKSPACE_CATALOG_ENTRIES: Record<string, number> = {
+  "components/qlik-cloud-tenant.yaml": 4,
+  "examples/clickhouse-cloud-stack.yaml": 5,
+  "examples/lakehouse-aws.yaml": 12,
+  "examples/qlik-cloud-data-gateway.yaml": 7,
+  "examples/qlik-sense-enterprise-onprem.yaml": 6,
+  "templates/qlik-cloud-customer-landscape.yaml": 8,
+  "templates/qlik-talend-cloud-pipeline.yaml": 13,
+};
 
 interface WorkspaceRow {
   name: string;
@@ -193,7 +237,7 @@ function runWorkspace(): WorkspaceRow[] {
     .map((name) => {
       const [wantNodes, wantEdges] = WORKSPACE_SHAPE[name] ?? [0, 0];
       const text = WORKSPACE[`../../workspace/${name}`] ?? "";
-      const compiled = compileText(text);
+      const compiled = compileText(text, { catalog: bundledCatalog() }); // DG-26 (1b.12)
       const roundTrip = roundTrips(compiled);
       const nodes = compiled.graph?.nodes.length ?? 0;
       const edges = compiled.graph?.edges.length ?? 0;
@@ -201,15 +245,26 @@ function runWorkspace(): WorkspaceRow[] {
         (i) => i.severity === "error" || i.severity === "warning",
       );
       const shapeOk = nodes === wantNodes && edges === wantEdges;
-      const detail =
+      const catalogEntries =
+        compiled.graph?.nodes.filter((n) => (n.data as RefData).catalogEntry !== undefined)
+          .length ?? 0;
+      const wantCatalogEntries = WORKSPACE_CATALOG_ENTRIES[name] ?? 0;
+      const catalogOk = catalogEntries === wantCatalogEntries;
+      const tenant =
         name === "templates/qlik-cloud-customer-landscape.yaml"
           ? tenantDetail(compiled)
           : undefined;
+      const detail =
+        tenant ??
+        (catalogOk
+          ? undefined
+          : `${catalogEntries} nodes carry data.catalogEntry, not ${wantCatalogEntries}`);
       const pass =
         compiled.ast?.sourceVersion === "1" &&
         clean &&
         shapeOk &&
         roundTrip !== false &&
+        catalogOk &&
         detail === undefined;
       return {
         name,
@@ -257,13 +312,132 @@ function runUpgrades(): UpgradeRow[] {
 
 const UPGRADE_ROWS = runUpgrades();
 
+// DG-26 (1b.12) — five checks over valid-ref-catalog.yaml and issue-ref-missing.yaml, run
+// against the bundled catalog: what a catalog reference fills into the compiled graph, and
+// what the inspector's form shows for a field a reference supplies (1b.6).
+interface RefRow {
+  name: string;
+  pass: boolean;
+  detail: string;
+}
+
+function inheritedOf(node: { unwritten?: readonly string[] }, supplied: Supplied | undefined) {
+  return new Set(
+    (node.unwritten ?? []).filter((key) => supplied?.[key as keyof Supplied] !== undefined),
+  );
+}
+
+function formValueOf(node: { unwritten?: readonly string[] }, supplied: Supplied | undefined) {
+  return entryFormValues(REF_FORM_SPEC, NODE_DEF, {}, inheritedOf(node, supplied));
+}
+
+function runReferenceFirst(): RefRow[] {
+  const catalog = bundledCatalog();
+  const catalogFixture = ROWS.find((r) => r.name === "valid-ref-catalog.yaml");
+  const missingFixture = ROWS.find((r) => r.name === "issue-ref-missing.yaml");
+  const compiled = catalogFixture?.compiled;
+  const ast = catalogFixture?.result.ast;
+  const glueNode = ast?.nodes.find((n) => n.id === "glue");
+  const peopleNode = ast?.nodes.find((n) => n.id === "people");
+  const glueSupplied =
+    glueNode?.catalogEntry !== undefined
+      ? suppliedBy(catalog.get(glueNode.catalogEntry)!, catalog)
+      : undefined;
+  const peopleSupplied =
+    peopleNode?.catalogEntry !== undefined
+      ? suppliedBy(catalog.get(peopleNode.catalogEntry)!, catalog)
+      : undefined;
+  const issues = missingFixture?.result.issues ?? [];
+  const rdss = issues.find((i) => i.message.includes("aws/rdss"));
+  const lucideUsers = issues.find((i) => i.message.includes("lucide/users"));
+
+  const glue = compiled && dataOf(compiled, "glue");
+  const people = compiled && dataOf(compiled, "people");
+  const ch = compiled && dataOf(compiled, "ch");
+  const ch2 = compiled && dataOf(compiled, "ch2");
+
+  const rows: RefRow[] = [
+    {
+      name: "glue: title, icon, catalogEntry, no description",
+      pass: Boolean(
+        glue &&
+        glue.title === "AWS Glue" &&
+        glue.icon === "aws/glue" &&
+        glue.catalogEntry === "aws/glue" &&
+        glue.description === undefined,
+      ),
+      detail: JSON.stringify(glue),
+    },
+    {
+      name: "people: type arch/actor, icon lucide/users, title Users",
+      pass: Boolean(
+        compiled &&
+        people &&
+        typeOf(compiled, "people") === NODE_TYPE_KEY.actor &&
+        people.icon === "lucide/users" &&
+        people.title === "Users",
+      ),
+      detail: `type ${compiled ? typeOf(compiled, "people") : "?"}, ${JSON.stringify(people)}`,
+    },
+    {
+      name: "ch inherits subtitle + badges; ch2's written badges/title stand",
+      pass: Boolean(
+        ch &&
+        ch.subtitle === "Cloud" &&
+        JSON.stringify(ch.badges) === JSON.stringify(["managed"]) &&
+        ch2?.badges === undefined &&
+        ch2?.title === "Analytics DB",
+      ),
+      detail: `ch=${JSON.stringify(ch)} ch2=${JSON.stringify(ch2)}`,
+    },
+    {
+      name: "aws/rdss suggests catalog/aws/rds; lucide/users has no suggestion",
+      pass: rdss?.suggestion === "catalog/aws/rds" && lucideUsers?.suggestion === undefined,
+      detail: `rdss=${JSON.stringify(rdss?.suggestion)} lucide/users=${JSON.stringify(lucideUsers?.suggestion)}`,
+    },
+    {
+      name: "inspector values: glue's title absent + type service; people's type UNSET",
+      pass: (() => {
+        if (!glueNode || !peopleNode) return false;
+        const glueValues = formValueOf(glueNode, glueSupplied);
+        const peopleValues = formValueOf(peopleNode, peopleSupplied);
+        return (
+          glueValues.title === undefined &&
+          glueValues.type === "service" &&
+          inheritedOf(peopleNode, peopleSupplied).has("type") &&
+          peopleValues.type === UNSET
+        );
+      })(),
+      detail: `glue.type=${JSON.stringify(formValueOf(glueNode ?? {}, glueSupplied).type)} people.type=${JSON.stringify(formValueOf(peopleNode ?? {}, peopleSupplied).type)}`,
+    },
+  ];
+  return rows;
+}
+
+const REFERENCE_FIRST_ROWS = runReferenceFirst();
+
+/** DG-26 (1b.12) — the bundled catalog merges without a problem and is not empty. */
+const CATALOG_BUNDLE_ROW = {
+  pass: BUNDLED_CATALOG.problems.length === 0 && BUNDLED_CATALOG.entries.length > 0,
+  entries: BUNDLED_CATALOG.entries.length,
+  problems: BUNDLED_CATALOG.problems,
+};
+
 export function SpecCheckView() {
   const passed =
     ROWS.filter((r) => r.pass).length +
     PAIRS.filter((p) => p.pass).length +
     WORKSPACE_ROWS.filter((r) => r.pass).length +
-    UPGRADE_ROWS.filter((r) => r.pass).length;
-  const total = ROWS.length + PAIRS.length + WORKSPACE_ROWS.length + UPGRADE_ROWS.length;
+    UPGRADE_ROWS.filter((r) => r.pass).length +
+    REFERENCE_FIRST_ROWS.filter((r) => r.pass).length +
+    (CATALOG_BUNDLE_ROW.pass ? 1 : 0);
+  const total =
+    ROWS.length +
+    PAIRS.length +
+    WORKSPACE_ROWS.length +
+    UPGRADE_ROWS.length +
+    REFERENCE_FIRST_ROWS.length +
+    1;
   return (
     <main className="min-h-dvh bg-background p-8 text-foreground">
       <Heading level={1}>Spec check</Heading>
@@ -434,6 +608,70 @@ export function SpecCheckView() {
           ))}
         </TableBody>
       </Table>
+
+      <Table className="mt-6">
+        <TableCaption>{SPEC_CHECK_LABELS.referenceFirst}</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{SPEC_CHECK_LABELS.check}</TableHead>
+            <TableHead>{SPEC_CHECK_LABELS.result}</TableHead>
+            <TableHead>{SPEC_CHECK_LABELS.detail}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {REFERENCE_FIRST_ROWS.map((row) => (
+            <TableRow key={row.name} data-pass={row.pass}>
+              <TableCell>
+                <Text as="span" variant="code">
+                  {row.name}
+                </Text>
+              </TableCell>
+              <TableCell>
+                <StatusBadge status={row.pass ? "complete" : "failed"}>
+                  {row.pass ? "Pass" : "Fail"}
+                </StatusBadge>
+              </TableCell>
+              <TableCell>
+                <Text as="span" variant="caption" tone="muted" className="min-w-0 break-words">
+                  {row.detail}
+                </Text>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <Table className="mt-6">
+        <TableCaption>{SPEC_CHECK_LABELS.catalogBundle}</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{SPEC_CHECK_LABELS.entries}</TableHead>
+            <TableHead>{SPEC_CHECK_LABELS.problems}</TableHead>
+            <TableHead>{SPEC_CHECK_LABELS.result}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow data-pass={CATALOG_BUNDLE_ROW.pass}>
+            <TableCell>
+              <Text as="span" variant="code" className="tabular-nums">
+                {CATALOG_BUNDLE_ROW.entries}
+              </Text>
+            </TableCell>
+            <TableCell>
+              <Text as="span" variant="code">
+                {CATALOG_BUNDLE_ROW.problems.length
+                  ? CATALOG_BUNDLE_ROW.problems.join(", ")
+                  : "none"}
+              </Text>
+            </TableCell>
+            <TableCell>
+              <StatusBadge status={CATALOG_BUNDLE_ROW.pass ? "complete" : "failed"}>
+                {CATALOG_BUNDLE_ROW.pass ? "Pass" : "Fail"}
+              </StatusBadge>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </main>
   );
 }
@@ -450,6 +688,11 @@ const SPEC_CHECK_LABELS = {
   from: "From",
   changed: "Changed",
   result: "Result",
+  referenceFirst: "Reference-first (DG-26 1b)",
+  catalogBundle: "Catalog bundle",
+  check: "Check",
+  entries: "Entries",
+  problems: "Problems",
 } as const;
 
 const PLURAL = new Intl.PluralRules("en");

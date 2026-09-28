@@ -35,6 +35,7 @@ export const ISSUE_SEVERITY = {
   "unknown-note-target": "error",
   // DG-26
   "bad-ref": "error",
+  "ref-missing": "error",
   "inner-flow": "warning",
   "expand-not-diagram": "warning",
   "ref-type-not-drawn": "info",

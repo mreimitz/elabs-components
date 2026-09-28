@@ -12,7 +12,8 @@ import {
   stackBounds,
 } from "./bar-stacking";
 import { chartCssVars, useChart, useYScale } from "./chart-context";
-import { useChartLegendHover } from "./chart-legend-hover";
+import { useComposedChartContext } from "./composed-chart-context";
+import { useChartLegendHover } from "./legend/legend-hover";
 import { transitionWithDelay } from "./motion-utils";
 import { computeSeriesBarWidth } from "./series-bar-layout";
 import {
@@ -193,6 +194,10 @@ export function SeriesBar({
     enterTransition,
     revealEpoch = 0,
     barScale,
+    tooltipData,
+    chartPhase,
+  } = useChart();
+  const {
     composedBarDataKeys,
     composedBarSize,
     composedMaxBarSize,
@@ -200,9 +205,7 @@ export function SeriesBar({
     composedStacked,
     composedStackOffsets,
     composedStackGap,
-    tooltipData,
-    chartPhase,
-  } = useChart();
+  } = useComposedChartContext();
   const stackExtents = useContext(SeriesBarStackExtentsContext);
   const yScale = useYScale(yAxisId);
 
