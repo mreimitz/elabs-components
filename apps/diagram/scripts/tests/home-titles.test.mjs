@@ -152,3 +152,89 @@ test("oversized alias materialization is refused before allocating a copy", () =
   assert.throws(() => titleWithCopySuffix(source, 1), /copy too large/);
   assert.equal(titleOf(source), "a".repeat(10000));
 });
+
+const difficultTitles = [
+  "Simple",
+  "null",
+  "true",
+  "12",
+  "a: b # c",
+  'quoted "value"',
+  "single 'quote'",
+  "Line one\nline two\n",
+  "A ".repeat(120),
+  "Grüezi 雪 😀",
+  "Tab\tseparated",
+  "Windows\r\nline\r\n",
+  "Carriage\rreturn",
+  "C:\\some\\path\\file",
+  "Next\u0085line",
+  "Unicode\u2028line\u2029paragraph",
+  '\t"mixed\\\r\n\u0085\u2028\u2029end\n',
+];
+const quote = (value) =>
+  JSON.stringify(value).replace(
+    /[\u0085\u2028\u2029]/g,
+    (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
+  );
+for (const title of difficultTitles)
+  for (const form of ["anchor", "alias", "flow"])
+    for (const ending of ["\n", "\r\n"])
+      for (const n of [1, 2]) {
+        test(`alias scalar matrix ${JSON.stringify({ title, form, ending, n })}`, () => {
+          const q = quote(title);
+          const consumers =
+            "description: *name # keep description\nnodes:\n  - id: a\n    title: *name\nx-list: [*name, {nested: [*name, *name]}]\nx-map: {*name : [*name]}\nx-block-map:\n  ? *name # keep key\n  : *name\n";
+          const source =
+            form === "anchor"
+              ? `diagram: "1"\ntitle: &name ${q} # keep title\n${consumers}`
+              : form === "alias"
+                ? `diagram: "1"\nx-title: &name ${q}\ntitle: *name # keep title\n${consumers}`
+                : `{diagram: "1", title: &name ${q}, description: *name, nodes: [{id: a, title: *name}], x-list: [*name, {nested: [*name, *name]}], x-map: {*name : [*name]}} # keep root\n`;
+          const before = source.replaceAll("\n", ending);
+          const original = parseDocument(before);
+          assert.deepEqual(original.errors, []);
+          const after = titleWithCopySuffix(before, n);
+          const next = parseDocument(after);
+          assert.deepEqual(next.errors, []);
+          const expected = `${title.replace(/\n+$/, "")}${n === 1 ? " (copy)" : " (copy 2)"}`;
+          const originalValue = original.toJS({ mapAsMap: true });
+          const nextValue = next.toJS({ mapAsMap: true });
+          assert.equal(nextValue.get("title"), expected);
+          assert.equal(titleOf(after), expected.trim());
+          originalValue.delete("title");
+          nextValue.delete("title");
+          assert.deepEqual(nextValue, originalValue);
+          assert.deepEqual(comments(after), comments(before));
+          if (ending === "\r\n") assert.equal(/(?<!\r)\n/.test(after), false);
+        });
+      }
+for (const ending of ["\n", "\r\n"]) {
+  test(`anchored block scalar preserves nested values and keys (${JSON.stringify(ending)})`, () => {
+    const before =
+      'diagram: "1"\ntitle: &name |+ # keep\n  First line\n  Second line\n\ndescription: *name\nnodes: [{id: a, title: *name}]\nx-map:\n  ? *name\n  : [*name, {nested: *name}]\n'.replaceAll(
+        "\n",
+        ending,
+      );
+    for (const n of [1, 2]) {
+      const original = parseDocument(before).toJS({ mapAsMap: true });
+      const after = titleWithCopySuffix(before, n);
+      const parsed = parseDocument(after);
+      assert.deepEqual(parsed.errors, []);
+      const next = parsed.toJS({ mapAsMap: true });
+      assert.equal(next.get("title"), `First line\nSecond line (copy${n === 1 ? "" : " 2"})`);
+      original.delete("title");
+      next.delete("title");
+      assert.deepEqual(next, original);
+      assert.deepEqual(comments(after), comments(before));
+      if (ending === "\r\n") assert.equal(/(?<!\r)\n/.test(after), false);
+    }
+  });
+}
+
+test("unresolved non-title aliases refuse a copy before creation", () => {
+  assert.throws(
+    () => titleWithCopySuffix("title: Good title\nx: *missing\n", 1),
+    /Could not safely copy/,
+  );
+});
