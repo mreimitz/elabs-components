@@ -85,9 +85,7 @@ const TOP_BAR_LABELS = {
   // as the app's View/Edit mode name, not "your own copy of this setting", which is what these
   // controls actually mean. The scope note is one shared string, never in an item's own
   // accessible name; it is tied instead via `aria-describedby` on the group (`ViewToggleGroup`
-  // below), and short enough to wrap instead of overflowing the compact menu at 390 px. It is
-  // VISIBLE on the wide bar too, not `sr-only` — a sighted person gets the same "only for you"
-  // cue a screen reader already does.
+  // below), and short enough to wrap instead of overflowing the compact menu at 390 px.
   directionViewLabel: "Direction (only for you)",
   nodeStyleViewLabel: "Node style (only for you)",
   viewScopeHint: "Direction and node style are only for you, not saved, and forgotten on reload.",
@@ -317,15 +315,6 @@ export function TopBar() {
           <ThemeSwitcher variant="ghost" size="sm" />
         </WithTooltip>
       </header>
-      {viewing ? (
-        <div
-          data-slot="view-mode-hint"
-          className="flex shrink-0 flex-wrap gap-x-2 border-b px-4 py-1 text-caption text-muted-foreground"
-        >
-          <span>{TOP_BAR_LABELS.viewScopeHint}</span>
-          {lensDisabled ? <span>{TOP_BAR_LABELS.lensDisabledReason}</span> : null}
-        </div>
-      ) : null}
     </TooltipProvider>
   );
 }

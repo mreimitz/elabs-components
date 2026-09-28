@@ -223,7 +223,7 @@ try {
       );
     },
   );
-  await check("scope remains visible at ordinary desktop widths in both themes", async () => {
+  await check("toolbar has no extra notice row and visual controls stay disabled", async () => {
     for (const theme of ["light", "dark"]) {
       await page.evaluate(
         (theme) => document.documentElement.setAttribute("data-theme", theme),
@@ -231,11 +231,10 @@ try {
       );
       await page.setViewportSize({ width: 1200, height: 900 });
       const hint = page.locator('[data-slot="view-mode-hint"]');
-      await expect(hint).toBeVisible();
-      await expect(hint).toContainText("forgotten on reload");
+      await expect(hint).toHaveCount(0);
       assert.ok((await page.locator("header h1").boundingBox()).width > 30);
       await setLens("visual");
-      await expect(hint).toContainText("Direction and node style apply to the technical diagram");
+      await expect(hint).toHaveCount(0);
       await expect(
         page.getByRole("radio", { name: "Top to bottom (TB)", exact: true }),
       ).toBeDisabled();
