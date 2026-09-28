@@ -648,7 +648,8 @@ function runRefFirstMigration(): MigrationRow[] {
       result.changed &&
       result.text.includes("icon: generic/users") &&
       !result.text.includes("ref: generic/users") &&
-      afterData?.icon === "generic/users" &&
+      afterData?.icon === catalog.get("generic/users")?.icon &&
+      beforeData?.icon === afterData?.icon &&
       beforeData?.title === afterData?.title &&
       typeOf(compileText(before, { catalog }), "u") === typeOf(compiledAfter, "u");
     rows.push({
