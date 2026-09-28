@@ -56,20 +56,29 @@ function readAst(
 /** Every unseen dependency, bounded even for cyclic or over-depth graphs. */
 export function neededFiles(ast: ArchDiagram, files: ComponentFiles): string[] {
   const needed = new Set<string>();
-  const visit = (current: ArchDiagram, stack: readonly string[]) => {
+  const shallowest = new Map<string, number>();
+  const parsed = new Map<string, ReturnType<typeof readAst>>();
+  const visit = (current: ArchDiagram, depth: number) => {
     for (const path of diagramRefsOf(current)) {
-      if (stack.includes(path) || stack.length >= MAX_COMPONENT_DEPTH) continue;
+      if (depth >= MAX_COMPONENT_DEPTH || (shallowest.get(path) ?? Infinity) <= depth) continue;
+      // A shared dependency only needs another visit when a shorter route reveals more levels.
+      // This also terminates cycles without enumerating every route through a shared graph.
+      shallowest.set(path, depth);
       if (!files.has(path)) {
         needed.add(path);
         continue;
       }
       const file = files.get(path);
       if (!file || "error" in file) continue;
-      const parsed = readAst(file.text);
-      if ("ast" in parsed) visit(parsed.ast, [...stack, path]);
+      let child = parsed.get(path);
+      if (!child) {
+        child = readAst(file.text);
+        parsed.set(path, child);
+      }
+      if ("ast" in child) visit(child.ast, depth + 1);
     }
   };
-  visit(ast, []);
+  visit(ast, 0);
   return [...needed];
 }
 

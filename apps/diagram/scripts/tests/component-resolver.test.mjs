@@ -162,3 +162,52 @@ test("dotted endpoints cannot descend into catalog items", async () => {
   assert.ok(issue?.range);
   assert.match(issue.message, /does not reference a diagram/);
 });
+
+test("shared dependency discovery parses each file once per snapshot", () => {
+  let reads = 0;
+  const files = new Map();
+  const layer = (level) =>
+    Array.from({ length: 5 }, (_, index) => ref(`layer-${level}-${index}`, `n${index}`));
+  for (let level = 0; level < 7; level++) {
+    for (let index = 0; index < 5; index++) {
+      const text = doc(level === 6 ? [ref("missing")] : layer(level + 1));
+      files.set(`layer-${level}-${index}.yaml`, {
+        get text() {
+          reads += 1;
+          return text;
+        },
+        mtime: 1,
+      });
+    }
+  }
+  const ast = api.checkDiagram(doc(layer(0))).ast;
+  assert.deepEqual(resolver.neededFiles(ast, files), ["missing.yaml"]);
+  assert.equal(reads, 35);
+});
+
+test("discovery revisits a shared file reached later by a shallower route", () => {
+  const files = new Map(
+    Array.from({ length: 8 }, (_, index) => [
+      `chain-${index}.yaml`,
+      file(doc([ref(index === 7 ? "missing" : `chain-${index + 1}`)])),
+    ]),
+  );
+  for (const nodes of [
+    [ref("chain-0", "deep"), ref("chain-7", "shallow")],
+    [ref("chain-7", "shallow"), ref("chain-0", "deep")],
+  ])
+    assert.deepEqual(resolver.neededFiles(api.checkDiagram(doc(nodes)).ast, files), [
+      "missing.yaml",
+    ]);
+  assert.deepEqual(resolver.neededFiles(api.checkDiagram(doc([ref("chain-0")])).ast, files), []);
+});
+
+test("discovery caches neither old file contents nor missing results between calls", () => {
+  const ast = api.checkDiagram(doc([ref("a")])).ast;
+  const files = new Map([["a.yaml", file(doc([ref("b")]))]]);
+  assert.deepEqual(resolver.neededFiles(ast, files), ["b.yaml"]);
+  files.set("a.yaml", file(doc([ref("a", "self"), ref("c", "next")])));
+  assert.deepEqual(resolver.neededFiles(ast, files), ["c.yaml"]);
+  files.set("c.yaml", file("nodes: ["));
+  assert.deepEqual(resolver.neededFiles(ast, files), []);
+});
