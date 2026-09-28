@@ -3,6 +3,7 @@
  * turns this into UI, `recents.ts` imports `TEMPLATES_FOLDER` so "a template is never a recent" has
  * one definition, not two literals.
  */
+import { CST, Parser, isAlias, isScalar, parseDocument, visit } from "yaml";
 import type { WorkspaceFile } from "../workspace/client";
 import { topLevelDescription } from "./yaml-field";
 
@@ -14,7 +15,7 @@ export function fileStem(path: string): string {
   return path.slice(path.lastIndexOf("/") + 1).replace(/\.ya?ml$/i, "");
 }
 
-/** Every diagram directly under `templates/`, from the tree's files. */
+/** Every diagram under `templates/`, including one nested in a subfolder, from the tree's files. */
 export function templateFiles(files: readonly WorkspaceFile[] | undefined): WorkspaceFile[] {
   return (files ?? []).filter(
     (file) => file.kind === "diagram" && file.path.startsWith(`${TEMPLATES_FOLDER}/`),
@@ -26,30 +27,123 @@ export function templateDescription(text: string): string {
   return topLevelDescription(text, ["description"]);
 }
 
-/**
- * A top-level `title:` line, matched only at column 0 so a nested `title:` under `boxes`/`lanes`/
- * `story.steps` (always indented) is never touched.
- */
-const TOP_LEVEL_TITLE_RE = /^title:[ \t]*(.*)$/m;
+/** JSON quoting is valid YAML when YAML's additional line separators are escaped too. */
+function singleLineQuoted(value: string): string {
+  return JSON.stringify(value).replace(
+    /[\u0085\u2028\u2029]/g,
+    (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
+  );
+}
+
+/** Compare parsed YAML graphs, retaining mapping keys and supporting cyclic aliases. */
+function sameYamlValue(a: unknown, b: unknown, seen = new Map<unknown, unknown>()): boolean {
+  if (Object.is(a, b)) return true;
+  if (seen.has(a)) return seen.get(a) === b;
+  if (a instanceof Map && b instanceof Map) {
+    if (a.size !== b.size) return false;
+    seen.set(a, b);
+    const entries = [...b];
+    return [...a].every(([key, value], i) => {
+      const entry = entries[i];
+      return !!entry && sameYamlValue(key, entry[0], seen) && sameYamlValue(value, entry[1], seen);
+    });
+  }
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    seen.set(a, b);
+    return a.every((value, i) => sameYamlValue(value, b[i], seen));
+  }
+  return false;
+}
 
 /**
- * `text` with `n`'s copy suffix appended to its top-level `title:` value — `" (copy)"` for the
- * first copy, `" (copy 2)"` for the second, matching the number `createUniqueFile` gives the copy's
- * own file name. Without it, two copies of the same template read identically in Recent, Folders
- * and a component's Used-in list. Every other line, including comments, is left untouched — this
- * edits one line with a plain string replace, not a full YAML-document round trip, which would
- * re-flow long lines and re-space flow collections.
+ * Append the file-name attempt's copy marker to a string title, including alias and flow-map
+ * forms. Edit CST tokens so comments, quoting and unrelated bytes remain intact. If the title
+ * defines an anchor, aliases of that exact scalar are replaced by its original quoted value
+ * before changing the title; otherwise their non-title semantics would change as well.
+ * An aliased title is replaced at its own token, leaving the original anchor untouched.
+ * Invalid documents and non-string titles are returned unchanged.
  */
 export function titleWithCopySuffix(text: string, n: number): string {
+  const parsed = parseDocument(text);
+  if (parsed.errors.length > 0) return text;
+  const titleNode = parsed.get("title", true);
+  // Resolve at most one scalar alias. No collection expansion or recursive toJS conversion.
+  const scalar = isAlias(titleNode) ? titleNode.resolve(parsed) : titleNode;
+  if (!isScalar(scalar) || typeof scalar.value !== "string") return text;
+  const title = scalar.value;
   const suffix = n <= 1 ? " (copy)" : ` (copy ${n})`;
-  return text.replace(TOP_LEVEL_TITLE_RE, (_line, rawValue: string) => {
-    const doubleQuoted = /^"([^"]*)"$/.exec(rawValue);
-    const singleQuoted = /^'([^']*)'$/.exec(rawValue);
-    const quoted = doubleQuoted ?? singleQuoted;
-    if (quoted) {
-      const quote = rawValue[0];
-      return `title: ${quote}${quoted[1]}${suffix}${quote}`;
+  const tokens = [...new Parser().parse(text)];
+  const doc = tokens.find((token): token is CST.Document => token.type === "document");
+  const map = doc?.value;
+  if (!doc || !map || (map.type !== "block-map" && map.type !== "flow-collection")) return text;
+  const item = map.items.find((entry) => CST.resolveAsScalar(entry.key)?.value === "title");
+  const valueToken = item?.value;
+  if (!valueToken) return text;
+
+  const aliases = new Set<number>();
+  if (isScalar(titleNode) && titleNode.anchor) {
+    visit(parsed, {
+      Alias(_key, node) {
+        if (node.resolve(parsed) === titleNode && node.range) aliases.add(node.range[0]);
+      },
+    });
+  }
+  // Materializing a large scalar many times must not allocate an unbounded copy. The server
+  // also enforces its one-megabyte write limit; fail before creating any file here.
+  if (text.length + aliases.size * JSON.stringify(title).length > 1_000_000) {
+    throw new Error("The title's aliases would make this copy too large. Use a shorter title.");
+  }
+  CST.visit(doc, (entry) => {
+    for (const token of [entry.key, entry.value]) {
+      if (token?.type === "alias" && aliases.has(token.offset)) {
+        // Quoting preserves strings such as "null", "true" and numeric-looking titles,
+        // including when the alias supplies a mapping key or a flow-collection value.
+        CST.setScalarValue(token, title, { type: "QUOTE_DOUBLE", inFlow: true });
+        // CST's multiline formatting needs indentation context that an alias token lacks.
+        // Keep the repaired scalar on one physical line in block values, flows and keys.
+        token.source = singleLineQuoted(title);
+      }
     }
-    return `title: ${rawValue.trimEnd()}${suffix}`;
   });
+  const copyTitle = title.replace(/\n+$/, "") + suffix;
+  CST.setScalarValue(valueToken, copyTitle, {
+    afterKey: true,
+    inFlow: map.type === "flow-collection",
+    ...(isAlias(titleNode) && { type: "QUOTE_DOUBLE" as const }),
+  });
+  if (valueToken.type === "double-quoted-scalar") valueToken.source = singleLineQuoted(copyTitle);
+  let candidate = tokens.map((token) => CST.stringify(token)).join("");
+  if (text.includes("\r\n") && !/(?<!\r)\n/.test(text)) {
+    candidate = candidate.replace(/(?<!\r)\n/g, "\r\n");
+  }
+  // Refuse before file creation if formatting or bounded alias resolution changes anything
+  // except the root title. Maps retain non-string keys; no JSON conversion loses YAML data.
+  try {
+    const result = parseDocument(candidate);
+    if (result.errors.length > 0) throw new Error("Invalid copy YAML");
+    const original: unknown = parsed.toJS({ mapAsMap: true, maxAliasCount: 100 });
+    const copied: unknown = result.toJS({ mapAsMap: true, maxAliasCount: 100 });
+    if (!(original instanceof Map)) throw new Error("Invalid copy root");
+    original.set("title", copyTitle);
+    if (!sameYamlValue(original, copied)) throw new Error("Changed copy values");
+  } catch {
+    throw new Error("Could not safely copy this template's title. Simplify its YAML aliases.");
+  }
+  return candidate;
+}
+
+const COPY_SUFFIX_RE = / \(copy(?: \d+)?\)$/;
+
+/**
+ * Split a title (as read from a file, e.g. `WorkspaceFile.title`) into its base text and a
+ * trailing `(copy)`/`(copy N)` marker written by `titleWithCopySuffix`, if any — so a view that
+ * truncates or line-clamps the base can still render the marker as its own non-shrinking part
+ * instead of cutting it off along with the rest of a long title. `marker` is `null` when `title`
+ * carries no such suffix.
+ */
+export function splitCopySuffix(title: string): { base: string; marker: string | null } {
+  const match = COPY_SUFFIX_RE.exec(title);
+  if (!match) return { base: title, marker: null };
+  return { base: title.slice(0, match.index), marker: match[0].trim() };
 }

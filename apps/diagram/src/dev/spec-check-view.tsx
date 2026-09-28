@@ -10,7 +10,9 @@ import {
   TableRow,
   Text,
 } from "@elabs-ai/components-ui";
+import { isAlias, isScalar, parseDocument } from "yaml";
 import { BUNDLED_CATALOG, bundledCatalog } from "../catalog/catalog-bundle"; // DG-26 (1b.12)
+import { titleWithCopySuffix } from "../home/templates"; // DG-23 follow-up
 import { ICON_NAMES } from "../icons/icon-names"; // DG-10
 import { ARCH_COMPOSITE_TYPE } from "../nodes/arch-node-data"; // DG-26
 import { IssueMessage, SEVERITY_STATUS } from "../panes/issues-panel";
@@ -161,6 +163,140 @@ const PAIRS = SAME_AST.map(([a, b]) => {
     pass: left != null && right != null && canonical(left) === canonical(right),
   };
 });
+
+/**
+ * DG-23 follow-up — `titleWithCopySuffix` (`home/templates.ts`) across every valid YAML form a
+ * hand-authored `title:` can take, plus the two guarantees it always kept: a document with no
+ * top-level `title` is returned unchanged, and a nested `title:` (under `boxes`/`lanes`/
+ * `story.steps`) is never touched.
+ */
+const TITLE_SUFFIX_CASES: readonly {
+  name: string;
+  before: string;
+  n: number;
+  /** Text that must still be present, byte-for-byte, once the title is rewritten. */
+  mustContain: readonly string[];
+}[] = [
+  {
+    name: "plain",
+    before: "title: Customer landscape draft\ndescription: hi\n",
+    n: 1,
+    mustContain: ["description: hi"],
+  },
+  {
+    name: "plain, trailing comment",
+    before: "title: Customer landscape draft # working title\ndescription: hi\n",
+    n: 2,
+    mustContain: ["# working title", "description: hi"],
+  },
+  {
+    name: "single-quoted, '' escape",
+    before: "title: 'Customer''s landscape'\ndescription: hi\n",
+    n: 3,
+    mustContain: ["description: hi"],
+  },
+  {
+    name: 'double-quoted, \\" escape',
+    before: 'title: "Say \\"hi\\""\ndescription: hi\n',
+    n: 1,
+    mustContain: ["description: hi"],
+  },
+  {
+    name: "single-quoted with comment",
+    before: "title: 'Customer''s landscape' # keep\ndescription: hi\n",
+    n: 2,
+    mustContain: ["# keep", "description: hi"],
+  },
+  {
+    name: "double-quoted with comment",
+    before: 'title: "Say \\"hi\\"" # keep\ndescription: hi\n',
+    n: 2,
+    mustContain: ["# keep", "description: hi"],
+  },
+  { name: "null title", before: "title: ~\ndescription: hi\n", n: 1, mustContain: [] },
+  {
+    name: "block literal (|)",
+    before: "title: |\n  Multi\n  line\ndescription: hi\n",
+    n: 2,
+    mustContain: ["description: hi"],
+  },
+  {
+    name: "block folded (>-)",
+    before: "title: >-\n  Folded title\n  continued\ndescription: hi\n",
+    n: 4,
+    mustContain: ["description: hi"],
+  },
+  {
+    name: "no title key",
+    before: "dialect: v1\ndescription: hi\n",
+    n: 1,
+    mustContain: ["dialect: v1", "description: hi"],
+  },
+  {
+    name: "nested title untouched",
+    before: "title: Top\ndescription: hi\nboxes:\n  - id: a\n    title: Nested\n",
+    n: 2,
+    mustContain: ["title: Nested", "description: hi"],
+  },
+];
+
+interface TitleSuffixRow {
+  name: string;
+  pass: boolean;
+  detail: string;
+}
+
+function runTitleSuffixCases(): TitleSuffixRow[] {
+  const shipped = Object.entries(
+    import.meta.glob<string>("../../workspace/templates/*.yaml", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    }),
+  ).map(([path, before]) => ({
+    name: path.split("/").at(-1) ?? path,
+    before,
+    n: 2,
+    mustContain: [],
+  }));
+  return [...TITLE_SUFFIX_CASES, ...shipped].map(({ name, before, n, mustContain }) => {
+    const after = titleWithCopySuffix(before, n);
+    const beforeDoc = parseDocument(before);
+    const beforeNode = beforeDoc.get("title", true);
+    const resolved = isAlias(beforeNode) ? beforeNode.resolve(beforeDoc) : beforeNode;
+    const beforeTitle = isScalar(resolved) ? resolved.value : undefined;
+    const hasTitle = typeof beforeTitle === "string";
+    if (!hasTitle) {
+      // Nothing to suffix: the text must come back unchanged.
+      const pass = after === before;
+      return { name, pass, detail: pass ? "unchanged" : "text changed with no title to suffix" };
+    }
+    const suffix = n <= 1 ? " (copy)" : ` (copy ${n})`;
+    const expected = beforeTitle.replace(/\n+$/, "") + suffix;
+    const afterDoc = parseDocument(after);
+    const parses = afterDoc.errors.length === 0;
+    const actualTitle = afterDoc.get("title");
+    const titleOk = parses && actualTitle === expected;
+    const beforeOther = parseDocument(before).toJS();
+    const afterOther = afterDoc.toJS();
+    delete beforeOther.title;
+    delete afterOther.title;
+    const otherOk =
+      mustContain.every((s) => after.includes(s)) &&
+      JSON.stringify(beforeOther) === JSON.stringify(afterOther);
+    const pass = parses && titleOk && otherOk;
+    const detail = pass
+      ? "ok"
+      : !parses
+        ? "the copy does not parse as YAML"
+        : !titleOk
+          ? `title is ${JSON.stringify(actualTitle)}, expected ${JSON.stringify(expected)}`
+          : "other content changed";
+    return { name, pass, detail };
+  });
+}
+
+const TITLE_SUFFIX_ROWS = runTitleSuffixCases();
 
 // DG-26 — the seven workspace files: dialect "1", no error or warning, the measured shape.
 const WORKSPACE = import.meta.glob<string>(
@@ -579,6 +715,7 @@ export function SpecCheckView() {
   const passed =
     ROWS.filter((r) => r.pass).length +
     PAIRS.filter((p) => p.pass).length +
+    TITLE_SUFFIX_ROWS.filter((r) => r.pass).length +
     WORKSPACE_ROWS.filter((r) => r.pass).length +
     UPGRADE_ROWS.filter((r) => r.pass).length +
     REFERENCE_FIRST_ROWS.filter((r) => r.pass).length +
@@ -587,6 +724,7 @@ export function SpecCheckView() {
   const total =
     ROWS.length +
     PAIRS.length +
+    TITLE_SUFFIX_ROWS.length +
     WORKSPACE_ROWS.length +
     UPGRADE_ROWS.length +
     REFERENCE_FIRST_ROWS.length +
@@ -677,6 +815,38 @@ export function SpecCheckView() {
                 <StatusBadge status={p.pass ? "complete" : "failed"}>
                   {p.pass ? "Pass" : "Fail"}
                 </StatusBadge>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <Table className="mt-6">
+        <TableCaption>{SPEC_CHECK_LABELS.titleSuffix}</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{SPEC_CHECK_LABELS.titleForm}</TableHead>
+            <TableHead>{SPEC_CHECK_LABELS.result}</TableHead>
+            <TableHead>{SPEC_CHECK_LABELS.detail}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {TITLE_SUFFIX_ROWS.map((row) => (
+            <TableRow key={row.name} data-pass={row.pass}>
+              <TableCell>
+                <Text as="span" variant="code">
+                  {row.name}
+                </Text>
+              </TableCell>
+              <TableCell>
+                <StatusBadge status={row.pass ? "complete" : "failed"}>
+                  {row.pass ? "Pass" : "Fail"}
+                </StatusBadge>
+              </TableCell>
+              <TableCell>
+                <Text as="span" variant="caption" tone="muted">
+                  {row.detail}
+                </Text>
               </TableCell>
             </TableRow>
           ))}
@@ -865,6 +1035,8 @@ export function SpecCheckView() {
 /** Captions and column titles for the DG-26 tables, in one place (`conventions/i18n-strings`). */
 const SPEC_CHECK_LABELS = {
   fixtures: "Dialect fixtures (v0 and v1)",
+  titleSuffix: "Template copy titles keep every valid YAML title form",
+  titleForm: "Title form",
   workspace: "Workspace files",
   upgrade: "Upgrade 0 → 1",
   file: "File",

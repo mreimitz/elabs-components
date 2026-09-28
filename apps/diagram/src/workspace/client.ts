@@ -155,20 +155,23 @@ export function writeFile(
 }
 
 /**
- * Write `text` to a new file `<folder>/<name>.yaml`, adding `-2`, `-3`, … while the name is
+ * Write `text` (or `text(n)`, the attempt number starting at 1 — a copy whose own text carries
+ * its attempt's number, e.g. a title suffix, needs it baked in before the write, not just into
+ * the file name) to a new file `<folder>/<name>.yaml`, adding `-2`, `-3`, … while the name is
  * taken (`create`: never an overwrite, never an existing file). Returns the path.
  */
 export async function createUniqueFile(
   folder: string,
   name: string,
-  text: string,
+  text: string | ((n: number) => string),
 ): Promise<string> {
   const stem = name.replace(/\.ya?ml$/i, "");
   for (let n = 1; n < 100; n += 1) {
     const file = `${n === 1 ? stem : `${stem}-${n}`}.yaml`;
     const path = folder === "" ? file : `${folder}/${file}`;
+    const attemptText = typeof text === "function" ? text(n) : text;
     try {
-      await writeFile(path, text, { create: true });
+      await writeFile(path, attemptText, { create: true });
       return path;
     } catch (error) {
       if (!(error instanceof WorkspaceApiError && error.code === "exists")) throw error;
