@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   CanvasShell,
   FlowMiniMap,
@@ -219,8 +219,7 @@ export function CanvasPane(props: CanvasPaneProps) {
   // phases, the technical pane's content now fades OUT over the first 120 ms ("settle") and the
   // visual pane's fades IN over the last 200 ms ("dress"); the ghost overlay owns the screen
   // only in between, so the first and last frames are always real content. This is content-only
-  // (`--pane-opacity`, `index.css`'s `.react-flow__renderer` rule) — the chrome below runs its
-  // own, always-continuous cross-fade so it is never dark at the same time as the content.
+  // Chrome is outside these independently composited renderer layers.
   const technicalOpacity = reduced
     ? 1 - position
     : morphing
@@ -242,6 +241,14 @@ export function CanvasPane(props: CanvasPaneProps) {
   // `aria-hidden` below still only flip at the settled ends, so the pane keeps taking real
   // focus/hit-testing while both sides cross-fade during a switch.
   const technicalLensLocked = position !== 0 || target !== "technical";
+  // Opacity belongs to the composited renderer, not an inherited custom property: changing
+  // a variable on the pane invalidates the styles of every node and edge on every frame.
+  useLayoutEffect(() => {
+    const technical = technicalRef.current?.querySelector<HTMLElement>(".react-flow__renderer");
+    const visual = visualRef.current?.querySelector<HTMLElement>(".react-flow__renderer");
+    if (technical) technical.style.opacity = String(technicalOpacity);
+    if (visual) visual.style.opacity = String(visualOpacity);
+  }, [technicalOpacity, visualOpacity]);
   return (
     <LensChromeTarget.Provider value={chromeTarget}>
       <div ref={containerRef} data-lens-root className="@container relative h-full w-full">
@@ -250,12 +257,7 @@ export function CanvasPane(props: CanvasPaneProps) {
           data-lens-pane="technical"
           className="absolute inset-0 focus-ring-inset"
           tabIndex={-1}
-          style={
-            {
-              "--pane-opacity": technicalOpacity,
-              visibility: atVisual ? "hidden" : "visible",
-            } as CSSProperties
-          }
+          style={{ visibility: atVisual ? "hidden" : "visible" }}
           aria-hidden={atVisual || undefined}
           inert={atVisual || undefined}
         >
@@ -266,12 +268,7 @@ export function CanvasPane(props: CanvasPaneProps) {
           data-lens-pane="visual"
           className="absolute inset-0 focus-ring-inset"
           tabIndex={-1}
-          style={
-            {
-              "--pane-opacity": visualOpacity,
-              visibility: atTechnical ? "hidden" : "visible",
-            } as CSSProperties
-          }
+          style={{ visibility: atTechnical ? "hidden" : "visible" }}
           aria-hidden={!atVisual || undefined}
           inert={!atVisual || undefined}
         >
