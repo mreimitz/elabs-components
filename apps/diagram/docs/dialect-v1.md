@@ -77,27 +77,32 @@ diagram-ref  := "ws" ("/" segment)+           segment: any character except "/",
 The node's own written key always wins. Below it, only a catalog reference fills anything in
 R1 (a diagram reference's title/icon land in Part 2 — see §2.4):
 
-| Key                                       | Catalog part supplies                                                                          | Catalog icon entry supplies                                        | Node default (no ref, or ref fills nothing) |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------- |
-| `title`                                   | the part's name, else its slug                                                                 | the vendor file's `name`, else the icon index label, else the slug | the node's `id`                             |
-| `subtitle`                                | the part's own `subtitle`                                                                      | none                                                               | none                                        |
-| `icon`                                    | the part's own `icon`                                                                          | its own `icon`                                                     | the type's glyph, at render                 |
-| `type`                                    | the part's own `kind`, else its icon entry's                                                   | its own `kind` (no vendor file sets one today)                     | `service`                                   |
-| `badges`                                  | the part's own `badges`                                                                        | none                                                               | none                                        |
-| `description`, `docs`                     | shown by the reader (`suppliedBy`, DG-25) when the node writes none — never copied into `data` | (same)                                                             | none                                        |
-| `tone`, `href`, `class`, `text`, `status` | never supplied                                                                                 | never supplied                                                     | none                                        |
+| Key                                       | Catalog part supplies                                               | Catalog icon entry supplies                                        | Node default (no ref, or ref fills nothing) |
+| ----------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------- |
+| `title`                                   | the part's name, else its slug                                      | the vendor file's `name`, else the icon index label, else the slug | the node's `id`                             |
+| `subtitle`                                | the part's own `subtitle`                                           | none                                                               | none                                        |
+| `icon`                                    | the part's own `icon`                                               | its own `icon`                                                     | the type's glyph, at render                 |
+| `type`                                    | the part's own `kind`, else its icon entry's                        | its own `kind` (no vendor file sets one today)                     | `service`                                   |
+| `badges`                                  | the part's own `badges`                                             | none                                                               | none                                        |
+| `description`, `docs`                     | reserved for the future details reader (DG-25); not inherited today | (same)                                                             | none                                        |
+| `tone`, `href`, `class`, `text`, `status` | never supplied                                                      | never supplied                                                     | none                                        |
 
 - `title`, `subtitle`, `icon`, `type` and `badges` (`SUPPLIED_KEYS`) are filled into the AST
   before validation — only for the keys the node's text does not already have
   (`node.unwritten`, recorded by the normalizer from the raw entry via `isSuppliedKeyWritten`,
   not from what the reference happens to supply). A key left with no value at all (`title:`,
-  YAML null) counts as unwritten, same as the key's absence. An explicit empty value
+  YAML null) counts as unwritten for reference resolution, but still produces a `wrong-type`
+  diagnostic; omit the key to inherit without a diagnostic. An explicit empty value
   (`subtitle: ""`) is a written override instead: it draws nothing, the same as `badges: []` —
-  neither ever falls back to the reference's value.
+  neither ever falls back to the reference's value. `type: ""` is a `not-in-enum` error;
+  `icon: ""` warns `unknown-icon` and uses the type glyph.
 - `description` and `docs` are **not** in `SUPPLIED_KEYS`: they never land in the compiled
   node's data even when the node writes neither, so the drawing never changes shape. Today
-  only the inspector's `SUPPLIED_KEYS` fields (title, subtitle, icon, type, badges) get the
-  "From the reference: …" help text (§2.3, `1b.6`); `description` and `docs` are not filled
+  the inspector's supplied text/list fields show "From the reference: …" help while inherited.
+  Type offers a "From the reference: …" option even after an override; choosing it removes
+  the written key. **Clear subtitle**, or clearing a subtitle after editing, writes `subtitle: ""`;
+  **Use reference subtitle** removes that override. Help updates while editing without
+  remounting fields or closing portaled menus; `description` and `docs` are not filled
   into that form at all yet, and the details card does not read a reference's
   `description`/`docs` either — that is DG-25's own work, not yet built.
 
@@ -157,12 +162,17 @@ node scripts/upgrade-workspace.mjs [--dry-run] [file-or-folder …]
 # "custom" } } (either form of the name works). scripts/ref-first-choices.json (committed) is
 # always applied first — it is exactly what migrated the seven shipped workspace files, so a
 # bare --ref-first re-run is a no-op on them; --choices <file.json> merges on top of it, per
-# file and then per node id. A node not named in either is tried against its own written icon
-# as the catalog name; "custom" (or an icon that is not a catalog name) leaves the node exactly
+# file and then per node id. In a file with no ref nodes, a node not named in either is tried
+# against its own written icon as the catalog name. Once any node writes ref, only explicitly
+# named choices convert further nodes, preserving stand-ins in copied or moved diagrams;
+# "custom" (or an icon that is not a catalog name) leaves the node exactly
 # as written. Each file reports its own line — a bad choice, a node left custom on purpose, a
 # key pinned to keep the drawing the same, or "<n> references, <n> keys dropped" — and the run
 # fails (without writing anything, on any file) if any file was unreadable or named a choice
-# with no matching node or catalog entry. Never run together with a dialect upgrade.
+# with no matching node or catalog entry. Anchors, aliases, descriptions and docs stay written.
+# Every rewritten file is compiled and compared against the original (all drawing fields,
+# ignoring only catalogEntry provenance); a diagnostic error or changed drawing writes nothing.
+# Never run together with a dialect upgrade.
 node scripts/upgrade-workspace.mjs --ref-first [--choices <file.json>] [--dry-run] [file-or-folder …]
 ```
 
@@ -176,7 +186,7 @@ position is the issue's start.
 
 | Code                 | Severity | Message (template)                                                                                                                                                        | Fixture @ line:col                            |
 | -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `bad-ref`            | error    | One message per cause (`normalize.ts` `badRef()`) — see the list below.                                                                                                   | `issue-bad-ref.yaml` @ 5:10 through 25:10     |
+| `bad-ref`            | error    | One message per cause (`normalize.ts` `badRef()`) — see the list below.                                                                                                   | `issue-bad-ref.yaml` @ 5:10 through 29:10     |
 | `ref-missing`        | error    | `No catalog item "<name>".` (+ `Did you mean "catalog/<near>"?` when one is close) · `"<name>" is an icon with no catalog item; write "icon: <name>" instead of the ref.` | `issue-ref-missing.yaml` @ 5:10 and 7:10      |
 | `inner-flow`         | warning  | `Both ends are inside "<id>"; draw this flow in <ref> instead.`                                                                                                           | `issue-inner-flow.yaml` @ 7:5                 |
 | `expand-not-diagram` | warning  | `"expand" applies only to a node whose ref names a diagram (ws/…); here it does nothing.` (on the key)                                                                    | `issue-expand-not-diagram.yaml` @ 5:5 and 8:5 |
@@ -205,13 +215,15 @@ before referencing it.`
 name; a reference cannot skip a segment.`
 - `ws/…` whose first bad segment is exactly `.` or `..`: `"<ref>" has a "<segment>" segment; a
 reference names an exact path, never "." or "..".`
+- `ws/…` whose first bad segment starts or ends with a space: `"<ref>" names "<segment>",
+which starts or ends with a space; the workspace trims names.`
 - `ws/…` whose first bad segment starts with `_` (not `_trash`): `"<ref>" names "<name>", which
 starts with "_" (reserved, like _trash); a reference cannot use it.`
 - `ws/…` whose first bad segment starts with `.`: `"<ref>" names "<name>", which starts with
 "." (hidden); a reference cannot use it.`
 - `ws/…` whose first bad segment has a character the grammar refuses (`\`, a control
-  character): `"<ref>" names "<name>", which has a character the workspace does not accept in
-a name.`
+  character): `"<ref>" contains a backslash; the workspace does not accept it in a name.`
+  (or "a control character"). Control characters in the displayed path are escaped.
 
 `unsupported-version`'s message changed with v1: `Dialect <value as JSON> is not supported;
 this app reads dialects "0" and "1".` A `ref` on a zone-only entry is reported as

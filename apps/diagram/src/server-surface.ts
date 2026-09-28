@@ -24,9 +24,11 @@ export { flowItem, nodeItem } from "./spec/dialect/entry-text";
 export { entrySnippet } from "./catalog/entry-snippet"; // DG-24
 export { upgradeText } from "./spec/dialect/upgrade"; // DG-26
 export {
+  hasCatalogRef,
   refFirstText,
   type RefChoices,
   type RefFirstChange,
+  type RefFirstOptions,
   type RefFirstResult,
 } from "./spec/dialect/upgrade"; // DG-26 (1b)
 export { catalogRefsOf, diagramRefsOf, refFileOf, refForm } from "./spec/dialect/ids"; // DG-26

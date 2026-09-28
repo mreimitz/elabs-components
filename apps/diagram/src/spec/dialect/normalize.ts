@@ -126,10 +126,14 @@ function badRef(ref: string): { message: string; suggestion?: string } | null {
         message: `"${ref}" names "${bad}", which starts with "." (hidden); a reference cannot use it.`,
       };
     }
-    // A control character (already rejected by SEGMENT_CHAR) would otherwise print raw here,
-    // making the offending character invisible; JSON.stringify escapes it.
+    // Escape control characters in the full path as well as naming the rejected character.
+    const shown = Array.from(ref, (char) => {
+      const code = char.charCodeAt(0);
+      return code < 32 || code === 127 ? `\\u${code.toString(16).padStart(4, "0")}` : char;
+    }).join("");
+    const character = bad.includes("\\") ? "a backslash" : "a control character";
     return {
-      message: `"${ref}" names ${JSON.stringify(bad)}, which has a character the workspace does not accept in a name.`,
+      message: `"${shown}" contains ${character}; the workspace does not accept it in a name.`,
     };
   }
   if (form === "catalog") {

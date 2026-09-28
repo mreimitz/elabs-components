@@ -30,7 +30,7 @@ const NODE_FIELDS = {
   ref: {
     type: "string",
     description:
-      "A reference this node's icon, title, subtitle, type, badges, description and docs " +
+      "A reference this node's icon, title, subtitle, type and badges " +
       "come from, unless the node also writes them: catalog/<pack>/<entry> for a catalog " +
       "item, ws/<folder>/…/<file name> for another workspace diagram.",
   },

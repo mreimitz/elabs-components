@@ -266,12 +266,15 @@ specific part; stand-ins `nat`, `replicate` and onprem `licensing` stay custom).
   at a time — `choices[id]` names a catalog entry or `"custom"`; a node not named tries its own
   written `icon:` as the catalog name; a hit becomes `ref: catalog/<name>` (renaming `icon:` to
   `ref:` when the icon already equals the entry, else adding `ref:` and keeping the icon
-  override) and drops any written key that already equals what the reference supplies, unless
-  a comment guards it.
+  override) and drops matching title, subtitle, type and badges only when no comment, anchor
+  or alias guards them. Description and docs stay written. Files already containing references
+  convert only explicitly named nodes, including after a copy or move. The migration checks
+  the whole compiled drawing before any file can be written.
 - **The inspector shows what a reference supplies** (1b.6): a field the node does not write and
-  the reference does gets no default value (an enum shows "Not set", a text field is empty)
-  and its help text becomes "From the reference: `<value>`"; the form remounts on a live
-  catalog change (`catalogVersion()`/`onCatalogChange`).
+  the reference does gets no default value (an enum offers "From the reference: `<value>`",
+  a text field is empty with reference help). Type can return to that option after an override;
+  subtitle has an explicit restore action. Help updates without blur remounts; live
+  catalog changes refresh inherited values (`catalogVersion()`/`onCatalogChange`).
 - **`refHints`**: advisory-only, for the MCP tools — a custom node (no `ref`) whose `icon:`
   names a catalog item gets a hint string in `compose_set`/`compose_add_nodes`'s result, never
   an issue; a human author sees nothing.
@@ -325,8 +328,7 @@ still reports "0 of 7 files would change" (no dialect-0 files remain).
 A scratch script (`runnerImport` on `src/server-surface.ts`, compiling `git show
 HEAD:apps/diagram/workspace/<rel>` against the migrated working file through the same
 `checkDiagram`) compared each file's compiled nodes and edges as JSON, stripping only
-`catalogEntry`, `description` and `docs` (fields the migration is allowed to add or drop by
-design). All seven files: **same**. `#dev/spec-check`'s workspace-row shape assertions (node
+`catalogEntry` (provenance added by migration). All seven files: **same**. `#dev/spec-check`'s workspace-row shape assertions (node
 and edge counts unchanged from Part 1a's numbers) and the new `data.catalogEntry` count per
 file (tenant 4, clickhouse 5, lakehouse 12, gateway 7, onprem 6, landscape 8, pipeline 13 — 55
 total, matching the dry run) back this from the running app, not just the scratch script.

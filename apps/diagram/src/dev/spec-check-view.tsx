@@ -313,8 +313,8 @@ function runUpgrades(): UpgradeRow[] {
 
 const UPGRADE_ROWS = runUpgrades();
 
-// DG-26 (1b.12) — five checks over valid-ref-catalog.yaml and issue-ref-missing.yaml, run
-// against the bundled catalog: what a catalog reference fills into the compiled graph, and
+// DG-26 (1b.12) — checks over valid-ref-catalog.yaml and issue-ref-missing.yaml, run against
+// the bundled catalog: what a catalog reference fills into the compiled graph, and
 // what the inspector's form shows for a field a reference supplies (1b.6).
 interface RefRow {
   name: string;
@@ -356,6 +356,7 @@ function runReferenceFirst(): RefRow[] {
   const people = compiled && dataOf(compiled, "people");
   const ch = compiled && dataOf(compiled, "ch");
   const ch2 = compiled && dataOf(compiled, "ch2");
+  const ch3 = compiled && dataOf(compiled, "ch3");
 
   const rows: RefRow[] = [
     {
@@ -390,6 +391,11 @@ function runReferenceFirst(): RefRow[] {
         ch2?.title === "Analytics DB",
       ),
       detail: `ch=${JSON.stringify(ch)} ch2=${JSON.stringify(ch2)}`,
+    },
+    {
+      name: 'ch3: a written subtitle: "" clears the reference\'s subtitle',
+      pass: ch3?.subtitle === "",
+      detail: JSON.stringify(ch3),
     },
     {
       name: "aws/rdss suggests catalog/aws/rds; lucide/users has no suggestion",
@@ -489,6 +495,68 @@ function runRefFirstMigration(): MigrationRow[] {
     });
   }
 
+  // A written icon naming a part's own catalog entry ("generic/users"), rather than what that
+  // part actually draws ("lucide/users"), still converts — the icon stays written (never
+  // renamed away) and the node draws the same before and after.
+  {
+    const before = 'diagram: "1"\nnodes:\n  - id: u\n    icon: generic/users\n';
+    const result = refFirstText(before, catalog);
+    const compiledAfter = compileText(result.text, { catalog });
+    const beforeData = dataOf(compileText(before, { catalog }), "u");
+    const afterData = dataOf(compiledAfter, "u");
+    const pass =
+      result.changed &&
+      result.text.includes("icon: generic/users") &&
+      !result.text.includes("ref: generic/users") &&
+      afterData?.icon === "generic/users" &&
+      beforeData?.title === afterData?.title &&
+      typeOf(compileText(before, { catalog }), "u") === typeOf(compiledAfter, "u");
+    rows.push({
+      name: "a written icon naming a part (not its own drawn icon) stays written, never renamed",
+      pass,
+      detail: result.text,
+    });
+  }
+
+  // A key a YAML anchor or alias sets is never rewritten as text: the anchor/alias round trips
+  // and the node it names still draws the same reference-supplied value.
+  {
+    const before =
+      'diagram: "1"\nx-names: &glue AWS Glue\nnodes:\n  - id: a\n    icon: aws/glue\n    title: *glue\n';
+    const result = refFirstText(before, catalog);
+    const change = result.changes.find((c) => c.id === "a");
+    const pass =
+      result.changed &&
+      change?.kept?.includes("title") === true &&
+      !change.dropped.includes("title") &&
+      result.text.includes("title: *glue") &&
+      titleOf(before, "a", catalog) === titleOf(result.text, "a", catalog);
+    rows.push({
+      name: "a title set through a YAML alias is kept written, not dropped",
+      pass,
+      detail: result.text,
+    });
+  }
+  {
+    const before =
+      'diagram: "1"\nnodes:\n  - id: a\n    icon: clickhouse/cloud\n    title: ClickHouse Cloud\n    type: datastore\n    subtitle: Cloud\n    badges: &b [managed]\n  - id: b\n    icon: aws/glue\n    badges: *b\n';
+    const result = refFirstText(before, catalog);
+    const change = result.changes.find((c) => c.id === "a");
+    const bBadgesBefore = dataOf(compileText(before, { catalog }), "b")?.badges;
+    const bBadgesAfter = dataOf(compileText(result.text, { catalog }), "b")?.badges;
+    const pass =
+      result.changed &&
+      change?.kept?.includes("badges") === true &&
+      result.text.includes("badges: &b [managed]") &&
+      result.text.includes("badges: *b") &&
+      JSON.stringify(bBadgesBefore) === JSON.stringify(bBadgesAfter);
+    rows.push({
+      name: "badges set through a YAML anchor stay written, so another node's alias still resolves",
+      pass,
+      detail: result.text,
+    });
+  }
+
   return rows;
 }
 
@@ -502,8 +570,7 @@ const REF_FIRST_MIGRATION_ROWS = runRefFirstMigration();
 const CATALOG_BUNDLE_ROW = {
   pass:
     BUNDLED_CATALOG.problems.length === 0 &&
-    BUNDLED_CATALOG.entries.length ===
-      ICON_NAMES.size + BUNDLED_CATALOG.entries.filter((e) => e.part !== undefined).length,
+    BUNDLED_CATALOG.entries.length === ICON_NAMES.size + 15,
   entries: BUNDLED_CATALOG.entries.length,
   problems: BUNDLED_CATALOG.problems,
 };

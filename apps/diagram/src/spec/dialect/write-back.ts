@@ -89,7 +89,7 @@ function yamlValue(value: WriteValue, flow: boolean, quote: Quote = ""): string 
 // ── Reading ─────────────────────────────────────────────────────────────────
 
 /** `zones[0].children[1]` → `["zones", 0, "children", 1]`. */
-function segments(path: string): (string | number)[] {
+export function pathSegments(path: string): (string | number)[] {
   const out: (string | number)[] = [];
   for (const part of path.match(/[^.[\]]+|\[\d+\]/g) ?? []) {
     out.push(part.startsWith("[") ? Number(part.slice(1, -1)) : part);
@@ -100,7 +100,7 @@ function segments(path: string): (string | number)[] {
 /** The plain value at `path` in a parsed document's `raw`. */
 export function valueAt(raw: unknown, path: string): unknown {
   let node = raw;
-  for (const segment of segments(path)) {
+  for (const segment of pathSegments(path)) {
     if (node === null || typeof node !== "object") return undefined;
     node = (node as Record<string | number, unknown>)[segment];
   }
@@ -274,8 +274,9 @@ function setKeysEdits(
     ? trimEnd(text, anchor.value[0], anchor.value[1])
     : anchor.keyEnd + 1;
   const newline = text.indexOf("\n", anchorEnd);
-  const at = newline === -1 ? text.length : newline;
-  const lines = inserts.map((line) => `\n${indent}${line}`).join("");
+  const crlf = text.includes("\r\n");
+  const at = newline === -1 ? text.length : newline - (text[newline - 1] === "\r" ? 1 : 0);
+  const lines = inserts.map((line) => `${crlf ? "\r\n" : "\n"}${indent}${line}`).join("");
   return [...edits, { from: at, to: at, insert: lines }];
 }
 
