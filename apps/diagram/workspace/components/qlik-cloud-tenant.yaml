@@ -33,7 +33,7 @@ nodes:
     description: Hosts the analytics apps that people open in the browser or see embedded in other apps.
     docs: https://help.qlik.com/en-US/cloud-services/
   - id: answers
-    ref: catalog/qlik/answers
+    ref: ws/components/Qlik/SaaS/answers
     description: Answers questions in plain language from the documents in its knowledge bases.
   - id: automate
     ref: catalog/qlik/automate
