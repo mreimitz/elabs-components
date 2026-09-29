@@ -1,3 +1,4 @@
+import { FlowAnimationControl } from "../particles/animation-control";
 import type { Node } from "@elabs-ai/components-flow";
 import { Panel } from "@elabs-ai/components-flow";
 import { Button } from "@elabs-ai/components-ui";
@@ -44,7 +45,10 @@ export function InteractionOverlays({ nodes }: InteractionOverlaysProps) {
       <StoryBar />
       {presenting ? (
         <Panel position="bottom-center" data-diagram-export="exclude">
-          <ExitButton />
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-elevated p-1">
+            <FlowAnimationControl />
+            <ExitButton />
+          </div>
         </Panel>
       ) : null}
     </>

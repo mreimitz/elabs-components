@@ -1045,7 +1045,7 @@ function DiagramCanvas({
               (wave-2 review M7). Proposed: `onFitView?: () => void` (or `fitViewOptions`),
               through which the app would run its chrome-aware fit (use-diagram-layout.ts).
               docs/findings/DG-12-editor-integration.md. */}
-                <CanvasNavigation flowAnimation />
+                <CanvasNavigation />
 
                 {/* DG-18: details card, step player, presentation exit. */}
                 <InteractionOverlays nodes={nodes} />

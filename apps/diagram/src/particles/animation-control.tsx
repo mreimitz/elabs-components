@@ -18,7 +18,7 @@ export function FlowAnimationControl() {
       onClick={() => {
         if (!reduced) toggleParticles();
       }}
-      className="rounded-none border-t border-border aria-disabled:opacity-50"
+      className="aria-disabled:opacity-50"
     />
   );
 }

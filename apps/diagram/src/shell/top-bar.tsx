@@ -1,3 +1,4 @@
+import { FlowAnimationControl } from "../particles/animation-control";
 import { DrillBreadcrumb } from "../interaction/drill-breadcrumb";
 import { useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
@@ -294,6 +295,7 @@ export function TopBar() {
                 onReset={resetOverride}
               />
             ) : null}
+            {onDoc && lensTarget === "technical" ? <FlowAnimationControl /> : null}
           </div>
           {/* Wave 3: LayoutControls owns the layout dialogs, so it stays mounted when its
             controls are not shown (view mode, the compact bar). */}
@@ -335,6 +337,7 @@ export function TopBar() {
             </WithTooltip>
           )}
         </div>
+        {drilling ? <FlowAnimationControl /> : null}
       </header>
     </TooltipProvider>
   );

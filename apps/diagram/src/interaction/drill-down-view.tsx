@@ -1,3 +1,4 @@
+import { FlowAnimationControl } from "../particles/animation-control";
 import { ParticleLayer } from "../particles/particle-layer";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -112,6 +113,7 @@ export function DrillDownView({ chain }: { chain: readonly string[] }) {
       {route.kind === "doc" && route.present ? (
         <header className="flex min-w-0 items-center gap-2 border-b border-border px-4 py-2">
           <DrillBreadcrumb route={route} />
+          <FlowAnimationControl />
         </header>
       ) : null}
       <Text className="px-4 py-2" variant="meta" tone="muted">
@@ -264,7 +266,7 @@ function DrillCanvas({
           <ParticleLayer enabled={status === "ready"} />
           <TitleBlock title={spec.title} description={spec.description} />
           <DiagramLegend mode={view.legend} />
-          <CanvasNavigation flowAnimation />
+          <CanvasNavigation />
         </CanvasShell>
       </div>
       {status !== "ready" || empty ? (

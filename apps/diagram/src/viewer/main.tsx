@@ -1,3 +1,4 @@
+import { FlowAnimationControl } from "../particles/animation-control";
 import { useEffect, useLayoutEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { ThemeProvider, defineTheme } from "@elabs-ai/components-tokens";
@@ -97,6 +98,9 @@ function Viewer() {
             </ToggleGroup>
           </>
         )}
+        {!(route.kind === "doc" && route.present) && (into?.length || target === "technical") ? (
+          <FlowAnimationControl />
+        ) : null}
       </header>
       <section className="relative min-h-0 flex-1">
         <div

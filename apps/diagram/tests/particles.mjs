@@ -115,6 +115,18 @@ try {
     assert.equal(mounted.export, "exclude");
     assert.equal(mounted.pointer, "none");
     assert.equal(mounted.pixels, true);
+    const toolbar = page.locator('[data-slot="diagram-toolbar"]');
+    const navigation = page.locator('[data-slot="canvas-navigation"]');
+    assert.equal(
+      await toolbar.getByRole("button", { name: "Pause flow animation", exact: true }).count(),
+      1,
+    );
+    assert.equal(await navigation.getByRole("button", { name: /flow animation/ }).count(), 0);
+    assert.equal(
+      await toolbar.evaluate((el) => el.scrollWidth > el.clientWidth),
+      false,
+      "toolbar fits its width",
+    );
     const sampleBefore = (await stats()).samples;
     await page.getByRole("button", { name: "Zoom in", exact: true }).click();
     await poll(async () => (await stats()).frames > 20, "frames after camera change");
@@ -164,6 +176,23 @@ try {
       true,
       "child owns its canvas",
     );
+    assert.equal(
+      await toolbar.getByRole("button", { name: "Pause flow animation", exact: true }).count(),
+      1,
+      "drill toolbar owns one control",
+    );
+    for (const suffix of ["&present", "&present&into=child"]) {
+      await page.goto(`${base}/#d/${folder}/proof.yaml${suffix}`);
+      await ready();
+      const pause = page.getByRole("button", { name: "Pause flow animation", exact: true });
+      await pause.waitFor();
+      assert.equal(await pause.count(), 1, "presentation owns one control");
+      assert.equal(await navigation.getByRole("button", { name: /flow animation/ }).count(), 0);
+      await pause.click();
+      await poll(async () => (await canvas().count()) === 0, "presentation pause");
+      await page.getByRole("button", { name: "Resume flow animation", exact: true }).click();
+      await ready();
+    }
     await page.goto(`${base}/#v/${folder}/proof.yaml`);
     await page.locator(".react-flow__node").first().waitFor({ state: "visible" });
     assert.equal(await canvas().count(), 0, "pure shared picture has no animation");

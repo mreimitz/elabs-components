@@ -62,6 +62,14 @@ for (const [name, engine] of Object.entries({ chromium, firefox, webkit })) {
       const snapshotBefore = await page.locator("#atlas-snapshot").textContent();
       await expect(page.locator('[data-slot="flow-particles"]')).toHaveCount(1);
       const pause = page.getByRole("button", { name: "Pause flow animation", exact: true });
+      await expect(
+        page.locator("header").getByRole("button", { name: "Pause flow animation", exact: true }),
+      ).toHaveCount(1);
+      await expect(
+        page
+          .locator('[data-slot="canvas-navigation"]')
+          .getByRole("button", { name: /flow animation/ }),
+      ).toHaveCount(0);
       await pause.focus();
       await page.keyboard.press("Enter");
       await expect(page.locator('[data-slot="flow-particles"]')).toHaveCount(0);
