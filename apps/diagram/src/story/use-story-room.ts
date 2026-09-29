@@ -15,11 +15,10 @@ export function useStoryRoom(surface: RefObject<HTMLDivElement | null>, visible:
       if (!box.width) return;
       const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       const center = box.left + box.width / 2;
-      const panels = [
-        ...host.querySelectorAll<HTMLElement>(
-          ".react-flow__panel.bottom.left, .react-flow__panel.bottom.right",
-        ),
-      ];
+      const ownPanel = element.closest(".react-flow__panel");
+      const panels = [...host.querySelectorAll<HTMLElement>(".react-flow__panel.bottom")].filter(
+        (panel) => panel !== ownPanel,
+      );
       for (const previous of observed) {
         if (!panels.includes(previous)) {
           observer.unobserve(previous);
@@ -37,6 +36,7 @@ export function useStoryRoom(surface: RefObject<HTMLDivElement | null>, visible:
         .filter(({ rect }) => rect.width > 0 && rect.height > 0);
       let half = box.width / 2 - rem;
       for (const { panel, rect } of sides) {
+        if (!panel.classList.contains("left") && !panel.classList.contains("right")) continue;
         half = Math.min(
           half,
           panel.classList.contains("left") ? center - rect.right - 8 : rect.left - center - 8,
@@ -47,7 +47,7 @@ export function useStoryRoom(surface: RefObject<HTMLDivElement | null>, visible:
         Math.max(0, box.width - 2 * rem),
         half * 2 >= 20 * rem ? half * 2 : Infinity,
       );
-      let bottom = 3.25 * rem;
+      let bottom = 0;
       for (const { rect } of sides) {
         if (rect.right > center - width / 2 && rect.left < center + width / 2) {
           // Panel has its own bottom margin; this margin is inside that panel.

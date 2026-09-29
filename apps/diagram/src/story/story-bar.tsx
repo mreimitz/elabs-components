@@ -17,6 +17,7 @@ const LABELS = {
   pause: "Pause story",
   present: "Present story",
   progress: "Step progress",
+  caption: "Step description",
   technical: "Play story in technical view",
 };
 const KEEP_KEYS =
@@ -27,7 +28,9 @@ export function handleStoryKey(event: KeyboardEvent): boolean {
     event.altKey ||
     event.ctrlKey ||
     event.metaKey ||
-    (event.target instanceof Element && event.target.closest(KEEP_KEYS))
+    (event.target instanceof Element &&
+      (event.target.closest(KEEP_KEYS) ||
+        (event.key !== "Escape" && event.target.closest('[data-slot="story-caption"]'))))
   )
     return false;
   if (document.querySelector('[role="dialog"][data-state="open"],[role="menu"][data-state="open"]'))
@@ -65,6 +68,10 @@ export function StoryBar({ visual = false }: { visual?: boolean }) {
   const play = useRef<HTMLButtonElement>(null);
   const focus = useRef(false);
   const surface = useRef<HTMLDivElement>(null);
+  const caption = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (caption.current) caption.current.scrollTop = 0;
+  }, [step]);
   useStoryRoom(surface, state.story.steps.length > 0);
   useEffect(() => {
     if (!focus.current) return;
@@ -75,7 +82,9 @@ export function StoryBar({ visual = false }: { visual?: boolean }) {
     if (visual) return;
     // Capture precedes the shell/presentation Escape handlers; overlays and fields keep keys.
     const handle = (event: KeyboardEvent) => {
-      handleStoryKey(event);
+      const ending = event.key === "Escape" && storyStore.get().index !== null;
+      if (ending) focus.current = true;
+      if (!handleStoryKey(event) && ending) focus.current = false;
     };
     window.addEventListener("keydown", handle, true);
     return () => window.removeEventListener("keydown", handle, true);
@@ -93,11 +102,11 @@ export function StoryBar({ visual = false }: { visual?: boolean }) {
       <div
         ref={surface}
         data-slot="story-bar"
-        className="pointer-events-auto mb-[var(--story-bottom,3.25rem)] w-[var(--story-room,min(32rem,calc(100cqw-2rem)))] rounded-lg bg-surface-elevated p-2 text-foreground shadow-ring-sm"
+        className="pointer-events-auto mb-[var(--story-bottom,0px)] w-[var(--story-room,min(32rem,calc(100cqw-2rem)))] overflow-hidden rounded-lg bg-surface-elevated text-foreground shadow-ring-sm"
       >
         {visual ? (
           <Button
-            className="w-full"
+            className="h-10 w-full"
             variant="ghost"
             size="sm"
             onClick={() => {
@@ -112,7 +121,7 @@ export function StoryBar({ visual = false }: { visual?: boolean }) {
             ref={start}
             variant="ghost"
             size="sm"
-            className="w-full"
+            className="h-10 w-full"
             onClick={() => {
               focus.current = true;
               storyActions.go(0);
@@ -123,7 +132,46 @@ export function StoryBar({ visual = false }: { visual?: boolean }) {
           </Button>
         ) : (
           <>
-            <div className="flex items-center gap-1">
+            <div
+              ref={caption}
+              data-slot="story-caption"
+              role="group"
+              aria-label={LABELS.caption}
+              tabIndex={0}
+              className="h-32 overflow-y-auto overscroll-contain break-words px-4 pt-3 text-meta focus-ring-inset"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <Text as="p" variant="body" className="mb-2 font-semibold">
+                {step.title}
+              </Text>
+              {step.text ? <StoryMarkdown text={step.text} /> : null}
+              {step.callouts.length > 0 ? (
+                <ol className="flex list-decimal flex-col gap-1 ps-5">
+                  {step.callouts.map((callout, index) => (
+                    <li key={`${callout.at}:${index}`}>
+                      <StoryMarkdown text={callout.text} />
+                    </li>
+                  ))}
+                </ol>
+              ) : null}
+            </div>
+            <div data-slot="story-progress" className="flex h-8 items-center px-4">
+              <Slider
+                aria-label={LABELS.progress}
+                aria-valuetext={`${Math.round(state.progress * 100)} percent`}
+                min={0}
+                max={1}
+                step={0.01}
+                value={[state.progress]}
+                onValueChange={([value]) => storyActions.seek(value ?? 0)}
+                className="w-full"
+              />
+            </div>
+            <div
+              data-slot="story-controls"
+              className="flex h-10 items-center gap-1 border-t border-border px-2"
+            >
               <IconButton
                 label={LABELS.previous}
                 icon={<ChevronLeft />}
@@ -136,15 +184,10 @@ export function StoryBar({ visual = false }: { visual?: boolean }) {
                 ref={play}
                 label={state.playing ? LABELS.pause : LABELS.play}
                 icon={state.playing ? <Pause /> : <Play />}
-                variant="ghost"
+                variant="secondary"
                 size="icon-sm"
                 onClick={state.playing ? storyActions.pause : storyActions.play}
               />
-              <Text
-                as="span"
-                variant="meta"
-                className="min-w-0 flex-1 text-center tabular-nums"
-              >{`Step ${(state.index ?? 0) + 1} of ${state.story.steps.length}`}</Text>
               <IconButton
                 label={LABELS.next}
                 icon={<ChevronRight />}
@@ -153,6 +196,11 @@ export function StoryBar({ visual = false }: { visual?: boolean }) {
                 aria-disabled={state.index === state.story.steps.length - 1}
                 onClick={() => storyActions.move(1)}
               />
+              <Text
+                as="span"
+                variant="meta"
+                className="min-w-0 flex-1 text-center tabular-nums"
+              >{`Step ${(state.index ?? 0) + 1} of ${state.story.steps.length}`}</Text>
               <IconButton
                 label={LABELS.present}
                 icon={<Maximize2 />}
@@ -175,36 +223,6 @@ export function StoryBar({ visual = false }: { visual?: boolean }) {
                 }}
               />
             </div>
-            <div
-              data-slot="story-caption"
-              className="max-h-32 overflow-y-auto px-2 py-1 text-meta"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              <Text as="p" variant="body" className="font-semibold">
-                {step.title}
-              </Text>
-              {step.text ? <StoryMarkdown text={step.text} /> : null}
-              {step.callouts.length > 0 ? (
-                <ol className="flex list-decimal flex-col gap-1 ps-5">
-                  {step.callouts.map((callout, index) => (
-                    <li key={`${callout.at}:${index}`}>
-                      <StoryMarkdown text={callout.text} />
-                    </li>
-                  ))}
-                </ol>
-              ) : null}
-            </div>
-            <Slider
-              aria-label={LABELS.progress}
-              aria-valuetext={`${Math.round(state.progress * 100)} percent`}
-              min={0}
-              max={1}
-              step={0.01}
-              value={[state.progress]}
-              onValueChange={([value]) => storyActions.seek(value ?? 0)}
-              className="mx-2 my-2 w-auto"
-            />
           </>
         )}
       </div>
