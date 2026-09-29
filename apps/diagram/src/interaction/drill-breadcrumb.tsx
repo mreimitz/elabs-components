@@ -66,7 +66,7 @@ export function DrillBreadcrumb({ route }: { route: Extract<Route, { kind: "doc"
         </BreadcrumbList>
       </Breadcrumb>
       {leaf ? (
-        <Button size="sm" variant="outline" onClick={() => openDoc(leaf.path, { mode: "edit" })}>
+        <Button size="sm" variant="outline" onClick={() => openDoc(leaf.path, { mode: "view" })}>
           {DRILL_LABELS.open}
         </Button>
       ) : null}

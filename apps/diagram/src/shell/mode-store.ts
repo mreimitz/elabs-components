@@ -55,6 +55,8 @@ export interface ModeState {
   paletteOpen: boolean;
   /** `openDoc` is waiting for "Replace my edits" (a share-link document with edits). */
   pendingOpen: string | null;
+  /** Preserve the requested mode across the unsaved share-link confirmation. */
+  pendingOpenMode: DocMode | null;
   /** `requestClose` is waiting for a confirmation (the tab's autosave failed). */
   pendingClose: string | null;
 }
@@ -88,6 +90,7 @@ export const modeStore = createStore<ModeState>({
   phonePane: "editor",
   paletteOpen: false,
   pendingOpen: null,
+  pendingOpenMode: null,
   pendingClose: null,
 });
 
@@ -300,12 +303,12 @@ export const modeActions = {
 
   /** "Replace my edits" answered: open the pending document, or stay. */
   confirmOpen() {
-    const { pendingOpen } = modeStore.get();
-    modeStore.set({ pendingOpen: null });
-    if (pendingOpen !== null) show(pendingOpen);
+    const { pendingOpen, pendingOpenMode } = modeStore.get();
+    modeStore.set({ pendingOpen: null, pendingOpenMode: null });
+    if (pendingOpen !== null) show(pendingOpen, pendingOpenMode ?? undefined);
   },
   cancelOpen() {
-    modeStore.set({ pendingOpen: null });
+    modeStore.set({ pendingOpen: null, pendingOpenMode: null });
   },
 };
 
@@ -315,6 +318,7 @@ function show(path: string, mode?: DocMode) {
     const { modes } = modeStore.get();
     modeStore.set({ modes: { ...modes, [path]: mode } });
   }
+  if (mode === "view") editActions.setInspectorOpen(false);
   navigate({ kind: "doc", path });
 }
 
@@ -327,7 +331,7 @@ function show(path: string, mode?: DocMode) {
 export function openDoc(path: string, options: { mode?: DocMode } = {}): void {
   const { path: current, text, loadedText } = diagramStore.get();
   if (current === null && text !== loadedText) {
-    modeStore.set({ pendingOpen: path });
+    modeStore.set({ pendingOpen: path, pendingOpenMode: options.mode ?? null });
     return;
   }
   show(path, options.mode);

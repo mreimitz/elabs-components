@@ -1,5 +1,5 @@
 /** Compound zones remain compact without moving nodes outside their parent or detaching flows. */
-/* global process, console, localStorage, sessionStorage, performance, document, CSS, DOMMatrix, getComputedStyle */
+/* global URL, process, console, localStorage, sessionStorage, performance, document, CSS, DOMMatrix, getComputedStyle */
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { mkdir, readFile, writeFile, rm } from "node:fs/promises";

@@ -17,6 +17,7 @@ import { CircleCheck, CircleDashed, CircleX, ExternalLink, TriangleAlert } from 
 import { ArchMark } from "../nodes/arch-mark";
 import type { ArchNodeStatus } from "../nodes/arch-node-data";
 import { useCatalogEntry } from "../catalog/catalog-service";
+import { ComponentPreview } from "./component-preview";
 import { openDoc } from "../shell/mode-store";
 import { toHash } from "../routes/use-hash";
 import { catalogNameOfNode, resolveNodeDetails, type NodeDetails } from "./node-details";
@@ -111,6 +112,13 @@ export function CardBody({ details, titleId }: { details: NodeDetails; titleId: 
         </div>
       </div>
       {details.description ? <CardDescription text={details.description} /> : null}
+      {details.componentPath ? (
+        <ComponentPreview
+          key={details.componentPath}
+          path={details.componentPath}
+          title={details.name}
+        />
+      ) : null}
       {details.status ? (
         <StatusBadge status={STATUS_BADGE[details.status]} size="sm" className="self-start" />
       ) : null}
@@ -151,7 +159,7 @@ export function CardBody({ details, titleId }: { details: NodeDetails; titleId: 
             onClick={(event) => {
               if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
                 event.preventDefault();
-                openDoc(details.componentPath!, { mode: "edit" });
+                openDoc(details.componentPath!, { mode: "view" });
               }
             }}
           >

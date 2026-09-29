@@ -183,6 +183,8 @@ try {
           }),
         )
         .toBe(component);
+      await expect(page.getByRole("button", { name: /^Edit/ })).toBeVisible();
+      await expect(page.locator(".monaco-editor textarea")).toHaveCount(0);
       results.push({
         theme,
         width,
