@@ -93,15 +93,37 @@ test("long paths adapt within a strict cache budget", () => {
   assert.equal(path.points.length, 1024);
 });
 
-test("fixed pulses overlap without slowing down on long paths; both directions are paired", () => {
+test("short-path cadence and paired directions keep their bounded allocation", () => {
   for (const schedule of ["hourly", "nightly", "real-time", "on-demand"]) {
     const p = particleProfile("data", schedule);
     assert.ok(particleSlots(100, p, true) >= 2);
     assert.equal(particleSlots(100000, p, true), MAX_PARTICLES_PER_EDGE);
-    for (const duration of [100, 10000, 100000]) {
-      assert.equal(particlePhase(p.spawnEveryMs, 0, duration, p), 0);
-      assert.equal(particlePhase(p.spawnEveryMs * 2, 0, duration, p), 0);
+    assert.equal(particlePhase(p.spawnEveryMs, 0, 100, p), 0);
+    assert.equal(particlePhase(p.spawnEveryMs * 2, 0, 100, p), 0);
+  }
+});
+test("every pulse reaches the endpoint before its bounded slot is recycled", () => {
+  for (const schedule of ["hourly", "nightly", "real-time", "on-demand"]) {
+    const p = particleProfile("data", schedule);
+    for (const both of [false, true]) {
+      for (const duration of [100, 10000, 100000]) {
+        const count = particleSlots(duration, p, both) / (both ? 2 : 1);
+        for (let member = 0; member < p.burst; member++) {
+          // Follow one emitted pulse as it advances through the age slots. Checking each
+          // burst member catches early recycling of the delayed hourly particles too.
+          for (const fraction of [0.01, 0.25, 0.5, 0.75, 0.999999]) {
+            const age = duration * fraction;
+            const time = age + member * 130;
+            const phases = [];
+            for (let ordinal = member; ordinal < count; ordinal += p.burst)
+              phases.push(particlePhase(time, ordinal, duration, p, both));
+            assert.ok(
+              phases.some((phase) => phase !== null && Math.abs(phase - fraction) < 1e-9),
+              `${schedule} both=${both} duration=${duration}: pulse must survive to ${fraction}`,
+            );
+          }
+        }
+      }
     }
-    assert.ok(particlePhase(500, p.burst, 10000, p) > particlePhase(500, 0, 10000, p));
   }
 });

@@ -46,13 +46,16 @@ export function particlePhase(
   ordinal: number,
   duration: number,
   profile: ParticleProfile,
+  both = false,
 ): number | null {
   if (!(duration > 0)) return null;
-  // Slots represent recent fixed-cadence emissions, not a traversal-length loop.
-  // At the allocation cap the oldest trails disappear; new pulses keep their cadence.
+  // Thin emissions on long/zoomed paths instead of recycling a pulse before it arrives.
+  // Both directions share the budget; a delayed burst member must finish too.
+  const groups = Math.floor(MAX_PARTICLES_PER_EDGE / (both ? 2 : 1) / profile.burst);
+  const interval = Math.max(profile.spawnEveryMs, (duration + (profile.burst - 1) * 130) / groups);
   const age =
-    (time % profile.spawnEveryMs) +
-    Math.floor(ordinal / profile.burst) * profile.spawnEveryMs -
+    (time % interval) +
+    Math.floor(ordinal / profile.burst) * interval -
     (ordinal % profile.burst) * 130;
   return age >= 0 && age <= duration ? age / duration : null;
 }

@@ -178,7 +178,7 @@ export function startParticles({ canvas, pane, viewport }: ParticleEngineOptions
       ctx.strokeStyle = track.color;
       ctx.globalAlpha = profile.opacity;
       for (let i = 0; i < count; i++) {
-        const phase = particlePhase(elapsed, both ? Math.floor(i / 2) : i, duration, profile);
+        const phase = particlePhase(elapsed, both ? Math.floor(i / 2) : i, duration, profile, both);
         if (phase === null) continue;
         const reverse = track.direction === "back" || (track.direction === "both" && i % 2 === 1);
         pointAt(track.path, reverse ? 1 - phase : phase, point);
