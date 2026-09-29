@@ -6,3 +6,56 @@ data-gateway:
   docs: https://help.qlik.com/en-US/cloud-services/Subsystems/Hub/Content/Sense_Hub/Gateways/setting-up-gateways.htm
   tags: [gateway, connectivity]
   curated: false
+  capability: Data connectivity
+answers:
+  name: Qlik Answers
+  description: AI assistants answer questions using governed analytics applications and document knowledge bases.
+  capability: Conversational analytics
+  docs: https://help.qlik.com/en-US/cloud-services/Subsystems/Hub/Content/Sense_Hub/QlikAnswers/Qlik-Answers.htm
+  tags: [ai, analytics, search]
+  curated: false
+automate:
+  name: Qlik Automate
+  description: Builds visual workflows that connect applications and automate tasks through APIs and events.
+  capability: Application automation
+  docs: https://help.qlik.com/en-US/cloud-services/Subsystems/Hub/Content/Sense_QlikAutomation/introduction/getting-started.htm
+  tags: [automation, integration]
+  aliases: [Qlik Application Automation]
+  curated: false
+automl:
+  name: Qlik Predict
+  description: Trains machine learning models on historical data and deploys them to generate and explain predictions.
+  capability: Predictive analytics
+  docs: https://help.qlik.com/en-US/cloud-services/Subsystems/Hub/Content/Sense_Hub/AutoML/home-automl.htm
+  tags: [ai, analytics, prediction]
+  aliases: [Qlik AutoML]
+  curated: false
+cloud:
+  name: Qlik Cloud Analytics
+  description: Hosts interactive analytics applications, dashboards and governed data exploration in Qlik Cloud.
+  capability: Analytics
+  docs: https://help.qlik.com/en-US/evaluation-guides/Content/analytics/analytics.htm
+  tags: [analytics, cloud]
+  curated: false
+qlik:
+  name: Qlik
+  description: Provides software for data integration, data quality, analytics and AI across cloud and client-managed deployments.
+  capability: Data integration and analytics
+  docs: https://help.qlik.com/
+  tags: [analytics, integration, ai]
+  curated: false
+sense-enterprise:
+  name: Qlik Sense Enterprise on Windows
+  description: Runs governed analytics applications on a Windows deployment managed by the customer.
+  capability: Analytics
+  docs: https://help.qlik.com/en-US/sense-admin/May2025/Subsystems/DeployAdministerQSE/Content/Sense_DeployAdminister/Common/qse-introduction.htm
+  tags: [analytics, windows]
+  aliases: [Qlik Sense Enterprise, Qlik Sense Enterprise Client-Managed]
+  curated: false
+talend-cloud:
+  name: Qlik Talend Cloud
+  description: Combines data movement, transformation, quality and governance to deliver data pipelines across systems.
+  capability: Data integration
+  docs: https://help.qlik.com/en-US/evaluation-guides/Content/data-integration/data-integration.htm
+  tags: [integration, quality, pipelines]
+  curated: false
