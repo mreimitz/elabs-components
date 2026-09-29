@@ -1,7 +1,7 @@
 /** Issue shape and codes. Compatible with ui SpecPlaygroundError { path, code, message }. React-free. */
 import type { SourceRange } from "./source-map";
 
-// P4: library gap — ui SpecIssueSeverity has no "info"; this app widens it (zone-endpoint).
+// P4: library gap — ui SpecIssueSeverity has no "info"; this app widens it (story and expansion notices).
 export type ArchIssueSeverity = "error" | "warning" | "info";
 
 export const ISSUE_SEVERITY = {
@@ -27,7 +27,6 @@ export const ISSUE_SEVERITY = {
   "missing-owner": "warning",
   "position-without-manual": "error",
   "unknown-endpoint": "error",
-  "zone-endpoint": "info",
   "duplicate-step": "warning",
   "unknown-story-target": "error",
   "invalid-visual": "error",

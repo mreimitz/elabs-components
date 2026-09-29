@@ -188,15 +188,7 @@ export function validateArch(
         }
         continue;
       }
-      if (zones.has(id)) {
-        out.push(
-          issue(
-            "zone-endpoint",
-            joinPath(f.path, end),
-            `"${id}" is a zone; the edge attaches to the zone's border.`,
-          ),
-        );
-      } else if (!nodes.has(id)) {
+      if (!zones.has(id) && !nodes.has(id)) {
         out.push(
           issue("unknown-endpoint", joinPath(f.path, end), `No node or zone has the id "${id}".`),
         );

@@ -9,5 +9,4 @@ nodes:
     type: actor
 flows:
   - users -> vpc
-# expect: zone-endpoint @ 11:14
 # expect: missing-owner @ 4:9

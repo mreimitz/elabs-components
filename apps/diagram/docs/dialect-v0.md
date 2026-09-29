@@ -162,7 +162,8 @@ its type icon).
 ## 5. Flows
 
 A flow is a directed edge between two nodes or zones (a zone endpoint attaches to the zone's
-border, reported as `zone-endpoint`, info).
+border). This is a supported connection, not a diagnostic. Children can illustrate the zone
+without being individual flow endpoints.
 
 | Key         | Type            | Allowed values                                       | Default                                | Example            |
 | ----------- | --------------- | ---------------------------------------------------- | -------------------------------------- | ------------------ |
@@ -272,7 +273,6 @@ Severity decides `ok` (`false` if any `error`). Every code has a fixture under
 | `missing-owner`           | warning  | `Zone "<id>" has no owner; it is drawn as customer.` (top-level zones only)                                                                                                                                                             | `issue-missing-owner.yaml` @ 4:9           |
 | `position-without-manual` | error    | `position: is only read under layout: manual; remove it or set layout: manual.` (on the key)                                                                                                                                            | `issue-position-without-manual.yaml` @ 5:5 |
 | `unknown-endpoint`        | error    | `No node or zone has the id "<id>".` (on the id, inside `a -> b` too)                                                                                                                                                                   | `issue-unknown-endpoint.yaml` @ 6:10       |
-| `zone-endpoint`           | info     | `"<id>" is a zone; the edge attaches to the zone's border.`                                                                                                                                                                             | `issue-zone-endpoint.yaml` @ 11:14         |
 | `duplicate-step`          | warning  | `step: <n> is also used by <from> -> <to>; steps number a walkthrough and should be unique.`                                                                                                                                            | `issue-duplicate-step.yaml` @ 8:21         |
 | `unknown-class`           | warning  | `No style named "<name>" under styles:.`                                                                                                                                                                                                | `issue-unknown-class.yaml` @ 5:13          |
 | `unknown-icon`            | warning  | `No icon named "<name>"; the node falls back to its type icon.`                                                                                                                                                                         | `issue-unknown-icon.yaml` @ 5:11           |
