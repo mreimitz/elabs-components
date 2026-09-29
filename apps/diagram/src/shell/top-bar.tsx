@@ -1,5 +1,7 @@
 import { FlowAnimationControl } from "../particles/animation-control";
 import { DrillBreadcrumb } from "../interaction/drill-breadcrumb";
+import { BrowserBreadcrumb } from "../home/browser-navigation";
+import { useBrowserState } from "../home/browser-state";
 import { useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
   ArrowDown,
@@ -353,6 +355,10 @@ export function TopBar() {
  */
 function TitleCrumbs({ route }: { route: Route }) {
   const shownPath = useDiagram((s) => s.path);
+  const browserState = useBrowserState();
+  if (route.kind === "home" || (route.kind === "catalog" && !route.entry)) {
+    return <BrowserBreadcrumb state={route.browser ?? browserState} />;
+  }
   let folders: string[] = [];
   // catalog crumbs (maintainer 2026-09-27): the catalog's real, keyboard-reachable links
   // (Catalog, then the pack) — unlike `folders`, which stay plain text for a document.
@@ -371,8 +377,7 @@ function TitleCrumbs({ route }: { route: Route }) {
     ) : (
       TOP_BAR_LABELS.notInWorkspace
     );
-  } else if (route.kind === "home") heading = TOP_BAR_LABELS.home;
-  else if (route.kind === "catalog") {
+  } else if (route.kind === "catalog") {
     // catalog crumbs (maintainer 2026-09-27): `#catalog` → "Catalog"; `#catalog/<pack>` →
     // "Catalog › <pack>" (pack the `h1`); `#catalog/<pack>/<entry>` → "Catalog › <pack> ›
     // <entry id>" (entry id the `h1`) — the pack/entry id is the route segment as typed, the

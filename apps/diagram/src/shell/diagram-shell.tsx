@@ -18,6 +18,7 @@ import {
   SidebarProvider,
   SkipLink,
   useSidebar,
+  cn,
 } from "@elabs-ai/components-ui";
 import { useCatalogSync } from "../catalog/catalog-sync"; // DG-26
 import { navigate, useRoute, type Route } from "../routes/use-hash";
@@ -171,13 +172,16 @@ export function DiagramShell({ children }: DiagramShellProps) {
       </Sidebar>
       {/* `h-svh`: a definite height, so the editor/canvas split fills the viewport instead of
           growing the page past it (min-height alone lets content push it 8 px taller). */}
-      <SidebarInset className="h-svh">
+      <SidebarInset className={cn("h-svh min-w-0", browsing && "overflow-hidden")}>
         <DocTabs />
         <TopBar />
         <div
           id={WORKSPACE_ID}
           tabIndex={-1}
-          className="flex min-h-0 flex-1 focus-ring-inset"
+          className={cn(
+            "flex min-h-0 min-w-0 flex-1 focus-ring-inset",
+            browsing && "overflow-hidden",
+          )}
           {...tabpanel}
         >
           {children}

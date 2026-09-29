@@ -37,7 +37,7 @@ try {
     await expect(home).toBeVisible();
     const items = home.locator('[data-slot="browser-result"]');
     const search = home.getByRole("searchbox", { name: "Search library" });
-    const collection = (name) => home.getByRole("tab", { name, exact: true });
+    const collection = (name) => home.getByRole("treeitem", { name, exact: true });
     await expect(items).toHaveCount(0);
     await page.screenshot({ path: `${evidence}/${theme}-recent.png` });
     await search.fill("NebulaContentNeedle");

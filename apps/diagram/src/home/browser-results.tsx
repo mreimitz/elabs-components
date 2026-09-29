@@ -158,9 +158,9 @@ export function BrowserResultsView({
     results.length > 0 && results.every((result) => result.item.source === "catalog");
   if (layout === "table")
     return (
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <div className="rounded-lg border border-border bg-card [&>[data-slot=table-scroll-region]]:overflow-visible">
         <Table className="table-fixed">
-          <TableHeader>
+          <TableHeader className="sticky top-0 z-10 bg-background">
             <TableRow>
               <TableHead className="w-3/5 sm:w-2/5">{LABELS.name}</TableHead>
               <TableHead>{LABELS.type}</TableHead>
@@ -234,7 +234,7 @@ export function BrowserResultsView({
       </div>
     );
   return (
-    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+    <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,13rem),1fr))] gap-3">
       {results.map((result) => {
         const { item } = result;
         return (
@@ -245,7 +245,7 @@ export function BrowserResultsView({
               className="relative flex h-full min-w-0 flex-col overflow-hidden"
             >
               {item.source === "workspace" ? (
-                <div className="h-36 overflow-hidden bg-surface-muted">
+                <div className="h-32 overflow-hidden bg-surface-muted">
                   <Image
                     src={item.thumbnail}
                     alt=""

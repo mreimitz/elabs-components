@@ -44,12 +44,16 @@ content heading. No oversized welcome hero, metrics tiles or setup instructions 
 primary browsing area.
 
 ```text
-Icon rail | Home                         Search diagrams, components, catalog…   New ▾
-          | Recent · Diagrams · Components · Templates · Catalog
-          | Recent                  Type: All ▾   Last opened ▾    Grid | Table
-          | -----------------------------------------------------------------
-          |                         Results
-          |          Optional preview panel appears only on request
+Icon rail | Document tabs (when open)
+          | Home > Components > Qlik > SaaS
+          | Library tree       | Search…                         New ▾
+          | Recent             | Filters · Sort             Grid | Table
+          | Diagrams           | -------------------------------------
+          | Components         | Results scroll here; table header stays
+          |   Qlik             | visible. Preview opens on request.
+          |     SaaS           |
+          | Templates          | -------------------------------------
+          | Catalog > vendors  | Count / page              Previous Next
 ```
 
 - **Recent:** genuinely opened items, newest first, with a type indicator. Extend local
@@ -62,8 +66,9 @@ Icon rail | Home                         Search diagrams, components, catalog…
   template. This remains distinct from ordinary document opening.
 - **Catalog:** products and reusable parts, with vendor, capability/type and tag filters;
   real icon and reference ID. Generic Lucide glyphs stay in the icon picker.
-- **Folders:** breadcrumbs and navigable folder items within workspace collections; not
-  another permanent full-height tree duplicating the application's sidebar.
+- **Folders:** a dedicated, independently scrolling Home tree contains all workspace
+  subfolders and catalog vendors. The global application sidebar remains collapsed by
+  default. The toolbar breadcrumb reflects the selected collection and full folder path.
 
 Opening an existing diagram/component always uses view mode. Creation intentionally opens
 edit mode. Primary titles/cards open their destination with one click or Enter. A separately
@@ -111,8 +116,8 @@ Preview never auto-opens merely because the user entered Home.
   user's document sidebar preference. Explicitly expanding it on Home remains possible.
 - Use the same browser for existing Catalog navigation; preserve old catalog/vendor/entry
   deep links and history. Do not retain a second independent catalog list implementation.
-- At 390px, search stays directly available, collection/filter controls compact into labelled
-  selectors, and preview opens as a sheet. Grid becomes one column. Table prioritizes name
+- At 390px, search stays directly available, the tree opens from Browse library in a
+  labelled sheet, filters scroll horizontally within their row, and preview opens as a sheet. Grid becomes one column. Table prioritizes name
   and type without horizontal page overflow. On desktop the optional preview is a side panel.
 - First visit: a concise empty Recent state with Browse diagrams and Explore templates.
   Catalog remains usable even when the workspace is empty or its API fails.
@@ -128,7 +133,7 @@ Preview never auto-opens merely because the user entered Home.
 3. Add typed browser route state for collection/folder/query/filters/sort, with backwards
    compatibility for existing hashes. Persist only view preference/history locally; namespace
    history to the workspace and handle invalid/stale storage defensively.
-4. Compose existing brand-ui Tabs/navigation, Input, Table, dropdowns and Sheet.
+4. Compose existing brand-ui Tree, Breadcrumb, Input, Table, dropdowns and Sheet.
    Share result/action semantics between grid and table. Keep app-specific logic in Diagram.
 5. Use bounded result rendering (proposed pages of 48 items in both modes), lazy thumbnail
    loading and cached metadata. Begin with the existing local APIs; no new search service.
@@ -221,3 +226,30 @@ Known unrelated baseline: the developer spec-check gallery expects 13 flows for 
 Talend pipeline fixture while its current source renders 16. This redesign does not change
 that fixture or its gallery expectation; that check was removed from the Home-specific
 browser script rather than treating it as Home behavior.
+
+## Explorer structure revision — 2026-09-29
+
+The user requested a file-browser layout after reviewing the first Home implementation.
+This revision supersedes collection tabs and the page-wide scrolling layout:
+
+- The existing toolbar row now holds a location breadcrumb, including nested folders or
+  catalog vendor. No second Home title or repeated collection heading occupies content space.
+- A 224px desktop navigation pane contains Recent, the complete workspace folder hierarchy,
+  Components, Templates, and Catalog vendors. Selection and breadcrumb follow Back/Forward.
+- Search/New and the compact filter row remain above the results; pagination remains below.
+  Only the results and navigation tree scroll. Table headers stay visible above scrolled rows.
+- Mobile uses a Browse library sheet; selecting a destination closes it. Grid/table,
+  preview, true recents, view-mode opening and nonfatal source failure/retry remain unchanged.
+
+`tests/home-explorer.mjs` proves viewport containment, fixed controls, sticky headers,
+nested folder selection/breadcrumb history, mobile navigation and both themes. The existing
+Home library regression now uses the navigation tree and retains search/preview/history/
+catalog/error recovery coverage.
+
+Revision verification: 506 diagram tests, 98 repository checks and 470 gate fixtures pass;
+typecheck, production build and strict static audit pass. Lint retains the existing 11
+warnings with no errors. The full Home interaction matrix and dedicated explorer proof
+pass in light/dark at 1440, 768 and 390px, including independently scrolling panes, fixed
+controls, sticky table headers, deep breadcrumb overflow handling, and mobile navigation.
+The independent review reports no open findings after the narrow breadcrumb fix. Existing
+sidebar lifecycle and 22 diagram navigation checks also pass.
