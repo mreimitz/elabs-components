@@ -73,7 +73,20 @@ try {
         await page.evaluate(() => {
           window.samples = [];
           const sample = () => {
-            window.samples.push({ at: performance.now(), nodes: window.geometry() });
+            const box = document
+              .querySelector('[data-lens-pane="technical"] .react-flow__node[data-id="tenant"]')
+              ?.getBoundingClientRect();
+            window.samples.push({
+              at: performance.now(),
+              nodes: window.geometry(),
+              anchor:
+                box && !document.querySelector('[data-slot="component-measurement-cover"]')
+                  ? { x: box.x, y: box.y }
+                  : null,
+              camera: document
+                .querySelector('[data-lens-pane="technical"] .react-flow__viewport')
+                ?.getAttribute("style"),
+            });
             window.sampleFrame = requestAnimationFrame(sample);
           };
           sample();
@@ -85,8 +98,30 @@ try {
           cancelAnimationFrame(window.sampleFrame);
           return window.samples;
         });
+        await writeFile(
+          `${evidence}/${theme}-${reducedMotion}-samples.json`,
+          JSON.stringify(samples),
+        );
+        await page.screenshot({ path: `${evidence}/${theme}-${reducedMotion}-latest.png` });
+        const anchors = samples.map((frame) => frame.anchor).filter(Boolean);
+        assert.ok(anchors.length > 2, "Capture component anchor in real frames");
+        if (anchors.length) {
+          assert.ok(
+            Math.max(...anchors.map((p) => p.x)) - Math.min(...anchors.map((p) => p.x)) < 1,
+            "Component must not travel sideways during disclosure",
+          );
+          assert.ok(
+            Math.max(...anchors.map((p) => p.y)) - Math.min(...anchors.map((p) => p.y)) < 1,
+            "Component must not travel upward during disclosure",
+          );
+        }
+        assert.equal(
+          new Set(samples.map((frame) => frame.camera)).size,
+          1,
+          "Disclosure must not zoom or recenter the camera",
+        );
         const states = new Set(
-          samples.map((frame) => JSON.stringify(frame.nodes.find((n) => n.id === "customer"))),
+          samples.map((frame) => JSON.stringify(frame.nodes.find((n) => n.id === "qlik"))),
         );
         if (!process.env.MOTION_BASELINE) {
           if (reducedMotion === "reduce")
@@ -121,6 +156,22 @@ try {
         original,
         "Repeated roundtrip must not accumulate size or position drift",
       );
+      if (reducedMotion === "no-preference") {
+        await toggle(expand, collapse);
+        await collapse.evaluate((button) => button.click());
+        await expect(expand).toBeAttached();
+        await page.waitForTimeout(100);
+        await expand.evaluate((button) => button.click());
+        await expect(collapse).toBeAttached();
+        await settled();
+        await collapse.click();
+        await expect(expand).toBeAttached();
+        assert.deepEqual(
+          await settled(),
+          original,
+          "Reopening mid-collapse must preserve canonical compact geometry",
+        );
+      }
       // Interrupt before the first layout/transition settles: latest collapse wins.
       await expand.evaluate((button) => button.click());
       await expect(collapse).toBeAttached();

@@ -70,6 +70,7 @@ export function layoutFrame(
   before: { nodes: Node[]; edges: Edge[] },
   after: { nodes: Node[]; edges: Edge[] },
   progress: number,
+  disclosure = false,
 ) {
   if (progress >= 1) return after;
   const oldNodes = new Map(before.nodes.map((node) => [node.id, node]));
@@ -78,7 +79,13 @@ export function layoutFrame(
     nodes: after.nodes.map((node) => {
       const old = oldNodes.get(node.id);
       if (!old || old.parentId !== node.parentId || old.hidden) {
-        return { ...node, style: { ...node.style, opacity: progress } };
+        return {
+          ...node,
+          style: {
+            ...node.style,
+            opacity: disclosure ? Math.max(0, (progress - 0.6) / 0.4) : progress,
+          },
+        };
       }
       const width = old.width ?? old.measured?.width;
       const height = old.height ?? old.measured?.height;
@@ -90,6 +97,13 @@ export function layoutFrame(
         targetHeight !== undefined &&
         width !== undefined &&
         height !== undefined;
+      if (
+        old.type === node.type &&
+        old.position.x === node.position.x &&
+        old.position.y === node.position.y &&
+        (!resize || (width === targetWidth && height === targetHeight))
+      )
+        return node;
       return {
         ...node,
         position: {
@@ -108,9 +122,16 @@ export function layoutFrame(
       const old = oldEdges.get(edge.id);
       const from = old?.data?.route as DataFlowEdgeRoute | undefined;
       const to = edge.data?.route as DataFlowEdgeRoute | undefined;
+      if (old && from === to) return edge;
       return from?.points.length && to?.points.length
         ? { ...edge, data: { ...edge.data, route: morphRoute(from, to, progress) } }
-        : { ...edge, style: { ...edge.style, opacity: progress } };
+        : {
+            ...edge,
+            style: {
+              ...edge.style,
+              opacity: disclosure ? Math.max(0, (progress - 0.6) / 0.4) : progress,
+            },
+          };
     }),
   };
 }

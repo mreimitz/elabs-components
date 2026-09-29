@@ -1,9 +1,12 @@
+import { anchorComponentLayout } from "./anchored-component-layout";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type Dispatch,
+  type MutableRefObject,
   type SetStateAction,
 } from "react";
 // P4: library gap — flow does not re-export `useNodesInitialized`, `useStore`, `useStoreApi`,
@@ -43,7 +46,19 @@ const FIT = { padding: 0.1, minZoom: FIT_MIN_ZOOM } as const;
 
 export type LayoutStatus = "pending" | "ready" | "error";
 
+export interface ComponentLayoutChange {
+  id: string;
+  source: string;
+  nodes: Node[];
+  edges: Edge[];
+  profile: string;
+}
+
 export interface UseDiagramLayoutOptions {
+  /** Explicit inline expansion preserves the local canvas context. */
+  componentChange?: MutableRefObject<ComponentLayoutChange | null>;
+  onAnimationStart?: () => void;
+  profile?: string;
   /** Change it to lay out the current nodes from scratch (a new graph, a new direction). */
   layoutKey: string | number;
   /** Compiled structure: invalidates in-flight work before the deferred layout key advances. */
@@ -141,8 +156,8 @@ function matchesDom(root: HTMLElement | null, nodes: readonly Node[]): boolean {
 
 /**
  * DG-11 — lays the diagram out once its nodes are measured, re-lays out the visible graph
- * when a zone is collapsed or expanded on the canvas, and fits the whole diagram after
- * every layout. Must run inside the canvas's `ReactFlowProvider`. Returns the status the
+ * when a zone is collapsed or expanded on the canvas. Component disclosure preserves the
+ * camera; other layouts fit the diagram. Must run inside `ReactFlowProvider`. Returns the status the
  * pane shows: nodes stay invisible behind a loading state until the layout lands.
  */
 export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayout {
@@ -224,6 +239,16 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
   const latestSource = useRef(source);
   latestSource.current = source;
   // DG-12: the last layout's nodes, until the fit effect below has fitted them.
+  const revealPending = useRef(false);
+  const onAnimationStart = options.onAnimationStart;
+  useLayoutEffect(() => {
+    if (!revealPending.current) return;
+    revealPending.current = false;
+    onAnimationStart?.();
+  }, [nodes, onAnimationStart]);
+  const componentSnapshots = useRef(
+    new Map<string, { source: string; layout: { nodes: Node[]; edges: Edge[] } }>(),
+  );
   const previousLayout = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null);
   const cancelMotion = useRef<(() => void) | null>(null);
   const mounted = useRef(true);
@@ -282,9 +307,48 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
 
   const apply = async (result: DiagramLayoutResult, fold?: string): Promise<boolean> => {
     cancelMotion.current?.();
-    const after = { nodes: result.nodes.map(unstage), edges: result.edges };
-    const before = previousLayout.current;
-    const duration = before && !manual ? motionMs("base") : 0;
+    const requested = options.componentChange?.current;
+    const change = requested?.profile === options.profile ? requested : null;
+    if (requested && !change) {
+      if (options.componentChange) options.componentChange.current = null;
+      options.onAnimationStart?.();
+    }
+    if (!change) componentSnapshots.current.clear();
+    let after = { nodes: result.nodes.map(unstage), edges: result.edges };
+    const before = change ? { nodes: change.nodes, edges: change.edges } : previousLayout.current;
+    let finishCollapse: (() => void) | undefined;
+    if (change && before) {
+      const expanded = after.nodes.find((node) => node.id === change.id)?.type === "arch/zone";
+      const saved = componentSnapshots.current.get(change.id);
+      if (!expanded && saved?.source === change.source) {
+        const boxes = new Map(saved.layout.nodes.map((node) => [node.id, node]));
+        const routes = new Map(saved.layout.edges.map((edge) => [edge.id, edge.data?.route]));
+        after = {
+          nodes: after.nodes.map((node) => {
+            const old = boxes.get(node.id);
+            return old
+              ? { ...node, position: old.position, width: old.width, height: old.height }
+              : node;
+          }),
+          edges: after.edges.map((edge) => ({
+            ...edge,
+            data: { ...edge.data, route: routes.get(edge.id) },
+          })),
+        };
+        // A reverse click can arrive while this collapse is still moving. Keep the
+        // canonical compact geometry until the collapse actually finishes; otherwise
+        // reopening would save an interpolated box as the next collapsed shape.
+        finishCollapse = () => {
+          if (componentSnapshots.current.get(change.id) === saved)
+            componentSnapshots.current.delete(change.id);
+        };
+      } else {
+        after = anchorComponentLayout(before, after, change.id, direction);
+        if (expanded && saved?.source !== source)
+          componentSnapshots.current.set(change.id, { source, layout: before });
+      }
+    }
+    const duration = before && !manual ? motionMs(change ? "camera" : "base") : 0;
     const key = layoutKey,
       input = source;
     const valid = () =>
@@ -298,19 +362,26 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
       setNodes((live) => keepSelection(frame.nodes, live));
       setEdges((live) => keepSelection(frame.edges, live));
       previousLayout.current = frame;
+      if (change) revealPending.current = true;
     };
     if (!before || duration === 0) {
       commit(after);
-      fitLaid(after.nodes);
+      if (!change) fitLaid(after.nodes);
+      else lastFit.current = null;
+      if (options.componentChange && options.componentChange.current === change) {
+        finishCollapse?.();
+        options.componentChange.current = null;
+      }
       return true;
     }
     const bounds = diagramBounds(after.nodes);
     const { width, height, minZoom, maxZoom, transform } = flowStore.getState();
     const padding = fitPaddingRef.current?.(after.nodes, { minZoom, maxZoom }) ?? FIT.padding;
     const from = { x: transform[0], y: transform[1], zoom: transform[2] };
-    const to = bounds
-      ? getViewportForBounds(bounds, width, height, minZoom, maxZoom, padding)
-      : from;
+    const to =
+      !change && bounds
+        ? getViewportForBounds(bounds, width, height, minZoom, maxZoom, padding)
+        : from;
     return new Promise((resolve) => {
       let frame = 0;
       const start = performance.now();
@@ -326,15 +397,20 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
         }
         const raw = prefersReducedMotion() ? 1 : Math.min(1, (now - start) / duration);
         const progress = motionProgress(MOTION.ease, raw);
-        commit(layoutFrame(before, after, progress));
-        void setViewport({
-          x: interpolate(from.x, to.x, progress),
-          y: interpolate(from.y, to.y, progress),
-          zoom: interpolate(from.zoom, to.zoom, progress),
-        });
+        commit(layoutFrame(before, after, progress, Boolean(change)));
+        if (!change)
+          void setViewport({
+            x: interpolate(from.x, to.x, progress),
+            y: interpolate(from.y, to.y, progress),
+            zoom: interpolate(from.zoom, to.zoom, progress),
+          });
         if (raw < 1) frame = requestAnimationFrame(tick);
         else {
-          lastFit.current = { laid: after.nodes, viewport: to };
+          lastFit.current = change ? null : { laid: after.nodes, viewport: to };
+          if (options.componentChange && options.componentChange.current === change) {
+            finishCollapse?.();
+            options.componentChange.current = null;
+          }
           if (cancelMotion.current === cancel) cancelMotion.current = null;
           resolve(true);
         }

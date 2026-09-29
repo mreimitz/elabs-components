@@ -31,7 +31,11 @@ import { DiagramLegend } from "../chrome/diagram-legend";
 import { CanvasNavigation } from "../chrome/canvas-navigation";
 import { chromeFitPadding } from "../chrome/fit-padding";
 import { TitleBlock } from "../chrome/title-block";
-import { FIT_MIN_ZOOM, useDiagramLayout } from "../layout/use-diagram-layout";
+import {
+  FIT_MIN_ZOOM,
+  useDiagramLayout,
+  type ComponentLayoutChange,
+} from "../layout/use-diagram-layout";
 import { motionMs, prefersReducedMotion } from "../motion";
 import { isZoneNode } from "../nodes/zone-data";
 import { useZoneAutofit } from "../nodes/use-zone-autofit";
@@ -572,12 +576,59 @@ function DiagramCanvas({
   // must not patch the staged graph back to the empty one `getNodes()` still returns.
   const paneRef = useRef<HTMLDivElement>(null);
   const handled = useRef<{ graph: ReactFlowGraph; request: number } | null>(null);
+  const measurementCover = useRef<HTMLElement | null>(null);
+  const revealComponent = useCallback(() => {
+    measurementCover.current?.remove();
+    measurementCover.current = null;
+    if (paneRef.current) paneRef.current.style.opacity = "";
+  }, []);
+  useEffect(() => revealComponent, [revealComponent]);
+  const revealMeasuredComponent = useCallback(() => {
+    const cover = measurementCover.current;
+    // React Flow commits its derived parent positions after the controlled nodes.
+    // Keep the old scene through that commit, including when motion is reduced.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        if (measurementCover.current === cover) revealComponent();
+      }),
+    );
+  }, [revealComponent]);
+  const componentChange = useRef<ComponentLayoutChange | null>(null);
   const compositeFocus = useRef<{ graph: ReactFlowGraph; id: string } | null>(null);
   const captureComposite = useCallback(
     (id: string) => {
+      revealComponent();
+      const pane = paneRef.current;
+      if (pane) {
+        const cover = pane.cloneNode(true) as HTMLElement;
+        cover.inert = true;
+        cover.setAttribute("aria-hidden", "true");
+        cover.setAttribute("data-diagram-export", "exclude");
+        cover.setAttribute("data-slot", "component-measurement-cover");
+        cover.className = "pointer-events-none absolute inset-0";
+        cover.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
+        cover.querySelectorAll<HTMLElement>(".react-flow__node").forEach((element) => {
+          element.classList.remove("react-flow__node");
+          element.style.position = "absolute";
+          element.removeAttribute("data-id");
+        });
+        cover
+          .querySelectorAll(".react-flow__edge")
+          .forEach((element) => element.classList.remove("react-flow__edge"));
+        pane.parentElement?.append(cover);
+        measurementCover.current = cover;
+        pane.style.opacity = "0";
+      }
       compositeFocus.current = { graph, id };
+      componentChange.current = {
+        id,
+        source: structure,
+        nodes: getNodes(),
+        edges: getEdges(),
+        profile: `${direction}:${nodeStyle}`,
+      };
     },
-    [graph],
+    [graph, structure, getNodes, getEdges, direction, nodeStyle, revealComponent],
   );
 
   // A new compile: same structure → patch the words in place; otherwise stage and lay out.
@@ -592,6 +643,11 @@ function DiagramCanvas({
       if (patched) {
         setNodes(patched.nodes);
         setEdges(patched.edges);
+        if (componentChange.current) {
+          componentChange.current = null;
+          compositeFocus.current = null;
+          revealComponent();
+        }
         return;
       }
     }
@@ -628,6 +684,7 @@ function DiagramCanvas({
     getEdges,
     setNodes,
     setEdges,
+    revealComponent,
   ]);
 
   // view mode overrides (maintainer 2026-09-27): a direction or an effective node style that
@@ -658,6 +715,9 @@ function DiagramCanvas({
 
   const [storyLayout, setStoryLayout] = useState<string | null>(null);
   const { status, refit } = useDiagramLayout({
+    componentChange,
+    profile: `${direction}:${nodeStyle}`,
+    onAnimationStart: revealMeasuredComponent,
     layoutKey,
     source: structure,
     direction,
@@ -676,6 +736,7 @@ function DiagramCanvas({
     // before reading the canvas, so it never captures a layout mid-flight. Written at the event
     // that settles the layout itself, not mirrored from `status` after the fact.
     onSettled: (settledStatus) => {
+      if (settledStatus === "error") revealComponent();
       setStoryLayout(settledStatus === "ready" ? structure : null);
       layoutReadyActions.setReady(path, settledStatus === "ready");
     },
@@ -788,6 +849,8 @@ function DiagramCanvas({
         if (viewing || presenting || node.data.inner) compositeOverrides.set(path, id, expanded);
         else if (!editActions.editEntry(id, { expand: expanded })) {
           compositeFocus.current = null;
+          componentChange.current = null;
+          revealComponent();
         }
       },
     }),
@@ -800,6 +863,7 @@ function DiagramCanvas({
       releaseForDrill,
       getNode,
       captureComposite,
+      revealComponent,
       path,
     ],
   );
