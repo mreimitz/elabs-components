@@ -4,6 +4,7 @@ import {
   type DataFlowEdgeData,
   type DataFlowEdgeRoute,
 } from "../edges/data-flow-edge-data";
+import { groupFlowLabels } from "../edges/group-flow-labels";
 import { measureLabelCluster } from "../edges/edge-label-size";
 import { isZoneNode } from "../nodes/zone-data";
 import { fitZones } from "../nodes/use-zone-autofit";
@@ -126,13 +127,24 @@ function edgeRouting(
   anchors?: HandleAnchors,
 ): Pick<ElkRouting, "labels" | "handles"> {
   const byId = new Map(shown.map((node) => [node.id, node]));
-  const labels = new Map<string, { width: number; height: number }>();
+  const labels = new Map<string, { width: number; height: number; placement?: "HEAD" | "TAIL" }>();
   const handles = new Map<string, { source?: RoutingHandle; target?: RoutingHandle }>();
-  for (const edge of followZoneDirection(shown, [...edges], direction)) {
+  const directed = followZoneDirection(shown, [...edges], direction);
+  const groups = groupFlowLabels(directed);
+  for (const edge of directed) {
     if (edge.type !== FLOW_EDGE_TYPE_KEY) continue;
     const data = (edge.data ?? {}) as DataFlowEdgeData;
-    const size = measureLabelCluster(data);
-    if (size) labels.set(edge.id, size);
+    const group = groups.get(edge.id);
+    const size =
+      !group || group.ownerId === edge.id
+        ? measureLabelCluster(data, group?.memberIds.length)
+        : undefined;
+    if (size)
+      labels.set(edge.id, {
+        ...size,
+        // The shared caption belongs at the common port, not on the owner's branch.
+        placement: group ? (group.endpoint === "target" ? "HEAD" : "TAIL") : undefined,
+      });
     const source = byId.get(edge.source);
     const target = byId.get(edge.target);
     const floats = (node: Node | undefined) =>

@@ -13,3 +13,5 @@ pnpm --filter @elabs-ai/diagram dev          # http://localhost:5180
 ```
 
 In Edit mode, YAML suggestions open as you type or with **Ctrl+Space**. Complete `ref: catalog/…` or `ref: ws/…`, icon names, schema fields and values, and flow endpoints. Workspace references match titles as well as filenames and insert the file path. Hover over a field or reference for details. Inside a nodes, zones or flows list, the `node`, `zone` and `flow` snippets insert a starting entry.
+
+Flows that share a source or target port and the same label and details display one shared caption with a flow count. The caption sits by their common endpoint; each connection stays independently selectable and animated. Different schedules, protocols, security, direction, styling or story step numbers keep separate captions.

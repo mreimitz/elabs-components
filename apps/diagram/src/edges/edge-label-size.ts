@@ -9,6 +9,7 @@ import { KIND_GLYPH } from "./edge-style";
  * reserves is the box that is drawn.
  */
 export const CLUSTER_CLASS = {
+  count: "text-meta tabular-nums text-muted-foreground",
   column: "flex flex-col items-center gap-0.5",
   head: "flex items-center gap-1",
   /**
@@ -52,7 +53,7 @@ export function clusterParts(data: DataFlowEdgeData, kind: FlowKind) {
  * when the edge shows no cluster or nothing can be measured (no DOM). Wave-2 review M2: ELK
  * gets this as the edge's label size, so it reserves room for the label and places it.
  */
-export function measureLabelCluster(data: DataFlowEdgeData): ProbeSize | undefined {
+export function measureLabelCluster(data: DataFlowEdgeData, groupSize = 1): ProbeSize | undefined {
   const kind = data.kind ?? "data";
   const { kindGlyph, secureGlyph, hasLabel, hasProtocol, hasPill, hasHead, hasMeta } = clusterParts(
     data,
@@ -70,6 +71,7 @@ export function measureLabelCluster(data: DataFlowEdgeData): ProbeSize | undefin
     const pill: (ProbeSpec | string)[] = [];
     if (kindGlyph) pill.push(GLYPH);
     if (data.label) pill.push({ className: "", children: [data.label] });
+    if (groupSize > 1) pill.push({ className: CLUSTER_CLASS.count, children: [`×${groupSize}`] });
     if (hasProtocol) {
       pill.push({
         className: cn(CLUSTER_CLASS.protocol, hasLabel && CLUSTER_CLASS.divider),
@@ -94,6 +96,7 @@ export function measureLabelCluster(data: DataFlowEdgeData): ProbeSize | undefin
     ],
   };
   const key = JSON.stringify([
+    groupSize,
     data.step,
     data.label,
     kindGlyph,

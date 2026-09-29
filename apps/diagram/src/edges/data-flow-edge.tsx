@@ -1,21 +1,70 @@
-import { useSyncExternalStore, type CSSProperties } from "react";
+import { useLayoutEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
 import {
   FLOW_EDGE_DEFAULTS,
   FlowEdgePath,
   getSmoothStepPath,
   type EdgeProps,
+  type Edge,
 } from "@elabs-ai/components-flow";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
-// P4: library gap — `useInternalNode` is not re-exported by `@elabs-ai/components-flow`
+// P4: library gap — `useInternalNode` and `useStore` are not re-exported by `@elabs-ai/components-flow`
 // (its own `FlowFloatingEdge` imports it from the engine); see DG-07-edge-primitives.md.
-import { useInternalNode } from "@xyflow/react";
-import type { DataFlowEdge as DataFlowEdgeType } from "./data-flow-edge-data";
+import { useInternalNode, useStore } from "@xyflow/react";
+import type { DataFlowEdge as DataFlowEdgeType, DataFlowEdgeData } from "./data-flow-edge-data";
+import { groupFlowLabels, type FlowLabelGroup } from "./group-flow-labels";
+import { measureLabelCluster } from "./edge-label-size";
 import { EdgeLabelCluster } from "./edge-label-cluster";
 import { KIND_STROKE, KIND_STROKE_WIDTH, resolveDash, resolveLineStyle } from "./edge-style";
 import { fitRoute, polylineMidpoint, roundedOrthogonalPath, type EndBox } from "./route-path";
 import { isZoneNode, resolveEdgeEnds } from "./zone-endpoint";
 import { useContext } from "react";
 import { StoryHighlightContext } from "../story/highlight-context";
+
+interface SharedLabelState {
+  group: FlowLabelGroup;
+  selected: boolean;
+  preceding: { data: DataFlowEdgeData; count: number }[];
+}
+
+// React Flow replaces the edge array for graph/selection changes. Share one grouping
+// pass across all edge renderers, and keep each selector stable between those changes.
+const labelStates = new WeakMap<readonly Edge[], Map<string, SharedLabelState>>();
+function sharedLabels(edges: readonly Edge[]): Map<string, SharedLabelState> {
+  const cached = labelStates.get(edges);
+  if (cached) return cached;
+  const groups = groupFlowLabels(edges);
+  const selectedIds = new Set(edges.filter((edge) => edge.selected).map((edge) => edge.id));
+  const states = new Map<string, SharedLabelState>();
+  const byId = new Map(edges.map((edge) => [edge.id, edge]));
+  const unique = [...new Set(groups.values())].sort((a, b) => (a.ownerId < b.ownerId ? -1 : 1));
+  for (const group of unique) {
+    const preceding = unique
+      .slice(0, unique.indexOf(group))
+      .filter(
+        (peer) =>
+          peer.endpoint === group.endpoint &&
+          peer.endpointId === group.endpointId &&
+          peer.handle === group.handle,
+      )
+      .map((peer) => ({ data: byId.get(peer.ownerId)?.data ?? {}, count: peer.memberIds.length }));
+    const state = {
+      group,
+      preceding,
+      selected: group.memberIds.some((member) => selectedIds.has(member)),
+    };
+    for (const id of group.memberIds) states.set(id, state);
+  }
+  labelStates.set(edges, states);
+  return states;
+}
+
+function isHighlighted(id: string, highlighted: ReadonlySet<string>): boolean {
+  return (
+    highlighted.has(id) ||
+    (id.startsWith("flow-group-proxy__") &&
+      [...highlighted].some((edgeId) => id.endsWith(`__${edgeId}`)))
+  );
+}
 
 /** Corner radius of the orthogonal path, in flow px. */
 const CORNER_RADIUS = 8;
@@ -112,11 +161,12 @@ export function DataFlowEdge(props: EdgeProps<DataFlowEdgeType>) {
   // DG-18: the step walk-through draws the current step's flows wider (width, not colour:
   // `--flow-edge-strong` already means `access`) and dims every other flow.
   const highlighted = useContext(StoryHighlightContext);
-  const lit =
+  const shared = useStore((state) => sharedLabels(state.edges).get(id));
+  const group = shared?.group;
+  const lit = highlighted !== null && isHighlighted(id, highlighted);
+  const labelLit =
     highlighted !== null &&
-    (highlighted.has(id) ||
-      (id.startsWith("flow-group-proxy__") &&
-        [...highlighted].some((edgeId) => id.endsWith(`__${edgeId}`))));
+    (group ? group.memberIds.some((member) => isHighlighted(member, highlighted)) : lit);
   const dimmed = highlighted !== null && !lit;
   const sourceNode = useInternalNode(source);
   const targetNode = useInternalNode(target);
@@ -176,6 +226,31 @@ export function DataFlowEdge(props: EdgeProps<DataFlowEdgeType>) {
     });
   }
 
+  // Manual layout and a drag can have no valid ELK label box. Anchor the shared
+  // caption at its common end; CSS offsets it by its own size, clear of that node.
+  const labelEnd = group && !routed ? ends[group.endpoint] : undefined;
+  const [captionOffset, setCaptionOffset] = useState(0);
+  const needsFallback = Boolean(labelEnd);
+  useLayoutEffect(() => {
+    // Distinct captions sharing a manual port form a stack, using the same measured
+    // boxes as ELK. Measure after commit; never mutate the DOM during render.
+    setCaptionOffset(
+      needsFallback
+        ? (shared?.preceding ?? []).reduce(
+            (offset, peer) =>
+              offset + (measureLabelCluster(peer.data, peer.count)?.height ?? 0) + 8,
+            0,
+          )
+        : 0,
+    );
+  }, [needsFallback, shared]);
+  if (labelEnd) {
+    labelX =
+      labelEnd.x + (labelEnd.position === "left" ? -12 : labelEnd.position === "right" ? 12 : 0);
+    labelY =
+      labelEnd.y + (labelEnd.position === "bottom" ? 12 + captionOffset : -12 - captionOffset);
+  }
+
   const wantsMotion = Boolean(data.animated ?? edgeAnimated);
   const marching = wantsMotion && !reducedMotion;
   const lineStyle = resolveLineStyle(kind, data.style);
@@ -208,15 +283,20 @@ export function DataFlowEdge(props: EdgeProps<DataFlowEdgeType>) {
         data-lit={lit || undefined}
         style={motionStyle || style ? { ...motionStyle, ...style } : undefined}
       />
-      <EdgeLabelCluster
-        x={labelX}
-        y={labelY}
-        data={data}
-        kind={kind}
-        selected={selected}
-        dimmed={dimmed}
-        lit={lit}
-      />
+      {(!group || group.ownerId === id) && (
+        <EdgeLabelCluster
+          edgeId={id}
+          anchorSide={labelEnd?.position}
+          groupSize={group?.memberIds.length}
+          x={labelX}
+          y={labelY}
+          data={data}
+          kind={kind}
+          selected={shared?.selected ?? selected}
+          dimmed={highlighted !== null && !labelLit}
+          lit={labelLit}
+        />
+      )}
     </>
   );
 }

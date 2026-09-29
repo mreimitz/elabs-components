@@ -34,6 +34,7 @@ export type HandleAnchors = ReadonlyMap<string, ReadonlyMap<string, HandleAnchor
 interface Size {
   width: number;
   height: number;
+  placement?: "HEAD" | "TAIL";
 }
 
 /**
@@ -204,7 +205,7 @@ function attachRouting(
           width: label.width,
           height: label.height,
           layoutOptions: {
-            "elk.edgeLabels.placement": "CENTER",
+            "elk.edgeLabels.placement": label.placement ?? "CENTER",
             "elk.edgeLabels.inline": "true",
           },
         },

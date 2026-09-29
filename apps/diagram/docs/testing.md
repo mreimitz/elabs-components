@@ -139,3 +139,7 @@ Install the existing Playwright Chromium, Firefox and WebKit engines before this
 Notes and metrics, including inherited note nodes and nested referenced content, are excluded. Required targets removed by that policy fail export rather than silently changing the story. Public narrative remains. The immutable publishing theme/profile and authored initial technical drawing are retained; transient camera/expansion choices are not. See [DG-43](findings/DG-43.md) for privacy and build boundaries.
 
 The installed React Flow ESM observer patch has eight lifecycle/coalescing regressions. After changing it, also run `tests/lens-navigation.mjs`, `tests/composite-interactions.mjs`, `tests/story-interactions.mjs` and `scripts/check-view-mode.mjs` sequentially against the isolated server. Do not run builds or edit source during these browser checks: Vite reloads invalidate transient-state evidence. This patch is repository-local, not an upstream UMD or release guarantee.
+
+## Shared flow captions
+
+Run `node --test scripts/tests/group-flow-labels.test.mjs` for grouping boundaries and deterministic ownership. With an isolated server running, `DIAGRAM_URL=http://localhost:5455 FLOW_GROUP_EVIDENCE=/tmp/atlas-flow-groups node tests/flow-label-groups.mjs` checks shared captions, independent paths and selection, story highlighting, folding, and editing labels to split and rejoin groups in both directions and themes. Group membership changes re-layout the caption reservations; ordinary word edits retain the existing layout.

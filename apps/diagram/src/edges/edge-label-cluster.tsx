@@ -5,6 +5,10 @@ import { CLUSTER_CLASS, clusterParts } from "./edge-label-size";
 import { KIND_GLYPH, SECURE_GLYPH } from "./edge-style";
 
 export interface EdgeLabelClusterProps {
+  edgeId?: string;
+  groupSize?: number;
+  /** Manual/drag fallback: keep the shared caption outside its common endpoint. */
+  anchorSide?: "left" | "right" | "top" | "bottom";
   /**
    * Label anchor: the centre of the box ELK placed the label in (`data.route.label`), or
    * `getSmoothStepPath`'s `labelX`/`labelY` when the edge draws without its route.
@@ -40,6 +44,9 @@ export interface EdgeLabelClusterProps {
 export function EdgeLabelCluster({
   x,
   y,
+  edgeId,
+  groupSize = 1,
+  anchorSide,
   data,
   kind,
   selected,
@@ -59,9 +66,17 @@ export function EdgeLabelCluster({
       aria-hidden="true"
       data-slot="edge-label-cluster"
       data-kind={kind}
+      data-edge-id={edgeId}
+      data-group-size={groupSize > 1 ? groupSize : undefined}
+      title={groupSize > 1 ? `Shared by ${groupSize} flows` : undefined}
       data-dimmed={dimmed || undefined}
       data-lit={lit || undefined}
-      className="nodrag nopan pointer-events-auto"
+      className={cn("nodrag nopan pointer-events-auto", {
+        "-translate-x-1/2 -translate-y-1/2": anchorSide === "left",
+        "translate-x-1/2 -translate-y-1/2": anchorSide === "right",
+        "-translate-y-1/2": anchorSide === "top",
+        "translate-y-1/2": anchorSide === "bottom",
+      })}
       // B1: the `EdgeLabelRenderer` portal sits BELOW the nodes layer, and React Flow
       // elevates an edge between two child nodes to z 1 — nothing lifts its label with it,
       // so a label over a zone or a child node was painted under it. Labels sit at 1000.
@@ -89,6 +104,7 @@ export function EdgeLabelCluster({
               >
                 {KindGlyph ? <KindGlyph size={12} aria-hidden="true" /> : null}
                 {data.label ? <span>{data.label}</span> : null}
+                {groupSize > 1 ? <span className={CLUSTER_CLASS.count}>×{groupSize}</span> : null}
                 {hasProtocol ? (
                   <span
                     className={cn(CLUSTER_CLASS.protocol, hasLabel && CLUSTER_CLASS.divider)}

@@ -10,6 +10,8 @@ import type { ReactFlowGraph } from "../spec/flow-spec";
 import type { CompiledDiagram } from "./compile-text";
 import { NODE_TYPE_KEY } from "../spec/compile/arch-definitions"; // DG-15
 
+import { groupFlowLabels } from "../edges/group-flow-labels";
+
 const NOTE_TYPE: string = NODE_TYPE_KEY.note; // DG-15
 
 /**
@@ -32,6 +34,11 @@ export function structureKey(compiled: CompiledDiagram): string {
       n.data.direction ?? null,
     ]),
     graph.edges.map((e) => [e.id, e.source, e.target, e.sourceHandle, e.targetHandle]),
+    // A split/join changes which label boxes ELK must reserve. Ordinary word edits
+    // retain their positions; only a change in group membership triggers layout.
+    [...groupFlowLabels(graph.edges).values()]
+      .filter((group, index, groups) => groups.indexOf(group) === index)
+      .map((group) => [group.endpoint, group.endpointId, group.memberIds]),
     view.collapsed,
     view.noteAnchors,
   ]);
