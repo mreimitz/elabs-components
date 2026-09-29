@@ -45,7 +45,7 @@ try {
   await mkdir(dir, { recursive: true });
   await writeFile(new URL("captions.yaml", dir), source);
   if (evidence) await mkdir(evidence, { recursive: true });
-  for (const width of [1440, 390]) {
+  for (const width of [1440, 390, 760, 780]) {
     for (const theme of ["light", "dark"]) {
       const context = await browser.newContext({
         viewport: { width, height: 900 },
@@ -206,8 +206,45 @@ try {
         page.getByRole("button", { name: "Exit presentation", exact: true }),
       ).toBeVisible();
       await expect(caption).toBeVisible();
-      await settled();
-      await expect.poll(clearOfPanels).toBe(true);
+      await geometry();
+      const presentationControls = page
+        .locator('[data-slot="presentation-controls"]')
+        .filter({ visible: true });
+      await expect(presentationControls).toBeVisible();
+      const presentationBounds = await presentationControls.evaluate((panel) => {
+        const canvas = panel.closest(".react-flow");
+        const host = canvas.getBoundingClientRect();
+        const controls = panel.getBoundingClientRect();
+        const title = canvas.querySelector('[data-slot="diagram-title"]').getBoundingClientRect();
+        const story = canvas.querySelector('[data-slot="story-bar"]').getBoundingClientRect();
+        const overlap = (a, b) =>
+          Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 &&
+          Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1;
+        return {
+          top: controls.top - host.top,
+          right: host.right - controls.right,
+          overlapsTitle: overlap(controls, title),
+          overlapsStory: overlap(controls, story),
+        };
+      });
+      assert.ok(
+        presentationBounds.top >= 0 && presentationBounds.top <= 24,
+        "presentation controls stay near canvas top",
+      );
+      assert.ok(
+        presentationBounds.right >= 0 && presentationBounds.right <= 24,
+        "presentation controls stay near canvas right",
+      );
+      assert.equal(
+        presentationBounds.overlapsTitle,
+        false,
+        "presentation controls leave title readable",
+      );
+      assert.equal(
+        presentationBounds.overlapsStory,
+        false,
+        "presentation controls leave story usable",
+      );
       if (evidence)
         await page.screenshot({ path: `${evidence}/${theme}-${width}-presentation.png` });
       await caption.focus();
@@ -224,6 +261,7 @@ try {
         keyboardScroll: true,
         captionEscape: true,
         presentationClearance: true,
+        presentationBounds,
         fixedBounds: initial,
       });
       await context.close();

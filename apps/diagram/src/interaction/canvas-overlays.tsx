@@ -28,15 +28,8 @@ function ExitButton() {
   );
 }
 
-/**
- * DG-18 — everything the interactive layer draws over the canvas: the details card, the step
- * player and, while presenting, the way out — both bottom-centre, between the legend and the
- * zoom controls, with the step player rising above that row. The title block is top-left and
- * only ever reserves the top-right corner for the minimap, but its own width is the title
- * text's, not a fixed cap, so a top-centre button has no width it is guaranteed clear of; the
- * bottom row is the one spot on the pane the title block never reaches. Each is marked
- * `data-diagram-export="exclude"` or portaled, so a DG-17 export never contains it.
- */
+/** Details and stories stay with the canvas; presentation controls occupy the top-right
+ * corner. All interactive overlays are excluded from exported diagram pictures. */
 export function InteractionOverlays({ nodes }: InteractionOverlaysProps) {
   const presenting = isPresenting(useHash());
   return (
@@ -44,7 +37,7 @@ export function InteractionOverlays({ nodes }: InteractionOverlaysProps) {
       <DetailsCard nodes={nodes} />
       <StoryBar />
       {presenting ? (
-        <Panel position="bottom-center" data-diagram-export="exclude">
+        <Panel position="top-right" data-slot="presentation-controls" data-diagram-export="exclude">
           <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-elevated p-1">
             <FlowAnimationControl />
             <ExitButton />

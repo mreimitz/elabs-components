@@ -8,6 +8,8 @@ import { folderOf, useWorkspace } from "../workspace/workspace-store"; // DG-22
 export interface TitleBlockProps {
   /** The diagram's `title:`. Without one only `children` render. */
   title?: string;
+  /** Leave room for the presentation controls in the canvas top-right corner. */
+  presenting?: boolean;
   /** Prose under the title, capped to a readable measure. */
   description?: string;
   /**
@@ -45,6 +47,7 @@ export interface TitleBlockProps {
  */
 export function TitleBlock({
   title,
+  presenting = false,
   description,
   meta: sourceMeta,
   headingLevel = 2,
@@ -68,6 +71,7 @@ export function TitleBlock({
         // The column's empty corner (beside a short status line) must not catch the canvas's
         // pointer, so only the block takes it.
         "pointer-events-none flex min-w-0 max-w-[calc(100%-2rem)] flex-col items-start gap-2",
+        presenting && "@max-3xl:!top-12 @3xl:max-w-[calc(100%-18rem)]",
       )}
     >
       {title ? (

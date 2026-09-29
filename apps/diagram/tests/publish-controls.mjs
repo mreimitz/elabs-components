@@ -100,6 +100,25 @@ for (const [name, engine] of Object.entries({ chromium, firefox, webkit })) {
       await expect(
         page.getByRole("button", { name: "Exit presentation", exact: true }),
       ).toBeVisible();
+      const presentationControls = page.locator('[data-slot="presentation-controls"]');
+      await expect
+        .poll(() =>
+          presentationControls.evaluate((element) => {
+            const panel = element.getBoundingClientRect();
+            const canvas = element.closest(".react-flow").getBoundingClientRect();
+            const title = element
+              .closest(".react-flow")
+              .querySelector('[data-slot="diagram-title"]')
+              .getBoundingClientRect();
+            const top = panel.top - canvas.top;
+            const right = canvas.right - panel.right;
+            const overlap =
+              Math.min(panel.right, title.right) > Math.max(panel.left, title.left) &&
+              Math.min(panel.bottom, title.bottom) > Math.max(panel.top, title.top);
+            return top >= 0 && top <= 24 && right >= 0 && right <= 24 && !overlap;
+          }),
+        )
+        .toBe(true);
       await page.getByRole("button", { name: "Exit presentation", exact: true }).click();
       await page.getByRole("button", { name: "End story", exact: true }).click();
       const composite = page.locator('[data-lens-pane="technical"] .react-flow__node[data-id="t"]');
