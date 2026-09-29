@@ -170,7 +170,10 @@ zones:
 
 flows: # string shorthand or object form
   # Zone endpoints: every system in the zone takes the same path.
-  - systems -> replicate: { label: CDC & bulk capture, kind: data }
+  - sap -> replicate: { label: CDC & bulk capture, kind: data }
+  - saas-apps -> replicate: { label: CDC & bulk capture, kind: data }
+  - mainframe -> replicate: { label: CDC & bulk capture, kind: data }
+  - rdbms -> replicate: { label: CDC & bulk capture, kind: data }
   - streams -> lakehouse: { label: Stream ingestion, kind: data, schedule: real-time }
   - replicate -> landing: { label: CDC & bulk, kind: data, schedule: real-time }
   - landing -> lakehouse: { label: Read landed data, kind: data }
