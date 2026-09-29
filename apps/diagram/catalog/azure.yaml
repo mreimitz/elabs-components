@@ -6,3 +6,1489 @@ virtual-networks:
   docs: https://learn.microsoft.com/en-us/azure/virtual-network/
   tags: [networking]
   curated: false
+  capability: Private cloud networking
+active-directory:
+  name: Microsoft Entra ID
+  description: Manages workforce identities, authentication and access to applications and resources.
+  capability: Identity and access
+  docs: https://learn.microsoft.com/en-us/entra/fundamentals/
+  kind: service
+  tags: [identity]
+  aliases: [Azure Active Directory, Azure AD]
+  curated: false
+active-directory-connect-health:
+  name: Microsoft Entra Connect Health
+  description: Monitors the health of identity infrastructure connected to Microsoft Entra ID.
+  capability: Hybrid identity health
+  docs: https://learn.microsoft.com/en-us/entra/identity/hybrid/connect/whatis-azure-ad-connect
+  kind: service
+  tags: [identity, monitoring]
+  curated: false
+activity-log:
+  name: Azure Monitor activity log
+  description: Records subscription-level changes to Azure resources and service health events.
+  capability: Resource activity auditing
+  docs: https://learn.microsoft.com/en-us/azure/azure-monitor/fundamentals/activity-log
+  kind: service
+  tags: [monitoring]
+  curated: false
+ad-b2c:
+  name: Azure Active Directory B2C
+  description: Provides customer sign-up and sign-in for applications using local or social identities.
+  capability: Customer identity
+  docs: https://learn.microsoft.com/en-us/azure/active-directory-b2c/
+  kind: service
+  tags: [identity]
+  curated: false
+ad-domain-services:
+  name: Microsoft Entra Domain Services
+  description: Provides managed domain join, Group Policy, LDAP and Kerberos authentication.
+  capability: Managed domain services
+  docs: https://learn.microsoft.com/en-us/entra/identity/domain-services/
+  kind: service
+  tags: [identity]
+  curated: false
+ad-roles-and-administrators:
+  name: Microsoft Entra roles
+  description: Assigns administrative permissions for managing Microsoft Entra resources.
+  capability: Directory role management
+  docs: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/
+  kind: service
+  tags: [identity, security]
+  curated: false
+advisor:
+  name: Azure Advisor
+  description: Suggests improvements to resource reliability, security, performance, operations and cost.
+  capability: Cloud recommendations
+  docs: https://learn.microsoft.com/en-us/azure/advisor/
+  kind: service
+  tags: [management]
+  curated: false
+alerts:
+  name: Azure Monitor alerts
+  description: Notifies operators or triggers actions when monitored signals meet configured conditions.
+  capability: Operational alerting
+  docs: https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-overview
+  kind: service
+  tags: [monitoring]
+  curated: false
+analysis-services:
+  name: Azure Analysis Services
+  description: Hosts tabular models that prepare enterprise data for interactive analysis.
+  capability: Semantic data modeling
+  docs: https://learn.microsoft.com/en-us/analysis-services/azure-analysis-services/?view=sql-analysis-services-2025
+  kind: service
+  tags: [analytics]
+  curated: false
+api-management-services:
+  name: Azure API Management
+  description: Publishes APIs through gateways with access policies, monitoring and developer discovery.
+  capability: API management
+  docs: https://learn.microsoft.com/en-us/azure/api-management/
+  kind: service
+  tags: [integration]
+  curated: false
+app-registrations:
+  name: Microsoft Entra app registrations
+  description: Registers applications so they can authenticate users and request protected APIs.
+  capability: Application identity
+  docs: https://learn.microsoft.com/en-us/entra/identity-platform/
+  kind: service
+  tags: [identity]
+  curated: false
+app-service-certificates:
+  name: App Service certificates
+  description: Manages certificates used to secure custom domains in Azure App Service.
+  capability: Web TLS certificates
+  docs: https://learn.microsoft.com/en-us/azure/app-service/configure-ssl-certificate
+  kind: service
+  tags: [security, web]
+  curated: false
+app-service-domains:
+  name: App Service domains
+  description: Buys and manages custom domains for web applications hosted in App Service.
+  capability: Web domain management
+  docs: https://learn.microsoft.com/en-us/azure/app-service/manage-custom-dns-buy-domain
+  kind: service
+  tags: [web, networking]
+  curated: false
+app-service-environments:
+  name: App Service Environment
+  description: Hosts App Service workloads in an isolated environment within a virtual network.
+  capability: Isolated web hosting
+  docs: https://learn.microsoft.com/en-us/azure/app-service/environment/overview
+  kind: service
+  tags: [web, compute]
+  curated: false
+app-service-plans:
+  name: App Service plans
+  description: Defines the compute resources and pricing tier shared by App Service applications.
+  capability: Web compute capacity
+  docs: https://learn.microsoft.com/en-us/azure/app-service/overview-hosting-plans
+  kind: service
+  tags: [web, compute]
+  curated: false
+app-services:
+  name: Azure App Service
+  description: Runs web applications and APIs on a managed hosting platform.
+  capability: Managed web hosting
+  docs: https://learn.microsoft.com/en-us/azure/app-service/
+  kind: service
+  tags: [web, compute]
+  curated: false
+application-gateways:
+  name: Azure Application Gateway
+  description: Routes HTTP traffic to backend applications with TLS termination and optional firewall protection.
+  capability: Web traffic routing
+  docs: https://learn.microsoft.com/en-us/azure/application-gateway/
+  kind: service
+  tags: [networking]
+  curated: false
+application-insights:
+  name: Application Insights
+  description: Collects application telemetry to investigate requests, dependencies, failures and performance.
+  capability: Application observability
+  docs: https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview
+  kind: service
+  tags: [monitoring]
+  curated: false
+application-security-groups:
+  name: Application security groups
+  description: Groups virtual machine interfaces so network security rules can target application roles.
+  capability: Application traffic grouping
+  docs: https://learn.microsoft.com/en-us/azure/virtual-network/application-security-groups
+  kind: service
+  tags: [networking, security]
+  curated: false
+arc:
+  name: Azure Arc
+  description: Extends Azure management to servers, Kubernetes clusters and services outside Azure.
+  capability: Hybrid resource management
+  docs: https://learn.microsoft.com/en-us/azure/azure-arc/
+  kind: service
+  tags: [management, hybrid]
+  curated: false
+automation-accounts:
+  name: Azure Automation
+  description: Runs automation jobs to manage cloud and on-premises resources.
+  capability: Operations automation
+  docs: https://learn.microsoft.com/en-us/azure/automation/
+  kind: service
+  tags: [management]
+  curated: false
+availability-sets:
+  name: Availability sets
+  description: Distributes virtual machines across fault and update domains to reduce correlated outages.
+  capability: Virtual machine availability
+  docs: https://learn.microsoft.com/en-us/azure/virtual-machines/availability-set-overview
+  kind: service
+  tags: [compute]
+  curated: false
+avs:
+  name: Azure VMware Solution
+  description: Runs VMware workloads on dedicated infrastructure in Azure.
+  capability: Managed VMware infrastructure
+  docs: https://learn.microsoft.com/en-us/azure/azure-vmware/
+  kind: service
+  tags: [compute, hybrid]
+  curated: false
+azure:
+  name: Microsoft Azure
+  description: Provides cloud infrastructure and managed services for building and operating applications.
+  capability: Cloud platform
+  docs: https://learn.microsoft.com/en-us/azure/
+  kind: service
+  tags: [cloud]
+  curated: false
+batch-accounts:
+  name: Azure Batch
+  description: Schedules parallel and high-performance computing jobs across managed pools of virtual machines.
+  capability: Batch processing
+  docs: https://learn.microsoft.com/en-us/azure/batch/
+  kind: service
+  tags: [compute]
+  curated: false
+biz-talk:
+  name: Microsoft BizTalk Server
+  description: Connects enterprise applications through message transformation, adapters and orchestrated workflows.
+  capability: Enterprise integration
+  docs: https://learn.microsoft.com/en-us/biztalk/
+  kind: service
+  tags: [integration]
+  curated: false
+blob-block:
+  name: Azure block blobs
+  description: Stores text and binary objects as blocks in Azure Blob Storage.
+  capability: Object storage
+  docs: https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction
+  kind: datastore
+  tags: [storage]
+  curated: false
+blob-page:
+  name: Azure page blobs
+  description: Stores data in pages for workloads requiring frequent random reads and writes.
+  capability: Random-access blob storage
+  docs: https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-pageblob-overview
+  kind: datastore
+  tags: [storage]
+  curated: false
+blueprints:
+  name: Azure Blueprints (Preview)
+  description: Preview service packaging governed Azure environments; phased retirement is underway and ends January 31, 2027.
+  capability: Governed environment templates
+  docs: https://learn.microsoft.com/en-us/azure/governance/blueprints/overview
+  kind: service
+  tags: [governance]
+  curated: false
+bot-services:
+  name: Azure AI Bot Service
+  description: Connects and manages bots across supported messaging channels.
+  capability: Conversational interfaces
+  docs: https://learn.microsoft.com/en-us/azure/bot-service/?view=azure-bot-service-4.0
+  kind: service
+  tags: [ai, integration]
+  curated: false
+cache-redis:
+  name: Azure Cache for Redis
+  description: Provides a managed Redis-compatible cache to reduce application data access latency.
+  capability: In-memory caching
+  docs: https://learn.microsoft.com/en-us/azure/azure-cache-for-redis/
+  kind: datastore
+  tags: [cache, storage]
+  curated: false
+cdn-profiles:
+  name: Azure Content Delivery Network
+  description: Caches and delivers web content from distributed edge locations.
+  capability: Content delivery
+  docs: https://learn.microsoft.com/en-us/azure/frontdoor/
+  kind: service
+  tags: [networking, web]
+  curated: false
+cloud-services-classic:
+  name: Azure Cloud Services (classic)
+  description: Legacy Azure hosting for web and worker roles; retained for diagrams of classic deployments.
+  capability: Classic application hosting
+  docs: https://learn.microsoft.com/en-us/previous-versions/azure/cloud-services/
+  kind: service
+  tags: [compute, legacy]
+  curated: false
+cloud-shell:
+  name: Azure Cloud Shell
+  description: Provides an authenticated browser shell with tools for managing Azure resources.
+  capability: Browser-based administration
+  docs: https://learn.microsoft.com/en-us/azure/cloud-shell/overview
+  kind: service
+  tags: [management]
+  curated: false
+cognitive-services:
+  name: Foundry Tools
+  description: Exposes managed APIs for language, speech, vision and other AI capabilities.
+  capability: Prebuilt AI services
+  docs: https://learn.microsoft.com/en-us/azure/ai-services/what-are-ai-services
+  kind: service
+  tags: [ai]
+  aliases: [Azure Cognitive Services, Azure AI services]
+  curated: false
+compliance:
+  name: Microsoft Defender for Cloud regulatory compliance
+  description: Maps security assessments to regulatory standards and tracks compliance findings.
+  capability: Compliance assessment
+  docs: https://learn.microsoft.com/en-us/azure/defender-for-cloud/regulatory-compliance-dashboard
+  kind: service
+  tags: [security, governance]
+  curated: false
+conditional-access:
+  name: Microsoft Entra Conditional Access
+  description: Applies access decisions using signals such as user, device, location and risk.
+  capability: Conditional access policies
+  docs: https://learn.microsoft.com/en-us/entra/identity/conditional-access/
+  kind: service
+  tags: [identity, security]
+  curated: false
+container-instances:
+  name: Azure Container Instances
+  description: Runs containers without requiring users to provision or manage virtual machines.
+  capability: On-demand containers
+  docs: https://learn.microsoft.com/en-us/azure/container-instances/
+  kind: service
+  tags: [containers, compute]
+  curated: false
+container-registries:
+  name: Azure Container Registry
+  description: Stores and distributes private container images and related artifacts.
+  capability: Container image registry
+  docs: https://learn.microsoft.com/en-us/azure/container-registry/
+  kind: datastore
+  tags: [containers, storage]
+  curated: false
+cosmos-db:
+  name: Azure Cosmos DB
+  description: Stores application data in a managed distributed NoSQL database.
+  capability: Distributed NoSQL data
+  docs: https://learn.microsoft.com/en-us/azure/cosmos-db/
+  kind: datastore
+  tags: [database]
+  curated: false
+cost-alerts:
+  name: Cost Management alerts
+  description: Notifies users about budget, credit and spending conditions in Cost Management.
+  capability: Spending alerts
+  docs: https://learn.microsoft.com/en-us/azure/cost-management-billing/costs/cost-mgt-alerts-monitor-usage-spending
+  kind: service
+  tags: [management]
+  curated: false
+cost-analysis:
+  name: Cost analysis
+  description: Breaks down cloud spending by scopes, services and other cost dimensions.
+  capability: Cloud cost analysis
+  docs: https://learn.microsoft.com/en-us/azure/cost-management-billing/costs/quick-acm-cost-analysis
+  kind: service
+  tags: [analytics, management]
+  curated: false
+cost-budgets:
+  name: Cost Management budgets
+  description: Tracks spending against configured budgets and sends threshold notifications.
+  capability: Cloud spending budgets
+  docs: https://learn.microsoft.com/en-us/azure/cost-management-billing/costs/tutorial-acm-create-budgets
+  kind: service
+  tags: [management]
+  curated: false
+cost-management:
+  name: Microsoft Cost Management
+  description: Analyzes usage and spending to help plan and control cloud costs.
+  capability: Cloud cost management
+  docs: https://learn.microsoft.com/en-us/azure/cost-management-billing/
+  kind: service
+  tags: [management]
+  curated: false
+dashboard:
+  name: Azure portal dashboards
+  description: Combines resource information and monitoring tiles into a customizable Azure portal view.
+  capability: Resource dashboards
+  docs: https://learn.microsoft.com/en-us/azure/azure-portal/azure-portal-dashboards
+  kind: service
+  tags: [management]
+  curated: false
+data-box:
+  name: Azure Data Box
+  description: Transfers large datasets to Azure using shipped storage devices.
+  capability: Offline data transfer
+  docs: https://learn.microsoft.com/en-us/azure/databox/
+  kind: service
+  tags: [storage, migration]
+  curated: false
+data-box-edge:
+  name: Azure Stack Edge
+  description: Processes data on a managed edge appliance and transfers it to Azure.
+  capability: Edge compute and transfer
+  docs: https://learn.microsoft.com/en-us/azure/databox-online/
+  kind: service
+  tags: [compute, storage]
+  aliases: [Azure Data Box Edge]
+  curated: false
+data-explorer-clusters:
+  name: Azure Data Explorer
+  description: Stores and queries logs, telemetry and other high-volume data using Kusto Query Language.
+  capability: Telemetry analytics
+  docs: https://learn.microsoft.com/en-us/azure/data-explorer/
+  kind: datastore
+  tags: [analytics]
+  curated: false
+data-factory:
+  name: Azure Data Factory
+  description: Builds and schedules pipelines that move and transform data across systems.
+  capability: Data integration
+  docs: https://learn.microsoft.com/en-us/azure/data-factory/
+  kind: service
+  tags: [integration, analytics]
+  curated: false
+data-lake-storage-gen1:
+  name: Azure Data Lake Storage Gen1
+  description: Retired Azure data lake service; retained for documenting legacy analytics architectures.
+  capability: Legacy data lake storage
+  docs: https://learn.microsoft.com/en-us/previous-versions/azure/data-lake-store/data-lake-store-overview
+  kind: datastore
+  tags: [storage, legacy]
+  curated: false
+data-share-invitations:
+  name: Azure Data Share invitations
+  description: Accepts invitations to receive datasets shared through Azure Data Share.
+  capability: Data share subscriptions
+  docs: https://learn.microsoft.com/en-us/azure/data-share/subscribe-to-data-share
+  kind: service
+  tags: [integration]
+  curated: false
+data-shares:
+  name: Azure Data Share
+  description: Shares supported datasets across organizations with controlled access and updates.
+  capability: Dataset sharing
+  docs: https://learn.microsoft.com/en-us/azure/data-share/
+  kind: service
+  tags: [integration]
+  curated: false
+database-migration-services:
+  name: Azure Database Migration Service
+  description: Coordinates migration of databases from supported sources to Azure database services.
+  capability: Database migration
+  docs: https://learn.microsoft.com/en-us/azure/dms/
+  kind: service
+  tags: [migration, database]
+  curated: false
+database-mysql-server:
+  name: Azure Database for MySQL
+  description: Hosts MySQL databases with managed backups, maintenance and availability options.
+  capability: Managed MySQL
+  docs: https://learn.microsoft.com/en-us/azure/mysql/
+  kind: datastore
+  tags: [database]
+  curated: false
+database-postgresql-server:
+  name: Azure Database for PostgreSQL
+  description: Hosts PostgreSQL databases with managed operations, backups and scaling options.
+  capability: Managed PostgreSQL
+  docs: https://learn.microsoft.com/en-us/azure/postgresql/
+  kind: datastore
+  tags: [database]
+  curated: false
+ddos-protection-plans:
+  name: Azure DDoS Protection
+  description: Monitors and mitigates distributed denial-of-service attacks against protected resources.
+  capability: DDoS protection
+  docs: https://learn.microsoft.com/en-us/azure/ddos-protection/
+  kind: service
+  tags: [networking, security]
+  curated: false
+device-provisioning-services:
+  name: Azure IoT Hub Device Provisioning Service
+  description: Registers and assigns IoT devices to the appropriate IoT hubs.
+  capability: Device provisioning
+  docs: https://learn.microsoft.com/en-us/azure/iot-dps/
+  kind: service
+  tags: [iot]
+  curated: false
+devops:
+  name: Azure DevOps
+  description: Provides work tracking, source control, pipelines and testing tools for development teams.
+  capability: Software delivery
+  docs: https://learn.microsoft.com/en-us/azure/devops/?view=azure-devops
+  kind: service
+  tags: [development]
+  curated: false
+devtest-labs:
+  name: Azure DevTest Labs
+  description: Creates and manages reusable virtual machine environments for development and testing.
+  capability: Development environments
+  docs: https://learn.microsoft.com/en-us/azure/devtest-labs/
+  kind: service
+  tags: [development, compute]
+  curated: false
+diagnostics-settings:
+  name: Azure Monitor diagnostic settings
+  description: Routes supported resource logs and metrics to configured storage and analysis destinations.
+  capability: Telemetry routing
+  docs: https://learn.microsoft.com/en-us/azure/azure-monitor/data-collection/diagnostic-settings
+  kind: service
+  tags: [monitoring]
+  curated: false
+digital-twins:
+  name: Azure Digital Twins
+  description: Models connected physical environments and their relationships as a digital graph.
+  capability: Digital environment models
+  docs: https://learn.microsoft.com/en-us/azure/digital-twins/
+  kind: service
+  tags: [iot]
+  curated: false
+disk-encryption-sets:
+  name: Disk encryption sets
+  description: Associates managed disks with customer-managed encryption keys.
+  capability: Disk encryption keys
+  docs: https://learn.microsoft.com/en-us/azure/virtual-machines/disk-encryption
+  kind: service
+  tags: [security, storage]
+  curated: false
+disks:
+  name: Azure managed disks
+  description: Provides managed block storage volumes for Azure virtual machines.
+  capability: Virtual machine disks
+  docs: https://learn.microsoft.com/en-us/azure/virtual-machines/managed-disks-overview
+  kind: datastore
+  tags: [storage]
+  curated: false
+disks-classic:
+  name: Azure unmanaged disks
+  description: Legacy virtual machine disks stored as page blobs in customer-managed storage accounts.
+  capability: Legacy virtual machine disks
+  docs: https://learn.microsoft.com/en-us/azure/virtual-machines/unmanaged-disks-deprecation
+  kind: datastore
+  tags: [storage, legacy]
+  curated: false
+disks-snapshots:
+  name: Managed disk snapshots
+  description: Captures a point-in-time copy of an Azure managed disk.
+  capability: Disk snapshots
+  docs: https://learn.microsoft.com/en-us/azure/virtual-machines/snapshot-copy-managed-disk
+  kind: datastore
+  tags: [storage]
+  curated: false
+dns-zones:
+  name: Azure DNS
+  description: Hosts and manages domain name records for public and private DNS zones.
+  capability: DNS hosting
+  docs: https://learn.microsoft.com/en-us/azure/dns/
+  kind: service
+  tags: [networking]
+  curated: false
+elastic-job-agents:
+  name: Azure SQL elastic jobs
+  description: Schedules and runs T-SQL tasks across groups of Azure SQL databases.
+  capability: Database job scheduling
+  docs: https://learn.microsoft.com/en-us/azure/azure-sql/database/elastic-jobs-overview?view=azuresql
+  kind: service
+  tags: [database, automation]
+  curated: false
+enterprise-applications:
+  name: Microsoft Entra enterprise applications
+  description: Manages application access, single sign-on and provisioning in a Microsoft Entra tenant.
+  capability: Enterprise application access
+  docs: https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/
+  kind: service
+  tags: [identity]
+  curated: false
+event-grid-domains:
+  name: Azure Event Grid domains
+  description: Groups related Event Grid topics under a common authorization and management boundary.
+  capability: Multi-tenant event routing
+  docs: https://learn.microsoft.com/en-us/azure/event-grid/event-domains
+  kind: queue
+  tags: [events]
+  curated: false
+event-grid-subscriptions:
+  name: Azure Event Grid event subscriptions
+  description: Defines event filters and delivery destinations for events published through Event Grid.
+  capability: Event subscriptions
+  docs: https://learn.microsoft.com/en-us/azure/event-grid/concepts
+  kind: queue
+  tags: [events]
+  curated: false
+event-grid-topics:
+  name: Azure Event Grid topics
+  description: Provides endpoints where publishers send events for delivery to matching subscribers.
+  capability: Event publishing
+  docs: https://learn.microsoft.com/en-us/azure/event-grid/concepts
+  kind: queue
+  tags: [events]
+  curated: false
+event-hub-clusters:
+  name: Azure Event Hubs Dedicated
+  description: Provides dedicated capacity for high-volume Event Hubs streaming workloads.
+  capability: Dedicated event streaming
+  docs: https://learn.microsoft.com/en-us/azure/event-hubs/event-hubs-dedicated-overview
+  kind: queue
+  tags: [streaming]
+  curated: false
+event-hubs:
+  name: Azure Event Hubs
+  description: Ingests and retains streams of events for processing by independent consumers.
+  capability: Event ingestion
+  docs: https://learn.microsoft.com/en-us/azure/event-hubs/
+  kind: queue
+  tags: [streaming]
+  curated: false
+expressroute-circuits:
+  name: Azure ExpressRoute
+  description: Connects on-premises networks to Microsoft cloud services through private circuits.
+  capability: Private cloud connectivity
+  docs: https://learn.microsoft.com/en-us/azure/expressroute/
+  kind: service
+  tags: [networking]
+  curated: false
+extendedsecurityupdates:
+  name: Extended Security Updates enabled by Azure Arc
+  description: Delivers eligible Extended Security Updates to Azure Arc-enabled Windows Server machines.
+  capability: Legacy security updates
+  docs: https://learn.microsoft.com/en-us/azure/azure-arc/servers/deliver-extended-security-updates
+  kind: service
+  tags: [security, hybrid]
+  curated: false
+extensions:
+  name: Azure virtual machine extensions
+  description: Installs post-deployment configuration and automation components on virtual machines.
+  capability: Virtual machine configuration
+  docs: https://learn.microsoft.com/en-us/azure/virtual-machines/extensions/overview
+  kind: service
+  tags: [compute, management]
+  curated: false
+firewall-manager:
+  name: Azure Firewall Manager
+  description: Manages security policies and routing for cloud-based network security perimeters.
+  capability: Central firewall management
+  docs: https://learn.microsoft.com/en-us/azure/firewall-manager/
+  kind: service
+  tags: [networking, security]
+  curated: false
+firewalls:
+  name: Azure Firewall
+  description: Filters network and application traffic using a managed stateful firewall.
+  capability: Network traffic protection
+  docs: https://learn.microsoft.com/en-us/azure/firewall/
+  kind: service
+  tags: [networking, security]
+  curated: false
+front-doors:
+  name: Azure Front Door
+  description: Routes and accelerates web traffic through global edge locations with security controls.
+  capability: Global web delivery
+  docs: https://learn.microsoft.com/en-us/azure/frontdoor/
+  kind: service
+  tags: [networking, web]
+  curated: false
+function-apps:
+  name: Azure Functions
+  description: Runs application functions in response to events without managing server infrastructure.
+  capability: Event-driven compute
+  docs: https://learn.microsoft.com/en-us/azure/azure-functions/
+  kind: service
+  tags: [compute, serverless]
+  curated: false
+groups:
+  name: Microsoft Entra groups
+  description: Organizes users and devices to assign access and other policies collectively.
+  capability: Identity grouping
+  docs: https://learn.microsoft.com/en-us/entra/fundamentals/concept-learn-about-groups
+  kind: service
+  tags: [identity]
+  curated: false
+hd-insight-clusters:
+  name: Azure HDInsight
+  description: Runs supported open-source analytics frameworks on managed clusters.
+  capability: Managed analytics clusters
+  docs: https://learn.microsoft.com/en-us/azure/hdinsight/
+  kind: service
+  tags: [analytics]
+  curated: false
+identity-governance:
+  name: Microsoft Entra ID Governance
+  description: Controls identity and access lifecycles with reviews, entitlement management and privileged access.
+  capability: Identity governance
+  docs: https://learn.microsoft.com/en-us/entra/id-governance/
+  kind: service
+  tags: [identity, governance]
+  curated: false
+image-definitions:
+  name: Azure Compute Gallery image definitions
+  description: Defines the operating system and configuration metadata for versioned virtual machine images.
+  capability: Virtual machine image definitions
+  docs: https://learn.microsoft.com/en-us/azure/virtual-machines/shared-image-galleries
+  kind: datastore
+  tags: [compute, storage]
+  curated: false
+image-versions:
+  name: Azure Compute Gallery image versions
+  description: Stores deployable versions of virtual machine images for replication and reuse.
+  capability: Virtual machine image versions
+  docs: https://learn.microsoft.com/en-us/azure/virtual-machines/shared-image-galleries
+  kind: datastore
+  tags: [compute, storage]
+  curated: false
+images:
+  name: Azure legacy managed images
+  description: Stores a captured virtual machine image that can be used to create new machines.
+  capability: Reusable virtual machine images
+  docs: https://learn.microsoft.com/en-us/azure/virtual-machines/capture-image-resource
+  kind: datastore
+  tags: [compute, storage]
+  curated: false
+import-export-jobs:
+  name: Azure Import/Export
+  description: Moves data between storage accounts and shipped disk drives.
+  capability: Disk-based data transfer
+  docs: https://learn.microsoft.com/en-us/azure/import-export/
+  kind: service
+  tags: [storage, migration]
+  curated: false
+infrastructure-backup:
+  name: Azure Stack Hub Infrastructure Backup Service
+  description: Backs up Azure Stack Hub infrastructure configuration for recovery operations.
+  capability: Infrastructure configuration backup
+  docs: https://learn.microsoft.com/en-us/azure-stack/operator/azure-stack-backup-infrastructure-backup?view=azs-2604
+  kind: service
+  tags: [backup, hybrid]
+  curated: false
+instance-pools:
+  name: Azure SQL Managed Instance pools
+  description: Shares provisioned resources among smaller Azure SQL managed instances.
+  capability: Pooled SQL instance capacity
+  docs: https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/instance-pools-overview?view=azuresql
+  kind: datastore
+  tags: [database]
+  curated: false
+integration-accounts:
+  name: Azure Logic Apps integration accounts
+  description: Stores partners, agreements and artifacts used by Logic Apps enterprise integration workflows.
+  capability: Business-to-business integration
+  docs: https://learn.microsoft.com/en-us/azure/logic-apps/enterprise-integration/create-integration-account
+  kind: service
+  tags: [integration]
+  curated: false
+iot-central-applications:
+  name: Azure IoT Central
+  description: Provides a managed application platform for connecting and monitoring IoT devices.
+  capability: IoT application management
+  docs: https://learn.microsoft.com/en-us/azure/iot-central/
+  kind: service
+  tags: [iot]
+  curated: false
+iot-edge:
+  name: Azure IoT Edge
+  description: Runs containerized workloads and IoT processing on devices at the edge.
+  capability: Edge workload execution
+  docs: https://learn.microsoft.com/en-us/azure/iot-edge/
+  kind: service
+  tags: [iot, compute]
+  curated: false
+iot-hub:
+  name: Azure IoT Hub
+  description: Connects devices with cloud applications through managed messaging and device management.
+  capability: IoT device messaging
+  docs: https://learn.microsoft.com/en-us/azure/iot-hub/
+  kind: service
+  tags: [iot]
+  curated: false
+ip-groups:
+  name: IP Groups
+  description: Reuses named collections of IP addresses in Azure Firewall rules.
+  capability: IP address grouping
+  docs: https://learn.microsoft.com/en-us/azure/firewall/ip-groups
+  kind: service
+  tags: [networking, security]
+  curated: false
+key-vaults:
+  name: Azure Key Vault
+  description: Stores and controls access to application secrets, cryptographic keys and certificates.
+  capability: Secrets and key management
+  docs: https://learn.microsoft.com/en-us/azure/key-vault/
+  kind: datastore
+  tags: [security]
+  curated: false
+kubernetes-services:
+  name: Azure Kubernetes Service
+  description: Deploys and operates Kubernetes clusters with an Azure-managed control plane.
+  capability: Managed Kubernetes
+  docs: https://learn.microsoft.com/en-us/azure/aks/
+  kind: service
+  tags: [containers, compute]
+  curated: false
+lab-services:
+  name: Azure Lab Services
+  description: Provides managed virtual machine labs for teaching, training and similar scenarios.
+  capability: Managed virtual labs
+  docs: https://learn.microsoft.com/en-us/azure/lab-services/
+  kind: service
+  tags: [education, compute]
+  curated: false
+lighthouse:
+  name: Azure Lighthouse
+  description: Allows authorized providers to manage resources across customer tenants.
+  capability: Delegated resource management
+  docs: https://learn.microsoft.com/en-us/azure/lighthouse/
+  kind: service
+  tags: [management]
+  curated: false
+load-balancers:
+  name: Azure Load Balancer
+  description: Distributes incoming network traffic across healthy backend resources.
+  capability: Transport-layer load balancing
+  docs: https://learn.microsoft.com/en-us/azure/load-balancer/
+  kind: service
+  tags: [networking]
+  curated: false
+load-test:
+  name: Azure Load Testing
+  description: Runs managed load tests to measure application performance under simulated demand.
+  capability: Application load testing
+  docs: https://learn.microsoft.com/en-us/azure/app-testing/
+  kind: service
+  tags: [testing]
+  curated: false
+log-analytics-workspaces:
+  name: Log Analytics workspaces
+  description: Stores monitoring data in tables for querying, analysis and alerting.
+  capability: Log storage and analysis
+  docs: https://learn.microsoft.com/en-us/azure/azure-monitor/logs/log-analytics-workspace-overview
+  kind: datastore
+  tags: [monitoring, analytics]
+  curated: false
+log-streaming:
+  name: App Service log stream
+  description: Streams application and web server logs to help diagnose App Service workloads.
+  capability: Live application logs
+  docs: https://learn.microsoft.com/en-us/azure/app-service/troubleshoot-diagnostic-logs
+  kind: service
+  tags: [monitoring, web]
+  curated: false
+logic-apps:
+  name: Azure Logic Apps
+  description: Orchestrates workflows connecting applications, data and services through connectors.
+  capability: Workflow automation
+  docs: https://learn.microsoft.com/en-us/azure/logic-apps/
+  kind: service
+  tags: [integration]
+  curated: false
+machinesazurearc:
+  name: Azure Arc-enabled servers
+  description: Connects Windows and Linux servers outside Azure to Azure management services.
+  capability: Hybrid server management
+  docs: https://learn.microsoft.com/en-us/azure/azure-arc/servers/
+  kind: service
+  tags: [compute, hybrid]
+  curated: false
+managed-applications-center:
+  name: Azure Managed Applications
+  description: Packages cloud solutions that publishers can operate within customer subscriptions.
+  capability: Managed application delivery
+  docs: https://learn.microsoft.com/en-us/azure/azure-resource-manager/managed-applications/
+  kind: service
+  tags: [management]
+  curated: false
+management-groups:
+  name: Azure management groups
+  description: Organizes subscriptions into a hierarchy for shared policies and access control.
+  capability: Subscription governance
+  docs: https://learn.microsoft.com/en-us/azure/governance/management-groups/
+  kind: service
+  tags: [governance]
+  curated: false
+management-portal:
+  name: Azure portal
+  description: Provides a web interface for creating, configuring and monitoring Azure resources.
+  capability: Cloud administration portal
+  docs: https://learn.microsoft.com/en-us/azure/azure-portal/
+  kind: service
+  tags: [management]
+  curated: false
+maps-accounts:
+  name: Azure Maps
+  description: Provides maps, routing, search and other location APIs for applications.
+  capability: Geospatial services
+  docs: https://learn.microsoft.com/en-us/azure/azure-maps/
+  kind: service
+  tags: [location]
+  curated: false
+marketplace:
+  name: Microsoft Marketplace
+  description: Helps customers discover, purchase and deploy software and services from publishers.
+  capability: Cloud solution marketplace
+  docs: https://learn.microsoft.com/en-us/marketplace/
+  kind: service
+  tags: [management]
+  curated: false
+metrics:
+  name: Azure Monitor metrics
+  description: Collects and analyzes numeric measurements from monitored resources.
+  capability: Time-series monitoring
+  docs: https://learn.microsoft.com/en-us/azure/azure-monitor/metrics/data-platform-metrics
+  kind: service
+  tags: [monitoring]
+  curated: false
+migrate:
+  name: Azure Migrate
+  description: Discovers and assesses workloads and coordinates their migration to Azure.
+  capability: Cloud migration planning
+  docs: https://learn.microsoft.com/en-us/azure/migrate/?view=migrate
+  kind: service
+  tags: [migration]
+  curated: false
+monitor:
+  name: Azure Monitor
+  description: Collects and analyzes monitoring data from applications and infrastructure.
+  capability: Cloud observability
+  docs: https://learn.microsoft.com/en-us/azure/azure-monitor/
+  kind: service
+  tags: [monitoring]
+  curated: false
+nat:
+  name: Azure NAT Gateway
+  description: Provides outbound internet connectivity for resources in virtual network subnets.
+  capability: Outbound network connectivity
+  docs: https://learn.microsoft.com/en-us/azure/nat-gateway/
+  kind: service
+  tags: [networking]
+  curated: false
+netapp-files:
+  name: Azure NetApp Files
+  description: Provides managed enterprise file volumes with NFS and SMB support.
+  capability: Enterprise file storage
+  docs: https://learn.microsoft.com/en-us/azure/azure-netapp-files/
+  kind: datastore
+  tags: [storage]
+  curated: false
+network-interfaces:
+  name: Azure network interfaces
+  description: Connects virtual machines to virtual networks using IP configurations.
+  capability: Virtual machine networking
+  docs: https://learn.microsoft.com/en-us/azure/virtual-network/virtual-network-network-interface
+  kind: service
+  tags: [networking]
+  curated: false
+network-security-groups:
+  name: Network security groups
+  description: Filters inbound and outbound traffic using ordered security rules.
+  capability: Network access rules
+  docs: https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview
+  kind: service
+  tags: [networking, security]
+  curated: false
+network-watcher:
+  name: Azure Network Watcher
+  description: Diagnoses connectivity and monitors traffic and topology in Azure virtual networks.
+  capability: Network diagnostics
+  docs: https://learn.microsoft.com/en-us/azure/network-watcher/
+  kind: service
+  tags: [networking, monitoring]
+  curated: false
+notification-hub-namespaces:
+  name: Azure Notification Hubs namespaces
+  description: Groups notification hubs under a shared regional and management boundary.
+  capability: Push notification namespaces
+  docs: https://learn.microsoft.com/en-us/azure/notification-hubs/notification-hubs-push-notification-overview
+  kind: service
+  tags: [messaging]
+  curated: false
+notification-hubs:
+  name: Azure Notification Hubs
+  description: Sends push notifications to applications across supported mobile platforms.
+  capability: Mobile push notifications
+  docs: https://learn.microsoft.com/en-us/azure/notification-hubs/
+  kind: service
+  tags: [messaging]
+  curated: false
+os-images-classic:
+  name: Classic virtual machine OS images
+  description: Legacy operating system images used by virtual machines in the retired classic deployment model.
+  capability: Classic operating system images
+  docs: https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/deployment-models
+  kind: datastore
+  tags: [compute, legacy]
+  curated: false
+peering-service:
+  name: Azure Peering Service
+  description: Works with connectivity providers to improve access to Microsoft public cloud services.
+  capability: Optimized Microsoft connectivity
+  docs: https://learn.microsoft.com/en-us/azure/peering-service/
+  kind: service
+  tags: [networking]
+  curated: false
+policy:
+  name: Azure Policy
+  description: Evaluates and enforces organizational rules for Azure resource configurations.
+  capability: Resource policy enforcement
+  docs: https://learn.microsoft.com/en-us/azure/governance/policy/
+  kind: service
+  tags: [governance]
+  curated: false
+powershell:
+  name: Azure PowerShell
+  description: Provides PowerShell commands for managing Azure resources and services.
+  capability: Scripted cloud administration
+  docs: https://learn.microsoft.com/en-us/powershell/azure/?view=azps-16.3.0
+  kind: service
+  tags: [management, automation]
+  curated: false
+private-link:
+  name: Azure Private Link
+  description: Connects to supported services through private endpoints in a virtual network.
+  capability: Private service connectivity
+  docs: https://learn.microsoft.com/en-us/azure/private-link/
+  kind: service
+  tags: [networking, security]
+  curated: false
+private-link-hub:
+  name: Azure Synapse private link hubs
+  description: Provides private network access to Azure Synapse Studio through private endpoints.
+  capability: Private Synapse Studio access
+  docs: https://learn.microsoft.com/en-us/azure/synapse-analytics/security/synapse-private-link-hubs
+  kind: service
+  tags: [networking, analytics]
+  curated: false
+private-link-service:
+  name: Azure Private Link service
+  description: Exposes a service behind a standard load balancer to consumers through private endpoints.
+  capability: Private service publishing
+  docs: https://learn.microsoft.com/en-us/azure/private-link/private-link-service-overview
+  kind: service
+  tags: [networking]
+  curated: false
+proximity-placement-groups:
+  name: Proximity placement groups
+  description: Places compute resources physically close together to reduce inter-resource network latency.
+  capability: Low-latency compute placement
+  docs: https://learn.microsoft.com/en-us/azure/virtual-machines/co-location
+  kind: service
+  tags: [compute]
+  curated: false
+public-ip-addresses:
+  name: Public IP addresses
+  description: Assigns internet-reachable IP addresses to supported Azure resources.
+  capability: Public network endpoints
+  docs: https://learn.microsoft.com/en-us/azure/virtual-network/ip-services/public-ip-addresses
+  kind: service
+  tags: [networking]
+  curated: false
+public-ip-addresses-classic:
+  name: Classic public IP addresses
+  description: Legacy public endpoints used by resources in the retired Azure classic deployment model.
+  capability: Classic public endpoints
+  docs: https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/deployment-models
+  kind: service
+  tags: [networking, legacy]
+  curated: false
+public-ip-prefixes:
+  name: Public IP address prefixes
+  description: Reserves a contiguous range of public IP addresses for Azure resources.
+  capability: Public address allocation
+  docs: https://learn.microsoft.com/en-us/azure/virtual-network/ip-services/public-ip-address-prefix
+  kind: service
+  tags: [networking]
+  curated: false
+quickstart-center:
+  name: Azure Quickstart Center
+  description: Guides users through initial Azure setup and deployment tasks in the portal.
+  capability: Azure setup guidance
+  docs: https://learn.microsoft.com/en-us/azure/azure-portal/azure-portal-quickstart-center
+  kind: service
+  tags: [management]
+  curated: false
+recovery-services-vaults:
+  name: Recovery Services vaults
+  description: Stores recovery points and configuration used by Azure backup and recovery services.
+  capability: Backup and recovery storage
+  docs: https://learn.microsoft.com/en-us/azure/backup/backup-azure-recovery-services-vault-overview
+  kind: datastore
+  tags: [backup]
+  curated: false
+relays:
+  name: Azure Relay
+  description: Connects cloud applications with services behind firewalls without exposing inbound ports.
+  capability: Hybrid application relay
+  docs: https://learn.microsoft.com/en-us/azure/azure-relay/
+  kind: service
+  tags: [integration, networking]
+  curated: false
+reservations:
+  name: Azure Reservations
+  description: Applies discounted pricing for eligible resource usage through term-based commitments.
+  capability: Reserved usage discounts
+  docs: https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/
+  kind: service
+  tags: [management]
+  curated: false
+reserved-ip-addresses-classic:
+  name: Classic reserved IP addresses
+  description: Legacy reserved public IP addresses associated with classic Azure deployments.
+  capability: Classic reserved addresses
+  docs: https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/deployment-models
+  kind: service
+  tags: [networking, legacy]
+  curated: false
+resource-graph-explorer:
+  name: Azure Resource Graph
+  description: Queries Azure resource properties across subscriptions for inventory and governance.
+  capability: Resource inventory queries
+  docs: https://learn.microsoft.com/en-us/azure/governance/resource-graph/
+  kind: service
+  tags: [management, analytics]
+  curated: false
+resource-groups:
+  name: Azure resource groups
+  description: Groups related Azure resources for deployment, access control and lifecycle management.
+  capability: Resource lifecycle grouping
+  docs: https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/manage-resource-groups-portal
+  kind: service
+  tags: [management]
+  curated: false
+route-filters:
+  name: ExpressRoute route filters
+  description: Selects Microsoft service routes advertised over an ExpressRoute Microsoft peering connection.
+  capability: ExpressRoute route selection
+  docs: https://learn.microsoft.com/en-us/azure/expressroute/how-to-routefilter-portal
+  kind: service
+  tags: [networking]
+  curated: false
+route-tables:
+  name: Azure route tables
+  description: Defines user routes that control traffic paths from virtual network subnets.
+  capability: Custom network routing
+  docs: https://learn.microsoft.com/en-us/azure/virtual-network/virtual-networks-udr-overview
+  kind: service
+  tags: [networking]
+  curated: false
+sap-azure-monitor:
+  name: Azure Monitor for SAP solutions
+  description: Collects monitoring data from SAP systems and supporting infrastructure in Azure.
+  capability: SAP workload monitoring
+  docs: https://learn.microsoft.com/en-us/azure/sap/monitor/about-azure-monitor-sap-solutions
+  kind: service
+  tags: [monitoring]
+  curated: false
+search-services:
+  name: Azure AI Search
+  description: Indexes content and serves text, vector and hybrid search queries for applications.
+  capability: Application search
+  docs: https://learn.microsoft.com/en-us/azure/search/
+  kind: service
+  tags: [search, ai]
+  curated: false
+security-center:
+  name: Microsoft Defender for Cloud
+  description: Assesses cloud security posture and protects supported workloads against threats.
+  capability: Cloud security posture
+  docs: https://learn.microsoft.com/en-us/azure/defender-for-cloud/
+  kind: service
+  tags: [security]
+  aliases: [Azure Security Center]
+  curated: false
+sentinel:
+  name: Microsoft Sentinel
+  description: Analyzes security data and supports threat investigation and automated response.
+  capability: Security analytics and response
+  docs: https://learn.microsoft.com/en-us/azure/sentinel/
+  kind: service
+  tags: [security]
+  curated: false
+service-bus:
+  name: Azure Service Bus
+  description: Transfers messages through queues and publish-subscribe topics with delivery controls.
+  capability: Enterprise messaging
+  docs: https://learn.microsoft.com/en-us/azure/service-bus-messaging/
+  kind: queue
+  tags: [messaging]
+  curated: false
+service-endpoint-policies:
+  name: Virtual network service endpoint policies
+  description: Restricts which storage resources a subnet can reach through service endpoints.
+  capability: Service endpoint access control
+  docs: https://learn.microsoft.com/en-us/azure/virtual-network/virtual-network-service-endpoint-policies-overview
+  kind: service
+  tags: [networking, security]
+  curated: false
+service-fabric-clusters:
+  name: Azure Service Fabric
+  description: Deploys and manages distributed applications built from services and containers.
+  capability: Distributed application hosting
+  docs: https://learn.microsoft.com/en-us/azure/service-fabric/
+  kind: service
+  tags: [compute]
+  curated: false
+service-health:
+  name: Azure Service Health
+  description: Reports Azure service incidents, planned maintenance and health advisories relevant to subscriptions.
+  capability: Cloud service health
+  docs: https://learn.microsoft.com/en-us/azure/service-health/
+  kind: service
+  tags: [monitoring]
+  curated: false
+shared-image-galleries:
+  name: Azure Compute Gallery
+  description: Organizes, versions and replicates images and other compute artifacts for reuse.
+  capability: Shared compute images
+  docs: https://learn.microsoft.com/en-us/azure/virtual-machines/shared-image-galleries
+  kind: datastore
+  tags: [compute, storage]
+  curated: false
+sphere:
+  name: Azure Sphere
+  description: Combines supported hardware, an operating system and cloud security for connected devices.
+  capability: Secured connected devices
+  docs: https://learn.microsoft.com/en-us/azure-sphere/?view=azure-sphere-integrated
+  kind: service
+  tags: [iot, security]
+  curated: false
+sql-data-warehouses:
+  name: Dedicated SQL pool
+  description: Stores and analyzes relational data using distributed SQL processing in Azure Synapse.
+  capability: Distributed SQL warehouse
+  docs: https://learn.microsoft.com/en-us/azure/synapse-analytics/
+  kind: datastore
+  tags: [analytics, database]
+  curated: false
+sql-database:
+  name: Azure SQL Database
+  description: Runs managed SQL databases with automated maintenance, backups and scaling options.
+  capability: Managed relational database
+  docs: https://learn.microsoft.com/en-us/azure/azure-sql/database/?view=azuresql
+  kind: datastore
+  tags: [database]
+  curated: false
+sql-elastic-pools:
+  name: Azure SQL Database elastic pools
+  description: Shares a pool of compute resources among SQL databases with varying demand.
+  capability: Shared database capacity
+  docs: https://learn.microsoft.com/en-us/azure/azure-sql/database/elastic-pool-overview?view=azuresql
+  kind: datastore
+  tags: [database]
+  curated: false
+sql-managed-instance:
+  name: Azure SQL Managed Instance
+  description: Provides managed SQL instances with broad SQL Server compatibility.
+  capability: Managed SQL instances
+  docs: https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/?view=azuresql
+  kind: datastore
+  tags: [database]
+  curated: false
+sql-server:
+  name: Azure SQL logical server
+  description: Provides a management boundary for Azure SQL databases and elastic pools.
+  capability: SQL database administration
+  docs: https://learn.microsoft.com/en-us/azure/azure-sql/database/logical-servers?view=azuresql
+  kind: service
+  tags: [database]
+  curated: false
+sql-vm:
+  name: SQL Server on Azure Virtual Machines
+  description: Runs SQL Server on Azure virtual machines with control over the operating system and instance.
+  capability: SQL Server virtual machines
+  docs: https://learn.microsoft.com/en-us/azure/azure-sql/virtual-machines/?view=azuresql
+  kind: datastore
+  tags: [database, compute]
+  curated: false
+stack:
+  name: Azure Stack Hub
+  description: Runs an integrated set of Azure services in an organization's own environment.
+  capability: On-premises Azure services
+  docs: https://learn.microsoft.com/en-us/azure-stack/operator/?view=azs-2604
+  kind: service
+  tags: [hybrid, compute]
+  curated: false
+stack-edge:
+  name: Azure Stack Edge
+  description: Provides a managed appliance for local processing, storage and transfer of data to Azure.
+  capability: Edge compute and transfer
+  docs: https://learn.microsoft.com/en-us/azure/databox-online/
+  kind: service
+  tags: [compute, storage]
+  curated: false
+static-apps:
+  name: Azure Static Web Apps
+  description: Builds and hosts static web applications with integrated APIs and authentication options.
+  capability: Static web application hosting
+  docs: https://learn.microsoft.com/en-us/azure/static-web-apps/
+  kind: service
+  tags: [web]
+  curated: false
+storage-accounts:
+  name: Azure Storage accounts
+  description: Provides a namespace and configuration boundary for Azure Storage data services.
+  capability: Cloud storage account
+  docs: https://learn.microsoft.com/en-us/azure/storage/common/storage-account-overview
+  kind: datastore
+  tags: [storage]
+  curated: false
+storage-accounts-classic:
+  name: Classic Azure Storage accounts
+  description: Legacy storage accounts in the retired classic deployment model, migrated to Resource Manager.
+  capability: Classic cloud storage
+  docs: https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/deployment-models
+  kind: datastore
+  tags: [storage, legacy]
+  curated: false
+storage-azure-files:
+  name: Azure Files
+  description: Provides managed file shares accessible through supported file protocols.
+  capability: Managed file shares
+  docs: https://learn.microsoft.com/en-us/azure/storage/files/
+  kind: datastore
+  tags: [storage]
+  curated: false
+storage-container:
+  name: Azure Blob Storage containers
+  description: Groups blobs within a storage account and defines container-level access settings.
+  capability: Blob organization
+  docs: https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction
+  kind: datastore
+  tags: [storage]
+  curated: false
+storage-queue:
+  name: Azure Queue Storage
+  description: Stores messages for asynchronous processing by application components.
+  capability: Asynchronous message storage
+  docs: https://learn.microsoft.com/en-us/azure/storage/queues/
+  kind: queue
+  tags: [messaging, storage]
+  curated: false
+storage-sync-services:
+  name: Azure File Sync
+  description: Synchronizes Azure file shares with Windows Server file caches.
+  capability: Hybrid file synchronization
+  docs: https://learn.microsoft.com/en-us/azure/storage/file-sync/
+  kind: service
+  tags: [storage, hybrid]
+  curated: false
+stream-analytics-jobs:
+  name: Azure Stream Analytics
+  description: Processes event streams with SQL queries to derive real-time results.
+  capability: Real-time stream processing
+  docs: https://learn.microsoft.com/en-us/azure/stream-analytics/
+  kind: service
+  tags: [analytics, streaming]
+  curated: false
+subscriptions:
+  name: Azure subscriptions
+  description: Provides a billing and resource management boundary for Azure services.
+  capability: Cloud subscription management
+  docs: https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/create-subscription
+  kind: service
+  tags: [management]
+  curated: false
+synapse-analytics:
+  name: Azure Synapse Analytics
+  description: Combines SQL analytics, Spark and data integration within an analytics workspace.
+  capability: Unified data analytics
+  docs: https://learn.microsoft.com/en-us/azure/synapse-analytics/
+  kind: service
+  tags: [analytics]
+  curated: false
+table:
+  name: Azure Table Storage
+  description: Stores structured non-relational data as partitioned entities.
+  capability: Key-value table storage
+  docs: https://learn.microsoft.com/en-us/azure/storage/tables/
+  kind: datastore
+  tags: [database, storage]
+  curated: false
+tags:
+  name: Azure resource tags
+  description: Applies name-value labels to resources for organization, governance and cost reporting.
+  capability: Resource classification
+  docs: https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/tag-resources
+  kind: service
+  tags: [management, governance]
+  curated: false
+tfs-vc-repository:
+  name: Team Foundation Version Control
+  description: Stores and versions source code in centralized repositories in Azure DevOps.
+  capability: Centralized source control
+  docs: https://learn.microsoft.com/en-us/azure/devops/repos/tfvc/?view=azure-devops
+  kind: datastore
+  tags: [development]
+  curated: false
+traffic-manager-profiles:
+  name: Azure Traffic Manager
+  description: Directs clients to service endpoints using DNS and configured routing policies.
+  capability: DNS-based traffic routing
+  docs: https://learn.microsoft.com/en-us/azure/traffic-manager/
+  kind: service
+  tags: [networking]
+  curated: false
+universal-print:
+  name: Universal Print
+  description: Manages organizational printers and print access through a cloud service.
+  capability: Cloud print management
+  docs: https://learn.microsoft.com/en-us/universal-print/
+  kind: service
+  tags: [printing]
+  curated: false
+virtual-clusters:
+  name: Azure SQL Managed Instance virtual clusters
+  description: Hosts SQL managed instances within a subnet using a shared infrastructure boundary.
+  capability: Managed instance infrastructure
+  docs: https://learn.microsoft.com/en-us/azure/azure-sql/managed-instance/virtual-cluster-architecture?view=azuresql
+  kind: service
+  tags: [database, networking]
+  curated: false
+virtual-machine:
+  name: Azure Virtual Machines
+  description: Runs configurable Windows and Linux virtual machines in Azure.
+  capability: Virtual machine compute
+  docs: https://learn.microsoft.com/en-us/azure/virtual-machines/
+  kind: service
+  tags: [compute]
+  curated: false
+virtual-machines-classic:
+  name: Azure Virtual Machines (classic)
+  description: Retired Azure virtual machines using the classic deployment model.
+  capability: Classic virtual machines
+  docs: https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/deployment-models
+  kind: service
+  tags: [compute, legacy]
+  curated: false
+virtual-network-gateways:
+  name: Azure VPN Gateway
+  description: Connects Azure virtual networks with other networks through encrypted VPN tunnels.
+  capability: Encrypted network connectivity
+  docs: https://learn.microsoft.com/en-us/azure/vpn-gateway/
+  kind: service
+  tags: [networking]
+  curated: false
+virtual-networks-classic:
+  name: Classic virtual networks
+  description: Legacy private networks created through Azure's classic deployment model.
+  capability: Classic private networks
+  docs: https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/deployment-models
+  kind: service
+  tags: [networking, legacy]
+  curated: false
+virtual-wans:
+  name: Azure Virtual WAN
+  description: Connects branches, users and virtual networks through managed networking hubs.
+  capability: Wide-area network connectivity
+  docs: https://learn.microsoft.com/en-us/azure/virtual-wan/
+  kind: service
+  tags: [networking]
+  curated: false
+vm-images-classic:
+  name: Classic virtual machine images
+  description: Legacy reusable virtual machine images from the retired Azure classic deployment model.
+  capability: Classic machine images
+  docs: https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/deployment-models
+  kind: datastore
+  tags: [compute, legacy]
+  curated: false
+vm-scale-sets:
+  name: Virtual Machine Scale Sets
+  description: Deploys and scales groups of virtual machines using a common configuration.
+  capability: Scalable virtual machine groups
+  docs: https://learn.microsoft.com/en-us/azure/virtual-machine-scale-sets/
+  kind: service
+  tags: [compute]
+  curated: false
+web-application-firewall-policies-waf:
+  name: Azure Web Application Firewall
+  description: Filters web requests using managed and custom rules against application-layer attacks.
+  capability: Web application protection
+  docs: https://learn.microsoft.com/en-us/azure/web-application-firewall/
+  kind: service
+  tags: [web, security]
+  curated: false
+web-slots:
+  name: App Service deployment slots
+  description: Hosts separate application deployments that can be tested and swapped with production.
+  capability: Staged web deployments
+  docs: https://learn.microsoft.com/en-us/azure/app-service/deploy-staging-slots
+  kind: service
+  tags: [web, deployment]
+  curated: false
+web-test:
+  name: Application Insights availability tests
+  description: Tests web endpoint availability and response time from configured locations.
+  capability: Endpoint availability checks
+  docs: https://learn.microsoft.com/en-us/azure/azure-monitor/app/availability
+  kind: service
+  tags: [monitoring, testing]
+  curated: false
+windows-virtual-desktop:
+  name: Azure Virtual Desktop
+  description: Delivers Windows desktops and applications from Azure to remote users.
+  capability: Hosted desktops and applications
+  docs: https://learn.microsoft.com/en-us/azure/virtual-desktop/
+  kind: service
+  tags: [compute]
+  aliases: [Windows Virtual Desktop]
+  curated: false
+workbooks:
+  name: Azure Workbooks
+  description: Combines queries, visualizations and parameters into interactive monitoring reports.
+  capability: Interactive monitoring reports
+  docs: https://learn.microsoft.com/en-us/azure/azure-monitor/visualize/workbooks-overview
+  kind: service
+  tags: [monitoring, analytics]
+  curated: false
