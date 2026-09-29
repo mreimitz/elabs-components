@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ID_RE } from "../spec/dialect/ids";
 import { LENS_PARAM } from "../interaction/lens-mode";
 import { PRESENT_PARAM } from "../interaction/presentation-mode";
+import { browserParams, parseBrowserParams, type BrowserState } from "../home/browser-state";
 
 /**
  * The live `location.hash`, as it is. `useHash()` below is what the galleries read.
@@ -38,7 +39,7 @@ const DEV_PREFIX = "dev/";
 const STEP_PARAM = "step";
 
 export type Route =
-  | { kind: "home" }
+  | { kind: "home"; browser?: BrowserState }
   | { kind: "view"; path: string; theme?: "light" | "dark" }
   | {
       kind: "doc";
@@ -65,7 +66,7 @@ export type Route =
       /** One release: an old `#doc=<text>` share link (DG-16) maps here. */
       share?: string;
     }
-  | { kind: "catalog"; vendor?: string; entry?: string }
+  | { kind: "catalog"; vendor?: string; entry?: string; browser?: BrowserState }
   | { kind: "settings" }
   | { kind: "dev"; name: string };
 
@@ -131,7 +132,7 @@ export function parseRoute(hash: string): Route {
     if (share !== null) return { kind: "doc", path: null, share, ...flags };
     // DG-18's Present button writes a bare `#present` (it keeps only `key=value` parts).
     if (present) return { kind: "doc", path: null, ...flags };
-    return { kind: "home" };
+    return { kind: "home", browser: parseBrowserParams(hash) };
   }
   if (head === "catalog" || head.startsWith("catalog/")) {
     const [, vendor, entry] = head.split("/").map(decodeSegment);
@@ -139,24 +140,29 @@ export function parseRoute(hash: string): Route {
       kind: "catalog",
       ...(vendor ? { vendor } : {}),
       ...(entry ? { entry } : {}),
+      browser: parseBrowserParams(hash),
     };
   }
   if (head === "settings") return { kind: "settings" };
   // DG-24: v1's bare `#icons[/<vendor>]` opens the catalog; `#dev/icons` stays the dev sheet.
   if (head === "icons" || head.startsWith("icons/")) {
     const [, vendor] = head.split("/").map(decodeSegment);
-    return { kind: "catalog", ...(vendor ? { vendor } : {}) };
+    return {
+      kind: "catalog",
+      ...(vendor ? { vendor } : {}),
+      browser: { ...parseBrowserParams(hash), collection: "catalog", vendor: vendor ?? "" },
+    };
   }
   const dev = devName(head);
   if (dev !== null) return { kind: "dev", name: dev };
-  return { kind: "home" };
+  return { kind: "home", browser: parseBrowserParams(hash) };
 }
 
 /** The canonical hash of a route (`parseRoute(toHash(r))` equals `r`). */
 export function toHash(route: Route): string {
   switch (route.kind) {
     case "home":
-      return "#home";
+      return `#home${route.browser ? browserParams(route.browser) : ""}`;
     case "view":
       return `#v/${encodePath(route.path)}${route.theme ? `&theme=${route.theme}` : ""}`;
     case "doc": {
@@ -179,7 +185,7 @@ export function toHash(route: Route): string {
       return `#${["catalog", route.vendor, route.vendor ? route.entry : undefined]
         .filter((part): part is string => Boolean(part))
         .map(encodeURIComponent)
-        .join("/")}`;
+        .join("/")}${route.browser ? browserParams(route.browser) : ""}`;
     case "settings":
       return "#settings";
     case "dev":

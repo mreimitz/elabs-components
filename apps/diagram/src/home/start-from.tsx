@@ -73,7 +73,7 @@ const CUSTOMERS_FOLDER = "customers";
  * carries its path and the navigation failure. `copyTemplate` never opens internally, so it
  * cannot raise this case; `openDoc` itself is synchronous and never throws.
  */
-async function createAndOpen(create: () => Promise<string>): Promise<void> {
+export async function createAndOpen(create: () => Promise<string>): Promise<void> {
   let path: string;
   try {
     path = await create();
@@ -147,7 +147,7 @@ function useTemplateEntries(
  * write that succeeds is never reported as "could not create" just because the tab it would open
  * in was busy with someone else's unsaved edits.
  */
-async function copyTemplate(entry: TemplateEntry): Promise<string> {
+export async function copyTemplate(entry: TemplateEntry): Promise<string> {
   const templateText = entry.text ?? (await readFile(entry.file.path)).text;
   const stem = fileStem(entry.file.path);
   const path = await createUniqueFile(CUSTOMERS_FOLDER, stem, (n) =>

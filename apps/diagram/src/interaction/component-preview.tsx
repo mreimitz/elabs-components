@@ -56,6 +56,19 @@ export function ComponentPreview({ path, title }: ComponentPreviewProps) {
     if (!file || !("text" in file)) return null;
     return compileText(file.text, { files, catalog: currentCatalog() });
   }, [identity]);
+  return <CompiledPreview compiled={compiled} title={title} identity={identity} />;
+}
+
+/** Read-only preview shared by component inspection and the on-demand library detail. */
+export function CompiledPreview({
+  compiled,
+  title,
+  identity,
+}: {
+  compiled: CompiledDiagram | null;
+  title: string;
+  identity: string;
+}) {
   const available = compiled?.ok && compiled.graph && compiled.spec && compiled.view;
   return (
     <div

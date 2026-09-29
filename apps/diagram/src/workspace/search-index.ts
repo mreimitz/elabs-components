@@ -137,14 +137,27 @@ const isTrash = (path: string) => path === "_trash" || path.startsWith(TRASH_PRE
 const cache = new Map<string, IndexEntry>();
 
 /** The whole index; unchanged files (same mtime) come from the cache. `_trash/` is skipped. */
-export async function buildIndex(tree: WorkspaceTree, read: ReadText): Promise<IndexEntry[]> {
+export async function buildIndex(
+  tree: WorkspaceTree,
+  read: ReadText,
+  options: { signal?: AbortSignal; onReadError?: (path: string) => void } = {},
+): Promise<IndexEntry[]> {
   const files = tree.files.filter((file) => !isTrash(file.path));
   const live = new Set(files.map((file) => file.path));
   for (const path of cache.keys()) if (!live.has(path)) cache.delete(path);
-  return Promise.all(
-    files.map(async (file) => {
+  const entries: IndexEntry[] = new Array(files.length);
+  let cursor = 0;
+  // Local reads and YAML parses are bounded even for a large workspace. The cache still
+  // prevents a second read when an unchanged tree is indexed again.
+  const workers = Array.from({ length: Math.min(8, files.length) }, async () => {
+    while (!options.signal?.aborted && cursor < files.length) {
+      const index = cursor++;
+      const file = files[index]!;
       const hit = cache.get(file.path);
-      if (hit && hit.mtime === file.mtime) return hit;
+      if (hit && hit.mtime === file.mtime) {
+        entries[index] = hit;
+        continue;
+      }
       let text = "";
       let readOk = true;
       try {
@@ -154,12 +167,15 @@ export async function buildIndex(tree: WorkspaceTree, read: ReadText): Promise<I
         // for this build, and NOT cached — the next rebuild retries the read rather than
         // repeating this failure until the file's mtime happens to change.
         readOk = false;
+        options.onReadError?.(file.path);
       }
       const entry = buildEntry(file, text);
-      if (readOk) cache.set(file.path, entry);
-      return entry;
-    }),
-  );
+      if (readOk && !options.signal?.aborted) cache.set(file.path, entry);
+      entries[index] = entry;
+    }
+  });
+  await Promise.all(workers);
+  return entries.filter((entry): entry is IndexEntry => entry !== undefined);
 }
 
 // ── Matching and ranking ─────────────────────────────────────────────────────────────────
@@ -396,18 +412,33 @@ export function matchEntry(
 
 // ── The index for the live workspace tree ────────────────────────────────────────────────
 
-export const indexStore = createStore<{ entries: readonly IndexEntry[]; ready: boolean }>({
+export const indexStore = createStore<{
+  entries: readonly IndexEntry[];
+  ready: boolean;
+  errors: readonly string[];
+}>({
   entries: [],
   ready: false,
+  errors: [],
 });
 
 let building: WorkspaceTree | null = null;
+let buildController: AbortController | null = null;
 
 /** Rebuild for `tree` (the latest call wins). */
 export async function refreshSearchIndex(tree: WorkspaceTree): Promise<void> {
   building = tree;
-  const entries = await buildIndex(tree, readFile);
-  if (building === tree) indexStore.set({ entries, ready: true });
+  buildController?.abort();
+  const controller = new AbortController();
+  buildController = controller;
+  indexStore.set({ ready: false, errors: [] });
+  const errors: string[] = [];
+  const entries = await buildIndex(tree, readFile, {
+    signal: controller.signal,
+    onReadError: (path) => errors.push(path),
+  });
+  if (building === tree && !controller.signal.aborted)
+    indexStore.set({ entries, ready: true, errors });
 }
 
 let active = false;

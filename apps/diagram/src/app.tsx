@@ -27,10 +27,13 @@ import { LiveView } from "./panes/live-view";
 import { CanvasPane } from "./panes/canvas-pane";
 import { InspectorPane } from "./panes/inspector-pane"; // DG-14
 import { navigate, parseRoute, useRoute, type Route } from "./routes/use-hash";
+import { browserActions } from "./home/browser-state";
+import { recordOpened } from "./home/browser-history";
+import { useCatalogEntry } from "./catalog/catalog-service";
 import { createStore } from "./state/create-store";
 import { focusSelectedTab, focusSoon } from "./shell/focus";
 import { diagramStore, useDiagram } from "./state/diagram-store";
-import { UnsavedEditsError, workspaceActions } from "./workspace/workspace-store";
+import { UnsavedEditsError, useWorkspace, workspaceActions } from "./workspace/workspace-store";
 import {
   EDITOR_WIDTH_MAX,
   EDITOR_WIDTH_MIN,
@@ -55,8 +58,6 @@ import { LegendGalleryView } from "./galleries/legend-gallery-view"; // DG-08
 import { SpecCheckView } from "./dev/spec-check-view"; // DG-09
 import { LensCheckView } from "./dev/lens-check-view"; // maintainer 2026-09-27 (lens switch)
 import { PresentationView } from "./interaction/presentation-view"; // DG-18
-import { CatalogView } from "./catalog/catalog-view"; // DG-24
-import { EntryView } from "./catalog/entry-view"; // DG-24
 import { HomeView } from "./home/home-view"; // DG-23
 
 /** The app's strings, in one place (`conventions/i18n-strings`). */
@@ -215,6 +216,49 @@ function useDocRoute(route: Route): void {
   useEffect(() => {
     syncDocRoute();
   }, [route]);
+}
+
+/** Hash Back/Forward is the source of truth for browser filters and collection. */
+function useBrowserRoute(route: Route): void {
+  useEffect(() => {
+    if (route.kind === "home" || route.kind === "catalog") {
+      browserActions.restore(window.location.hash);
+    }
+  }, [route]);
+}
+
+/** A route counts as opened only after the workspace has attached/read that exact file. */
+function useDocumentOpenHistory(route: Route): void {
+  const loadedPath = useWorkspace((state) => state.current?.path ?? null);
+  const shownPath = useDiagram((state) => state.path);
+  const lastOpened = useRef<string | null>(null);
+  useEffect(() => {
+    if (route.kind !== "doc" || route.path === null) {
+      lastOpened.current = null;
+    } else if (
+      route.path === loadedPath &&
+      route.path === shownPath &&
+      lastOpened.current !== route.path
+    ) {
+      recordOpened(`workspace:${route.path}`);
+      lastOpened.current = route.path;
+    } else if (lastOpened.current !== route.path) {
+      lastOpened.current = null;
+    }
+  }, [route, loadedPath, shownPath]);
+}
+
+/** A catalog entry joins Recent only when its valid detail route is actually opened. */
+function CatalogOpenHistory({ name }: { name: string }) {
+  const entry = useCatalogEntry(name);
+  const recorded = useRef(false);
+  useEffect(() => {
+    if (entry && !recorded.current) {
+      recorded.current = true;
+      recordOpened(`catalog:${name}`);
+    }
+  }, [name, entry]);
+  return null;
 }
 
 /** `Atlas · <diagram title>` on a document, `Atlas · <page>` elsewhere. */
@@ -541,14 +585,10 @@ function RouteView({ route }: { route: Route }) {
         </DiagramShell>
       );
     case "catalog":
-      // DG-24: `#catalog[/<vendor>]` is the grid, `#catalog/<vendor>/<slug>` one entry.
+      // Legacy catalog links now use the same browser collection as Home.
       return (
         <DiagramShell>
-          {route.vendor && route.entry ? (
-            <EntryView name={`${route.vendor}/${route.entry}`} />
-          ) : (
-            <CatalogView vendor={route.vendor} />
-          )}
+          <HomeView route={route} />
         </DiagramShell>
       );
     case "settings":
@@ -560,7 +600,7 @@ function RouteView({ route }: { route: Route }) {
     case "home":
       return (
         <DiagramShell>
-          <HomeView />
+          <HomeView route={route} />
         </DiagramShell>
       );
   }
@@ -576,9 +616,17 @@ function RouteView({ route }: { route: Route }) {
 export function App() {
   const route = useRoute();
   useDocRoute(route);
+  useBrowserRoute(route);
+  useDocumentOpenHistory(route);
   useDocumentTitle(route);
   return (
     <>
+      {route.kind === "catalog" && route.vendor && route.entry ? (
+        <CatalogOpenHistory
+          key={`${route.vendor}/${route.entry}`}
+          name={`${route.vendor}/${route.entry}`}
+        />
+      ) : null}
       {route.kind !== "view" ? (
         <>
           <Toaster />

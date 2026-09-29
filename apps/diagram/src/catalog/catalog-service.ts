@@ -32,9 +32,17 @@ interface CatalogState {
   loaded: boolean;
   /** `true` once the dev server's merged catalog loaded; `false` on the index fallback. */
   live: boolean;
+  /** Last live-source failure. Bundled entries may still be usable. */
+  error: string | null;
 }
 
-let state: CatalogState = { entries: new Map(), problems: [], loaded: false, live: false };
+let state: CatalogState = {
+  entries: new Map(),
+  problems: [],
+  loaded: false,
+  live: false,
+  error: null,
+};
 const listeners = new Set<() => void>();
 
 function set(next: Partial<CatalogState>) {
@@ -65,9 +73,10 @@ async function load(): Promise<void> {
       problems: body.problems,
       loaded: true,
       live: true,
+      error: null,
     });
     setCatalogEntries(body.entries); // DG-26 — keeps catalog references live (1b.4)
-  } catch {
+  } catch (error) {
     if (seq !== loadSeq) return;
     // A failed reload keeps the merged catalog it has; only the first load falls back.
     if (!state.live) {
@@ -75,6 +84,11 @@ async function load(): Promise<void> {
         entries: new Map(BUNDLED_CATALOG.entries.map((e) => [e.name, e])),
         problems: BUNDLED_CATALOG.problems,
         loaded: true,
+        error: error instanceof Error ? error.message : "The catalog could not be loaded.",
+      });
+    } else {
+      set({
+        error: error instanceof Error ? error.message : "The catalog could not be refreshed.",
       });
     }
   }
@@ -94,6 +108,10 @@ export const catalogService = {
   /** Resolves once the first load settled (merged catalog, or the index fallback). */
   ready(): Promise<void> {
     return ensureLoaded();
+  },
+  /** Retry the live source while retaining the last usable catalog. */
+  retry(): Promise<void> {
+    return load();
   },
   state(): CatalogState {
     return state;

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AppIcon } from "@elabs-ai/components-icons";
 import {
   CommandDialog,
@@ -17,6 +17,7 @@ import {
   SidebarInset,
   SidebarProvider,
   SkipLink,
+  useSidebar,
 } from "@elabs-ai/components-ui";
 import { useCatalogSync } from "../catalog/catalog-sync"; // DG-26
 import { navigate, useRoute, type Route } from "../routes/use-hash";
@@ -47,6 +48,11 @@ export interface DiagramShellProps {
 
 /** Target of the skip link: the workspace (or whichever page replaces it). */
 export { WORKSPACE_ID };
+
+function documentSidebarPreference(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split("; ").some((part) => part === "sidebar_state=true");
+}
 
 /** The shell's strings, in one place (`conventions/i18n-strings`). */
 const SHELL_LABELS = {
@@ -92,6 +98,27 @@ export function ShellServices() {
 export function DiagramShell({ children }: DiagramShellProps) {
   useShellKeymap();
   const route = useRoute();
+  const browsing = route.kind === "home" || route.kind === "catalog";
+  // The browser uses a temporary rail state. A person's document sidebar choice is kept
+  // separately, including when they explicitly expand the rail while browsing.
+  const [documentSidebarOpen, setDocumentSidebarOpen] = useState(documentSidebarPreference);
+  const [browserSidebarOpen, setBrowserSidebarOpen] = useState(false);
+  const previousKind = useRef(route.kind);
+  const enteringBrowser =
+    browsing && previousKind.current !== "home" && previousKind.current !== "catalog";
+  const enteringHome = route.kind === "home" && previousKind.current !== "home";
+  if ((enteringBrowser || enteringHome) && browserSidebarOpen) {
+    setBrowserSidebarOpen(false);
+  }
+  previousKind.current = route.kind;
+  const sidebarOpen = browsing ? browserSidebarOpen : documentSidebarOpen;
+  // SidebarProvider writes its cookie even for controlled state. Restore the document
+  // preference after browser-only toggles, so Home does not persist its temporary state.
+  useLayoutEffect(() => {
+    if (browsing) {
+      document.cookie = `sidebar_state=${documentSidebarOpen}; path=/; max-age=604800`;
+    }
+  }, [browsing, browserSidebarOpen, documentSidebarOpen]);
   const openPaths = useMode((s) => s.openPaths);
   // The workspace is the shown tab's panel (the strip's `aria-controls` points here).
   const tabPath = route.kind === "doc" && route.path !== null ? route.path : null;
@@ -103,10 +130,11 @@ export function DiagramShell({ children }: DiagramShellProps) {
     // Starts on the icon rail (wave-2 review M1): the expanded sidebar costs the canvas 208 px,
     // which the review measured as 0.479 → 0.424 fit zoom on Lakehouse at 1920. The trigger
     // or Ctrl/⌘+B opens it; the rail's tooltips name each entry (rail-nav.tsx).
-    // P4: library gap — SidebarProvider writes a `sidebar_state` cookie but never reads it
-    // back, so an opened sidebar does not survive a reload; the app builds no persistence
-    // of its own (docs/findings/DG-02-shell-a11y.md, wave-2 additions).
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider
+      open={sidebarOpen}
+      onOpenChange={browsing ? setBrowserSidebarOpen : setDocumentSidebarOpen}
+    >
+      <CloseBrowserMobileSidebar routeKind={route.kind} />
       {/*
        * The app routes on `location.hash` (`#d/…`, `#settings`, …), so the skip link's own
        * `href="#diagram-workspace"` would navigate away from the current route: focus the
@@ -160,6 +188,22 @@ export function DiagramShell({ children }: DiagramShellProps) {
       <SearchSidebarBridge />
     </SidebarProvider>
   );
+}
+
+/** Entering the browser closes a phone's navigation sheet without changing desktop state. */
+function CloseBrowserMobileSidebar({ routeKind }: { routeKind: Route["kind"] }) {
+  const { isMobile, openMobile, setOpenMobile } = useSidebar();
+  const previousKind = useRef(routeKind);
+  useLayoutEffect(() => {
+    const enteringBrowser =
+      (routeKind === "home" || routeKind === "catalog") &&
+      previousKind.current !== "home" &&
+      previousKind.current !== "catalog";
+    const enteringHome = routeKind === "home" && previousKind.current !== "home";
+    if ((enteringBrowser || enteringHome) && isMobile && openMobile) setOpenMobile(false);
+    previousKind.current = routeKind;
+  }, [routeKind, isMobile, openMobile, setOpenMobile]);
+  return null;
 }
 
 /** The palette's own "Go to" pages. */

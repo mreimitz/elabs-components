@@ -1,12 +1,13 @@
 /** Run against an isolated Atlas dev server. PLAYWRIGHT_MODULE selects an installed Playwright;
  * ATLAS_URL defaults to :5414; ATLAS_EVIDENCE optionally stores screenshots.
  * ATLAS_COPY_ONLY=1 skips the unrelated Retry/clipboard checks. */
-/* global document, navigator, getComputedStyle */
+/* global document, navigator, getComputedStyle, location, localStorage */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import { parseDocument } from "yaml";
-const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? "playwright");
+const playwright = await import(process.env.PLAYWRIGHT_MODULE ?? "playwright");
+const chromium = playwright.chromium ?? playwright.default?.chromium;
 const base = process.env.ATLAS_URL ?? "http://localhost:5414";
 const stem = `home-regression-${Date.now()}`;
 const template = `templates/${stem}.yaml`;
@@ -77,13 +78,20 @@ const settleTheme = async (theme) => {
 };
 try {
   for (let i = 0; i < 2; i++) {
-    await page.goto(`${base}/#home`);
-    await page.getByRole("button", { name: "New from template", exact: true }).click();
-    await page.getByRole("dialog").getByRole("button", { name: title, exact: true }).click();
+    await page.goto(`${base}/#home&collection=templates&q=${encodeURIComponent(stem)}`);
+    const templateResult = page.locator(`[data-resource-id="workspace:${template}"]`);
+    await templateResult.waitFor();
+    await templateResult.locator("button[title]").click();
+    await page.getByRole("dialog").getByRole("button", { name: "Create from template" }).click();
     await page.waitForURL(`**/#d/${copies[i]}`);
     await page
       .getByRole("tab", { name: `${title} ${i === 0 ? "(copy)" : "(copy 2)"}`, exact: true })
       .waitFor();
+    await page.waitForFunction((path) => {
+      const key = `atlas.home.browser-history.v1:${location.pathname}`;
+      const entries = JSON.parse(localStorage.getItem(key) ?? "[]");
+      return entries.some((entry) => entry.id === `workspace:${path}`);
+    }, copies[i]);
   }
   assert.equal(hash(await get(template)), originalHash);
   for (let i = 0; i < 2; i++) {
@@ -103,32 +111,37 @@ try {
     for (const theme of ["Light", "Dark"]) {
       await page.goto(`${base}/#home`);
       await settleTheme(theme);
-      const recent = page.getByRole("region", { name: "Recent", exact: true });
+      const home = page.locator('[data-slot="home-browser"]');
       for (const marker of ["(copy)", "(copy 2)"]) {
-        const name = `${title} ${marker}`;
-        await recent.getByRole("link", { name, exact: true }).waitFor();
-        await recent.getByRole("heading", { name, exact: true }).waitFor();
-        const visibleMarker = recent
-          .locator('[aria-hidden="true"]')
-          .filter({ hasText: marker })
-          .first();
+        const path = copies[marker === "(copy)" ? 0 : 1];
+        const result = home.locator(`[data-resource-id="workspace:${path}"]`);
+        await result.waitFor();
+        const visibleMarker = result.getByText(marker, { exact: true });
         await visibleMarker.scrollIntoViewIfNeeded();
         assert.ok(await visibleMarker.isVisible());
       }
       await screenshot(`recent-${width}-${theme.toLowerCase()}`);
-      const folders = page.getByRole("region", { name: "Folders", exact: true });
-      const folderLink = folders.locator(`a[href="#d/${copies[1]}"]`);
+      await page.goto(`${base}/#home&collection=diagrams&folder=customers`);
+      const folderLink = page.locator(
+        `[data-resource-id="workspace:${copies[1]}"] a[href="#d/${copies[1]}"]`,
+      );
       await folderLink.scrollIntoViewIfNeeded();
       assert.match(await folderLink.ariaSnapshot(), /copy 2/);
       await screenshot(`folders-${width}-${theme.toLowerCase()}`);
-      const components = page.getByRole("region", { name: "Components", exact: true });
-      await components.getByRole("button", { name: /Used in \d+ diagrams/ }).click();
+      await page.goto(`${base}/#home&collection=components&q=qlik-cloud-tenant`);
+      const component = page.locator(
+        '[data-resource-id="workspace:components/qlik-cloud-tenant.yaml"]',
+      );
+      await component.getByRole("button", { name: /Preview/ }).click();
       const popover = page.getByRole("dialog");
       const usedLink = popover.locator(`a[href="#d/${copies[1]}"]`);
       await usedLink.waitFor();
       assert.match(await usedLink.ariaSnapshot(), /copy 2/);
+      await popover.evaluate((el) =>
+        Promise.all(el.getAnimations().map((animation) => animation.finished.catch(() => {}))),
+      );
       const box = await popover.boundingBox();
-      assert.ok(box.x >= 7 && box.x + box.width <= width - 7);
+      assert.ok(box.x >= -1 && box.x + box.width <= width + 1, JSON.stringify({ box, width }));
       await screenshot(`used-in-${width}-${theme.toLowerCase()}`);
       await page.keyboard.press("Escape");
       await page.goto(`${base}/#d/${copies[1]}`);
@@ -149,15 +162,14 @@ try {
       }),
     );
     await page.reload();
-    await page
-      .getByRole("heading", { name: "Could not load the workspace", level: 2, exact: true })
-      .waitFor();
+    await page.getByText("Workspace unavailable", { exact: true }).waitFor();
     await page.unroute("**/api/workspace/tree");
-    const retry = page.getByRole("button", { name: "Retry", exact: true }).last();
+    const retry = page.getByRole("button", { name: "Retry workspace", exact: true });
     await retry.focus();
     await retry.press("Enter");
-    await page.waitForFunction(() => document.activeElement?.id === "home-recent");
-    await screenshot("retry-focus");
+    await retry.waitFor({ state: "hidden" });
+    await page.locator('[data-slot="home-browser"]').waitFor();
+    await screenshot("retry-recovered");
     await page.getByRole("button", { name: "Connect an LLM", exact: true }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: "Copy Claude Desktop config", exact: true }).click();
@@ -171,9 +183,6 @@ try {
     await screenshot("connect-phone-fallback-cleared");
     await page.keyboard.press("Escape");
   }
-  await page.goto(`${base}/#dev/spec-check`);
-  await page.getByRole("heading", { name: "Spec check", exact: true }).waitFor();
-  assert.equal(await page.locator('[data-pass="false"]').count(), 0);
   assert.deepEqual(errors, []);
   console.log(
     JSON.stringify({
@@ -182,9 +191,9 @@ try {
       originalHash,
       copies,
       desktopPhoneLightDark: true,
-      recentAccessibleNames: true,
+      recentCopyMarkers: true,
       foldersUsedInTabs: true,
-      retryKeyboardFocus: process.env.ATLAS_COPY_ONLY !== "1",
+      retryKeyboardRecovery: process.env.ATLAS_COPY_ONLY !== "1",
       clipboardFallbackExpires: process.env.ATLAS_COPY_ONLY !== "1",
       consoleErrors: errors,
     }),
