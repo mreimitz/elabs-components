@@ -1,2 +1,95 @@
+# Source: https://help.qlik.com/en-US/evaluation-guides/Content/ai/answers-security.htm
+# Reviewed 2026-09-29. Logical architecture; regional placement is illustrative.
 diagram: "1"
-title: "Answers"
+title: Qlik Answers
+description: Tenant data stays in the home region; cross-region inference uses AWS private connectivity and temporary in-memory processing.
+direction: LR
+nodeStyle: icon
+legend: auto
+component:
+  icon: qlik/answers
+  description: Qlik Answers security architecture, from governed retrieval to Amazon Bedrock inference.
+
+nodes:
+  - id: users
+    type: actor
+    icon: lucide/users
+    title: Users
+
+zones:
+  - id: aws
+    owner: saas
+    provider: aws
+    kind: trust-boundary
+    title: AWS security boundary
+    children:
+      - id: home
+        kind: region
+        provider: qlik
+        title: Home region · Qlik Cloud
+        children:
+          - id: answers
+            ref: catalog/qlik/answers
+            subtitle: Access enforcement
+            description: Qlik mediates requests and applies tenant access controls.
+            docs: https://help.qlik.com/en-US/evaluation-guides/Content/ai/answers-security.htm
+          - id: data
+            type: datastore
+            icon: lucide/database
+            title: Applications & knowledge bases
+          - id: index
+            type: datastore
+            icon: lucide/database
+            title: Search index
+            subtitle: Tenant-encrypted vectors
+          - id: prompt
+            icon: lucide/workflow
+            title: Prompt assembly
+            subtitle: Question, context, instructions
+            description: Plaintext exists in memory before transmission.
+          - id: history
+            type: datastore
+            icon: lucide/message-square
+            title: Questions & responses
+            subtitle: Tenant-encrypted history
+      - id: inference
+        kind: region
+        provider: aws
+        title: Inference region
+        children:
+          - id: bedrock
+            icon: lucide/brain
+            title: Amazon Bedrock
+            subtitle: Foundation model inference
+            description: Plaintext processing in memory; no retained content or model training. Operational metadata may be logged.
+            docs: https://help.qlik.com/en-US/evaluation-guides/Content/ai/answers-security.htm
+
+flows:
+  - users <-> answers: { label: Questions / answers, kind: request }
+  - data -> index: { label: Indexing, kind: data }
+  - index -> answers: { label: Relevant context, kind: data }
+  - answers -> prompt: { label: Inference payload, kind: request }
+  - prompt <-> bedrock:
+      { label: Private inference / response, kind: request, protocol: TLS 1.3, secure: tls }
+  - answers -> history: { label: Conversation, kind: data }
+
+notes:
+  - at: home
+    text: AES-256 at rest; customer-managed keys when configured.
+  - at: inference
+    text: Cross-region processing is tenant-controlled and disabled by default.
+  - at: bedrock
+    text: Temporary IAM credentials; no direct user access.
+
+story:
+  autoplay: false
+  steps:
+    - title: Governed retrieval
+      targets: [home]
+      text: Tenant data and indexes remain in the home region.
+    - title: Private inference
+      targets: ["prompt <-> bedrock"]
+      text: Encrypted transit; plaintext only during processing.
+    - title: Return and retain locally
+      targets: [answers, history]
+      text: Responses return to the tenant; inference content is purged.
