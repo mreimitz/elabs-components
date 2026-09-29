@@ -181,9 +181,15 @@ export function stageGraph(
   const nodes = next.nodes.map((node) => {
     const old = placed.get(node.id);
     if (old && old.parentId === node.parentId) {
-      // A zone keeps its laid-out box too, unless it was a collapsed chip (220×48).
+      // Keep a compatible box while the next layout runs. Inline expansion reuses
+      // the reference ID for a zone; carrying that zone's width/height back onto
+      // the reference makes React Flow measure the expanded box as a leaf.
       const box =
-        old.width !== undefined && old.height !== undefined && !old.data.collapsed
+        old.type === node.type &&
+        old.data.variant === node.data.variant &&
+        old.width !== undefined &&
+        old.height !== undefined &&
+        !old.data.collapsed
           ? { width: old.width, height: old.height }
           : {};
       return { ...node, position: manual ? node.position : old.position, ...box }; // DG-15

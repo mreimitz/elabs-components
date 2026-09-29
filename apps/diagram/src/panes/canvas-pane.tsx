@@ -32,7 +32,7 @@ import { CanvasNavigation } from "../chrome/canvas-navigation";
 import { chromeFitPadding } from "../chrome/fit-padding";
 import { TitleBlock } from "../chrome/title-block";
 import { FIT_MIN_ZOOM, useDiagramLayout } from "../layout/use-diagram-layout";
-import { MOTION, motionMs, prefersReducedMotion } from "../motion";
+import { motionMs, prefersReducedMotion } from "../motion";
 import { isZoneNode } from "../nodes/zone-data";
 import { useZoneAutofit } from "../nodes/use-zone-autofit";
 import { layoutReadyActions } from "./layout-ready-store";
@@ -572,36 +572,12 @@ function DiagramCanvas({
   // must not patch the staged graph back to the empty one `getNodes()` still returns.
   const paneRef = useRef<HTMLDivElement>(null);
   const handled = useRef<{ graph: ReactFlowGraph; request: number } | null>(null);
-  const transitionHost = useRef<HTMLDivElement>(null);
-  const snapshot = useRef<{ element: HTMLElement; graph: ReactFlowGraph; focus: string } | null>(
-    null,
-  );
-  const [changingComposite, setChangingComposite] = useState(false);
   const compositeFocus = useRef<{ graph: ReactFlowGraph; id: string } | null>(null);
   const captureComposite = useCallback(
     (id: string) => {
       compositeFocus.current = { graph, id };
-      const pane = paneRef.current,
-        host = transitionHost.current;
-      if (!pane || !host || motionMs("base") === 0) return;
-      snapshot.current?.element.remove();
-      const copy = pane.cloneNode(true) as HTMLElement;
-      copy.inert = true;
-      copy.setAttribute("aria-hidden", "true");
-      copy.setAttribute("data-diagram-export", "exclude");
-      copy.className = "pointer-events-none absolute inset-0";
-      host.append(copy);
-      snapshot.current = { element: copy, graph, focus: id };
-      setChangingComposite(true);
     },
     [graph],
-  );
-  useEffect(
-    () => () => {
-      snapshot.current?.element.remove();
-      snapshot.current = null;
-    },
-    [],
   );
 
   // A new compile: same structure → patch the words in place; otherwise stage and lay out.
@@ -701,7 +677,7 @@ function DiagramCanvas({
     // that settles the layout itself, not mirrored from `status` after the fact.
     onSettled: (settledStatus) => {
       setStoryLayout(settledStatus === "ready" ? structure : null);
-      layoutReadyActions.setReady(path, settledStatus === "ready" && !snapshot.current);
+      layoutReadyActions.setReady(path, settledStatus === "ready");
     },
   });
   const storyCamera = useStoryCamera(
@@ -710,42 +686,17 @@ function DiagramCanvas({
     nodes,
     structure,
   );
-  useZoneAutofit(nodes, setNodes);
+  useZoneAutofit(nodes, setNodes, undefined, undefined, status === "ready");
   const enterComposite = useDrillCamera([], status === "ready", paneRef);
   useEffect(() => {
     const pending = compositeFocus.current;
-    if (!pending || pending.graph === graph || status !== "ready" || snapshot.current) return;
+    if (!pending || pending.graph === graph || status !== "ready") return;
     compositeFocus.current = null;
     if (document.activeElement === document.body)
       paneRef.current
         ?.querySelector<HTMLElement>(`.react-flow__node[data-id="${CSS.escape(pending.id)}"]`)
         ?.focus({ preventScroll: true });
   }, [graph, status]);
-  useEffect(() => {
-    const previous = snapshot.current;
-    if (!previous || previous.graph === graph || status !== "ready") return;
-    setChangingComposite(false);
-    const animation = previous.element.animate([{ opacity: 1 }, { opacity: 0 }], {
-      duration: motionMs("base"),
-      easing: MOTION.ease,
-      fill: "forwards",
-    });
-    void animation.finished
-      .then(() => {
-        previous.element.remove();
-        if (snapshot.current !== previous) return;
-        snapshot.current = null;
-        layoutReadyActions.setReady(path, true);
-        if (document.activeElement === document.body)
-          paneRef.current
-            ?.querySelector<HTMLElement>(
-              `.react-flow__node[data-id="${CSS.escape(previous.focus)}"]`,
-            )
-            ?.focus({ preventScroll: true });
-      })
-      .catch(() => {});
-  }, [graph, status, path]);
-
   // This pane unmounting (a document closed, or the visual lens swapping it out) leaves no
   // stale "ready" behind for a path nothing is drawing any more.
   useEffect(() => {
@@ -836,9 +787,7 @@ function DiagramCanvas({
         captureComposite(id);
         if (viewing || presenting || node.data.inner) compositeOverrides.set(path, id, expanded);
         else if (!editActions.editEntry(id, { expand: expanded })) {
-          snapshot.current?.element.remove();
-          snapshot.current = null;
-          setChangingComposite(false);
+          compositeFocus.current = null;
         }
       },
     }),
@@ -945,7 +894,7 @@ function DiagramCanvas({
   return (
     <StoryHighlightContext.Provider value={storyCamera.litEdges}>
       <CompositeActionContext.Provider value={compositeActions}>
-        <div ref={transitionHost} className="relative h-full w-full">
+        <div className="relative h-full w-full">
           {/* Until the first layout lands the nodes sit at {0,0}: they mount (React Flow must
           measure them) behind `opacity-0` + `inert` — hidden from sight, assistive tech and
           the tab order. Not `invisible`: React Flow writes an inline `visibility: visible` on
@@ -953,14 +902,8 @@ function DiagramCanvas({
           {/* `@container`: the chrome sizes to the pane, not the window (the minimap below). */}
           <div
             ref={paneRef}
-            className={cn(
-              "@container h-full w-full",
-              snapshot.current
-                ? "transition-opacity duration-base ease-standard"
-                : "transition-none",
-              (!shown || changingComposite) && "opacity-0",
-            )}
-            inert={!shown || changingComposite}
+            className={cn("@container h-full w-full", "transition-none", !shown && "opacity-0")}
+            inert={!shown}
             onDoubleClickCapture={(event) => {
               const target = event.target as Element;
               const element = target.closest<HTMLElement>(".react-flow__node");
@@ -1005,13 +948,7 @@ function DiagramCanvas({
               {/* DG-08: title block top-left, legend bottom-left (both in the exported picture). */}
               {/* DG-68: the diagram's own description, one sentence under the title. */}
               <ParticleLayer
-                enabled={
-                  technicalSettled &&
-                  status === "ready" &&
-                  !lensLocked &&
-                  !stale &&
-                  !changingComposite
-                }
+                enabled={technicalSettled && status === "ready" && !lensLocked && !stale}
               />
               <StoryCallouts />
               <LensChrome lens="technical">

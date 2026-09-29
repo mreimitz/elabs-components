@@ -18,6 +18,8 @@ import {
   type Viewport,
 } from "@xyflow/react";
 import { useReactFlow, type Edge, type Node } from "@elabs-ai/components-flow";
+import { MOTION, motionMs, prefersReducedMotion } from "../motion";
+import { interpolate, layoutFrame, motionProgress } from "./layout-motion";
 import { isZoneNode } from "../nodes/zone-data";
 import {
   layoutDiagram,
@@ -214,13 +216,27 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
   const laidOutKey = useRef<string | number | null>(null);
   const foldedKey = useRef("");
   const folded = collapsedKey(nodes);
+  const latestFold = useRef(folded);
+  latestFold.current = folded;
   // The key of the latest render: a run that finishes after the key moved on is dropped.
   const latestKey = useRef(layoutKey);
   latestKey.current = layoutKey;
   const latestSource = useRef(source);
   latestSource.current = source;
   // DG-12: the last layout's nodes, until the fit effect below has fitted them.
-  const fitPending = useRef<Node[] | null>(null);
+  const previousLayout = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null);
+  const cancelMotion = useRef<(() => void) | null>(null);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      cancelMotion.current?.();
+    };
+  }, []);
+  useEffect(() => {
+    cancelMotion.current?.();
+  }, [source, layoutKey]);
   // Wave-2 M1: the last fitted layout and the viewport that fit set — `refit`'s input, and how
   // it tells a view the user moved from the one the fit left.
   const lastFit = useRef<{ laid: Node[]; viewport: Viewport } | null>(null);
@@ -264,27 +280,68 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
     fitLaid(last.laid);
   }, [flowStore, fitLaid]);
 
-  const apply = (result: DiagramLayoutResult) => {
-    // DG-12: placed now, so a node staged invisible (`stageGraph`) is shown.
-    setNodes((live) => keepSelection(result.nodes.map(unstage), live));
-    setEdges((live) => keepSelection(result.edges, live));
+  const apply = async (result: DiagramLayoutResult, fold?: string): Promise<boolean> => {
+    cancelMotion.current?.();
+    const after = { nodes: result.nodes.map(unstage), edges: result.edges };
+    const before = previousLayout.current;
+    const duration = before && !manual ? motionMs("base") : 0;
+    const key = layoutKey,
+      input = source;
+    const valid = () =>
+      mounted.current &&
+      key === latestKey.current &&
+      input === latestSource.current &&
+      (fold === undefined || fold === latestFold.current);
+    if (!valid()) return false;
     foldedKey.current = collapsedKey(result.nodes);
-    // Fitted by the effect below, once these nodes are committed.
-    fitPending.current = result.nodes;
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`[DG-11] engine=${result.engine} ms=${result.ms} nodes=${result.nodes.length}`);
+    const commit = (frame: typeof after) => {
+      setNodes((live) => keepSelection(frame.nodes, live));
+      setEdges((live) => keepSelection(frame.edges, live));
+      previousLayout.current = frame;
+    };
+    if (!before || duration === 0) {
+      commit(after);
+      fitLaid(after.nodes);
+      return true;
     }
+    const bounds = diagramBounds(after.nodes);
+    const { width, height, minZoom, maxZoom, transform } = flowStore.getState();
+    const padding = fitPaddingRef.current?.(after.nodes, { minZoom, maxZoom }) ?? FIT.padding;
+    const from = { x: transform[0], y: transform[1], zoom: transform[2] };
+    const to = bounds
+      ? getViewportForBounds(bounds, width, height, minZoom, maxZoom, padding)
+      : from;
+    return new Promise((resolve) => {
+      let frame = 0;
+      const start = performance.now();
+      const cancel = () => {
+        cancelAnimationFrame(frame);
+        resolve(false);
+      };
+      cancelMotion.current = cancel;
+      const tick = (now: number) => {
+        if (!valid()) {
+          cancel();
+          return;
+        }
+        const raw = prefersReducedMotion() ? 1 : Math.min(1, (now - start) / duration);
+        const progress = motionProgress(MOTION.ease, raw);
+        commit(layoutFrame(before, after, progress));
+        void setViewport({
+          x: interpolate(from.x, to.x, progress),
+          y: interpolate(from.y, to.y, progress),
+          zoom: interpolate(from.zoom, to.zoom, progress),
+        });
+        if (raw < 1) frame = requestAnimationFrame(tick);
+        else {
+          lastFit.current = { laid: after.nodes, viewport: to };
+          if (cancelMotion.current === cancel) cancelMotion.current = null;
+          resolve(true);
+        }
+      };
+      frame = requestAnimationFrame(tick);
+    });
   };
-
-  // Fit every layout to the box it computed (`fitLaid`). It runs after the commit that holds the
-  // laid-out nodes, so the new viewport and the new positions paint together.
-  useEffect(() => {
-    const laid = fitPending.current;
-    fitPending.current = null;
-    if (laid) fitLaid(laid);
-    // Runs once per layout: `apply` sets `fitPending`, then commits new `nodes`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes]);
 
   // Full layout: once per `layoutKey`, when every visible node has been measured.
   useEffect(() => {
@@ -308,22 +365,23 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
       ? Promise.resolve(layoutManual(current, layoutEdges, layoutOptions))
       : layoutDiagram(current, layoutEdges, layoutOptions);
     run
-      .then((result) => {
-        if (key !== latestKey.current || input !== latestSource.current) {
+      .then(async (result) => {
+        if (!mounted.current || key !== latestKey.current || input !== latestSource.current) {
           // Stale: a newer graph arrived mid-run. Re-render so this effect runs for it.
-          settle({ key, status: "pending" });
           return;
         }
         if (result.engine === "dagre") throw new Error("ELK failed; flow fell back to dagre");
-        apply(result);
-        settle({ key, status: "ready" });
+        if (await apply(result)) settle({ key, status: "ready" });
       })
       .catch((error: unknown) => {
         console.error("[DG-11] layout failed", error);
-        settle({ key, status: "error" });
+        if (mounted.current && key === latestKey.current && input === latestSource.current)
+          settle({ key, status: "error" });
       })
       .finally(() => {
         busy.current = false;
+        if (mounted.current && (key !== latestKey.current || input !== latestSource.current))
+          setSettled((previous) => ({ ...previous }));
       });
     // The option values are read when a run starts; these are the triggers.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -336,6 +394,7 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
     busy.current = true;
     const key = layoutKey;
     const input = source;
+    const fold = folded;
     const shown = getNodes();
     const edges = getEdges();
     relayoutVisible(shown, edges, {
@@ -343,20 +402,36 @@ export function useDiagramLayout(options: UseDiagramLayoutOptions): DiagramLayou
       noteAnchors,
       handleAnchors: measuredHandles(shown, edges),
     })
-      .then((result) => {
-        if (key !== latestKey.current || input !== latestSource.current) {
+      .then(async (result) => {
+        if (
+          !mounted.current ||
+          key !== latestKey.current ||
+          input !== latestSource.current ||
+          fold !== latestFold.current
+        ) {
           // Release a full layout that was waiting for this obsolete fold to finish.
-          settle({ key, status: "pending" });
           return;
         }
-        if (result.engine !== "dagre") apply(result);
+        if (result.engine !== "dagre") {
+          settle({ key, status: "pending" });
+          if (await apply(result, fold)) settle({ key, status: "ready" });
+        }
       })
       .catch((error: unknown) => console.error("[DG-11] re-layout failed", error))
       .finally(() => {
         busy.current = false;
+        if (
+          mounted.current &&
+          key === latestKey.current &&
+          input === latestSource.current &&
+          fold !== latestFold.current
+        )
+          settle({ key, status: "ready" });
+        if (mounted.current && (key !== latestKey.current || input !== latestSource.current))
+          setSettled((previous) => ({ ...previous }));
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [folded, status]);
+  }, [folded, status, settled]);
 
   return { status, refit };
 }

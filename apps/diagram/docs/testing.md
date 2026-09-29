@@ -64,6 +64,7 @@ node tests/visual-mcp.mjs
 node tests/diff-editor-lifecycle.mjs
 node tests/details-card.mjs
 node tests/component-preview.mjs
+node tests/component-motion.mjs
 node tests/component-references.mjs
 node tests/inline-expansion.mjs
 node tests/composite-interactions.mjs
@@ -150,3 +151,5 @@ Run `node --test scripts/tests/group-flow-labels.test.mjs` for grouping boundari
 With an isolated server, run `DIAGRAM_URL=http://localhost:5455 ZONE_LAYOUT_EVIDENCE=/tmp/atlas-zone-layout node tests/zone-layout-compaction.mjs`. It checks the customer-landscape template in both themes and directions, sibling-zone compaction, containment, attached endpoints, and stability after folding or re-layout, plus other example diagrams. Compound parents with multiple expanded child zones relax edge straightening so nested headers do not enlarge the parent just to keep a connection straight.
 
 Referenced component previews: `DIAGRAM_URL=http://localhost:5455 COMPONENT_PREVIEW_EVIDENCE=/tmp/atlas-component-preview node tests/component-preview.mjs` checks the live child graph below its description, keyboard access, independent viewport and state, updates without saved thumbnails, and view-mode navigation from parent and cached edit sessions in both themes. After `pnpm build:local`, add `COMPONENT_PREVIEW_EXPORT=1` to verify the downloaded HTML preview and read-only component navigation without network requests.
+
+Component expansion and layout motion: `DIAGRAM_URL=http://localhost:5455 COMPONENT_MOTION_EVIDENCE=/tmp/atlas-component-motion node tests/component-motion.mjs` checks repeated and interrupted expansion/collapse against the original node positions and sizes in both themes, with normal and reduced motion. Normal relayout interpolates nodes, zone sizes, flow routes and viewport together; reduced motion settles immediately. Pure tests in `component-roundtrip.test.mjs` cover both layout directions and `layout-motion.test.mjs` preserves route bends and exact final geometry.

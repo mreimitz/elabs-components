@@ -167,11 +167,12 @@ export function useZoneAutofit(
   setNodes: (updater: (nodes: Node[]) => Node[]) => void,
   padding = ZONE_PADDING,
   header = ZONE_HEADER_HEIGHT,
+  enabled = true,
 ): void {
   const lastKey = useRef("");
 
   useEffect(() => {
-    if (nodes.some((node) => node.dragging || node.resizing)) return;
+    if (!enabled || nodes.some((node) => node.dragging || node.resizing)) return;
     const key = geometryKey(nodes);
     if (key === lastKey.current) return;
     lastKey.current = key;
@@ -183,5 +184,5 @@ export function useZoneAutofit(
       console.debug(`[DG-06] auto-fit: ${changed.map((node) => node.id).join(", ")}`);
     }
     setNodes((latest) => (latest === nodes ? fitted : fitZones(latest, padding, header)));
-  }, [nodes, setNodes, padding, header]);
+  }, [nodes, setNodes, padding, header, enabled]);
 }
