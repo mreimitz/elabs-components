@@ -81,7 +81,7 @@ zones: # boundaries; nest with children:
         status: ok # ok | degraded | down | planned — shown on the details card
       - id: tenant
         ref: ws/components/qlik-cloud-tenant # another diagram: ws/<folder>/…/<file name>
-        expand: false # false = one box; true = draw its content inline (later)
+        expand: false # false = one box; true = draw read-only referenced contents inline in automatic layout
 
 flows: # from -> to, by id; <-> both ways
   - erp -> qca: CDC # string form, label after the colon

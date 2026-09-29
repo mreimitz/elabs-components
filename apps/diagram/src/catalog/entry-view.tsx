@@ -144,8 +144,8 @@ export function EntryView({ name }: EntryViewProps) {
 
       <Snippet entry={entry} />
 
-      {/* "Used in" waits for DG-23 (R1 cut its search index; the source is decided when DG-23
-          is re-hardened — a scan of the workspace tree is enough). DG-24 step 7.4, Deferred. */}
+      {/* Catalog-reference usage is deferred. Home's component usage list does not index
+          catalog references. */}
     </div>
   );
 }

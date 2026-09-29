@@ -1,5 +1,6 @@
 # Atlas — changelog (one line per fortnight, newest first)
 
+- 2026-09-29 — R1 engineering closeout: all 20 scoped items delivered, AWS/Azure/Qlik catalog fill reviewed, and the twelve-step local/offline tour recorded with source preservation and persisted reopening verified. See [the handoff](R1-tour.md) for evidence and limits.
 - 2026-09-29 — Export → Interactive HTML downloads one offline, read-only file with both lenses, stories, details and component inspection. Notes and metrics are excluded recursively; the publishing theme and profiles are frozen. The file opens the authored technical view, without transient camera or expansion choices.
 - 2026-09-29 — Two bounded style profiles now resolve from theme, workspace and diagram choices. Qlik visual drawings use navy panels, role accents and accessible capability colors; other themes retain neutral owner styling. Morphs and exports share the effective profile, and theme changes cannot leave stale transition paint.
 - 2026-09-29 — Authored visual layouts now control named lanes, capability boxes, processes, sub-items and the control plane. Component layouts travel with their references; technical connections remain authoritative. Visual layout previews save through an isolated undo step, and IntelliSense completes layout identifiers. Rapid diff-preview closure is safe beside the YAML editor.

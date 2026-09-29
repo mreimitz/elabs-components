@@ -35,7 +35,7 @@ That is the whole of **Release 1**. Everything in it serves that sentence; every
 
 Every cohort is a **gate**: C2 does not start until C1's metric is met. The platform (server, OIDC, permissions) is built for C2, not before.
 
-### 3.3 Release 1 — the wedge, 14 items, 8 weeks
+### 3.3 Release 1 — the wedge, 20 items including additions DG-67–70, 8 weeks
 
 Kept, in order, with what was cut from each:
 
@@ -47,7 +47,7 @@ Kept, in order, with what was cut from each:
 | 3       | DG-24 catalog                                        | catalog service + **Qlik, AWS, Azure, generic** metadata filled via MCP                                                                                                             | other vendors, in-app metadata editing (edit the YAML)                |
 | 3       | DG-35 MCP server                                     | workspace, spec, compose, catalog tools + `author-diagram` prompt + skill                                                                                                           | render/present bridge (later), resources                              |
 | 3       | DG-25 details card v2                                | as is                                                                                                                                                                               | —                                                                     |
-| 4       | DG-26 composition                                    | `use:`, `expand`, dotted ids, `component:`, resolver, propagation, `description/docs/status`                                                                                        | `phase`, `metrics`, `volume` (move to live-ops), rename refactoring   |
+| 4       | DG-26 composition                                    | `ref: catalog/…` / `ref: ws/…`, `expand`, dotted ids, `component:`, resolver, propagation, `description/docs/status`                                                                | `phase`, `metrics`, `volume` (move to live-ops), rename refactoring   |
 | 4       | DG-27 composites                                     | collapsed + inline + drill-down                                                                                                                                                     | peek thumbnail                                                        |
 | 4       | DG-28 language service                               | keys/enums, ids, icons, components, snippets                                                                                                                                        | quick-fixes (later)                                                   |
 | 5       | DG-23 home                                           | recents, tree, components, start-from templates                                                                                                                                     | health tiles, search index (tree filter is enough)                    |
@@ -60,13 +60,15 @@ Kept, in order, with what was cut from each:
 | 2       | **DG-67 wedge templates** (new)                      | two templates: _Qlik Cloud + customer landscape_ and _Qlik Talend Cloud pipeline_ (deck slide 4), plus the `qlik-cloud-tenant` component — content from the maintainer's 30 minutes | —                                                                     |
 | phase B | **DG-66 C1 onboarding** (new)                        | shared Git workspace repo, 10-min video, feedback form, weekly office hour                                                                                                          | —                                                                     |
 
+Later maintainer additions DG-68 (shell polish), DG-69 (generic catalog entries) and DG-70 (read-only live view) are part of R1 and delivered. Phase-B onboarding is outside the 20-item R1 count.
+
 Moved out of R1 entirely: DG-29 catalog panel/⌘K (the inspector + YAML + templates cover it), DG-32/33, DG-39–42, DG-44–65.
 
 Theme bindings collapse to one line in DG-37: the Qlik theme binds hero `qlik` + the two profiles; neutral binds hero none. Seven families wait for C3.
 
 ### 3.4 Release 2 — for C2, gated by C1's metric
 
-Server (DG-57), sharing UI (DG-56), hosted publishing (DG-58), protected components with extension points (from DG-26/27), product CI (DG-61), security hardening (DG-64), brand-terms review (DG-59), particles (DG-30), present v2 (DG-32), styles page (DG-41), dialect compatibility (DG-60). Chosen and ordered by what C1 asked for.
+Server (DG-57), sharing UI (DG-56), hosted publishing (DG-58), protected components with extension points (from DG-26/27), product CI (DG-61), security hardening (DG-64), brand-terms review (DG-59), present v2 (DG-32), styles page (DG-41), dialect compatibility (DG-60). Chosen and ordered by what C1 asked for.
 
 ### 3.5 Release 3 — pulled, not planned
 
