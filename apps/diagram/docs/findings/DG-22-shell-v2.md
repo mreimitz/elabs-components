@@ -1,5 +1,9 @@
 # DG-22: App shell v2 findings
 
+**2026-09-29 behavior update:** Edit opens only the editor. Inspector opens through its
+explicit control; returning to View closes it. Earlier automatic-opening behavior below
+is historical.
+
 These were found while building the Atlas shell on 2026-09-27, on `diagram/dg-22-shell-v2`
 (from `diagram/atlas-integrate`, with `5eb18d1a`, `6737d97b` and `d2f7f0e2` merged in). They
 were checked in the app's dev server, in Chromium through `agent-browser`.

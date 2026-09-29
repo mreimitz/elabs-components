@@ -31,7 +31,7 @@ export interface Shortcut {
 }
 
 export const SHORTCUTS: readonly Shortcut[] = [
-  { id: "edit", keys: ["E"], label: "Edit / Done: slide the editor and inspector in or out" },
+  { id: "edit", keys: ["E"], label: "Edit / Done: slide the editor in or out" },
   { id: "present", keys: ["P"], label: "Present the diagram" },
   { id: "lens", keys: ["L"], label: "Switch between the technical and visual lens" },
   { id: "palette", keys: ["Mod", "K"], label: "Command palette: switch diagram, go to a page" },

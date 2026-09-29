@@ -141,8 +141,6 @@ try {
     await page.getByRole("button", { name: /^Edit/ }).click();
     if (width < 768) {
       await page.getByRole("tab", { name: "Canvas", exact: true }).click();
-      await page.getByRole("button", { name: "Diagram options", exact: true }).click();
-      await page.getByRole("menuitemcheckbox", { name: "Inspector", exact: true }).click();
     }
     await inner.click();
     await page.keyboard.press("Delete");

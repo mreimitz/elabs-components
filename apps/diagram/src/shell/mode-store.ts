@@ -1,12 +1,12 @@
 /**
  * DG-22 — the shell's view state (plan V7, §3.3–3.4): the open document tabs, each document's
- * mode (`view` by default, `edit` slides the editor and inspector in), the editor's width, the
+ * mode (`view` by default, `edit` slides the editor in), the editor's width, the
  * phone's Editor/Canvas pane, the ⌘K palette, and the two confirmations the shell asks. View
  * state, not document state: the text and its file live in `diagram-store` / `workspace-store`.
  * It folds DG-02's `editor-visibility.tsx` ("Canvas only" is now view mode).
  *
  * `inspectorOpen` stays DG-14's field in the diagram store (the inspector reads it there);
- * entering and leaving edit mode drives it.
+ * it opens explicitly and closes when leaving edit mode.
  *
  * DG-23 (Home), DG-25/DG-27 ("Open component", drill-down) and DG-29 (palette) call `openDoc`.
  */
@@ -158,7 +158,7 @@ function setTabs(openPaths: string[]) {
 }
 
 export const modeActions = {
-  /** View or edit the shown document. Edit opens the inspector too (plan §3.4); view closes it. */
+  /** View or edit the shown document. The inspector opens explicitly; view closes it. */
   setMode(mode: DocMode) {
     const route = parseRoute(window.location.hash);
     if (documentNavigationPending() || (route.kind === "doc" && route.into?.length)) return;
@@ -167,7 +167,7 @@ export const modeActions = {
     if ((modes[key] ?? "view") !== mode) {
       modeStore.set({ modes: { ...modes, [key]: mode }, phonePane: "editor" });
     }
-    editActions.setInspectorOpen(mode === "edit");
+    if (mode === "view") editActions.setInspectorOpen(false);
   },
   toggleMode() {
     modeActions.setMode(currentMode() === "edit" ? "view" : "edit");

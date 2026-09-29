@@ -507,7 +507,7 @@ function SaveState() {
 }
 
 /**
- * Edit / Done (plan §3.4): slides the editor and inspector in or out. The `Kbd` inside would
+ * Edit / Done (plan §3.4): slides the editor in or out. The `Kbd` inside would
  * join the accessible name, so the button names itself and hides its visible label and key.
  */
 function EditToggle({ edit }: { edit: boolean }) {

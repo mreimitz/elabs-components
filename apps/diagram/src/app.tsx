@@ -156,7 +156,7 @@ function syncDocRoute(): void {
     () => {
       if (opening !== request) return;
       opening = null;
-      // The inspector is one flag for all documents: match it to this one's mode, or an
+      // The inspector is one flag for all documents: close it for view mode, or an
       // edit-mode document's inspector stays open over the next one's view mode.
       modeActions.setMode(currentMode());
       if (retryFocus === path && diagramStore.get().path === path) {
@@ -197,7 +197,7 @@ function syncDocRoute(): void {
           focusSoon(() => document.querySelector<HTMLElement>('[data-slot="document-load-retry"]'));
         return;
       }
-      // DG-22 review 2 (SF1): match the inspector to the document actually shown now — the
+      // DG-22 review 2 (SF1): close the inspector if the document actually shown is in view mode — the
       // previous code skipped this on the error path, so a view-mode document could keep
       // showing the inspector left open by whatever failed to load.
       modeActions.setMode(currentMode());

@@ -248,6 +248,7 @@ try {
       ),
     );
   await node("erp").click();
+  await page.getByRole("button", { name: "Inspector", exact: true }).click();
   const form = page.getByRole("form", { name: "Node", exact: true });
   await form.getByRole("textbox", { name: "Title", exact: true }).fill("Contoso ERP (SAP)");
   await form.getByRole("textbox", { name: "Icon", exact: true }).fill("sap/s4hana");

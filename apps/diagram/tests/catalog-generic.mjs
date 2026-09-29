@@ -229,6 +229,7 @@ try {
         await expect(pane.locator('.react-flow__node[data-id="legacy"]')).toBeVisible();
         await page.getByRole("button", { name: "Edit", exact: true }).click();
         await pane.locator('.react-flow__node[data-id="legacy"]').click();
+        await page.getByRole("button", { name: "Inspector", exact: true }).click();
         const title = page
           .getByRole("form", { name: "Node", exact: true })
           .getByRole("textbox", { name: "Title", exact: true });

@@ -69,6 +69,7 @@ try {
   await page.goto(`${base}/#d/${path}`);
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   await page.locator('.react-flow__node[data-id="probe"]').click();
+  await page.getByRole("button", { name: "Inspector", exact: true }).click();
   const form = page.getByRole("form", { name: "Node", exact: true });
   // Resolve the module loaded by Vite, including its HMR timestamp. Importing the bare
   // URL after a source update creates another store seeded with the default example.

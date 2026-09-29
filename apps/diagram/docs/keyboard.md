@@ -8,7 +8,7 @@ changes, update the code, and this page will then need updating to match.
 
 | Keys              | Second binding    | What it does                                                               |
 | ----------------- | ----------------- | -------------------------------------------------------------------------- |
-| `E`               |                   | Edit / Done: slide the editor and inspector in or out                      |
+| `E`               |                   | Edit / Done: slide the editor in or out                                    |
 | `P`               |                   | Present the diagram                                                        |
 | `L`               |                   | Switch between the technical and visual lens                               |
 | `Mod` `K`         |                   | Command palette: switch diagram, go to a page                              |
