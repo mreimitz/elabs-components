@@ -351,6 +351,12 @@ export function decorateElkGraph(
       "elk.spacing.nodeNode": String(NODE_SPACING),
       "elk.layered.spacing.nodeNodeBetweenLayers": String(RANK_SPACING[direction]),
     };
+    // Straightening cross-zone edges can lift a shorter nested zone above a taller
+    // sibling and enlarge their parent. Let BK compact these compound siblings;
+    // retain the default preference in leaf-only zones and at the graph root.
+    if ((zone.children ?? []).filter((child) => child.children?.length).length >= 2) {
+      options["elk.layered.nodePlacement.bk.edgeStraightening"] = "NONE";
+    }
     if (direction !== effective(parentOf.get(zone.id))) {
       separate.add(zone.id);
       options["elk.algorithm"] = "layered";

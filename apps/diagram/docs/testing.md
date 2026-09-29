@@ -143,3 +143,7 @@ The installed React Flow ESM observer patch has eight lifecycle/coalescing regre
 ## Shared flow captions
 
 Run `node --test scripts/tests/group-flow-labels.test.mjs` for grouping boundaries and deterministic ownership. With an isolated server running, `DIAGRAM_URL=http://localhost:5455 FLOW_GROUP_EVIDENCE=/tmp/atlas-flow-groups node tests/flow-label-groups.mjs` checks shared captions, independent paths and selection, story highlighting, folding, and editing labels to split and rejoin groups in both directions and themes. Group membership changes re-layout the caption reservations; ordinary word edits retain the existing layout.
+
+## Compound-zone layout
+
+With an isolated server, run `DIAGRAM_URL=http://localhost:5455 ZONE_LAYOUT_EVIDENCE=/tmp/atlas-zone-layout node tests/zone-layout-compaction.mjs`. It checks the customer-landscape template in both themes and directions, sibling-zone compaction, containment, attached endpoints, and stability after folding or re-layout, plus other example diagrams. Compound parents with multiple expanded child zones relax edge straightening so nested headers do not enlarge the parent just to keep a connection straight.
