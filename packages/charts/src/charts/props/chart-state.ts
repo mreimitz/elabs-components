@@ -38,7 +38,7 @@ export const chartStateGroup = /* @__PURE__ */ definePropGroup<ChartStateGroupPr
   fields: {
     // `status = DEFAULT_CHART_STATUS` on Line (`line-chart.tsx:453`), Area, Bar
     // and Composed. Heatmap and Gantt took `loading` until RM-194; it is an
-    // alias row until 6.0.0 (`false` is the same "ready").
+    // alias row until 7.0.0 (`false` is the same "ready").
     status: field.enum({
       values: ["loading", "ready"],
       default: DEFAULT_CHART_STATUS,

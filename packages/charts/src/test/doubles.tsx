@@ -195,7 +195,7 @@ function createChartContainerDouble<P extends DoubleOwnProps>(
     const raw = props as unknown as Record<string, unknown>;
     // Alias normalisation — RM-177: a caller still on a renamed prop's OLD
     // name validates like one already on the new one; both names stay
-    // readable off `record` until 6.0 (ADR 0042 §8). `aliases` is `undefined`
+    // readable off `record` until 7.0 (ADR 0042 §8). `aliases` is `undefined`
     // for every family until its rename item lands, so this is a no-op today.
     const record = resolveChartDoubleProps(name, raw, aliases);
     // RM-196: `raw` also names the violation after whichever of an aliased pair the

@@ -67,7 +67,7 @@ export interface RadarChartProps
   /**
    * Enter animation budget in ms.
    *
-   * @deprecated Since 5.6.0, use `animationDuration`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `animationDuration`. Removed in 7.0.0.
    */
   enterDurationMs?: number;
   /** Scales stagger timing (1 = default). */
@@ -75,7 +75,7 @@ export interface RadarChartProps
   /**
    * Scales stagger timing (1 = default).
    *
-   * @deprecated Since 5.6.0, use `enterStaggerScale`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `enterStaggerScale`. Removed in 7.0.0.
    */
   staggerScale?: number;
   /** Motion enter transition (spring or cubic-bezier tween). */
@@ -85,7 +85,7 @@ export interface RadarChartProps
   /**
    * Changes when motion settings change — replays enter animations.
    *
-   * @deprecated Since 5.6.0, use `revealSignature`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `revealSignature`. Removed in 7.0.0.
    */
   motionReplayKey?: string;
   /** Controlled hover state - index of hovered area */

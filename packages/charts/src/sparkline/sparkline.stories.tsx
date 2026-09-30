@@ -11,14 +11,14 @@ const meta = {
   argTypes: {
     label: {
       description:
-        "Deprecated (removed in 6.0.0): use `accessibleLabel` — the same value. Until then `label` still " +
+        "Deprecated (removed in 7.0.0): use `accessibleLabel` — the same value. Until then `label` still " +
         "works and logs one development warning; when both are set, `accessibleLabel` wins.",
       table: { category: "Deprecated" },
       control: false,
     },
     labels: {
       description:
-        "Deprecated (removed in 6.0.0): use `messages` — the same value. Until then `labels` still " +
+        "Deprecated (removed in 7.0.0): use `messages` — the same value. Until then `labels` still " +
         "works and logs one development warning; when both are set, `messages` wins.",
       table: { category: "Deprecated" },
       control: false,

@@ -16,7 +16,7 @@ export interface FlowFloatingEdgeData {
   [key: string]: unknown;
 }
 
-/** @deprecated Use `FlowFloatingEdgeData`. Removed in 6.0.0. */
+/** @deprecated Use `FlowFloatingEdgeData`. Removed in 7.0.0. */
 export type FloatingEdgeData = FlowFloatingEdgeData;
 
 /** A `FlowFloatingEdge` edge object: `type: "floating"`, `data: FlowFloatingEdgeData`. */

@@ -1714,7 +1714,7 @@ describe("TreeChart renamed props (RM-195) — zoomable → zoom", () => {
     render(tree({ zoomable: true })).unmount();
     render(tree({ zoomable: true })).unmount();
     expect(deprecations(spy)).toEqual([
-      ['[TreeChart] "zoomable" is deprecated and will be removed in 6.0.0. Use "zoom".'],
+      ['[TreeChart] "zoomable" is deprecated and will be removed in 7.0.0. Use "zoom".'],
     ]);
   });
 
@@ -1745,7 +1745,7 @@ describe("TreeChart renamed props (RM-195) — zoomable → zoom", () => {
     render(tree({ zoomable: true, zoom: false })).unmount();
     expect(deprecations(spy)).toEqual([
       [
-        '[TreeChart] "zoomable" is deprecated and will be removed in 6.0.0. ' +
+        '[TreeChart] "zoomable" is deprecated and will be removed in 7.0.0. ' +
           'Use "zoom". "zoomable" was ignored because "zoom" is set.',
       ],
     ]);
@@ -1773,7 +1773,7 @@ describe("TreeChart renamed props (RM-195) — align → plotAlign", () => {
     render(tree({ align: "center" })).unmount();
     render(tree({ align: "center" })).unmount();
     expect(deprecations(spy)).toEqual([
-      ['[TreeChart] "align" is deprecated and will be removed in 6.0.0. Use "plotAlign".'],
+      ['[TreeChart] "align" is deprecated and will be removed in 7.0.0. Use "plotAlign".'],
     ]);
   });
 
@@ -1804,7 +1804,7 @@ describe("TreeChart renamed props (RM-195) — align → plotAlign", () => {
     render(tree({ align: "center", plotAlign: "start" })).unmount();
     expect(deprecations(spy)).toEqual([
       [
-        '[TreeChart] "align" is deprecated and will be removed in 6.0.0. ' +
+        '[TreeChart] "align" is deprecated and will be removed in 7.0.0. ' +
           'Use "plotAlign". "align" was ignored because "plotAlign" is set.',
       ],
     ]);

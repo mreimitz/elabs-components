@@ -552,7 +552,7 @@ describe("ComposedChart `barGap` → `groupGap` (RM-196, row 39)", () => {
     barGapOf({ barGap: 10 });
     const renameWarnings = spy.mock.calls.filter(([m]) => String(m).includes('"barGap"'));
     expect(renameWarnings).toEqual([
-      ['[ComposedChart] "barGap" is deprecated and will be removed in 6.0.0. Use "groupGap".'],
+      ['[ComposedChart] "barGap" is deprecated and will be removed in 7.0.0. Use "groupGap".'],
     ]);
   });
 

@@ -11,7 +11,7 @@
  * RM-191 (ADR 0042 A.1 row 2): the word-bag `labels` moved to `messages`, which
  * comes from the `messages` group — no own field of that name. Its word-bag key
  * (`target`) sits beside the group's `charts.*` keys; the group's open object
- * accepts both. The old name stays readable through the alias row until 6.0.0.
+ * accepts both. The old name stays readable through the alias row until 7.0.0.
  *
  * `formatOptions`, `enterTransition`, `remainingLabel` and `children` (defs
  * elements — gradients/patterns, the same convention as `PieChart`) are each a
@@ -160,8 +160,8 @@ export const GAUGE = /* @__PURE__ */ defineSurface<GaugeProps>()({
       to: "messages",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
 });

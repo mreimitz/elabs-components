@@ -354,7 +354,7 @@ describe("DensityScatterChart `labels` → `messages` (RM-191, row 4)", () => {
     const renameWarnings = warn.mock.calls.filter(([m]) => String(m).includes('"labels"'));
     expect(renameWarnings).toEqual([
       [
-        '[DensityScatterChart] "labels" is deprecated and will be removed in 6.0.0. Use "messages".',
+        '[DensityScatterChart] "labels" is deprecated and will be removed in 7.0.0. Use "messages".',
       ],
     ]);
   });
@@ -459,7 +459,7 @@ describe("DensityScatterChart `xKey`/`yKey` → `xDataKey`/`yDataKey` (RM-196, r
     intentField(axis, { [fromKey]: value });
     const renameWarnings = warn.mock.calls.filter(([m]) => String(m).includes(`"${from}"`));
     expect(renameWarnings).toEqual([
-      [`[DensityScatterChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}".`],
+      [`[DensityScatterChart] "${from}" is deprecated and will be removed in 7.0.0. Use "${to}".`],
     ]);
   });
 

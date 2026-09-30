@@ -204,7 +204,7 @@ describe("FlowGroupNode tone", () => {
     expect(screen.getByText("Featured")).toHaveClass("sr-only");
   });
 
-  describe("legacy tones (removed in 6.0.0)", () => {
+  describe("legacy tones (removed in 7.0.0)", () => {
     let warn: ReturnType<typeof vi.spyOn>;
     beforeEach(() => {
       resetFlowWarnings();

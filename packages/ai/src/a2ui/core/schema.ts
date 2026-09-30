@@ -22,7 +22,7 @@ function propSchema(p: A2uiPropSchema): JsonSchema {
   if (p.description) base.description = p.description;
   if (p.default !== undefined) base.default = p.default;
   // JSON Schema draft 2020-12's own `deprecated` keyword — kept in the catalog until
-  // 6.0.0 (ADR 0042 §8); the replacement name lives in `description`.
+  // 7.0.0 (ADR 0042 §8); the replacement name lives in `description`.
   if (p.deprecated) base.deprecated = true;
   if (p.enum) return { ...base, enum: p.enum };
   // `anyOf`, never `oneOf`: a published `oneOf` over overlapping object alternatives

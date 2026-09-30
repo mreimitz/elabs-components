@@ -447,7 +447,7 @@ describe("SankeyChart renamed props (RM-195)", () => {
     render(el).unmount();
     render(el).unmount();
     expect(deprecations(spy)).toEqual([
-      [`[SankeyChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}".`],
+      [`[SankeyChart] "${from}" is deprecated and will be removed in 7.0.0. Use "${to}".`],
     ]);
   });
 
@@ -508,7 +508,7 @@ describe("SankeyChart renamed props (RM-195)", () => {
     ).unmount();
     expect(deprecations(spy)).toEqual([
       [
-        '[SankeyChart] "hoveredNodeIndex" is deprecated and will be removed in 6.0.0. ' +
+        '[SankeyChart] "hoveredNodeIndex" is deprecated and will be removed in 7.0.0. ' +
           'Use "hoveredIndex". "hoveredNodeIndex" was ignored because "hoveredIndex" is set.',
       ],
     ]);
@@ -524,7 +524,7 @@ describe("SankeyChart renamed props (RM-195)", () => {
     ).unmount();
     expect(deprecations(spy)).toEqual([
       [
-        '[SankeyChart] "onNodeHoverChange" is deprecated and will be removed in 6.0.0. ' +
+        '[SankeyChart] "onNodeHoverChange" is deprecated and will be removed in 7.0.0. ' +
           'Use "onHoverChange". "onNodeHoverChange" was ignored because "onHoverChange" is set.',
       ],
     ]);

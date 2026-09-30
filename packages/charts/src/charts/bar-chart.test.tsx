@@ -1061,7 +1061,7 @@ describe("BarChart richness (RM-113)", () => {
       );
       expect(warn).toHaveBeenCalledTimes(1);
       expect(warn).toHaveBeenCalledWith(
-        '[BarValueAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount".',
+        '[BarValueAxis] "numTicks" is deprecated and will be removed in 7.0.0. Use "tickCount".',
       );
     });
 
@@ -1091,7 +1091,7 @@ describe("BarChart richness (RM-113)", () => {
         axisOf(<BarValueAxis numTicks={NaN} tickCount={8} />)?.querySelectorAll("span").length,
       ).toBe(10);
       expect(warn).toHaveBeenCalledWith(
-        '[BarValueAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount". ' +
+        '[BarValueAxis] "numTicks" is deprecated and will be removed in 7.0.0. Use "tickCount". ' +
           '"tickCount" was ignored: "numTicks" still wins while both are set — remove "numTicks".',
       );
     });
@@ -1155,7 +1155,7 @@ describe("BarChart richness (RM-113)", () => {
       );
       expect(warn).toHaveBeenCalledTimes(1);
       expect(warn).toHaveBeenCalledWith(
-        '[Bar] "showValues" is deprecated and will be removed in 6.0.0. Use "labels".',
+        '[Bar] "showValues" is deprecated and will be removed in 7.0.0. Use "labels".',
       );
     });
 
@@ -1178,7 +1178,7 @@ describe("BarChart richness (RM-113)", () => {
       );
       expect(withBoth.querySelectorAll(".text-chart-value").length).toBe(0);
       expect(warn).toHaveBeenCalledWith(
-        '[Bar] "showValues" is deprecated and will be removed in 6.0.0. Use "labels". ' +
+        '[Bar] "showValues" is deprecated and will be removed in 7.0.0. Use "labels". ' +
           '"showValues" was ignored because "labels" is set.',
       );
     });

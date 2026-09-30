@@ -7,7 +7,7 @@
  * gets back from `resolveProps`.
  *
  * RM-195 (ADR 0042 A.5, rows 28–29): `hoveredNodeIndex` / `onNodeHoverChange` →
- * `hoveredIndex` / `onHoverChange`, each an alias row until 6.0.0 — the same names Pie, Ring,
+ * `hoveredIndex` / `onHoverChange`, each an alias row until 7.0.0 — the same names Pie, Ring,
  * Radar, Funnel and `Legend` already use for controlled hover. Aliases resolve before the
  * component's own controlled-hover check, so either name controls it.
  *
@@ -95,16 +95,16 @@ export const SANKEY_CHART = /* @__PURE__ */ defineChart<SankeyChartProps>()({
       to: "hoveredIndex",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
     {
       from: "onNodeHoverChange",
       to: "onHoverChange",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
   targets: [],

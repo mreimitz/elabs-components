@@ -40,7 +40,7 @@ export interface FlowNodeBaseData extends Record<string, unknown> {
   /**
    * Status tone — `StatusTone`: `"neutral" | "info" | "success" | "warning" |
    * "destructive"`. The legacy `"default"` (→ `"neutral"`) and `"accent"` (→
-   * `emphasis: "featured"`) still work, with a one-time warning, until 6.0.0.
+   * `emphasis: "featured"`) still work, with a one-time warning, until 7.0.0.
    * @default "neutral"
    */
   tone?: FlowToneInput;

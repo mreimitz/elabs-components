@@ -40,14 +40,14 @@ const meta = {
   argTypes: {
     numTicks: {
       description:
-        "Deprecated (removed in 6.0.0): use `tickCount` — the same value. Until then `numTicks` still " +
+        "Deprecated (removed in 7.0.0): use `tickCount` — the same value. Until then `numTicks` still " +
         "works and logs one development warning; when both are set, `numTicks` wins (XAxis, BarValueAxis and LiveXAxis too).",
       table: { category: "Deprecated" },
       control: false,
     },
     orientation: {
       description:
-        "Deprecated (removed in 6.0.0): use `position` — the same value. Until then `orientation` still " +
+        "Deprecated (removed in 7.0.0): use `position` — the same value. Until then `orientation` still " +
         "works and logs one development warning; when both are set, `position` wins (XAxis too).",
       table: { category: "Deprecated" },
       control: false,

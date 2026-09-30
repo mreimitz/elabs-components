@@ -12,11 +12,11 @@
  * hatch, rather than guessed at.
  *
  * RM-194 (ADR 0042 A.4, rows 23–24): `emptyTitle` / `emptyMessage` → `empty.title` /
- * `empty.message`, each an alias row until 6.0.0. The family applies the `chart-state` group
+ * `empty.message`, each an alias row until 7.0.0. The family applies the `chart-state` group
  * (`status`, `empty`), which now declares `status` in place of an own field, and the kind
  * default `empty` keeps the family's own words.
  *
- * RM-195 (ADR 0042 A.5, row 25): `zoomEnabled` → `zoom`, an alias row until 6.0.0. `zoom` is
+ * RM-195 (ADR 0042 A.5, row 25): `zoomEnabled` → `zoom`, an alias row until 7.0.0. `zoom` is
  * on the `charts-group-drift` exception list — a map viewport zoom, not the navigator
  * commons' window `zoom`.
  *
@@ -138,24 +138,24 @@ export const CHOROPLETH_CHART = /* @__PURE__ */ defineChart<ChoroplethChartProps
       to: "empty.title",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
     {
       from: "emptyMessage",
       to: "empty.message",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
     {
       from: "zoomEnabled",
       to: "zoom",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
   targets: [],

@@ -12,7 +12,7 @@
  *
  * RM-194 (ADR 0042 A.4, rows 17, 18, 20–22): `showLegend` → `legend`, `loading` → `status`
  * and `emptyTitle` / `emptyMessage` / `emptyAction` → `empty.*`, each an alias row until
- * 6.0.0. `status` and `empty` come from the `chart-state` group; the kind defaults keep what
+ * 7.0.0. `status` and `empty` come from the `chart-state` group; the kind defaults keep what
  * the old names defaulted to (`legend` true, `status` "ready" for `loading` false, and the
  * family's own empty-state words).
  *
@@ -196,56 +196,56 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
       to: "xDataKey",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
     {
       from: "y",
       to: "yDataKey",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
     {
       from: "showLegend",
       to: "legend",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
     {
       from: "loading",
       to: "status",
       transform: "loading-to-status",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
     {
       from: "emptyTitle",
       to: "empty.title",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
     {
       from: "emptyMessage",
       to: "empty.message",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
     {
       from: "emptyAction",
       to: "empty.action",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
     // RM-193 — ADR 0042 A.3, row 14. `showValues` becomes `labels`: `boolean-to-labels`.
     {
@@ -253,8 +253,8 @@ export const HEATMAP_CHART = /* @__PURE__ */ defineChart<HeatmapChartProps>()({
       to: "labels",
       transform: "boolean-to-labels",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
   // RM-193 — `labels`'s default follows `palette` (true only on "diverging"), so it can't

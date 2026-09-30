@@ -1161,7 +1161,7 @@ describe("ChoroplethChart renamed props (RM-194)", () => {
     render(map(old)).unmount();
     render(map(old)).unmount();
     expect(deprecations(spy)).toEqual([
-      [`[ChoroplethChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}".`],
+      [`[ChoroplethChart] "${from}" is deprecated and will be removed in 7.0.0. Use "${to}".`],
     ]);
   });
 
@@ -1210,11 +1210,11 @@ describe("ChoroplethChart renamed props (RM-194)", () => {
     ).unmount();
     expect(deprecations(spy)).toEqual([
       [
-        '[ChoroplethChart] "emptyTitle" is deprecated and will be removed in 6.0.0. ' +
+        '[ChoroplethChart] "emptyTitle" is deprecated and will be removed in 7.0.0. ' +
           'Use "empty.title". "emptyTitle" was ignored because "empty.title" is set.',
       ],
       [
-        '[ChoroplethChart] "emptyMessage" is deprecated and will be removed in 6.0.0. ' +
+        '[ChoroplethChart] "emptyMessage" is deprecated and will be removed in 7.0.0. ' +
           'Use "empty.message".',
       ],
     ]);
@@ -1272,7 +1272,7 @@ describe("ChoroplethChart renamed props (RM-195)", () => {
     render(map({ zoomEnabled: true })).unmount();
     render(map({ zoomEnabled: true })).unmount();
     expect(deprecations(spy)).toEqual([
-      ['[ChoroplethChart] "zoomEnabled" is deprecated and will be removed in 6.0.0. Use "zoom".'],
+      ['[ChoroplethChart] "zoomEnabled" is deprecated and will be removed in 7.0.0. Use "zoom".'],
     ]);
   });
 
@@ -1307,7 +1307,7 @@ describe("ChoroplethChart renamed props (RM-195)", () => {
     render(map({ zoomEnabled: true, zoom: false })).unmount();
     expect(deprecations(spy)).toEqual([
       [
-        '[ChoroplethChart] "zoomEnabled" is deprecated and will be removed in 6.0.0. ' +
+        '[ChoroplethChart] "zoomEnabled" is deprecated and will be removed in 7.0.0. ' +
           'Use "zoom". "zoomEnabled" was ignored because "zoom" is set.',
       ],
     ]);

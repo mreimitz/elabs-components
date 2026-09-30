@@ -27,7 +27,7 @@ const meta = {
         component:
           "Grouped, stacked or single-series bars, honest by default (zero-based) with " +
           "per-bar value labels, comparison overlays and a category axis that thins itself " +
-          "at narrow widths.\n\n**Deprecated since 5.6.0, removed in 6.0.0** — the `Bar` part's " +
+          "at narrow widths.\n\n**Deprecated since 6.0.0, removed in 7.0.0** — the `Bar` part's " +
           "`showValues` prop still works and logs one development warning; use `labels` " +
           "instead (same shape as every other family's value-label prop).",
       },

@@ -196,26 +196,26 @@ export interface HeatmapChartProps
    * Row field holding the column value (discrete; an ISO date in the calendar variant).
    * Passing neither this nor the deprecated `x` still renders — every row collapses onto
    * one unnamed column — and logs one development warning naming `xDataKey`. Required
-   * from 6.0.0.
+   * from 7.0.0.
    */
   xDataKey?: string;
   /**
    * Row field holding the column value (discrete; an ISO date in the calendar variant).
    *
-   * @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `xDataKey`. Removed in 7.0.0.
    */
   x?: string;
   /**
    * Row field holding the row value (discrete). Ignored by `variant="calendar"`. Passing
    * neither this nor the deprecated `y` still renders on `variant="matrix"` (every row
    * collapses onto one unnamed row) and logs one development warning naming `yDataKey`.
-   * Required on `variant="matrix"` from 6.0.0.
+   * Required on `variant="matrix"` from 7.0.0.
    */
   yDataKey?: string;
   /**
    * Row field holding the row value (discrete). Ignored by `variant="calendar"`.
    *
-   * @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `yDataKey`. Removed in 7.0.0.
    */
   y?: string;
   /**
@@ -244,7 +244,7 @@ export interface HeatmapChartProps
   steps?: number;
   /**
    * @deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3,
-   * row 14). Read until 6.0.0, with one development warning; when both are set, `labels` wins.
+   * row 14). Read until 7.0.0, with one development warning; when both are set, `labels` wins.
    */
   showValues?: boolean;
   /**
@@ -301,7 +301,7 @@ export interface HeatmapChartProps
   /**
    * Show the ramp key below the plot.
    *
-   * @deprecated Since 5.6.0, use `legend` (the same boolean). Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `legend` (the same boolean). Removed in 7.0.0.
    */
   showLegend?: boolean;
   /**
@@ -353,26 +353,26 @@ export interface HeatmapChartProps
   /**
    * Layout-shaped skeleton instead of the data.
    *
-   * @deprecated Since 5.6.0, use `status` — `loading={true}` is `status="loading"`,
-   * `loading={false}` is `status="ready"`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `status` — `loading={true}` is `status="loading"`,
+   * `loading={false}` is `status="ready"`. Removed in 7.0.0.
    */
   loading?: boolean;
   /**
    * Supporting sentence of the empty state, shown when there is nothing to plot.
    *
-   * @deprecated Since 5.6.0, use `empty.message`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `empty.message`. Removed in 7.0.0.
    */
   emptyMessage?: string;
   /**
    * Title of the empty state.
    *
-   * @deprecated Since 5.6.0, use `empty.title`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `empty.title`. Removed in 7.0.0.
    */
   emptyTitle?: string;
   /**
    * An action for the empty state, rendered below the message.
    *
-   * @deprecated Since 5.6.0, use `empty.action`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `empty.action`. Removed in 7.0.0.
    */
   emptyAction?: ReactNode;
   /**

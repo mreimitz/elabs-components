@@ -48,8 +48,8 @@ export const BAR_VALUE_AXIS_PART = /* @__PURE__ */ definePart<BarValueAxisProps>
       to: "tickCount",
       transform: "identity",
       precedence: "old-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
 });

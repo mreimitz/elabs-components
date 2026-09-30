@@ -14,7 +14,7 @@ export interface FlowPlaceholderNodeData extends Record<string, unknown> {
    */
   title?: string;
   /**
-   * @deprecated Use `title`. Removed in 6.0.0. Still rendered (with a one-time
+   * @deprecated Use `title`. Removed in 7.0.0. Still rendered (with a one-time
    * warning) when `title` is unset.
    */
   label?: string;
@@ -40,7 +40,7 @@ export function FlowPlaceholderNode({ data }: NodeProps<BrandFlowPlaceholderNode
   if (data.label !== undefined) {
     warnFlowOnce(
       "placeholder:label",
-      "`FlowPlaceholderNodeData.label` is deprecated and is removed in 6.0.0. Use `title`, " +
+      "`FlowPlaceholderNodeData.label` is deprecated and is removed in 7.0.0. Use `title`, " +
         "the field every node kind shares.",
     );
   }

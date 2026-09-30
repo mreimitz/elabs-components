@@ -17,7 +17,7 @@
  * declares only part of a group.
  *
  * RM-195 (ADR 0042 A.5, rows 26, 31): `zoomable` → `zoom`, `align` → `plotAlign`, each an alias
- * row until 6.0.0. `zoom` is on the `charts-group-drift` exception list — a tree viewport zoom,
+ * row until 7.0.0. `zoom` is on the `charts-group-drift` exception list — a tree viewport zoom,
  * not the navigator commons' window `zoom`.
  *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
@@ -92,7 +92,7 @@ export const TREE_CHART = /* @__PURE__ */ defineChart<TreeChartProps>()({
     }),
     collapseDepth: field.number({
       tier: "advanced",
-      deprecated: { since: "5.0.0", replacement: "defaultExpandedDepth", removeIn: "6.0.0" },
+      deprecated: { since: "5.0.0", replacement: "defaultExpandedDepth", removeIn: "7.0.0" },
       description: "Use defaultExpandedDepth.",
     }),
     zoom: field.boolean({
@@ -153,16 +153,16 @@ export const TREE_CHART = /* @__PURE__ */ defineChart<TreeChartProps>()({
       to: "zoom",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
     {
       from: "align",
       to: "plotAlign",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
   targets: [],

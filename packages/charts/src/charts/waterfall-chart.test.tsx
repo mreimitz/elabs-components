@@ -270,7 +270,7 @@ describe("WaterfallChart — `showValues` → `labels` (RM-193, ADR 0042 A.3 row
     rerender(<WaterfallChart data={grossToNet} showValues={false} />);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(
-      '[WaterfallChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels".',
+      '[WaterfallChart] "showValues" is deprecated and will be removed in 7.0.0. Use "labels".',
     );
     warn.mockRestore();
   });
@@ -296,7 +296,7 @@ describe("WaterfallChart — `showValues` → `labels` (RM-193, ADR 0042 A.3 row
     const { container } = render(<WaterfallChart data={grossToNet} labels={false} showValues />);
     expect(container.querySelectorAll("svg text")).toHaveLength(0);
     expect(warn).toHaveBeenCalledWith(
-      '[WaterfallChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels". ' +
+      '[WaterfallChart] "showValues" is deprecated and will be removed in 7.0.0. Use "labels". ' +
         '"showValues" was ignored because "labels" is set.',
     );
     warn.mockRestore();

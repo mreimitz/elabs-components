@@ -42,4 +42,4 @@ instead.
 Deprecated: `DensityScatterLabels.xRange`, `yRange`, `from` and `to` no longer drive the range
 thumbs by default, but still compose their old name when set (a one-time dev warning), so a caller
 that localised them keeps working; unset, the shared "Range start/end, {axis}" strings apply.
-Removed in 6.0.0.
+Removed in 7.0.0.

@@ -36,7 +36,7 @@ const meta = {
             "annotation. The inferred form `onViewModeChange={(mode) => …}` is " +
             "unaffected, and no runtime behaviour changed.",
           "",
-          "**Deprecated since 5.6.0, removed in 6.0.0:** `loading` → `status` " +
+          "**Deprecated since 6.0.0, removed in 7.0.0:** `loading` → `status` " +
             '(`loading={true}` is `status="loading"`). The old name still works and ' +
             "logs one development warning.",
         ].join("\n"),
@@ -46,7 +46,7 @@ const meta = {
   argTypes: {
     loading: {
       description:
-        'Deprecated since 5.6.0 — use `status` (`true` is `"loading"`, `false` is `"ready"`). Removed in 6.0.0.',
+        'Deprecated since 6.0.0 — use `status` (`true` is `"loading"`, `false` is `"ready"`). Removed in 7.0.0.',
       table: { category: "Deprecated" },
     },
   },

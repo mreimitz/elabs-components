@@ -4,7 +4,7 @@
  * (`charts/composed-chart.tsx`). It renders the dual-axis spec type. Its bars are `SeriesBar`
  * children, which have no part definition yet.
  *
- * RM-196 (ADR 0042 A.6, row 39): `barGap` → `groupGap`, an alias row until 6.0.0. This is
+ * RM-196 (ADR 0042 A.6, row 39): `barGap` → `groupGap`, an alias row until 7.0.0. This is
  * BarChart's own 0–1 fraction prop, unrelated and untouched — only ComposedChart's px gap
  * between grouped `SeriesBar` series is renamed here.
  *
@@ -179,8 +179,8 @@ export const COMPOSED_CHART = /* @__PURE__ */ defineChart<ComposedChartProps>()(
       to: "groupGap",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
   contract: {

@@ -67,7 +67,7 @@ export interface LiveLineChartProps
   /**
    * Visible time window in seconds.
    *
-   * @deprecated Since 5.6.0, use `windowSeconds`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `windowSeconds`. Removed in 7.0.0.
    */
   window?: number;
   /** Number of X-axis ticks (used to compute leading offset). Default: 5 */

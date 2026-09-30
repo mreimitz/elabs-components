@@ -961,7 +961,7 @@ describe("PieChart renamed props (RM-195)", () => {
     render(pie({ align: "center" })).unmount();
     render(pie({ align: "center" })).unmount();
     expect(deprecations(spy)).toEqual([
-      ['[PieChart] "align" is deprecated and will be removed in 6.0.0. Use "plotAlign".'],
+      ['[PieChart] "align" is deprecated and will be removed in 7.0.0. Use "plotAlign".'],
     ]);
   });
 
@@ -996,7 +996,7 @@ describe("PieChart renamed props (RM-195)", () => {
     render(pie({ align: "center", plotAlign: "start" })).unmount();
     expect(deprecations(spy)).toEqual([
       [
-        '[PieChart] "align" is deprecated and will be removed in 6.0.0. ' +
+        '[PieChart] "align" is deprecated and will be removed in 7.0.0. ' +
           'Use "plotAlign". "align" was ignored because "plotAlign" is set.',
       ],
     ]);

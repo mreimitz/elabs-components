@@ -99,7 +99,7 @@ export interface SparklineProps
   interactive?: boolean;
   /**
    * @deprecated Use `accessibleLabel` — the same string (RM-191, ADR 0042 A.1). Still read
-   * until 6.0.0, with one development warning; when both are set, `accessibleLabel` wins.
+   * until 7.0.0, with one development warning; when both are set, `accessibleLabel` wins.
    */
   label?: string;
   /** Rendered size when `fit="fixed"` (default) — the SVG's actual pixel geometry, unaffected by any CSS box the caller gives it. Also the FALLBACK size for `fit="fill"` before the first real measurement lands. */
@@ -175,7 +175,7 @@ export interface SparklineProps
   messages?: SparklineLabels & ChartMessages;
   /**
    * @deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still
-   * read until 6.0.0, with one development warning; when both are set, `messages` wins.
+   * read until 7.0.0, with one development warning; when both are set, `messages` wins.
    */
   labels?: SparklineLabels;
   /**

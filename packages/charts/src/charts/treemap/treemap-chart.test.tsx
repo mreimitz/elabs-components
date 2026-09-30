@@ -393,7 +393,7 @@ describe("TreemapChart", () => {
       rerender(<TreemapChart data={twoTiles} depth={1} labelMinArea={0} showValues={false} />);
       expect(warn).toHaveBeenCalledTimes(1);
       expect(warn).toHaveBeenCalledWith(
-        '[TreemapChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels".',
+        '[TreemapChart] "showValues" is deprecated and will be removed in 7.0.0. Use "labels".',
       );
       spy.mockRestore();
       warn.mockRestore();
@@ -425,7 +425,7 @@ describe("TreemapChart", () => {
       );
       expect(valueTexts(container)).toEqual([]);
       expect(warn).toHaveBeenCalledWith(
-        '[TreemapChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels". ' +
+        '[TreemapChart] "showValues" is deprecated and will be removed in 7.0.0. Use "labels". ' +
           '"showValues" was ignored because "labels" is set.',
       );
       spy.mockRestore();

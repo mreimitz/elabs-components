@@ -1579,7 +1579,7 @@ describe("Gantt renamed props (RM-194)", () => {
     render(<Gantt tasks={[]} loading />).unmount();
     render(<Gantt tasks={[]} loading />).unmount();
     expect(deprecations(spy)).toEqual([
-      ['[Gantt] "loading" is deprecated and will be removed in 6.0.0. Use "status".'],
+      ['[Gantt] "loading" is deprecated and will be removed in 7.0.0. Use "status".'],
     ]);
   });
 
@@ -1610,7 +1610,7 @@ describe("Gantt renamed props (RM-194)", () => {
     render(<Gantt tasks={[]} loading status="ready" />).unmount();
     expect(deprecations(spy)).toEqual([
       [
-        '[Gantt] "loading" is deprecated and will be removed in 6.0.0. Use "status". ' +
+        '[Gantt] "loading" is deprecated and will be removed in 7.0.0. Use "status". ' +
           '"loading" was ignored because "status" is set.',
       ],
     ]);

@@ -223,7 +223,7 @@ describe("LiveLineChart renamed props (RM-195)", () => {
     render(chart({ window: 5 })).unmount();
     expect(deprecations(spy)).toEqual([
       [
-        '[LiveLineChart] "window" is deprecated and will be removed in 6.0.0. ' +
+        '[LiveLineChart] "window" is deprecated and will be removed in 7.0.0. ' +
           'Use "windowSeconds".',
       ],
     ]);
@@ -262,7 +262,7 @@ describe("LiveLineChart renamed props (RM-195)", () => {
     render(chart({ window: 5, windowSeconds: 30 })).unmount();
     expect(deprecations(spy)).toEqual([
       [
-        '[LiveLineChart] "window" is deprecated and will be removed in 6.0.0. ' +
+        '[LiveLineChart] "window" is deprecated and will be removed in 7.0.0. ' +
           'Use "windowSeconds". "window" was ignored because "windowSeconds" is set.',
       ],
     ]);
@@ -308,7 +308,7 @@ describe("LiveXAxis — `numTicks` → `tickCount` (RM-192)", () => {
     );
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(
-      '[LiveXAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount".',
+      '[LiveXAxis] "numTicks" is deprecated and will be removed in 7.0.0. Use "tickCount".',
     );
   });
 
@@ -331,7 +331,7 @@ describe("LiveXAxis — `numTicks` → `tickCount` (RM-192)", () => {
       labelCountOf(<LiveXAxis numTicks={Number.NaN} tickCount={3} />),
     );
     expect(warn).toHaveBeenCalledWith(
-      '[LiveXAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount". ' +
+      '[LiveXAxis] "numTicks" is deprecated and will be removed in 7.0.0. Use "tickCount". ' +
         '"tickCount" was ignored: "numTicks" still wins while both are set — remove "numTicks".',
     );
   });

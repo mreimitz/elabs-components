@@ -20,7 +20,7 @@ const meta = {
           "a dashed hand-off hairline; rows marked kind “total” draw from zero and reset the " +
           "running total for a subtotal, gross, or net checkpoint — the read for a bridge " +
           "from a starting number to an ending one through a sequence of additions and " +
-          "subtractions.\n\n**Deprecated since 5.6.0, removed in 6.0.0** — `showValues` still " +
+          "subtractions.\n\n**Deprecated since 6.0.0, removed in 7.0.0** — `showValues` still " +
           "works and logs one development warning; use `labels` (a plain flag still works — " +
           "it now also accepts the richer per-row config).",
       },
@@ -32,7 +32,7 @@ const meta = {
   argTypes: {
     ...argTypesFromDefinition(WATERFALL_CHART),
     showValues: {
-      description: "Deprecated since 5.6.0 — use `labels`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `labels`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
   },

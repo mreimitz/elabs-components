@@ -219,7 +219,7 @@ export interface PieChartProps
   /**
    * Where the square plot sits in a container wider than it is tall.
    *
-   * @deprecated Since 5.6.0, use `plotAlign`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `plotAlign`. Removed in 7.0.0.
    */
   align?: "start" | "center";
   /** Padding angle between slices in radians. Default: 0 */

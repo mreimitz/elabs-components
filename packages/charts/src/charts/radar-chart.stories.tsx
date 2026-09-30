@@ -15,7 +15,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "**Deprecated since 5.6.0, removed in 6.0.0** — each old name still works and logs " +
+          "**Deprecated since 6.0.0, removed in 7.0.0** — each old name still works and logs " +
           "one development warning: `enterDurationMs` → `animationDuration`; `staggerScale` → " +
           "`enterStaggerScale`; `motionReplayKey` → `revealSignature`.",
       },
@@ -23,15 +23,15 @@ const meta = {
   },
   argTypes: {
     enterDurationMs: {
-      description: "Deprecated since 5.6.0 — use `animationDuration`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `animationDuration`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
     staggerScale: {
-      description: "Deprecated since 5.6.0 — use `enterStaggerScale`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `enterStaggerScale`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
     motionReplayKey: {
-      description: "Deprecated since 5.6.0 — use `revealSignature`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `revealSignature`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
   },

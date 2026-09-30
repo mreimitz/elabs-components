@@ -991,8 +991,8 @@
         {
           "from": "showValues",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "labels",
           "transform": "identity"
         }
@@ -1977,8 +1977,8 @@
         {
           "from": "numTicks",
           "precedence": "old-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "tickCount",
           "transform": "identity"
         }
@@ -2088,8 +2088,8 @@
         {
           "from": "labels",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "messages",
           "transform": "identity"
         }
@@ -2931,8 +2931,8 @@
         "maxVisibleItems": {
           "breakpoints": ["medium", "narrow"],
           "deprecated": {
-            "removeIn": "6.0.0",
-            "since": "5.6.0"
+            "removeIn": "7.0.0",
+            "since": "6.0.0"
           },
           "description": "Has no effect on CandlestickChart; remove the prop.",
           "group": null,
@@ -3048,8 +3048,8 @@
         },
         "windowDomain": {
           "deprecated": {
-            "removeIn": "6.0.0",
-            "since": "5.6.0"
+            "removeIn": "7.0.0",
+            "since": "6.0.0"
           },
           "description": "Has no effect on CandlestickChart; remove the prop.",
           "group": null,
@@ -3193,24 +3193,24 @@
         {
           "from": "emptyTitle",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "empty.title",
           "transform": "identity"
         },
         {
           "from": "emptyMessage",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "empty.message",
           "transform": "identity"
         },
         {
           "from": "zoomEnabled",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "zoom",
           "transform": "identity"
         }
@@ -3478,8 +3478,8 @@
         {
           "from": "barGap",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "groupGap",
           "transform": "identity"
         }
@@ -4095,24 +4095,24 @@
         {
           "from": "labels",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "messages",
           "transform": "identity"
         },
         {
           "from": "xKey",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "xDataKey",
           "transform": "identity"
         },
         {
           "from": "yKey",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "yDataKey",
           "transform": "identity"
         }
@@ -5372,8 +5372,8 @@
         {
           "from": "showValues",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "labels",
           "transform": "boolean-to-labels"
         }
@@ -5821,8 +5821,8 @@
         {
           "from": "loading",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "status",
           "transform": "loading-to-status"
         }
@@ -6055,8 +6055,8 @@
         {
           "from": "labels",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "messages",
           "transform": "identity"
         }
@@ -6554,64 +6554,64 @@
         {
           "from": "x",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "xDataKey",
           "transform": "identity"
         },
         {
           "from": "y",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "yDataKey",
           "transform": "identity"
         },
         {
           "from": "showLegend",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "legend",
           "transform": "identity"
         },
         {
           "from": "loading",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "status",
           "transform": "loading-to-status"
         },
         {
           "from": "emptyTitle",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "empty.title",
           "transform": "identity"
         },
         {
           "from": "emptyMessage",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "empty.message",
           "transform": "identity"
         },
         {
           "from": "emptyAction",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "empty.action",
           "transform": "identity"
         },
         {
           "from": "showValues",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "labels",
           "transform": "boolean-to-labels"
         }
@@ -8181,8 +8181,8 @@
         {
           "from": "window",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "windowSeconds",
           "transform": "identity"
         }
@@ -8408,8 +8408,8 @@
         {
           "from": "numTicks",
           "precedence": "old-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "tickCount",
           "transform": "identity"
         }
@@ -9012,8 +9012,8 @@
         {
           "from": "align",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "plotAlign",
           "transform": "identity"
         }
@@ -9468,24 +9468,24 @@
         {
           "from": "enterDurationMs",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "animationDuration",
           "transform": "identity"
         },
         {
           "from": "staggerScale",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "enterStaggerScale",
           "transform": "identity"
         },
         {
           "from": "motionReplayKey",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "revealSignature",
           "transform": "identity"
         }
@@ -10257,16 +10257,16 @@
         {
           "from": "hoveredNodeIndex",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "hoveredIndex",
           "transform": "identity"
         },
         {
           "from": "onNodeHoverChange",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "onHoverChange",
           "transform": "identity"
         }
@@ -10731,7 +10731,7 @@
         "trend": {
           "default": false,
           "deprecated": {
-            "removeIn": "6.0.0",
+            "removeIn": "7.0.0",
             "replacement": "analytics",
             "since": "5.4.0"
           },
@@ -11166,16 +11166,16 @@
         {
           "from": "labels",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "messages",
           "transform": "identity"
         },
         {
           "from": "label",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "accessibleLabel",
           "transform": "identity"
         }
@@ -11334,16 +11334,16 @@
         {
           "from": "zoomable",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "zoom",
           "transform": "identity"
         },
         {
           "from": "align",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "plotAlign",
           "transform": "identity"
         }
@@ -11383,7 +11383,7 @@
         },
         "collapseDepth": {
           "deprecated": {
-            "removeIn": "6.0.0",
+            "removeIn": "7.0.0",
             "replacement": "defaultExpandedDepth",
             "since": "5.0.0"
           },
@@ -11594,8 +11594,8 @@
         {
           "from": "showValues",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "labels",
           "transform": "boolean-to-labels"
         }
@@ -12199,8 +12199,8 @@
         {
           "from": "showValues",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "labels",
           "transform": "boolean-to-labels"
         }
@@ -12365,7 +12365,7 @@
         },
         "height": {
           "deprecated": {
-            "removeIn": "6.0.0",
+            "removeIn": "7.0.0",
             "replacement": "plotHeight",
             "since": "5.0.0"
           },
@@ -12675,16 +12675,16 @@
         {
           "from": "numTicks",
           "precedence": "old-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "tickCount",
           "transform": "identity"
         },
         {
           "from": "orientation",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "position",
           "transform": "identity"
         }
@@ -12806,16 +12806,16 @@
         {
           "from": "numTicks",
           "precedence": "old-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "tickCount",
           "transform": "identity"
         },
         {
           "from": "orientation",
           "precedence": "new-wins",
-          "removeIn": "6.0.0",
-          "since": "5.6.0",
+          "removeIn": "7.0.0",
+          "since": "6.0.0",
           "to": "position",
           "transform": "identity"
         }

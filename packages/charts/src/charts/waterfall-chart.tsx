@@ -1039,7 +1039,7 @@ export interface WaterfallChartProps
   orientation?: BarOrientation;
   /**
    * @deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3,
-   * row 16). Read until 6.0.0, with one development warning; when both are set, `labels` wins.
+   * row 16). Read until 7.0.0, with one development warning; when both are set, `labels` wins.
    */
   showValues?: boolean;
   /** Dashed hand-off hairline between each step's end and the next step's
@@ -1099,7 +1099,7 @@ export interface WaterfallChartProps
   plotHeight?: Responsive<ChartPlotHeight>;
   /**
    * @deprecated Use `plotHeight` (`height={n}` is an alias for
-   * `plotHeight={n}`); removed in 6.0.0.
+   * `plotHeight={n}`); removed in 7.0.0.
    */
   height?: number;
   /** Chart margins: one number for every side, or per side. Default: 40 on every side. */
@@ -1182,7 +1182,7 @@ const WaterfallChartUnscoped = forwardRef<HTMLDivElement, WaterfallChartProps>(
     if (height !== undefined) {
       warnChartOnce(
         "WaterfallChart.height",
-        '[WaterfallChart] "height" is deprecated and will be removed in 6.0.0. Use "plotHeight".',
+        '[WaterfallChart] "height" is deprecated and will be removed in 7.0.0. Use "plotHeight".',
       );
     }
     // RM-122 data pipeline — differences/runningTotals → subtotals by group →

@@ -1234,8 +1234,8 @@ describe("resolveChartDoubleProps / configureChartTestDouble({ deprecatedProps }
       from: "oldName",
       to: "newName",
       transform: "identity" as const,
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ];
 
@@ -1273,8 +1273,8 @@ describe("resolveChartDoubleProps / configureChartTestDouble({ deprecatedProps }
         from: "oldSecond",
         to: "newSecond",
         transform: "identity" as const,
-        since: "5.6.0",
-        removeIn: "6.0.0",
+        since: "6.0.0",
+        removeIn: "7.0.0",
       },
     ];
     configureChartTestDouble({ deprecatedProps: "warn" });
@@ -1450,8 +1450,8 @@ describe("alias → payload round trip (RM-177)", () => {
         from: "loading",
         to: "status",
         transform: "loading-to-status" as const,
-        since: "5.6.0",
-        removeIn: "6.0.0",
+        since: "6.0.0",
+        removeIn: "7.0.0",
       },
     ];
     const record = resolveChartDoubleProps("Gantt", { loading: true }, aliases);

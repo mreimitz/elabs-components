@@ -139,8 +139,8 @@ export const BAR_PART = /* @__PURE__ */ definePart<BarProps>()({
       to: "labels",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
 });

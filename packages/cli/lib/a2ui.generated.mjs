@@ -1525,7 +1525,7 @@ var CHARTS_A2UI_CATALOG_SCHEMA = {
       height: {
         type: "number",
         description:
-          "Deprecated \u2014 use `plotHeight`. Removed in 6.0.0. Until then it is read as `plotHeight` and logs one development warning per page.",
+          "Deprecated \u2014 use `plotHeight`. Removed in 7.0.0. Until then it is read as `plotHeight` and logs one development warning per page.",
         deprecated: true,
       },
       loading: {

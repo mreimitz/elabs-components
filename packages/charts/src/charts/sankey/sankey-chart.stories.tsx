@@ -18,7 +18,7 @@ const meta = {
       description: {
         component:
           "Flow between stages, edge width proportional to value.\n\n" +
-          "**Deprecated since 5.6.0, removed in 6.0.0** — each old name still works and logs " +
+          "**Deprecated since 6.0.0, removed in 7.0.0** — each old name still works and logs " +
           "one development warning: `hoveredNodeIndex` → `hoveredIndex`; `onNodeHoverChange` → " +
           "`onHoverChange`.",
       },
@@ -26,11 +26,11 @@ const meta = {
   },
   argTypes: {
     hoveredNodeIndex: {
-      description: "Deprecated since 5.6.0 — use `hoveredIndex`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `hoveredIndex`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
     onNodeHoverChange: {
-      description: "Deprecated since 5.6.0 — use `onHoverChange`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `onHoverChange`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
   },

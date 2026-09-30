@@ -531,7 +531,7 @@ describe("FunnelChart — `showValues` → `labels` (RM-193, ADR 0042 A.3 row 13
     rerender(<FunnelChart data={sampleData} showValues={false} />);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(
-      '[FunnelChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels".',
+      '[FunnelChart] "showValues" is deprecated and will be removed in 7.0.0. Use "labels".',
     );
     warn.mockRestore();
   });
@@ -567,7 +567,7 @@ describe("FunnelChart — `showValues` → `labels` (RM-193, ADR 0042 A.3 row 13
     );
     expect(valueText(container)).toBe("");
     expect(warn).toHaveBeenCalledWith(
-      '[FunnelChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels". ' +
+      '[FunnelChart] "showValues" is deprecated and will be removed in 7.0.0. Use "labels". ' +
         '"showValues" was ignored because "labels" is set.',
     );
     warn.mockRestore();

@@ -152,7 +152,7 @@ export const WATERFALL_CHART = /* @__PURE__ */ defineChart<WaterfallChartProps>(
     height: field.number({
       unit: "px",
       tier: "advanced",
-      deprecated: { since: "5.0.0", replacement: "plotHeight", removeIn: "6.0.0" },
+      deprecated: { since: "5.0.0", replacement: "plotHeight", removeIn: "7.0.0" },
       description: "Height of the plot in pixels. Use plotHeight.",
     }),
     className: classNameField,
@@ -185,8 +185,8 @@ export const WATERFALL_CHART = /* @__PURE__ */ defineChart<WaterfallChartProps>(
       to: "labels",
       transform: "boolean-to-labels",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
   contract: {

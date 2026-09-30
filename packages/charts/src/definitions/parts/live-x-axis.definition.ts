@@ -34,8 +34,8 @@ export const LIVE_X_AXIS_PART = /* @__PURE__ */ definePart<LiveXAxisProps>()({
       to: "tickCount",
       transform: "identity",
       precedence: "old-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
 });

@@ -11,7 +11,7 @@
  *
  * RM-196 (ADR 0042 A.6, rows 36–38): `enterDurationMs` / `staggerScale` / `motionReplayKey`
  * → `animationDuration` / `enterStaggerScale` / `revealSignature`, each an alias row until
- * 6.0.0 — Radar was the only family with its own motion names. Like `valueFormatGroup`,
+ * 7.0.0 — Radar was the only family with its own motion names. Like `valueFormatGroup`,
  * `motionGroup` stays OFF the `groups` list (Radar has no `animationEasing` prop, one of the
  * group's members) — the three renamed fields reference the group's field objects instead,
  * which is also where their (unchanged) defaults now come from, so no kind default repeats
@@ -119,24 +119,24 @@ export const RADAR_CHART = /* @__PURE__ */ defineChart<RadarChartProps>()({
       to: "animationDuration",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
     {
       from: "staggerScale",
       to: "enterStaggerScale",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
     {
       from: "motionReplayKey",
       to: "revealSignature",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
   contract: {

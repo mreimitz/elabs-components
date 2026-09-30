@@ -25,15 +25,15 @@ export const FLOW_EMPHASES: readonly FlowEmphasis[] = ["default", "featured"];
 
 /**
  * Tone values flow used before it adopted `StatusTone`. Still accepted, with a one-time
- * warning, until 6.0.0: `"default"` means `tone: "neutral"`, and `"accent"` means
+ * warning, until 7.0.0: `"default"` means `tone: "neutral"`, and `"accent"` means
  * `emphasis: "featured"`.
  *
  * @deprecated Use a `FlowTone`, plus `emphasis: "featured"` for the old `"accent"`.
- * Removed in 6.0.0.
+ * Removed in 7.0.0.
  */
 export type FlowLegacyTone = "default" | "accent";
 
-/** What a `tone` field accepts: a `FlowTone`, or (until 6.0.0) a legacy value. */
+/** What a `tone` field accepts: a `FlowTone`, or (until 7.0.0) a legacy value. */
 export type FlowToneInput = FlowTone | FlowLegacyTone;
 
 /** A tone and an emphasis after legacy values have been mapped. */
@@ -50,7 +50,7 @@ const isFlowTone = (value: unknown): value is FlowTone =>
  *
  * - `"default"` becomes `"neutral"`, and `"accent"` becomes `emphasis: "featured"`
  *   on a neutral tone. Each legacy value warns once (dev only) and keeps working
- *   until 6.0.0.
+ *   until 7.0.0.
  * - An unknown value (untyped data from a file or a server) falls back to
  *   `"neutral"` rather than painting nothing.
  */
@@ -58,7 +58,7 @@ export function resolveFlowTone(tone?: FlowToneInput, emphasis?: FlowEmphasis): 
   if (tone === "accent") {
     warnFlowOnce(
       "tone:accent",
-      '`tone: "accent"` is deprecated and is removed in 6.0.0. Use `emphasis: "featured"`: ' +
+      '`tone: "accent"` is deprecated and is removed in 7.0.0. Use `emphasis: "featured"`: ' +
         "it keeps the star glyph, and the status tone stays neutral.",
     );
     return { tone: "neutral", emphasis: "featured" };
@@ -66,7 +66,7 @@ export function resolveFlowTone(tone?: FlowToneInput, emphasis?: FlowEmphasis): 
   if (tone === "default") {
     warnFlowOnce(
       "tone:default",
-      '`tone: "default"` is deprecated and is removed in 6.0.0. Use `tone: "neutral"`, ' +
+      '`tone: "default"` is deprecated and is removed in 7.0.0. Use `tone: "neutral"`, ' +
         "or leave `tone` unset.",
     );
   }

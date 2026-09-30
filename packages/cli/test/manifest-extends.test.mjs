@@ -426,7 +426,7 @@ test("real manifest: LineChart inherits its mixin props; defaults and deprecatio
   assert.equal(prop(line, "animationDuration").kind, "number");
   assert.equal(prop(line, "window").group, "navigator");
   assert.deepEqual(prop(row("WaterfallChart"), "height").deprecated, {
-    removeIn: "6.0.0",
+    removeIn: "7.0.0",
     replacement: "plotHeight",
     since: "5.0.0",
   });
@@ -440,7 +440,7 @@ test("real manifest: LineChart inherits its mixin props; defaults and deprecatio
   ])
     assert.deepEqual(
       prop(row(component), from)?.deprecated,
-      { since: "5.6.0", replacement: to, removeIn: "6.0.0" },
+      { since: "6.0.0", replacement: to, removeIn: "7.0.0" },
       `${component}.${from} is deprecated in favour of ${to}`,
     );
 });
@@ -466,7 +466,7 @@ test("real manifest: HeatmapChart's x/y pair are plain optional members of Heatm
   ])
     assert.deepEqual(
       prop(heatmap, name)?.deprecated,
-      { since: "5.6.0", replacement: to, removeIn: "6.0.0" },
+      { since: "6.0.0", replacement: to, removeIn: "7.0.0" },
       `HeatmapChart.${name} is deprecated in favour of ${to}`,
     );
   // RM-196 F2 (owner decision, 2026-09-27): `HeatmapChartXProp`/`HeatmapChartYProp` — the
@@ -565,6 +565,6 @@ test("`brand-ui docs WaterfallChart` marks the deprecated prop", () => {
   assert.equal(res.status, 0, res.stderr);
   assert.match(
     res.stdout,
-    /^ {2}height\?: number {2}\[deprecated since 5\.0\.0; use plotHeight; removed in 6\.0\.0\]/m,
+    /^ {2}height\?: number {2}\[deprecated since 5\.0\.0; use plotHeight; removed in 7\.0\.0\]/m,
   );
 });

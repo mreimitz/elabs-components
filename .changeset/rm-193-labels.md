@@ -4,7 +4,7 @@
 
 `Bar`, `FunnelChart`, `HeatmapChart`, `TreemapChart` and `WaterfallChart` now take the shared
 `labels` name for their value-label flag (`ADR 0042` Appendix A.3). The old `showValues` name
-keeps working, unchanged, until 6.0.0, and logs one warning in development naming the
+keeps working, unchanged, until 7.0.0, and logs one warning in development naming the
 replacement; when a caller sets both, `labels` wins.
 
 - `Bar`: `labels` replaces `showValues` one for one — same values (`true`/`false`/`"inside"`/

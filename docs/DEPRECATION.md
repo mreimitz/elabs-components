@@ -42,6 +42,12 @@ using_ a prop. All four get the same treatment.
 - A deprecation with no announced replacement is not a deprecation — name the
   thing to use instead, or don't mark it.
 
+**6.0 release exception (2026-10-01).** The pending 5.6 chart and flow
+deprecations were never published as a minor release. They ship in 6.0 with
+their existing aliases intact and a 7.0 removal target. This preserves the
+warning period for consumers of the published 5.5 line. The 6.0 Version PR's
+tripwire checks this revised target; RM-205 remains the removal work for 7.0.
+
 ## 3. Breaking changes
 
 Every major ships a **migration section in `CHANGELOG.md`** with numbered

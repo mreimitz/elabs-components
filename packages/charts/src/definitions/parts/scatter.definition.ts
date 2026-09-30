@@ -168,7 +168,7 @@ export const SCATTER_PART = /* @__PURE__ */ definePart<ScatterProps>()({
     trend: field.enum({
       values: ["linear", "log", false],
       default: false,
-      deprecated: { since: "5.4.0", replacement: "analytics", removeIn: "6.0.0" },
+      deprecated: { since: "5.4.0", replacement: "analytics", removeIn: "7.0.0" },
       tier: "advanced",
       description: "A least-squares trend line. Use the chart's trend analytic.",
     }),

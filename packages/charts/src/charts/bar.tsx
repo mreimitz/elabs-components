@@ -270,7 +270,7 @@ export interface BarProps {
   /** Gap between grouped bars in pixels. Default: 4 */
   groupGap?: number;
   /**
-   * @deprecated Use `labels` — the same values (ADR 0042 A.3, row 12). Read until 6.0.0, with
+   * @deprecated Use `labels` — the same values (ADR 0042 A.3, row 12). Read until 7.0.0, with
    * one development warning; when both are set, `labels` wins.
    */
   showValues?: BarShowValues;

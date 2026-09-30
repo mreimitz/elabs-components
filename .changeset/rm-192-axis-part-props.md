@@ -4,7 +4,7 @@
 ---
 
 `XAxis`, `YAxis`, `BarValueAxis` and `LiveXAxis` now take the shared axis names for their tick
-target and edge (`ADR 0042` Appendix A.2). The old names keep working, unchanged, until 6.0.0,
+target and edge (`ADR 0042` Appendix A.2). The old names keep working, unchanged, until 7.0.0,
 and each logs one warning in development naming the replacement.
 
 - `XAxis`, `YAxis`, `BarValueAxis`, `LiveXAxis`: `tickCount` (a number, or `"auto"`) replaces

@@ -87,7 +87,7 @@ export type BrandFlowNode = Node<FlowNodeData, "brand">;
  * emphasis also get a glyph and an `sr-only` name, and the resolved values are exposed
  * as `data-tone` / `data-emphasis`. The legacy `tone: "default"` (→ `neutral`) and
  * `tone: "accent"` (→ `emphasis: "featured"`) still render, with a one-time warning,
- * until 6.0.0.
+ * until 7.0.0.
  *
  * ## Focus vs selection (#312)
  *

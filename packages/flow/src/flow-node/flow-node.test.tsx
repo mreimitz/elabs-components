@@ -272,7 +272,7 @@ describe("FlowNode tone — colour is never the only channel (#387)", () => {
   });
 });
 
-describe("FlowNode legacy tones (removed in 6.0.0)", () => {
+describe("FlowNode legacy tones (removed in 7.0.0)", () => {
   let warn: ReturnType<typeof vi.spyOn>;
   beforeEach(() => {
     resetFlowWarnings();

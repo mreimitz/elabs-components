@@ -4,8 +4,8 @@
       "alias": {
         "from": "showValues",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "labels",
         "transform": "identity"
       },
@@ -22,8 +22,8 @@
       "alias": {
         "from": "numTicks",
         "precedence": "old-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "tickCount",
         "transform": "identity"
       },
@@ -40,8 +40,8 @@
       "alias": {
         "from": "labels",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "messages",
         "transform": "identity"
       },
@@ -58,8 +58,8 @@
       "alias": {
         "from": "emptyTitle",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "empty.title",
         "transform": "identity"
       },
@@ -76,8 +76,8 @@
       "alias": {
         "from": "emptyMessage",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "empty.message",
         "transform": "identity"
       },
@@ -94,8 +94,8 @@
       "alias": {
         "from": "zoomEnabled",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "zoom",
         "transform": "identity"
       },
@@ -112,8 +112,8 @@
       "alias": {
         "from": "barGap",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "groupGap",
         "transform": "identity"
       },
@@ -130,8 +130,8 @@
       "alias": {
         "from": "labels",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "messages",
         "transform": "identity"
       },
@@ -148,8 +148,8 @@
       "alias": {
         "from": "xKey",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "xDataKey",
         "transform": "identity"
       },
@@ -166,8 +166,8 @@
       "alias": {
         "from": "yKey",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "yDataKey",
         "transform": "identity"
       },
@@ -184,8 +184,8 @@
       "alias": {
         "from": "showValues",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "labels",
         "transform": "boolean-to-labels"
       },
@@ -202,8 +202,8 @@
       "alias": {
         "from": "loading",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "status",
         "transform": "loading-to-status"
       },
@@ -220,8 +220,8 @@
       "alias": {
         "from": "labels",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "messages",
         "transform": "identity"
       },
@@ -238,8 +238,8 @@
       "alias": {
         "from": "x",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "xDataKey",
         "transform": "identity"
       },
@@ -256,8 +256,8 @@
       "alias": {
         "from": "y",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "yDataKey",
         "transform": "identity"
       },
@@ -274,8 +274,8 @@
       "alias": {
         "from": "showLegend",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "legend",
         "transform": "identity"
       },
@@ -292,8 +292,8 @@
       "alias": {
         "from": "loading",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "status",
         "transform": "loading-to-status"
       },
@@ -310,8 +310,8 @@
       "alias": {
         "from": "emptyTitle",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "empty.title",
         "transform": "identity"
       },
@@ -328,8 +328,8 @@
       "alias": {
         "from": "emptyMessage",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "empty.message",
         "transform": "identity"
       },
@@ -346,8 +346,8 @@
       "alias": {
         "from": "emptyAction",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "empty.action",
         "transform": "identity"
       },
@@ -364,8 +364,8 @@
       "alias": {
         "from": "showValues",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "labels",
         "transform": "boolean-to-labels"
       },
@@ -382,8 +382,8 @@
       "alias": {
         "from": "window",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "windowSeconds",
         "transform": "identity"
       },
@@ -400,8 +400,8 @@
       "alias": {
         "from": "numTicks",
         "precedence": "old-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "tickCount",
         "transform": "identity"
       },
@@ -418,8 +418,8 @@
       "alias": {
         "from": "align",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "plotAlign",
         "transform": "identity"
       },
@@ -436,8 +436,8 @@
       "alias": {
         "from": "enterDurationMs",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "animationDuration",
         "transform": "identity"
       },
@@ -454,8 +454,8 @@
       "alias": {
         "from": "staggerScale",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "enterStaggerScale",
         "transform": "identity"
       },
@@ -472,8 +472,8 @@
       "alias": {
         "from": "motionReplayKey",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "revealSignature",
         "transform": "identity"
       },
@@ -490,8 +490,8 @@
       "alias": {
         "from": "hoveredNodeIndex",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "hoveredIndex",
         "transform": "identity"
       },
@@ -508,8 +508,8 @@
       "alias": {
         "from": "onNodeHoverChange",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "onHoverChange",
         "transform": "identity"
       },
@@ -526,8 +526,8 @@
       "alias": {
         "from": "labels",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "messages",
         "transform": "identity"
       },
@@ -544,8 +544,8 @@
       "alias": {
         "from": "label",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "accessibleLabel",
         "transform": "identity"
       },
@@ -562,8 +562,8 @@
       "alias": {
         "from": "zoomable",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "zoom",
         "transform": "identity"
       },
@@ -580,8 +580,8 @@
       "alias": {
         "from": "align",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "plotAlign",
         "transform": "identity"
       },
@@ -598,8 +598,8 @@
       "alias": {
         "from": "showValues",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "labels",
         "transform": "boolean-to-labels"
       },
@@ -616,8 +616,8 @@
       "alias": {
         "from": "showValues",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "labels",
         "transform": "boolean-to-labels"
       },
@@ -634,8 +634,8 @@
       "alias": {
         "from": "numTicks",
         "precedence": "old-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "tickCount",
         "transform": "identity"
       },
@@ -652,8 +652,8 @@
       "alias": {
         "from": "orientation",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "position",
         "transform": "identity"
       },
@@ -670,8 +670,8 @@
       "alias": {
         "from": "numTicks",
         "precedence": "old-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "tickCount",
         "transform": "identity"
       },
@@ -688,8 +688,8 @@
       "alias": {
         "from": "orientation",
         "precedence": "new-wins",
-        "removeIn": "6.0.0",
-        "since": "5.6.0",
+        "removeIn": "7.0.0",
+        "since": "6.0.0",
         "to": "position",
         "transform": "identity"
       },

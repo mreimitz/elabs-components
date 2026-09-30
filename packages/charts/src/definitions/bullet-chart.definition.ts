@@ -23,7 +23,7 @@
  * RM-191 (ADR 0042 A.1 row 1): the word-bag `labels` moved to `messages`, which comes from the
  * `messages` group — no own field of that name. Its word-bag keys (`value`, `target`,
  * `comparative`) sit beside the group's `charts.*` keys; the group's open object accepts both.
- * The old name stays readable through the alias row until 6.0.0.
+ * The old name stays readable through the alias row until 7.0.0.
  *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
  */
@@ -112,8 +112,8 @@ export const BULLET_CHART = /* @__PURE__ */ defineChart<BulletChartDefinitionPro
       to: "messages",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
   contract: {

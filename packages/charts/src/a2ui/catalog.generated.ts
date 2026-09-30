@@ -10,7 +10,7 @@ export const CHARTS_A2UI_CATALOG_SCHEMA: ChartsA2uiCatalogSchema = {
       height: {
         type: "number",
         description:
-          "Deprecated — use `plotHeight`. Removed in 6.0.0. Until then it is read as `plotHeight` and logs one development warning per page.",
+          "Deprecated — use `plotHeight`. Removed in 7.0.0. Until then it is read as `plotHeight` and logs one development warning per page.",
         deprecated: true,
       },
       loading: {

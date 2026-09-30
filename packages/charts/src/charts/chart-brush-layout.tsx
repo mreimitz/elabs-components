@@ -42,7 +42,7 @@ function createXAccessor(xDataKey: string) {
  * then owns the window, feeds `xDomain` / `xDomainSlotCount` and mounts
  * `ChartNavigator` below the plot, with keyboard-operable handles. For a strip
  * of your own, render `ChartNavigator` directly. `ChartBrushLayout` keeps
- * working until its removal in 6.0; `ChartBrush` stays the in-plot zoom gesture.
+ * working until its removal in 7.0; `ChartBrush` stays the in-plot zoom gesture.
  */
 export const ChartBrushLayout = memo(function ChartBrushLayout({
   data,

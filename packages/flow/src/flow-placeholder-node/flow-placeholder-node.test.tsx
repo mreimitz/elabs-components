@@ -131,7 +131,7 @@ describe("FlowPlaceholderNode", () => {
   });
 });
 
-describe("FlowPlaceholderNode legacy label (removed in 6.0.0)", () => {
+describe("FlowPlaceholderNode legacy label (removed in 7.0.0)", () => {
   let warn: ReturnType<typeof vi.spyOn>;
   beforeEach(() => {
     resetFlowWarnings();

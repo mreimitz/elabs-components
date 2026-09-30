@@ -14,7 +14,7 @@
  * (the `messages` group) and the accessible name `label` to `accessibleLabel`
  * (the ui `a11y` group, which brings `accessibleDescription` with it) — no own
  * field of any of those names. Both old names stay readable through the alias
- * rows until 6.0.0.
+ * rows until 7.0.0.
  *
  * `SparklineProps` extends `Omit<SVGAttributes<SVGSVGElement>, "children" |
  * "values" | "target">`, spread onto the root `<svg>` via `...props` — the raw
@@ -123,16 +123,16 @@ export const SPARKLINE = /* @__PURE__ */ defineSurface<SparklineDefinitionProps>
       to: "messages",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
     {
       from: "label",
       to: "accessibleLabel",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
 });

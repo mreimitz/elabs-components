@@ -355,7 +355,7 @@ describe("Gauge `labels` → `messages` (RM-191, row 2)", () => {
     render(<Gauge {...base} labels={{ target: "Ziel" }} />);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(
-      '[Gauge] "labels" is deprecated and will be removed in 6.0.0. Use "messages".',
+      '[Gauge] "labels" is deprecated and will be removed in 7.0.0. Use "messages".',
     );
   });
 

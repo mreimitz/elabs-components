@@ -75,7 +75,7 @@ export interface FunnelChartProps
   showPercentage?: boolean;
   /**
    * @deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3,
-   * row 13). Read until 6.0.0, with one development warning; when both are set, `labels` wins.
+   * row 13). Read until 7.0.0, with one development warning; when both are set, `labels` wins.
    */
   showValues?: boolean;
   /** Print each stage's value beside it. Default `true`. */

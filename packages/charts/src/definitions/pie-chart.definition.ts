@@ -13,7 +13,7 @@
  * `tooltipGroup`). RM-187 made `locale` real — the formatters behind these members now
  * take the chart's own `locale` over the `LocaleProvider`'s — so it is listed too.
  *
- * RM-195 (ADR 0042 A.5, row 30): `align` → `plotAlign`, an alias row until 6.0.0 — the
+ * RM-195 (ADR 0042 A.5, row 30): `align` → `plotAlign`, an alias row until 7.0.0 — the
  * navigator commons' `align` names where the first window sits, a different concept and
  * value set than this family's plot placement.
  *
@@ -177,8 +177,8 @@ export const PIE_CHART = /* @__PURE__ */ defineChart<PieChartProps>()({
       to: "plotAlign",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
   targets: [

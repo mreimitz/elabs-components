@@ -513,7 +513,7 @@ describe("BulletChart `labels` → `messages` (RM-191, row 1)", () => {
     render(<BulletChart {...base} labels={WORDS} />);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(
-      '[BulletChart] "labels" is deprecated and will be removed in 6.0.0. Use "messages".',
+      '[BulletChart] "labels" is deprecated and will be removed in 7.0.0. Use "messages".',
     );
   });
 

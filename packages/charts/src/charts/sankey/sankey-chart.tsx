@@ -97,7 +97,7 @@ export interface SankeyChartProps {
   /**
    * Controlled hovered node index.
    *
-   * @deprecated Since 5.6.0, use `hoveredIndex`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `hoveredIndex`. Removed in 7.0.0.
    */
   hoveredNodeIndex?: number | null;
   /** Called when node hover changes from the chart surface. */
@@ -105,7 +105,7 @@ export interface SankeyChartProps {
   /**
    * Called when node hover changes from the chart surface.
    *
-   * @deprecated Since 5.6.0, use `onHoverChange`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `onHoverChange`. Removed in 7.0.0.
    */
   onNodeHoverChange?: (index: number | null) => void;
   /**

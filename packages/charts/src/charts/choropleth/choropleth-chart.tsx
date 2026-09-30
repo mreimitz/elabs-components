@@ -158,7 +158,7 @@ export interface ChoroplethChartProps
    * ramps. `ChoroplethFeature getFeatureColor` / `fill` still override it.
    *
    * Deprecated form: a NUMBER is the projection scale, kept as an alias of
-   * `projectionScale` (removed in 6.0.0).
+   * `projectionScale` (removed in 7.0.0).
    */
   scale?: number | ChoroplethScaleSpec;
   /** Projection scale. If not provided, auto-calculated based on width (or solved by `fitToData`). */
@@ -211,13 +211,13 @@ export interface ChoroplethChartProps
   /**
    * Title of the empty state (`hideNoData` left no region).
    *
-   * @deprecated Since 5.6.0, use `empty.title`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `empty.title`. Removed in 7.0.0.
    */
   emptyTitle?: string;
   /**
    * Message of the empty state.
    *
-   * @deprecated Since 5.6.0, use `empty.message`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `empty.message`. Removed in 7.0.0.
    */
   emptyMessage?: string;
   /** Center coordinates [longitude, latitude]. Default: [0, 20] */
@@ -229,7 +229,7 @@ export interface ChoroplethChartProps
   /**
    * Enable zoom and pan.
    *
-   * @deprecated Since 5.6.0, use `zoom`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `zoom`. Removed in 7.0.0.
    */
   zoomEnabled?: boolean;
   /** Minimum zoom scale. Default: 0.5 */

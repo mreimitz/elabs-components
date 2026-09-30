@@ -144,10 +144,10 @@ describe("YAxis — `numTicks` → `tickCount`, `orientation` → `position` (RM
     );
     expect(warn).toHaveBeenCalledTimes(2);
     expect(warn).toHaveBeenCalledWith(
-      '[YAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount".',
+      '[YAxis] "numTicks" is deprecated and will be removed in 7.0.0. Use "tickCount".',
     );
     expect(warn).toHaveBeenCalledWith(
-      '[YAxis] "orientation" is deprecated and will be removed in 6.0.0. Use "position".',
+      '[YAxis] "orientation" is deprecated and will be removed in 7.0.0. Use "position".',
     );
   });
 
@@ -172,7 +172,7 @@ describe("YAxis — `numTicks` → `tickCount`, `orientation` → `position` (RM
     const warn = warnSpy();
     expect(tickCountOf(<YAxis numTicks={3} tickCount={8} />)).toBe(3);
     expect(warn).toHaveBeenCalledWith(
-      '[YAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount". ' +
+      '[YAxis] "numTicks" is deprecated and will be removed in 7.0.0. Use "tickCount". ' +
         '"tickCount" was ignored: "numTicks" still wins while both are set — remove "numTicks".',
     );
   });
@@ -193,7 +193,7 @@ describe("YAxis — `numTicks` → `tickCount`, `orientation` → `position` (RM
     );
     expect(axisNode(container)).toBeTruthy();
     expect(warn).toHaveBeenCalledWith(
-      '[YAxis] "orientation" is deprecated and will be removed in 6.0.0. Use "position". ' +
+      '[YAxis] "orientation" is deprecated and will be removed in 7.0.0. Use "position". ' +
         '"orientation" was ignored because "position" is set.',
     );
   });

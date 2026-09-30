@@ -88,7 +88,7 @@ export interface A2uiPropSchema {
   default?: A2uiJson;
   description?: string;
   /**
-   * Kept in the catalog until 6.0.0 (ADR 0042 §8, `DEPRECATION.md`): still validates and
+   * Kept in the catalog until 7.0.0 (ADR 0042 §8, `DEPRECATION.md`): still validates and
    * still renders. The replacement name lives in `description`, never a second field —
    * a stored or model-generated surface that names this prop must keep working.
    */

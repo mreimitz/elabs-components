@@ -33,18 +33,18 @@ const meta = {
           "each part is, reach for `TreemapChart`, which sizes every leaf’s area by its value " +
           "over the same kind of hierarchy; see " +
           "[Choosing between similar components](?path=/docs/docs-choosing-between-similar-components--docs)." +
-          "\n\n**Deprecated since 5.6.0, removed in 6.0.0** — each old name still works and logs " +
+          "\n\n**Deprecated since 6.0.0, removed in 7.0.0** — each old name still works and logs " +
           "one development warning: `zoomable` → `zoom`; `align` → `plotAlign`.",
       },
     },
   },
   argTypes: {
     zoomable: {
-      description: "Deprecated since 5.6.0 — use `zoom`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `zoom`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
     align: {
-      description: "Deprecated since 5.6.0 — use `plotAlign`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `plotAlign`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
   },

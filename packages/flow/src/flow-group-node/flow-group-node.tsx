@@ -22,7 +22,7 @@ import { useFlowGroups } from "../use-flow-groups";
 /**
  * Tone of a group container.
  *
- * @deprecated Use `FlowToneInput` (or `FlowTone`, the `StatusTone` values). Removed in 6.0.0.
+ * @deprecated Use `FlowToneInput` (or `FlowTone`, the `StatusTone` values). Removed in 7.0.0.
  */
 export type FlowGroupTone = FlowToneInput;
 

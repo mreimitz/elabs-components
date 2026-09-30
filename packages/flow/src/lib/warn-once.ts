@@ -12,7 +12,7 @@ const warned = new Set<string>();
  * Dev-only `console.warn`, once per `key` per page load.
  *
  * The deprecation channel for flow's rename-with-aliases layer: an old name keeps
- * working until 6.0.0 and says so once, not once per render. It mirrors charts'
+ * working until 7.0.0 and says so once, not once per render. It mirrors charts'
  * `warnChartOnce`; both are due to become one shared `warnOnce` in
  * `@elabs-ai/components-ui` when the shared definition base lands.
  */

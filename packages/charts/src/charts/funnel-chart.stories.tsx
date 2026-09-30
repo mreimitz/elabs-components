@@ -16,14 +16,14 @@ const meta = {
         component:
           "A sequence of stages shrinking toward a goal, read left-to-right or top-to-bottom, " +
           "with per-stage value, percentage and conversion readouts.\n\n" +
-          "**Deprecated since 5.6.0, removed in 6.0.0** — `showValues` still works and logs " +
+          "**Deprecated since 6.0.0, removed in 7.0.0** — `showValues` still works and logs " +
           "one development warning; use `labels` instead.",
       },
     },
   },
   argTypes: {
     showValues: {
-      description: "Deprecated since 5.6.0 — use `labels`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `labels`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
   },

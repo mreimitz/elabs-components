@@ -8,4 +8,4 @@ The package now exports the types its chart props already use: `WaterfallLabelsC
 
 `MetricGrid` forwards a `ref` to its grid element, the same element that receives `className`.
 
-Deprecated: `<Scatter trend>` is now marked `@deprecated` in its type docs, not only by its one-time runtime warning. Pass `analytics={[{ kind: "trend", of: dataKey, model }]}` on `ScatterChart` instead, which also adds the legend entry and the tooltip row. The `trend` prop keeps working until its removal in 6.0.0.
+Deprecated: `<Scatter trend>` is now marked `@deprecated` in its type docs, not only by its one-time runtime warning. Pass `analytics={[{ kind: "trend", of: dataKey, model }]}` on `ScatterChart` instead, which also adds the legend entry and the tooltip row. The `trend` prop keeps working until its removal in 7.0.0.

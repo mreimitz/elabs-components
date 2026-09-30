@@ -20,14 +20,14 @@ const meta = {
     docs: {
       description: {
         component:
-          "**Deprecated since 5.6.0, removed in 6.0.0** — `barGap` still works and logs one " +
+          "**Deprecated since 6.0.0, removed in 7.0.0** — `barGap` still works and logs one " +
           "development warning: use `groupGap`, the pixel gap between grouped bars.",
       },
     },
   },
   argTypes: {
     barGap: {
-      description: "Deprecated since 5.6.0 — use `groupGap`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `groupGap`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
   },

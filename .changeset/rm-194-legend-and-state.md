@@ -5,7 +5,7 @@
 
 `HeatmapChart`, `Gantt` and `ChoroplethChart` now take the shared chart names for their legend,
 loading and empty states (`ADR 0042` Appendix A.4). The old names keep working, unchanged, until
-6.0.0, and each logs one warning in development naming the replacement.
+7.0.0, and each logs one warning in development naming the replacement.
 
 - `HeatmapChart`: `legend` (default `true`), `status: "loading" | "ready"` (default `"ready"`) and
   `empty: { title, message, action }`. A key left out of `empty` keeps its default, so

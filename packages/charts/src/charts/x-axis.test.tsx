@@ -530,10 +530,10 @@ describe("XAxis — `numTicks` → `tickCount`, `orientation` → `position` (RM
     );
     expect(warn).toHaveBeenCalledTimes(2);
     expect(warn).toHaveBeenCalledWith(
-      '[XAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount".',
+      '[XAxis] "numTicks" is deprecated and will be removed in 7.0.0. Use "tickCount".',
     );
     expect(warn).toHaveBeenCalledWith(
-      '[XAxis] "orientation" is deprecated and will be removed in 6.0.0. Use "position".',
+      '[XAxis] "orientation" is deprecated and will be removed in 7.0.0. Use "position".',
     );
   });
 
@@ -577,7 +577,7 @@ describe("XAxis — `numTicks` → `tickCount`, `orientation` → `position` (RM
     const warn = warnSpy();
     expect(tickCountOf(<XAxis numTicks={5} tickCount={8} />)).toBe(5);
     expect(warn).toHaveBeenCalledWith(
-      '[XAxis] "numTicks" is deprecated and will be removed in 6.0.0. Use "tickCount". ' +
+      '[XAxis] "numTicks" is deprecated and will be removed in 7.0.0. Use "tickCount". ' +
         '"tickCount" was ignored: "numTicks" still wins while both are set — remove "numTicks".',
     );
   });
@@ -598,7 +598,7 @@ describe("XAxis — `numTicks` → `tickCount`, `orientation` → `position` (RM
     );
     expect(axisNode(container)?.getAttribute("data-orientation")).toBe("top");
     expect(warn).toHaveBeenCalledWith(
-      '[XAxis] "orientation" is deprecated and will be removed in 6.0.0. Use "position". ' +
+      '[XAxis] "orientation" is deprecated and will be removed in 7.0.0. Use "position". ' +
         '"orientation" was ignored because "position" is set.',
     );
   });

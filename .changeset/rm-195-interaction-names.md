@@ -4,7 +4,7 @@
 
 `ChoroplethChart`, `TreeChart`, `LiveLineChart`, `SankeyChart` and `PieChart` now take the ADR
 0042 Appendix A.5 names for their zoom, window and hover interaction props. The old names keep
-working, unchanged, until 6.0.0, and each logs one warning in development naming the
+working, unchanged, until 7.0.0, and each logs one warning in development naming the
 replacement. A caller who passes an old name and its new name together keeps the new value.
 
 - `ChoroplethChart`: `zoomEnabled` → `zoom`. `zoomControls` alone still turns zoom on.

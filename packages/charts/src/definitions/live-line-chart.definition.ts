@@ -4,7 +4,7 @@
  * module constant `LERP_SPEED` (0.08), written as its value because that module is not pure.
  * No `ChartSpec` type renders it, and its rows are fixed `{ time, value }` points.
  *
- * RM-195 (ADR 0042 A.5, row 27): `window` → `windowSeconds`, an alias row until 6.0.0. The
+ * RM-195 (ADR 0042 A.5, row 27): `window` → `windowSeconds`, an alias row until 7.0.0. The
  * navigator commons' `window` is a `NavigatorWindow` object; this family's is a number of
  * seconds, so the new name carries the unit instead of colliding with that group's key.
  *
@@ -98,8 +98,8 @@ export const LIVE_LINE_CHART = /* @__PURE__ */ defineChart<LiveLineChartProps>()
       to: "windowSeconds",
       transform: "identity",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
   targets: [

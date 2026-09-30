@@ -35,7 +35,7 @@ const meta = {
   argTypes: {
     labels: {
       description:
-        "Deprecated (removed in 6.0.0): use `messages` — the same value. Until then `labels` still " +
+        "Deprecated (removed in 7.0.0): use `messages` — the same value. Until then `labels` still " +
         "works and logs one development warning; when both are set, `messages` wins.",
       table: { category: "Deprecated" },
       control: false,

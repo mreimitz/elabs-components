@@ -37,7 +37,7 @@ const meta = {
           "point per frame); density is binned in screen pixels on the JS side. Selection is an " +
           "intersection of an x range (drag the bottom axis), a y range (drag the left axis), a lasso " +
           "and a zone pick — every gesture also emits a `ChartSelectionIntent`. Wheel zooms at the " +
-          "cursor, drag pans, double-click resets.\n\n**Deprecated since 5.6.0, removed in 6.0.0** — " +
+          "cursor, drag pans, double-click resets.\n\n**Deprecated since 6.0.0, removed in 7.0.0** — " +
           "each old name still works and logs one development warning: `xKey` → `xDataKey`; `yKey` → " +
           "`yDataKey`.",
       },
@@ -51,18 +51,18 @@ const meta = {
     // RM-191 (ADR 0042 A.1): the autodocs note for the renamed prop.
     labels: {
       description:
-        "Deprecated (removed in 6.0.0): use `messages` — the same value. Until then `labels` still " +
+        "Deprecated (removed in 7.0.0): use `messages` — the same value. Until then `labels` still " +
         "works and logs one development warning; when both are set, `messages` wins.",
       table: { category: "Deprecated" },
       control: false,
     },
     xKey: {
-      description: "Deprecated since 5.6.0 — use `xDataKey`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `xDataKey`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
       control: false,
     },
     yKey: {
-      description: "Deprecated since 5.6.0 — use `yDataKey`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `yDataKey`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
       control: false,
     },

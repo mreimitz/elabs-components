@@ -17,7 +17,7 @@
  * `className`, `children` and Gantt's own `onSelect`) rather than declaring a codeOnly
  * entry for each key. No behaviour change.
  *
- * RM-194 (ADR 0042 A.4, row 19): `loading` → `status`, an alias row until 6.0.0. `status` and
+ * RM-194 (ADR 0042 A.4, row 19): `loading` → `status`, an alias row until 7.0.0. `status` and
  * `empty` come from the `chart-state` group; the kind default `status: "ready"` is the old
  * `loading: false`. `empty` has no kind default: unset, the empty state reads the
  * `charts.gantt.noTasksToDisplay` message, as before.
@@ -163,8 +163,8 @@ export const GANTT = /* @__PURE__ */ defineChart<GanttDefinitionProps>()({
       to: "status",
       transform: "loading-to-status",
       precedence: "new-wins",
-      since: "5.6.0",
-      removeIn: "6.0.0",
+      since: "6.0.0",
+      removeIn: "7.0.0",
     },
   ],
   targets: [],

@@ -19,6 +19,16 @@
   selection commons registered here by reference), ADR [0041](./0041-media-primitives-in-ui.md) §5
   (the one-minor alias precedent), [`DEPRECATION.md`](../DEPRECATION.md)
 
+## Release amendment — 2026-10-01
+
+The chart rename work was not published in a 5.6 minor before the 6.0 release was
+requested. The maintainer chose the major release now. The 39 alias rows and
+the listed legacy APIs therefore remain usable in 6.x, with removal scheduled
+for 7.0.0. Their `since` metadata is 6.0.0, and the version tripwire arms at
+7.0.0. This amendment supersedes the 6.0 removal dates below; the rename
+table, replacements, and behavior remain unchanged. RM-205 is deferred to
+the 7.0 release.
+
 ## Context
 
 `@elabs-ai/components-charts` has good commons (`Responsive<T>`, the host config, the navigator and

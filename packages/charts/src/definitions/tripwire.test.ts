@@ -1,10 +1,10 @@
 /**
- * The 6.0 tripwire (ADR 0042 §8 and §11, RM-190).
+ * The 7.0 tripwire (ADR 0042 §8 and §11, RM-190).
  *
  * Every alias row, and the four legacy deprecations ADR 0042 §8 lists, promise removal in
- * 6.0.0: `ChartSelection`, `ChartBrushLayout`, the `height` aliases (WaterfallChart, ChartFrame,
- * AutoChart) and Scatter `trend`. This test reads the charts package version. Below 6.0.0 it
- * passes whatever is still here. At 6.0.0 or above — a prerelease of 6.0.0 counts — it fails
+ * 7.0.0: `ChartSelection`, `ChartBrushLayout`, the `height` aliases (WaterfallChart, ChartFrame,
+ * AutoChart) and Scatter `trend`. This test reads the charts package version. Below 7.0.0 it
+ * passes whatever is still here. At 7.0.0 or above — a prerelease of 7.0.0 counts — it fails
  * while any alias row remains in the definition registry, or while any of the four is still
  * declared. RM-205 removes them; this is what makes a forgotten one fail the release.
  *
@@ -34,7 +34,7 @@ const SRC = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PACKAGE_JSON = join(SRC, "..", "package.json");
 
 /** The version the tripwire arms at. */
-const TRIPWIRE = "6.0.0";
+const TRIPWIRE = "7.0.0";
 
 type LegacyDeprecation =
   | { readonly name: string; readonly kind: "export"; readonly symbol: string }
@@ -82,7 +82,7 @@ const LEGACY: readonly LegacyDeprecation[] = [
 
 // ── The rule ────────────────────────────────────────────────────────────────
 
-/** `major.minor.patch` → a comparable tuple; a prerelease (`6.0.0-rc.1`) counts as its release. */
+/** `major.minor.patch` → a comparable tuple; a prerelease (`7.0.0-rc.1`) counts as its release. */
 function versionTuple(version: string): [number, number, number] {
   const match = /^(\d+)\.(\d+)\.(\d+)/.exec(version);
   if (!match) throw new Error(`tripwire: "${version}" is not a semver version`);
@@ -108,7 +108,7 @@ interface TripwireInput {
   readonly legacy: readonly string[];
 }
 
-/** What 6.0.0 still has to remove — empty below 6.0.0, whatever remains. */
+/** What 7.0.0 still has to remove — empty below 7.0.0, whatever remains. */
 function tripwireFindings({ version, rows, legacy }: TripwireInput): string[] {
   if (!atLeast(version, TRIPWIRE)) return [];
   return [
@@ -198,12 +198,12 @@ const SEEDED_ROW: AliasRowOf = {
     to: "labels",
     transform: "boolean-to-labels",
     precedence: "new-wins",
-    since: "5.6.0",
-    removeIn: "6.0.0",
+    since: "6.0.0",
+    removeIn: "7.0.0",
   },
 };
 
-describe("the 6.0 tripwire", () => {
+describe("the 7.0 tripwire", () => {
   it("holds for the package as it is", () => {
     const findings = tripwireFindings({
       version: chartsVersion(),
@@ -213,27 +213,27 @@ describe("the 6.0 tripwire", () => {
     expect(findings).toEqual([]);
   });
 
-  it("passes on 5.x while alias rows and every listed deprecation remain", () => {
+  it("passes before 7.0 while alias rows and every listed deprecation remain", () => {
     const legacy = LEGACY.map((item) => item.name);
-    for (const version of ["5.5.0", "5.99.9"])
+    for (const version of ["5.5.0", "6.0.0", "6.99.9"])
       expect(tripwireFindings({ version, rows: [SEEDED_ROW], legacy })).toEqual([]);
   });
 
-  it("fails on a seeded 6.0.0 with a remaining alias row", () => {
-    expect(tripwireFindings({ version: "6.0.0", rows: [SEEDED_ROW], legacy: [] })).toEqual([
-      "alias row HeatmapChart.showValues → labels (removeIn 6.0.0) is still registered",
+  it("fails on a seeded 7.0.0 with a remaining alias row", () => {
+    expect(tripwireFindings({ version: "7.0.0", rows: [SEEDED_ROW], legacy: [] })).toEqual([
+      "alias row HeatmapChart.showValues → labels (removeIn 7.0.0) is still registered",
     ]);
   });
 
-  it("fails at or above 6.0.0 — a prerelease counts — while a listed deprecation remains", () => {
-    for (const version of ["6.0.0-rc.1", "6.0.0", "6.2.0"])
+  it("fails at or above 7.0.0 — a prerelease counts — while a listed deprecation remains", () => {
+    for (const version of ["7.0.0-rc.1", "7.0.0", "7.2.0"])
       expect(tripwireFindings({ version, rows: [], legacy: ["ChartBrushLayout"] })).toEqual([
         "legacy deprecation ChartBrushLayout is still declared",
       ]);
   });
 
-  it("passes on 6.0.0 once every row and listed deprecation is gone", () => {
-    expect(tripwireFindings({ version: "6.0.0", rows: [], legacy: [] })).toEqual([]);
+  it("passes on 7.0.0 once every row and listed deprecation is gone", () => {
+    expect(tripwireFindings({ version: "7.0.0", rows: [], legacy: [] })).toEqual([]);
   });
 
   it("is scoped to the alias rows plus the four listed legacy deprecations", () => {

@@ -47,14 +47,14 @@ export interface YAxisProps {
   /** Which side of the chart to render labels. Default: `"left"`. */
   position?: YAxisOrientation;
   /**
-   * @deprecated Use `position` — the same values (ADR 0042 A.2, row 11). Read until 6.0.0,
+   * @deprecated Use `position` — the same values (ADR 0042 A.2, row 11). Read until 7.0.0,
    * with one development warning; when both are set, `position` wins.
    */
   orientation?: YAxisOrientation;
   /**
    * @deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before
    * (ADR 0042 A.2, row 7). Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link
-   * Y_AXIS_MAX_TICK_COUNT}. Read until 6.0.0, with one development warning.
+   * Y_AXIS_MAX_TICK_COUNT}. Read until 7.0.0, with one development warning.
    */
   numTicks?: number;
   /**

@@ -32,7 +32,7 @@ type AnyComponent = ComponentType<any>;
 
 /**
  * Sparkline — RM-191. The catalogue still names Sparkline's accessible name `label` (ADR 0042
- * keeps a renamed prop in the catalogue until 6.0.0; RM-197 flags it `deprecated`), so a stored
+ * keeps a renamed prop in the catalogue until 7.0.0; RM-197 flags it `deprecated`), so a stored
  * surface may send it. The binding maps the old names itself, silently: an app never sees a
  * deprecation warning for a surface its agent wrote against the catalogue.
  */

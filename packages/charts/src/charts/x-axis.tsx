@@ -137,7 +137,7 @@ export type XAxisOrientation = "top" | "bottom";
 export interface XAxisProps {
   /**
    * @deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before
-   * (ADR 0042 A.2, row 6). Read until 6.0.0, with one development warning.
+   * (ADR 0042 A.2, row 6). Read until 7.0.0, with one development warning.
    */
   numTicks?: number;
   /**
@@ -169,7 +169,7 @@ export interface XAxisProps {
   /** Which edge the labels sit on (RM-108). Default: `"bottom"`. */
   position?: XAxisOrientation;
   /**
-   * @deprecated Use `position` — the same values (ADR 0042 A.2, row 10). Read until 6.0.0,
+   * @deprecated Use `position` — the same values (ADR 0042 A.2, row 10). Read until 7.0.0,
    * with one development warning; when both are set, `position` wins.
    */
   orientation?: XAxisOrientation;

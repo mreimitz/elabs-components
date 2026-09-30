@@ -16,10 +16,10 @@
  * RM-191 (ADR 0042 A.1 row 4): the word-bag `labels` moved to `messages`, which comes from the
  * `messages` group — no own field and no code-only entry of that name. Its word-bag keys sit
  * beside the group's `charts.*` keys; the group's open object accepts both. The old name stays
- * readable through the alias row until 6.0.0.
+ * readable through the alias row until 7.0.0.
  *
  * RM-196 (ADR 0042 A.6, rows 34–35): `xKey`/`yKey` → `xDataKey`/`yDataKey`, each an alias row
- * until 6.0.0. Defaults stay `"x"`/`"y"`; `xDataKey` keeps `xKey`'s second role as the
+ * until 7.0.0. Defaults stay `"x"`/`"y"`; `xDataKey` keeps `xKey`'s second role as the
  * selection-intent `field` for x ranges (`charts/density-scatter/density-scatter-chart.tsx`).
  *
  * Pure: the ui definition base and pure modules at runtime, everything else by `import type`.
@@ -212,24 +212,24 @@ export const DENSITY_SCATTER_CHART =
         to: "messages",
         transform: "identity",
         precedence: "new-wins",
-        since: "5.6.0",
-        removeIn: "6.0.0",
+        since: "6.0.0",
+        removeIn: "7.0.0",
       },
       {
         from: "xKey",
         to: "xDataKey",
         transform: "identity",
         precedence: "new-wins",
-        since: "5.6.0",
-        removeIn: "6.0.0",
+        since: "6.0.0",
+        removeIn: "7.0.0",
       },
       {
         from: "yKey",
         to: "yDataKey",
         transform: "identity",
         precedence: "new-wins",
-        since: "5.6.0",
-        removeIn: "6.0.0",
+        since: "6.0.0",
+        removeIn: "7.0.0",
       },
     ],
     contract: {

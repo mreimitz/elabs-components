@@ -519,7 +519,7 @@ describe.each([
     render(<Sparkline {...withOld()} />);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(
-      `[Sparkline] "${row.old}" is deprecated and will be removed in 6.0.0. Use "${row.renamed}".`,
+      `[Sparkline] "${row.old}" is deprecated and will be removed in 7.0.0. Use "${row.renamed}".`,
     );
   });
 

@@ -507,7 +507,7 @@ describe("RadarChart renamed motion props (RM-196)", () => {
     renderOneArea(old).unmount();
     renderOneArea(old).unmount();
     expect(deprecations(spy)).toEqual([
-      [`[RadarChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}".`],
+      [`[RadarChart] "${from}" is deprecated and will be removed in 7.0.0. Use "${to}".`],
     ]);
   });
 

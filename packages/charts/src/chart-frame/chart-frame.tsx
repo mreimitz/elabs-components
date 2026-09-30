@@ -650,7 +650,7 @@ export interface ChartFrameProps extends Omit<HTMLAttributes<HTMLDivElement>, "t
   /**
    * @deprecated Use `plotHeight` — it sets the chart's own height, and the
    * title, legend and notes are added around it. `height={n}` is now an alias
-   * for `plotHeight={n}` (it no longer fixes the body); removed in 6.0.0.
+   * for `plotHeight={n}` (it no longer fixes the body); removed in 7.0.0.
    */
   height?: number;
   /**
@@ -785,7 +785,7 @@ export const ChartFrame = forwardRef<HTMLDivElement, ChartFrameProps>(function C
   if (height !== undefined) {
     warnChartOnce(
       "ChartFrame.height",
-      '[ChartFrame] "height" is deprecated and will be removed in 6.0.0. Use "plotHeight": it sets the chart\'s own height, and the title, legend and notes are added around it.',
+      '[ChartFrame] "height" is deprecated and will be removed in 7.0.0. Use "plotHeight": it sets the chart\'s own height, and the title, legend and notes are added around it.',
     );
   }
 

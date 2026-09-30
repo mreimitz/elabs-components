@@ -26,7 +26,7 @@ export interface GroupNodesOptions {
   groupId: string;
   /** Header title for the group. @default "Group" */
   title?: string;
-  /** Status tone for the group header (`StatusTone`; legacy values warn until 6.0.0). */
+  /** Status tone for the group header (`StatusTone`; legacy values warn until 7.0.0). */
   tone?: FlowToneInput;
   /** `"featured"` marks the group with a star — what the legacy `tone: "accent"` meant. */
   emphasis?: FlowEmphasis;

@@ -767,8 +767,8 @@ export interface GanttProps
    * When true, renders a built-in shimmer loading state (Skeleton rows in both panes)
    * instead of the task tree and canvas. Use while data is in flight.
    *
-   * @deprecated Since 5.6.0, use `status` — `loading={true}` is `status="loading"`,
-   * `loading={false}` is `status="ready"`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `status` — `loading={true}` is `status="loading"`,
+   * `loading={false}` is `status="ready"`. Removed in 7.0.0.
    */
   loading?: boolean;
   children?: ReactNode;

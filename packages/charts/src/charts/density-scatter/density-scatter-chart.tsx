@@ -168,7 +168,7 @@ export interface DensityScatterLabels {
    * `charts.selection.rangeStart`/`rangeEnd` messages. Setting `xRange`,
    * `yRange`, `from` or `to` still composes the thumbs' old names (kept for
    * one minor for backward-compat); unset, the shared strings apply. Removed
-   * in 6.0.0.
+   * in 7.0.0.
    */
   xRange?: string;
   /** @deprecated See {@link DensityScatterLabels.xRange}. */
@@ -238,7 +238,7 @@ export interface DensityScatterChartProps
   /**
    * Row key for x when `data` is rows. Also the intent `field` for x ranges.
    *
-   * @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `xDataKey`. Removed in 7.0.0.
    */
   xKey?: string;
   /** Row key for y when `data` is rows. Default `"y"`. */
@@ -246,7 +246,7 @@ export interface DensityScatterChartProps
   /**
    * Row key for y when `data` is rows.
    *
-   * @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `yDataKey`. Removed in 7.0.0.
    */
   yKey?: string;
   /** Row keys lifted as numeric columns (rows input only). */
@@ -390,7 +390,7 @@ export interface DensityScatterChartProps
   messages?: DensityScatterLabels & ChartMessages;
   /**
    * @deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still
-   * read until 6.0.0, with one development warning; when both are set, `messages` wins.
+   * read until 7.0.0, with one development warning; when both are set, `messages` wins.
    */
   labels?: DensityScatterLabels;
   /** Per-frame statistics (stories, diagnostics). */
@@ -657,7 +657,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
         `DensityScatterChart.messages.${key}`,
         `[DensityScatterChart] \`${key}\` in \`messages\` (or \`labels\`) is deprecated: the ` +
           `range thumbs now default to the shared "Range start/end, {axis}" wording. ` +
-          `\`${key}\` still composes the thumbs' old name for one minor; removed in 6.0.0.`,
+          `\`${key}\` still composes the thumbs' old name for one minor; removed in 7.0.0.`,
       );
     });
     const customRangeLabels =

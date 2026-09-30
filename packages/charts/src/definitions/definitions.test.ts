@@ -721,7 +721,7 @@ const DEMO = defineComponent<DemoProps>()({
   defaults: { label: "none" },
   targets: [],
   aliases: [
-    { from: "amount", to: "value", transform: "identity", since: "5.0.0", removeIn: "6.0.0" },
+    { from: "amount", to: "value", transform: "identity", since: "5.0.0", removeIn: "7.0.0" },
   ],
 });
 
@@ -778,7 +778,7 @@ describe("useResolvedChartProps", () => {
     expect(result.current).toEqual({ value: 3, label: "none" });
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy).toHaveBeenCalledWith(
-      '[DemoChart] "amount" is deprecated and will be removed in 6.0.0. Use "value".',
+      '[DemoChart] "amount" is deprecated and will be removed in 7.0.0. Use "value".',
     );
     rerender({ p: { amount: 4 } });
     expect(result.current).toEqual({ value: 4, label: "none" });

@@ -40,7 +40,7 @@ export interface LiveXAxisProps {
   tickCount?: AxisTickCount;
   /**
    * @deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before.
-   * Read until 6.0.0, with one development warning.
+   * Read until 7.0.0, with one development warning.
    */
   numTicks?: number;
   /** Time formatter. Default: HH:MM:SS */

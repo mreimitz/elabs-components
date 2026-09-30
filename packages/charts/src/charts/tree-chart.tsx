@@ -312,7 +312,7 @@ export interface TreeChartProps<TData = unknown> extends ChartInteractionProps {
   /**
    * A canvas viewport (wheel zoom, drag pan, pinch, corner controls).
    *
-   * @deprecated Since 5.6.0, use `zoom`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `zoom`. Removed in 7.0.0.
    */
   zoomable?: boolean;
   /** The zoom range with `zoom`. Default `[0.5, 2]` (React Flow's). */
@@ -341,7 +341,7 @@ export interface TreeChartProps<TData = unknown> extends ChartInteractionProps {
   /**
    * Where the tree sits when smaller than its container.
    *
-   * @deprecated Since 5.6.0, use `plotAlign`. Removed in 6.0.0.
+   * @deprecated Since 6.0.0, use `plotAlign`. Removed in 7.0.0.
    */
   align?: "start" | "center";
   className?: string;

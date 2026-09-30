@@ -144,7 +144,7 @@ export interface ComposedChartProps
   maxBarSize?: number;
   /** Gap between grouped `SeriesBar` series in px. Default: 4 */
   groupGap?: number;
-  /** @deprecated Since 5.6.0, use `groupGap`. Removed in 6.0.0. */
+  /** @deprecated Since 6.0.0, use `groupGap`. Removed in 7.0.0. */
   barGap?: number;
   /**
    * Stack `SeriesBar` segments in child order at each x (line/area are not

@@ -131,7 +131,7 @@ function fail(component: string, prop: string, received: unknown, reason: string
  * on a renamed prop's OLD name validates exactly like one already on the new
  * one. The row's value moves onto the new key; the OLD key is never deleted
  * from the record this returns, so BOTH spellings stay readable off it until
- * 6.0 — a consumer's own assertion on either name keeps passing, per ADR 0042
+ * 7.0 — a consumer's own assertion on either name keeps passing, per ADR 0042
  * §8. `aliases` is `undefined` for every family until its rename item lands
  * (wave 4), so this is a no-op today: it returns `props` itself, unchanged.
  *

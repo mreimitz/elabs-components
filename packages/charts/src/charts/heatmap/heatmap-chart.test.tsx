@@ -392,7 +392,7 @@ describe("HeatmapChart renamed props (RM-194)", () => {
     render(<HeatmapChart {...base} {...old} />).unmount();
     render(<HeatmapChart {...base} {...old} />).unmount();
     expect(deprecations(spy)).toEqual([
-      [`[HeatmapChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}".`],
+      [`[HeatmapChart] "${from}" is deprecated and will be removed in 7.0.0. Use "${to}".`],
     ]);
   });
 
@@ -466,13 +466,13 @@ describe("HeatmapChart renamed props (RM-194)", () => {
       />,
     ).unmount();
     const ignored = (from: string, to: string) =>
-      `[HeatmapChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}". ` +
+      `[HeatmapChart] "${from}" is deprecated and will be removed in 7.0.0. Use "${to}". ` +
       `"${from}" was ignored because "${to}" is set.`;
     expect(deprecations(spy)).toEqual([
       [ignored("showLegend", "legend")],
       [ignored("emptyTitle", "empty.title")],
       [
-        '[HeatmapChart] "emptyMessage" is deprecated and will be removed in 6.0.0. Use "empty.message".',
+        '[HeatmapChart] "emptyMessage" is deprecated and will be removed in 7.0.0. Use "empty.message".',
       ],
     ]);
   });
@@ -491,7 +491,7 @@ describe("HeatmapChart renamed props (RM-194)", () => {
     expect(container.querySelectorAll('[data-slot="halo-text"]')).toHaveLength(0);
     expect(deprecations(spy)).toEqual([
       [
-        '[HeatmapChart] "showValues" is deprecated and will be removed in 6.0.0. Use "labels". ' +
+        '[HeatmapChart] "showValues" is deprecated and will be removed in 7.0.0. Use "labels". ' +
           '"showValues" was ignored because "labels" is set.',
       ],
     ]);
@@ -605,7 +605,7 @@ describe("HeatmapChart renamed props (RM-196)", () => {
     render(<HeatmapChart {...old} />).unmount();
     render(<HeatmapChart {...old} />).unmount();
     expect(deprecations(spy)).toEqual([
-      [`[HeatmapChart] "${from}" is deprecated and will be removed in 6.0.0. Use "${to}".`],
+      [`[HeatmapChart] "${from}" is deprecated and will be removed in 7.0.0. Use "${to}".`],
     ]);
   });
 

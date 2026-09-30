@@ -10,7 +10,7 @@ export interface ChartsA2uiPropSchema {
   required?: boolean;
   default?: unknown;
   description?: string;
-  /** Kept in the catalog until 6.0.0 (ADR 0042 §8) — the replacement lives in `description`. */
+  /** Kept in the catalog until 7.0.0 (ADR 0042 §8) — the replacement lives in `description`. */
   deprecated?: boolean;
   /**
    * A closed set of alternative shapes (e.g. `Responsive<T>`) — valid against ANY one

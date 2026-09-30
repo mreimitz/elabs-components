@@ -1,7 +1,7 @@
 # Roadmap track — Chart definitions: shared prop groups and one definition per chart (`ui`, `charts`, `cli`)
 
 Source review: `docs/review/2026-09-25-charts-unification-review.md` (F01–F39; line numbers in the items are as of that review, 2026-09-25).
-Decision (ADR 0042, `docs/ADR/0042-chart-definitions-and-prop-groups.md`): `@elabs-ai/components-charts` becomes one unified package. Shared components, prop types and property definitions live once and every chart composes them — the pattern of the reference chart templates (per chart: default properties, data targets and a property definition, all built from shared property groups), adopted without its engine. Three layers: a React-free definition base in `ui` (`@elabs-ai/components-ui/definition`, shared with flow), pure prop groups and one definition per chart, part and surface in `charts`, and a committed snapshot in `cli` that the docs manifest, the A2UI catalog, `ChartSpec` / `AutoChart`, `chart_for`, the doc regions and the `./test` double all read. Names are unified with aliases: an old name keeps working with a one-time dev warning for at least one minor and is removed at 6.0.0; the complete rename table (39 rows) is frozen in ADR 0042 Appendix A at wave 0. **Nothing in the public API is removed before 6.0.0.** Items follow the chart-interaction track's format (front matter + Finding / Change / Acceptance / Test / gate / Orchestrator notes). Status values: `planned`, `in-progress`, `done`, `dropped` — update the front matter and the table together.
+Decision (ADR 0042, `docs/ADR/0042-chart-definitions-and-prop-groups.md`): `@elabs-ai/components-charts` becomes one unified package. Shared components, prop types and property definitions live once and every chart composes them — the pattern of the reference chart templates (per chart: default properties, data targets and a property definition, all built from shared property groups), adopted without its engine. Three layers: a React-free definition base in `ui` (`@elabs-ai/components-ui/definition`, shared with flow), pure prop groups and one definition per chart, part and surface in `charts`, and a committed snapshot in `cli` that the docs manifest, the A2UI catalog, `ChartSpec` / `AutoChart`, `chart_for`, the doc regions and the `./test` double all read. Names are unified with aliases: an old name keeps working with a one-time dev warning and is scheduled for removal at 7.0.0; the complete rename table (39 rows) is frozen in ADR 0042 Appendix A at wave 0. The 6.0 release amendment in ADR 0042 supersedes the original 6.0 removal dates below. Items follow the chart-interaction track's format (front matter + Finding / Change / Acceptance / Test / gate / Orchestrator notes). Status values: `planned`, `in-progress`, `done`, `dropped` — update the front matter and the table together.
 
 **Numbering: RM-162 … RM-205 and ADR 0042 are reserved for this track.** The flow track takes RM and ADR numbers after them.
 
@@ -39,7 +39,7 @@ Orchestration: `ORCHESTRATOR-PROMPT.md` in this folder is the kickoff prompt. It
 | RM-187 | Formatting + messages: `useChartFormatters`, host-locale leaks, #250, strings onto `charts.*` keys             | 3    | P1       | L      | 182, 183, 184, 185                          | brand-ui-component-builder / sonnet | done    |
 | RM-188 | Reference marks + axes: one painter each, `chart-style-constants`, shared axes, one zoom control               | 3    | P1       | L      | 182, 183, 184, 185                          | brand-ui-component-builder / opus   | done    |
 | RM-189 | Sizing + motion: one measurement path, one debounce, Dumbbell `groupBy`, one reduced-motion source             | 3    | P1       | M–L    | 182, 183, 184, 185                          | brand-ui-component-builder / sonnet | done    |
-| RM-190 | Rules `charts-deprecated-usage`, `chart-default-prose`, `charts-group-drift` + the 6.0 tripwire                | 4    | P1       | M      | 162, 178, 182, 183, 184, 185                | brand-ui-component-builder / sonnet | done    |
+| RM-190 | Rules `charts-deprecated-usage`, `chart-default-prose`, `charts-group-drift` + the 7.0 tripwire                | 4    | P1       | M      | 162, 178, 182, 183, 184, 185                | brand-ui-component-builder / sonnet | done    |
 | RM-191 | Rename: word-bag `labels` → `messages`; Sparkline `label` → `accessibleLabel` (ADR A.1)                        | 4    | P1       | M      | 183, 185, 187, 190                          | brand-ui-component-builder / sonnet | done    |
 | RM-192 | Rename on axis parts: `numTicks` → `tickCount` (old-wins), `orientation` → `position` (ADR A.2)                | 4    | P1       | S–M    | 182, 188, 190                               | brand-ui-component-builder / sonnet | done    |
 | RM-193 | Rename: `showValues` → `labels`; `data-labels` group applied (ADR A.3)                                         | 4    | P1       | M      | 182, 183, 184, 185, 190, 191                | brand-ui-component-builder / sonnet | done    |
@@ -54,7 +54,7 @@ Orchestration: `ORCHESTRATOR-PROMPT.md` in this folder is the kickoff prompt. It
 | RM-202 | Pie and Ring share arc drawing, entrance timing and center code (F28); contexts to 203, builders to 204        | 6    | P2       | M–L    | 183                                         | brand-ui-component-builder / sonnet | done    |
 | RM-203 | Split `ChartContextValue`; one legend item type; one hover context (F38, F04)                                  | 6    | P2       | M–L    | 182, 183, 184, 185                          | brand-ui-component-builder / opus   | done    |
 | RM-204 | Wiring dedupe: `mergeRefs`, `useId`, `displayName`, warn-once, datapoint gate, shared helpers (F13, F31, F34)  | 6    | P2       | M–L    | 182, 183, 184, 185                          | brand-ui-component-builder / sonnet | planned |
-| RM-205 | 6.0.0: remove aliases + legacy deprecations; migration steps + `brand-ui codemod`                              | 7    | P1       | M      | 169, 190, 191, 192, 193, 194, 195, 196, 197 | brand-ui-component-builder / opus   | planned |
+| RM-205 | 7.0.0: remove aliases + legacy deprecations; migration steps + `brand-ui codemod`                              | 7    | P1       | M      | 169, 190, 191, 192, 193, 194, 195, 196, 197 | brand-ui-component-builder / opus   | planned |
 
 Agent names are the `.claude/agents/brand-ui-*.md` definitions; `model` in each file overrides the agent's default for that item.
 
@@ -69,10 +69,10 @@ Versioning is lockstep (Changesets). Each wave's changesets follow this column.
 | A    | ui definition base                          | RM-170, RM-171  | minor (new `@elabs-ai/components-ui/definition` subpath)              | nothing — runs in parallel with wave 1                                                                |
 | 2    | charts foundations                          | RM-172 … RM-181 | minor, additive                                                       | wave A                                                                                                |
 | 3    | adoption, one PR per cluster                | RM-182 … RM-189 | minor                                                                 | wave 2                                                                                                |
-| 4    | renames                                     | RM-190 … RM-196 | minor per item; the last lands at least one minor before 6.0          | wave 3's cluster for the names it touches; RM-191 … RM-196 also the maintainer's review of Appendix A |
+| 4    | renames                                     | RM-190 … RM-196 | deprecated in 6.0; retained through 6.x                               | wave 3's cluster for the names it touches; RM-191 … RM-196 also the maintainer's review of Appendix A |
 | 5    | derived artifacts                           | RM-197 … RM-200 | minor                                                                 | wave 2 (RM-197 also wave 4, for the deprecated flags)                                                 |
 | 6    | optional convergence, each behind baselines | RM-201 … RM-204 | minor                                                                 | wave 3 (independent of waves 4 and 5)                                                                 |
-| 7    | major                                       | RM-205          | 6.0.0                                                                 | waves 4 and 5 (RM-197)                                                                                |
+| 7    | next major                                  | RM-205          | 7.0.0                                                                 | a published 6.x warning period                                                                        |
 
 Tooling-only items (RM-172, RM-180, RM-181, RM-190, RM-200) ship no changeset.
 
@@ -113,10 +113,10 @@ wave 5  ┬ RM-197 A2UI from the snapshot        ← needs wave 2 and all of wav
         └ RM-200 FormSpec spike                ┘
 wave 6  ┬ RM-201 shared shell hooks · RM-202 Ring on the Pie engine   ← independent after wave 3
         └ RM-203 split ChartContextValue · RM-204 wiring dedupe
-wave 7  └ RM-205 6.0.0 removals   ← only when the maintainer says release, a full minor after RM-196
+wave 7  └ RM-205 7.0.0 removals   ← only when the maintainer says release, after a 6.x warning period
 ```
 
-Critical path to 6.0.0: RM-170 → RM-172 → RM-173 → RM-174 → RM-175 → RM-176 → RM-178 → RM-179 → RM-180 → RM-182 → RM-187 → RM-191 → RM-193 → RM-197 → RM-205 (≈ 42 agent-days at the upper effort bound). RM-163 and RM-165 are the items to demo first — legends that show their values and a scatter that no longer clips negatives are visible wins.
+Critical path to 7.0.0 removals: RM-170 → RM-172 → RM-173 → RM-174 → RM-175 → RM-176 → RM-178 → RM-179 → RM-180 → RM-182 → RM-187 → RM-191 → RM-193 → RM-197 → RM-205. The 6.0 release ships the warning period before RM-205.
 
 ## Flow coordination
 
@@ -134,7 +134,7 @@ Flow Phase 1 needs wave A (RM-170, RM-171) and nothing else from charts.
 - New `pnpm check` rules, each with fixtures (`pnpm check:test`): `charts-definitions-pure` (RM-172), `charts-definition-isolation` (RM-181), `chart-style-constants` (RM-188), `charts-deprecated-usage`, `chart-default-prose`, `charts-group-drift` (RM-190).
 - CI post-build: `packages/cli/scripts/check-chart-treeshake.mjs` (esbuild metafile inputs plus a per-family byte budget) in the "Built-output checks" step (RM-181).
 - Existing gates that stay green: `charts-test-double`, `charts-responsive`, `charts-honesty`, `chart-hairline`, `locale-formatting`, `i18n-strings`, `motion-tokens`, `data-slot`, `variant-coverage`, `loading-states`, `reference-leakage`, and `pnpm gen:check` ("Generated artifacts are fresh").
-- Tests: lockstep type tests (`*.test-d.ts`), the completeness test, golden `CHART_CONTRACT_SPECS`, defaults parity, registry-loop behaviour tests (policy, tooltip, legend, palette, status, spec fixtures — jsdom plus fixtures, Storybook play tests where jsdom cannot render), per-alias tests, the 6.0 tripwire, visual baselines (`charts/__baselines__`).
+- Tests: lockstep type tests (`*.test-d.ts`), the completeness test, golden `CHART_CONTRACT_SPECS`, defaults parity, registry-loop behaviour tests (policy, tooltip, legend, palette, status, spec fixtures — jsdom plus fixtures, Storybook play tests where jsdom cannot render), per-alias tests, the 7.0 tripwire, visual baselines (`charts/__baselines__`).
 
 ## Definition of done for the track
 
@@ -145,5 +145,5 @@ Flow Phase 1 needs wave A (RM-170, RM-171) and nothing else from charts.
 - `pnpm consumer:check` before each release; each wave's changeset follows the semver column.
 - `pnpm test:stories` (the CLI runner, not the MCP runner, which serves stale package code) with `addon-a11y` on every touched story, light and dark, 380 / 600 / 900 px.
 - The `chart_for` and A2UI catalog outputs are compared before and after (RM-197, RM-199).
-- At 6.0.0: the tripwire is green and the CHANGELOG migration section lists every alias row with `brand-ui codemod` usage.
+- At 7.0.0: the tripwire is green and the CHANGELOG migration section lists every alias row with `brand-ui codemod` usage.
 - The review's `## Outcome` records merged items, gate results and browser evidence.

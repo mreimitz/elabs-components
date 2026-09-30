@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-30T17:16:03.755Z",
+  "generatedAt": "2026-09-30T23:25:41.718Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -21316,7 +21316,7 @@
               "name": "height",
               "optional": true,
               "type": "number",
-              "description": "@deprecated Use `plotHeight`. Removed in 6.0.0. Until then it is read as `plotHeight` and logs one development warning per page."
+              "description": "@deprecated Use `plotHeight`. Removed in 7.0.0. Until then it is read as `plotHeight` and logs one development warning per page."
             },
             {
               "name": "loading",
@@ -21472,11 +21472,11 @@
               "name": "showValues",
               "optional": true,
               "type": "BarShowValues",
-              "description": "@deprecated Use `labels` — the same values (ADR 0042 A.3, row 12). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+              "description": "@deprecated Use `labels` — the same values (ADR 0042 A.3, row 12). Read until 7.0.0, with one development warning; when both are set, `labels` wins.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "labels",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -22026,11 +22026,11 @@
               "name": "numTicks",
               "optional": true,
               "type": "number",
-              "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before. Read until 6.0.0, with one development warning.",
+              "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before. Read until 7.0.0, with one development warning.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "tickCount",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -22224,11 +22224,11 @@
               "name": "labels",
               "optional": true,
               "type": "BulletChartLabels",
-              "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins.",
+              "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 7.0.0, with one development warning; when both are set, `messages` wins.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "messages",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -22718,8 +22718,8 @@
               "description": "@deprecated has no effect on CandlestickChart; remove the prop.",
               "kind": "responsive",
               "deprecated": {
-                "removeIn": "6.0.0",
-                "since": "5.6.0"
+                "removeIn": "7.0.0",
+                "since": "6.0.0"
               }
             },
             {
@@ -22729,8 +22729,8 @@
               "description": "@deprecated has no effect on CandlestickChart; remove the prop.",
               "kind": "enum",
               "deprecated": {
-                "removeIn": "6.0.0",
-                "since": "5.6.0"
+                "removeIn": "7.0.0",
+                "since": "6.0.0"
               }
             },
             {
@@ -23392,7 +23392,7 @@
               "name": "height",
               "optional": true,
               "type": "number",
-              "description": "@deprecated Use `plotHeight` — it sets the chart's own height, and the title, legend and notes are added around it. `height={n}` is now an alias for `plotHeight={n}` (it no longer fixes the body); removed in 6.0.0."
+              "description": "@deprecated Use `plotHeight` — it sets the chart's own height, and the title, legend and notes are added around it. `height={n}` is now an alias for `plotHeight={n}` (it no longer fixes the body); removed in 7.0.0."
             },
             {
               "name": "loading",
@@ -24787,7 +24787,7 @@
               "name": "scale",
               "optional": true,
               "type": "number | ChoroplethScaleSpec",
-              "description": "The COLOUR scale (RM-124): `{ key, type: \"continuous\" | \"stepped\", method?, steps?, domain?, palette? }`, resolved by `colorScaleFor` over every feature's `properties[key]` (default key `\"value\"`) into the chart token ramps. `ChoroplethFeature getFeatureColor` / `fill` still override it. Deprecated form: a NUMBER is the projection scale, kept as an alias of `projectionScale` (removed in 6.0.0)."
+              "description": "The COLOUR scale (RM-124): `{ key, type: \"continuous\" | \"stepped\", method?, steps?, domain?, palette? }`, resolved by `colorScaleFor` over every feature's `properties[key]` (default key `\"value\"`) into the chart token ramps. `ChoroplethFeature getFeatureColor` / `fill` still override it. Deprecated form: a NUMBER is the projection scale, kept as an alias of `projectionScale` (removed in 7.0.0)."
             },
             {
               "name": "projectionScale",
@@ -24866,22 +24866,22 @@
               "name": "emptyTitle",
               "optional": true,
               "type": "string",
-              "description": "Title of the empty state (`hideNoData` left no region). @deprecated Since 5.6.0, use `empty.title`. Removed in 6.0.0.",
+              "description": "Title of the empty state (`hideNoData` left no region). @deprecated Since 6.0.0, use `empty.title`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "empty.title",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
               "name": "emptyMessage",
               "optional": true,
               "type": "string",
-              "description": "Message of the empty state. @deprecated Since 5.6.0, use `empty.message`. Removed in 6.0.0.",
+              "description": "Message of the empty state. @deprecated Since 6.0.0, use `empty.message`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "empty.message",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -24910,11 +24910,11 @@
               "name": "zoomEnabled",
               "optional": true,
               "type": "boolean",
-              "description": "Enable zoom and pan. @deprecated Since 5.6.0, use `zoom`. Removed in 6.0.0.",
+              "description": "Enable zoom and pan. @deprecated Since 6.0.0, use `zoom`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "zoom",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -25200,11 +25200,11 @@
               "name": "barGap",
               "optional": true,
               "type": "number",
-              "description": "@deprecated Since 5.6.0, use `groupGap`. Removed in 6.0.0.",
+              "description": "@deprecated Since 6.0.0, use `groupGap`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "groupGap",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -25558,11 +25558,11 @@
               "name": "xKey",
               "optional": true,
               "type": "string",
-              "description": "Row key for x when `data` is rows. Also the intent `field` for x ranges. @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.",
+              "description": "Row key for x when `data` is rows. Also the intent `field` for x ranges. @deprecated Since 6.0.0, use `xDataKey`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "xDataKey",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -25577,11 +25577,11 @@
               "name": "yKey",
               "optional": true,
               "type": "string",
-              "description": "Row key for y when `data` is rows. @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0.",
+              "description": "Row key for y when `data` is rows. @deprecated Since 6.0.0, use `yDataKey`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "yDataKey",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -25890,11 +25890,11 @@
               "name": "labels",
               "optional": true,
               "type": "DensityScatterLabels",
-              "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins.",
+              "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 7.0.0, with one development warning; when both are set, `messages` wins.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "messages",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -26712,11 +26712,11 @@
               "name": "showValues",
               "optional": true,
               "type": "boolean",
-              "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 13). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+              "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 13). Read until 7.0.0, with one development warning; when both are set, `labels` wins.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "labels",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -27208,11 +27208,11 @@
               "name": "loading",
               "optional": true,
               "type": "boolean",
-              "description": "When true, renders a built-in shimmer loading state (Skeleton rows in both panes) instead of the task tree and canvas. Use while data is in flight. @deprecated Since 5.6.0, use `status` — `loading={true}` is `status=\"loading\"`, `loading={false}` is `status=\"ready\"`. Removed in 6.0.0.",
+              "description": "When true, renders a built-in shimmer loading state (Skeleton rows in both panes) instead of the task tree and canvas. Use while data is in flight. @deprecated Since 6.0.0, use `status` — `loading={true}` is `status=\"loading\"`, `loading={false}` is `status=\"ready\"`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "status",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -27454,11 +27454,11 @@
               "name": "labels",
               "optional": true,
               "type": "Partial<GaugeLabels>",
-              "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins.",
+              "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 7.0.0, with one development warning; when both are set, `messages` wins.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "messages",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -27855,36 +27855,36 @@
               "name": "xDataKey",
               "optional": true,
               "type": "string",
-              "description": "Row field holding the column value (discrete; an ISO date in the calendar variant). Passing neither this nor the deprecated `x` still renders — every row collapses onto one unnamed column — and logs one development warning naming `xDataKey`. Required from 6.0.0.",
+              "description": "Row field holding the column value (discrete; an ISO date in the calendar variant). Passing neither this nor the deprecated `x` still renders — every row collapses onto one unnamed column — and logs one development warning naming `xDataKey`. Required from 7.0.0.",
               "kind": "string"
             },
             {
               "name": "x",
               "optional": true,
               "type": "string",
-              "description": "Row field holding the column value (discrete; an ISO date in the calendar variant). @deprecated Since 5.6.0, use `xDataKey`. Removed in 6.0.0.",
+              "description": "Row field holding the column value (discrete; an ISO date in the calendar variant). @deprecated Since 6.0.0, use `xDataKey`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "xDataKey",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
               "name": "yDataKey",
               "optional": true,
               "type": "string",
-              "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`. Passing neither this nor the deprecated `y` still renders on `variant=\"matrix\"` (every row collapses onto one unnamed row) and logs one development warning naming `yDataKey`. Required on `variant=\"matrix\"` from 6.0.0.",
+              "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`. Passing neither this nor the deprecated `y` still renders on `variant=\"matrix\"` (every row collapses onto one unnamed row) and logs one development warning naming `yDataKey`. Required on `variant=\"matrix\"` from 7.0.0.",
               "kind": "string"
             },
             {
               "name": "y",
               "optional": true,
               "type": "string",
-              "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`. @deprecated Since 5.6.0, use `yDataKey`. Removed in 6.0.0.",
+              "description": "Row field holding the row value (discrete). Ignored by `variant=\"calendar\"`. @deprecated Since 6.0.0, use `yDataKey`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "yDataKey",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -27922,11 +27922,11 @@
               "name": "showValues",
               "optional": true,
               "type": "boolean",
-              "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 14). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+              "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 14). Read until 7.0.0, with one development warning; when both are set, `labels` wins.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "labels",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -28016,11 +28016,11 @@
               "name": "showLegend",
               "optional": true,
               "type": "boolean",
-              "description": "Show the ramp key below the plot. @deprecated Since 5.6.0, use `legend` (the same boolean). Removed in 6.0.0.",
+              "description": "Show the ramp key below the plot. @deprecated Since 6.0.0, use `legend` (the same boolean). Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "legend",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -28089,44 +28089,44 @@
               "name": "loading",
               "optional": true,
               "type": "boolean",
-              "description": "Layout-shaped skeleton instead of the data. @deprecated Since 5.6.0, use `status` — `loading={true}` is `status=\"loading\"`, `loading={false}` is `status=\"ready\"`. Removed in 6.0.0.",
+              "description": "Layout-shaped skeleton instead of the data. @deprecated Since 6.0.0, use `status` — `loading={true}` is `status=\"loading\"`, `loading={false}` is `status=\"ready\"`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "status",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
               "name": "emptyMessage",
               "optional": true,
               "type": "string",
-              "description": "Supporting sentence of the empty state, shown when there is nothing to plot. @deprecated Since 5.6.0, use `empty.message`. Removed in 6.0.0.",
+              "description": "Supporting sentence of the empty state, shown when there is nothing to plot. @deprecated Since 6.0.0, use `empty.message`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "empty.message",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
               "name": "emptyTitle",
               "optional": true,
               "type": "string",
-              "description": "Title of the empty state. @deprecated Since 5.6.0, use `empty.title`. Removed in 6.0.0.",
+              "description": "Title of the empty state. @deprecated Since 6.0.0, use `empty.title`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "empty.title",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
               "name": "emptyAction",
               "optional": true,
               "type": "ReactNode",
-              "description": "An action for the empty state, rendered below the message. @deprecated Since 5.6.0, use `empty.action`. Removed in 6.0.0.",
+              "description": "An action for the empty state, rendered below the message. @deprecated Since 6.0.0, use `empty.action`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "empty.action",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -29400,11 +29400,11 @@
               "name": "window",
               "optional": true,
               "type": "number",
-              "description": "Visible time window in seconds. @deprecated Since 5.6.0, use `windowSeconds`. Removed in 6.0.0.",
+              "description": "Visible time window in seconds. @deprecated Since 6.0.0, use `windowSeconds`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "windowSeconds",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -29528,11 +29528,11 @@
               "name": "numTicks",
               "optional": true,
               "type": "number",
-              "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before. Read until 6.0.0, with one development warning.",
+              "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before. Read until 7.0.0, with one development warning.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "tickCount",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -30430,11 +30430,11 @@
               "name": "align",
               "optional": true,
               "type": "\"start\" | \"center\"",
-              "description": "Where the square plot sits in a container wider than it is tall. @deprecated Since 5.6.0, use `plotAlign`. Removed in 6.0.0.",
+              "description": "Where the square plot sits in a container wider than it is tall. @deprecated Since 6.0.0, use `plotAlign`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "plotAlign",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -31027,11 +31027,11 @@
               "name": "enterDurationMs",
               "optional": true,
               "type": "number",
-              "description": "Enter animation budget in ms. @deprecated Since 5.6.0, use `animationDuration`. Removed in 6.0.0.",
+              "description": "Enter animation budget in ms. @deprecated Since 6.0.0, use `animationDuration`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "animationDuration",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -31046,11 +31046,11 @@
               "name": "staggerScale",
               "optional": true,
               "type": "number",
-              "description": "Scales stagger timing (1 = default). @deprecated Since 5.6.0, use `enterStaggerScale`. Removed in 6.0.0.",
+              "description": "Scales stagger timing (1 = default). @deprecated Since 6.0.0, use `enterStaggerScale`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "enterStaggerScale",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -31071,11 +31071,11 @@
               "name": "motionReplayKey",
               "optional": true,
               "type": "string",
-              "description": "Changes when motion settings change — replays enter animations. @deprecated Since 5.6.0, use `revealSignature`. Removed in 6.0.0.",
+              "description": "Changes when motion settings change — replays enter animations. @deprecated Since 6.0.0, use `revealSignature`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "revealSignature",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -31801,11 +31801,11 @@
               "name": "hoveredNodeIndex",
               "optional": true,
               "type": "number | null",
-              "description": "Controlled hovered node index. @deprecated Since 5.6.0, use `hoveredIndex`. Removed in 6.0.0.",
+              "description": "Controlled hovered node index. @deprecated Since 6.0.0, use `hoveredIndex`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "hoveredIndex",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -31818,11 +31818,11 @@
               "name": "onNodeHoverChange",
               "optional": true,
               "type": "(index: number | null) => void",
-              "description": "Called when node hover changes from the chart surface. @deprecated Since 5.6.0, use `onHoverChange`. Removed in 6.0.0.",
+              "description": "Called when node hover changes from the chart surface. @deprecated Since 6.0.0, use `onHoverChange`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "onHoverChange",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -32139,11 +32139,11 @@
               "name": "trend",
               "optional": true,
               "type": "\"linear\" | \"log\" | false",
-              "description": "A least-squares trend line (RM-115): `\"linear\"` (`y = a + bx`) or `\"log\"` (`y = a + b·ln(x)`, points with a non-positive x dropped). `false` (default): no trend line. See `trend-line.tsx` for the regression space it fits in and its accuracy caveat for `\"log\"` on a `xScale=\"linear\"` chart. @deprecated Use `analytics={[{ kind: \"trend\", of: dataKey, model }]}` on `ScatterChart` — the shared trend analytic, which adds the legend entry, the tooltip row and every trend model. `trend` keeps drawing the same line as an alias of it until its removal in 6.0.0.",
+              "description": "A least-squares trend line (RM-115): `\"linear\"` (`y = a + bx`) or `\"log\"` (`y = a + b·ln(x)`, points with a non-positive x dropped). `false` (default): no trend line. See `trend-line.tsx` for the regression space it fits in and its accuracy caveat for `\"log\"` on a `xScale=\"linear\"` chart. @deprecated Use `analytics={[{ kind: \"trend\", of: dataKey, model }]}` on `ScatterChart` — the shared trend analytic, which adds the legend entry, the tooltip row and every trend model. `trend` keeps drawing the same line as an alias of it until its removal in 7.0.0.",
               "defaultValue": "false",
               "kind": "enum",
               "deprecated": {
-                "removeIn": "6.0.0",
+                "removeIn": "7.0.0",
                 "replacement": "analytics",
                 "since": "5.4.0"
               }
@@ -32950,11 +32950,11 @@
               "name": "label",
               "optional": true,
               "type": "string",
-              "description": "@deprecated Use `accessibleLabel` — the same string (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `accessibleLabel` wins.",
+              "description": "@deprecated Use `accessibleLabel` — the same string (RM-191, ADR 0042 A.1). Still read until 7.0.0, with one development warning; when both are set, `accessibleLabel` wins.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "accessibleLabel",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -33042,11 +33042,11 @@
               "name": "labels",
               "optional": true,
               "type": "SparklineLabels",
-              "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 6.0.0, with one development warning; when both are set, `messages` wins.",
+              "description": "@deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still read until 7.0.0, with one development warning; when both are set, `messages` wins.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "messages",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -33162,7 +33162,7 @@
               "description": "@deprecated Use `defaultExpandedDepth`. While the chart is collapsible it means exactly that: nodes AT this depth start closed, showing `(n)`. With `collapsible={false}` it keeps its old behaviour, replacing everything deeper with a single \"+k\" pill (k = hidden leaves).",
               "kind": "number",
               "deprecated": {
-                "removeIn": "6.0.0",
+                "removeIn": "7.0.0",
                 "replacement": "defaultExpandedDepth",
                 "since": "5.0.0"
               }
@@ -33191,11 +33191,11 @@
               "name": "zoomable",
               "optional": true,
               "type": "boolean",
-              "description": "A canvas viewport (wheel zoom, drag pan, pinch, corner controls). @deprecated Since 5.6.0, use `zoom`. Removed in 6.0.0.",
+              "description": "A canvas viewport (wheel zoom, drag pan, pinch, corner controls). @deprecated Since 6.0.0, use `zoom`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "zoom",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -33255,11 +33255,11 @@
               "name": "align",
               "optional": true,
               "type": "\"start\" | \"center\"",
-              "description": "Where the tree sits when smaller than its container. @deprecated Since 5.6.0, use `plotAlign`. Removed in 6.0.0.",
+              "description": "Where the tree sits when smaller than its container. @deprecated Since 6.0.0, use `plotAlign`. Removed in 7.0.0.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "plotAlign",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -33434,11 +33434,11 @@
               "name": "showValues",
               "optional": true,
               "type": "boolean",
-              "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 15). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+              "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 15). Read until 7.0.0, with one development warning; when both are set, `labels` wins.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "labels",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -33903,11 +33903,11 @@
               "name": "showValues",
               "optional": true,
               "type": "boolean",
-              "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 16). Read until 6.0.0, with one development warning; when both are set, `labels` wins.",
+              "description": "@deprecated Use `labels` — `true`/`false` keep meaning the same thing (ADR 0042 A.3, row 16). Read until 7.0.0, with one development warning; when both are set, `labels` wins.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "labels",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -34042,10 +34042,10 @@
               "name": "height",
               "optional": true,
               "type": "number",
-              "description": "@deprecated Use `plotHeight` (`height={n}` is an alias for `plotHeight={n}`); removed in 6.0.0.",
+              "description": "@deprecated Use `plotHeight` (`height={n}` is an alias for `plotHeight={n}`); removed in 7.0.0.",
               "kind": "number",
               "deprecated": {
-                "removeIn": "6.0.0",
+                "removeIn": "7.0.0",
                 "replacement": "plotHeight",
                 "since": "5.0.0"
               }
@@ -34168,11 +34168,11 @@
               "name": "numTicks",
               "optional": true,
               "type": "number",
-              "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before (ADR 0042 A.2, row 6). Read until 6.0.0, with one development warning.",
+              "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before (ADR 0042 A.2, row 6). Read until 7.0.0, with one development warning.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "tickCount",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -34216,11 +34216,11 @@
               "name": "orientation",
               "optional": true,
               "type": "XAxisOrientation",
-              "description": "@deprecated Use `position` — the same values (ADR 0042 A.2, row 10). Read until 6.0.0, with one development warning; when both are set, `position` wins.",
+              "description": "@deprecated Use `position` — the same values (ADR 0042 A.2, row 10). Read until 7.0.0, with one development warning; when both are set, `position` wins.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "position",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
@@ -34304,22 +34304,22 @@
               "name": "orientation",
               "optional": true,
               "type": "YAxisOrientation",
-              "description": "@deprecated Use `position` — the same values (ADR 0042 A.2, row 11). Read until 6.0.0, with one development warning; when both are set, `position` wins.",
+              "description": "@deprecated Use `position` — the same values (ADR 0042 A.2, row 11). Read until 7.0.0, with one development warning; when both are set, `position` wins.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "position",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {
               "name": "numTicks",
               "optional": true,
               "type": "number",
-              "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before (ADR 0042 A.2, row 7). Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Read until 6.0.0, with one development warning.",
+              "description": "@deprecated Use `tickCount` — `numTicks` still wins when both are set, exactly as before (ADR 0042 A.2, row 7). Clamped to {@link Y_AXIS_MIN_TICK_COUNT}–{@link Y_AXIS_MAX_TICK_COUNT}. Read until 7.0.0, with one development warning.",
               "deprecated": {
-                "since": "5.6.0",
+                "since": "6.0.0",
                 "replacement": "tickCount",
-                "removeIn": "6.0.0"
+                "removeIn": "7.0.0"
               }
             },
             {

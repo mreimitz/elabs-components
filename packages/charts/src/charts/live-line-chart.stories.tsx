@@ -19,14 +19,14 @@ const meta = {
       description: {
         component:
           "A streaming metric, latest value first, sliding over a fixed time window.\n\n" +
-          "**Deprecated since 5.6.0, removed in 6.0.0** — `window` still works and logs one " +
+          "**Deprecated since 6.0.0, removed in 7.0.0** — `window` still works and logs one " +
           "development warning: `window` → `windowSeconds`.",
       },
     },
   },
   argTypes: {
     window: {
-      description: "Deprecated since 5.6.0 — use `windowSeconds`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `windowSeconds`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
   },

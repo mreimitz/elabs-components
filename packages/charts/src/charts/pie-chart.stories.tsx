@@ -23,14 +23,14 @@ const meta = {
       description: {
         component:
           "A whole split into shares, one ring of proportional slices.\n\n" +
-          "**Deprecated since 5.6.0, removed in 6.0.0** — `align` still works and logs one " +
+          "**Deprecated since 6.0.0, removed in 7.0.0** — `align` still works and logs one " +
           "development warning: `align` → `plotAlign`.",
       },
     },
   },
   argTypes: {
     align: {
-      description: "Deprecated since 5.6.0 — use `plotAlign`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `plotAlign`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
   },

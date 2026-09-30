@@ -286,7 +286,7 @@ export interface GaugeProps extends ChartA11yProps {
   messages?: Partial<GaugeLabels> & ChartMessages;
   /**
    * @deprecated Use `messages` — the same object, the same keys (RM-191, ADR 0042 A.1). Still
-   * read until 6.0.0, with one development warning; when both are set, `messages` wins.
+   * read until 7.0.0, with one development warning; when both are set, `messages` wins.
    */
   labels?: Partial<GaugeLabels>;
 }

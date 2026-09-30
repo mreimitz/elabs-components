@@ -1,6 +1,6 @@
 ---
 id: RM-205
-title: "6.0.0: remove the alias rows and legacy deprecations; numbered migration steps and `brand-ui codemod`"
+title: "7.0.0: remove the alias rows and legacy deprecations; numbered migration steps and `brand-ui codemod`"
 status: planned
 priority: P1
 effort: M (2 days)
@@ -18,13 +18,15 @@ touches:
   - packages/charts/src/charts/candlestick-chart.tsx (the `@deprecated` `maxVisibleItems` and `windowDomain` removed — ADR 0042 A.8)
   - packages/ai/src/a2ui/catalog.source.json and the generated catalogs (deprecated names removed)
   - .claude/rules/charts.md (the `height` alias note removed)
-  - .changeset/*.md (major — 6.0.0 migration: numbered steps generated from the alias rows; `brand-ui codemod` usage)
+  - .changeset/*.md (major — 7.0.0 migration: numbered steps generated from the alias rows; `brand-ui codemod` usage)
 source: docs/review/2026-09-25-charts-unification-review.md F35, F36; ADR 0042 (alias policy, tripwire); docs/DEPRECATION.md §2, §3
 ---
 
-# RM-205 6.0.0: remove the alias rows and legacy deprecations; numbered migration steps and `brand-ui codemod`
+# RM-205 7.0.0: remove the alias rows and legacy deprecations; numbered migration steps and `brand-ui codemod`
 
 ## Finding
+
+The 2026-10-01 release amendment to ADR 0042 moved this item from 6.0 to 7.0 because the chart deprecations had no published 5.6 warning release. The filename is retained for existing roadmap links.
 
 - Every alias shipped in wave 4, the A2UI deprecated names (RM-197) and the listed legacy deprecations (`ChartSelection`, `ChartBrushLayout`, the `height` aliases, Scatter `trend`) are due for removal in the next major (`docs/DEPRECATION.md` §2).
 - Every major ships a CHANGELOG migration section with numbered consumer steps and, for mechanical renames, the read-only `brand-ui codemod <map.json>` planner (§3).
@@ -32,18 +34,18 @@ source: docs/review/2026-09-25-charts-unification-review.md F35, F36; ADR 0042 (
 ## Change
 
 - Remove the 39 alias rows of ADR 0042 Appendix A with their deprecated props, Candlestick's `maxVisibleItems` and `windowDomain` (A.8), the `height` aliases, `ChartSelection`, `ChartBrushLayout`, Scatter `trend` and the A2UI deprecated names.
-- Nothing is renamed here. The 6.0 questions in ADR A.9 (confirmation item (e)) are the maintainer's to settle; any rename they lead to is an ADR amendment and a later item.
+- Nothing is renamed here. The 7.0 questions in ADR A.9 (confirmation item (e)) are the maintainer's to settle; any rename they lead to is an ADR amendment and a later item.
 - The changeset carries the numbered migration steps generated from the same rows as `chart-codemod-map.generated.json`, and shows `brand-ui codemod packages/cli/lib/chart-codemod-map.generated.json`.
 - RM-196 F2 (owner decision, 2026-09-27): Heatmap's `xDataKey` becomes a required prop at
-  6.0.0 unconditionally, and `yDataKey` becomes required on `variant="matrix"` (the default) —
+  7.0.0 unconditionally, and `yDataKey` becomes required on `variant="matrix"` (the default) —
   the real component ignores `yDataKey` entirely on `variant="calendar"` (review R2-2), so it
-  stays optional there. `HeatmapChartProps` regains the compile-time shape that was dropped in
-  the 5.6.0 minor to honour `docs/DEPRECATION.md` §2's no-break promise; `x`/`y` are removed the
+  stays optional there. `HeatmapChartProps` regains the compile-time shape that was deferred
+  for the 6.0 release to honour `docs/DEPRECATION.md` §2's warning-period promise; `x`/`y` are removed the
   same release.
 
 ## Acceptance
 
-- The 6.0 tripwire (RM-190) is green at version 6.0.0.
+- The 7.0 tripwire (RM-190) is green at version 7.0.0.
 - `pnpm consumer:check` (the consumer install smoke) green.
 - The migration steps list every row of the codemod map, numbered.
 
@@ -53,4 +55,4 @@ source: docs/review/2026-09-25-charts-unification-review.md F35, F36; ADR 0042 (
 
 ## Orchestrator notes
 
-Start only when the maintainer says release, and only after the last rename item (RM-196) has shipped in a minor. The release itself goes through `brand-ui-release`.
+Start only when the maintainer says to prepare 7.0, after the 6.x warning period has shipped. The release itself goes through `brand-ui-release`.

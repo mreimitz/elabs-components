@@ -52,7 +52,7 @@ const meta = {
           'shaded or sized by one numeric value per cell, with a `variant="calendar"` mode ' +
           "for one measure per day across a year. Cell fill suits few, dense cells; " +
           '`mode="dot"` reads better once cells get small and numerous.' +
-          "\n\n**Deprecated since 5.6.0, removed in 6.0.0** — each old name still works and " +
+          "\n\n**Deprecated since 6.0.0, removed in 7.0.0** — each old name still works and " +
           "logs one development warning: `showLegend` → `legend`; `loading` → " +
           '`status` (`loading={true}` is `status="loading"`); `emptyTitle` / ' +
           "`emptyMessage` / `emptyAction` → `empty: { title, message, action }`; " +
@@ -62,36 +62,36 @@ const meta = {
   },
   argTypes: {
     x: {
-      description: "Deprecated since 5.6.0 — use `xDataKey`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `xDataKey`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
     y: {
-      description: "Deprecated since 5.6.0 — use `yDataKey`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `yDataKey`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
     showLegend: {
-      description: "Deprecated since 5.6.0 — use `legend`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `legend`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
     loading: {
       description:
-        'Deprecated since 5.6.0 — use `status` (`true` is `"loading"`, `false` is `"ready"`). Removed in 6.0.0.',
+        'Deprecated since 6.0.0 — use `status` (`true` is `"loading"`, `false` is `"ready"`). Removed in 7.0.0.',
       table: { category: "Deprecated" },
     },
     emptyTitle: {
-      description: "Deprecated since 5.6.0 — use `empty.title`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `empty.title`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
     emptyMessage: {
-      description: "Deprecated since 5.6.0 — use `empty.message`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `empty.message`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
     emptyAction: {
-      description: "Deprecated since 5.6.0 — use `empty.action`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `empty.action`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
     showValues: {
-      description: "Deprecated since 5.6.0 — use `labels`. Removed in 6.0.0.",
+      description: "Deprecated since 6.0.0 — use `labels`. Removed in 7.0.0.",
       table: { category: "Deprecated" },
     },
   },
