@@ -1,5 +1,5 @@
 /** A reversible viewer-only lens tween. Target locks edits immediately; position controls the
- * shared-camera morph. URL replacement preserves sharing without rerendering the shell. */
+ * complete-drawing crossfade. URL replacement preserves sharing without rerendering the shell. */
 import { useSyncExternalStore } from "react";
 import { prefersReducedMotion } from "../motion";
 import { createStore } from "../state/create-store";
@@ -8,9 +8,9 @@ import { hashWithLens, isVisualLensHash } from "../interaction/lens-mode";
 export type Lens = "technical" | "visual";
 
 /** Normal-motion choreography duration. */
-const DURATION_MS = 700;
+const DURATION_MS = 240;
 /** Reduced motion: a short cross-fade, no movement (style-system concept §7). */
-const REDUCED_DURATION_MS = 200;
+const REDUCED_DURATION_MS = 120;
 
 interface LensState {
   /** The settled lens: meaningful once `position` has reached 0 or 1 and stopped. */
@@ -72,27 +72,37 @@ function tick(now: number, last: number) {
 
 let preparing = false;
 let transitionGeneration = 0;
-let prepareTransition: (() => Promise<boolean>) | null = null;
+let prepareTransition: ((signal: AbortSignal) => Promise<boolean>) | null = null;
+let preparationController: AbortController | null = null;
 
 /** The mounted canvas prepares both current layouts before the animation clock starts. */
-export function registerLensPreparation(prepare: () => Promise<boolean>): () => void {
+export function registerLensPreparation(
+  prepare: (signal: AbortSignal) => Promise<boolean>,
+): () => void {
   prepareTransition = prepare;
   return () => {
-    if (prepareTransition === prepare) prepareTransition = null;
+    if (prepareTransition === prepare) {
+      preparationController?.abort();
+      prepareTransition = null;
+    }
   };
 }
 
 function ensureAnimating() {
   if (rafId || preparing) return;
+  const current = lensStore.get();
+  if (current.position === (current.target === "visual" ? 1 : 0)) return;
   preparing = true;
   const generation = transitionGeneration;
   lensStore.set({ animating: true });
-  const prepared = prepareTransition?.() ?? Promise.resolve(false);
+  preparationController = new AbortController();
+  const prepared = prepareTransition?.(preparationController.signal) ?? Promise.resolve(false);
   void prepared
     .catch(() => false)
     .then((ready) => {
       if (generation !== transitionGeneration) return;
       preparing = false;
+      preparationController = null;
       const state = lensStore.get();
       const endpoint = state.target === "visual" ? 1 : 0;
       if (!ready || state.position === endpoint) {
@@ -107,6 +117,8 @@ export const lensActions = {
   /** Geometry belongs to one document. Discard its preparation and tween on navigation. */
   settleForDocument() {
     transitionGeneration++;
+    preparationController?.abort();
+    preparationController = null;
     cancelAnimationFrame(rafId);
     rafId = 0;
     preparing = false;

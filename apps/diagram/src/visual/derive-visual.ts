@@ -1,5 +1,5 @@
 /** Stable default grouping, augmented only by explicit roles and catalog capabilities. */
-import { aggregateVisualFlows } from "./aggregate-flows";
+import { addVisualBoundaries, aggregateVisualFlows, visualRelationships } from "./aggregate-flows";
 import type {
   ArchDiagram,
   ArchFlowSpec,
@@ -380,6 +380,7 @@ export function deriveVisualLens(ast: ArchDiagram, context: DeriveVisualContext 
     for (const entry of members) nodeToBox.set(entry.node.id, id);
   }
 
+  addVisualBoundaries(ast, boxes);
   const flows = aggregateVisualFlows(ast, boxes);
 
   const laneRoles = new Set(boxes.map((b) => b.lane));
@@ -389,5 +390,5 @@ export function deriveVisualLens(ast: ArchDiagram, context: DeriveVisualContext 
     title: LANE_TITLE[role],
   }));
 
-  return { lanes, boxes, flows };
+  return { lanes, boxes, flows, relationships: visualRelationships(ast) };
 }

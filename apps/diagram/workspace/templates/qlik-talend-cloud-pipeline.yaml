@@ -233,50 +233,61 @@ visual:
   controlPlane: [pipelines, dpm]
   lanes:
     - { id: sources, role: sources, title: Data sources, of: [data-sources] }
-    - { id: managed, role: customer-managed, title: Customer managed env, of: [customer-env] }
-    - { id: targets, role: targets, title: Targets, of: [vpc, dwh] }
+    - { id: managed, role: customer-managed, title: Customer managed, of: [customer-env] }
+    - { id: vpc, role: customer-vpc, title: Customer VPC, of: [vpc] }
+    - { id: targets, role: targets, title: Targets, of: [dwh] }
     - { id: control, role: vendor-cloud, title: Qlik Talend Cloud, of: [qtc] }
   boxes:
     - id: streaming
+      boundary: streams
       lane: sources
-      title: Streaming & Events
+      title: Streaming & events
+      summary: true
+      processes: []
       members: [kafka, kinesis, s3-source]
     - id: cdc-batch
+      boundary: systems
       lane: sources
-      title: CDC & Batch Sources
+      title: Operational systems
+      summary: true
       members: [saas-apps, rdbms, sap, mainframe]
     # Slide 4 has the Data Movement Gateway in this place. Slide 12 swaps in Qlik Replicate
     # at the same position (deck rule 7: variants keep positions and swap labels).
     - { id: capture, lane: managed, title: Qlik Replicate, members: [replicate] }
     - id: tenant
       lane: control
-      title: Customer Tenant
+      title: Pipeline management
+      summary: true
+      processes: []
       members: [pipelines, dpm]
       sub: [pipelines, dpm]
-    - { id: cluster, lane: targets, title: Open Lakehouse Cluster, members: [lakehouse, nia] }
-    - id: storage
-      lane: targets
-      title: Cloud Object Storage
-      members: [landing, config, tables, catalog]
-      sub: [landing, config, tables]
-      processes: [landing, storage]
+    # The visual overview groups the lakehouse compute and storage capabilities. The
+    # technical view retains their data/control relationships and individual services.
+    - id: lakehouse
+      lane: vpc
+      title: Open Lakehouse
+      summary: true
+      members: [lakehouse, nia, landing, config, tables, catalog]
+      processes: [storage]
     # Slide 4 titles this box "DWH Targets"; the item and slide 9 say "DWH Platform".
     - id: dwh-platform
+      boundary: dwh
       lane: targets
-      title: DWH Platform
+      title: Cloud warehouses
+      summary: true
       members: [snowflake, databricks, redshift]
-      processes: [mirror, transform]
-    # Slide 4 draws this box right of the targets lane, outside every lane. No lane role
-    # fits, so it sits in the targets lane as an aside box.
+      processes: []
+    # Data products are an output capability alongside the target platforms.
     - id: products
       lane: targets
       title: Qlik Data Products
       members: [data-products]
-      aside: true
   flows:
     # The technical flows start at zones; these name the lines the slide draws.
-    - { from: streaming, to: cluster }
-    - { from: cdc-batch, to: capture }
-    # The deck puts the ELT badge on the data line into the warehouse platform (slide 9);
-    # the technical transform flow is `pipelines -> dwh`.
-    - { from: storage, to: dwh-platform, process: elt }
+    - { from: streaming, to: lakehouse, label: Stream }
+    - { from: cdc-batch, to: capture, label: Capture }
+    - { from: capture, to: lakehouse, label: Replicate }
+    - { from: lakehouse, to: dwh-platform, label: Publish }
+    - { from: tenant, to: lakehouse, label: Manage }
+    - { from: tenant, to: dwh-platform, label: Transform }
+    - { from: tenant, to: products, label: Publish }

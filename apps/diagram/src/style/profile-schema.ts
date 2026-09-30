@@ -61,7 +61,7 @@ export const PROFILE_SCHEMA: Rule = object(
     boxes: object({
       anatomy: choice("capability-list"),
       title: object({ weight: choice(400, 500, 600, 700), align: choice("left", "center") }),
-      items: object({ icon: choice("mono", "brand"), bullet: choice("ring", "none") }),
+      items: object({ icon: choice("mono", "brand", "semantic"), bullet: choice("ring", "none") }),
     }),
     pills: object({
       enabled: "boolean",

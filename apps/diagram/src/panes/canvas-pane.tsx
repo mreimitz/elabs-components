@@ -36,7 +36,7 @@ import {
   useDiagramLayout,
   type ComponentLayoutChange,
 } from "../layout/use-diagram-layout";
-import { motionMs, prefersReducedMotion } from "../motion";
+import { motionMs } from "../motion";
 import { isZoneNode } from "../nodes/zone-data";
 import { useZoneAutofit } from "../nodes/use-zone-autofit";
 import { layoutReadyActions } from "./layout-ready-store";
@@ -76,7 +76,7 @@ import {
 } from "../shell/view-overrides-store"; // view mode overrides (maintainer 2026-09-27)
 
 import { lensActions, useLens } from "../shell/lens-store";
-import { DRESS_START, GATHER_START, LensMorphOverlay, subProgress } from "./lens-morph-overlay"; // orchestrator correction 2026-09-27 (S10 morph)
+import { LensTransitionPreparation, lensOpacity } from "./lens-morph-overlay";
 import { LensChrome, LensChromeTarget } from "./lens-chrome";
 import { VisualCanvasPane } from "./visual-canvas-pane"; // maintainer 2026-09-27 (lens switch)
 
@@ -208,8 +208,8 @@ function applyViewNodeStyle(
   };
 }
 
-/** Keeps both layouts mounted and shares one camera during the lens morph. Chrome is
- * portaled outside fading content. Technical writes remain locked until fully settled. */
+/** Keep complete layouts and their independent cameras mounted. Many-to-one projection
+ * changes topology: crossfade the real drawings instead of inventing intermediate edges. */
 export function CanvasPane(props: CanvasPaneProps) {
   const ast = useDiagram((s) => s.drawn.ast);
   const style = useResolvedStyle(ast);
@@ -223,23 +223,22 @@ export function CanvasPane(props: CanvasPaneProps) {
   const loadCount = useDiagram((s) => s.loadCount);
   const position = useLens((s) => s.position);
   const target = useLens((s) => s.target);
+  const animating = useLens((s) => s.animating);
   const viewing = useDocMode() === "view";
   const [chromeTarget, setChromeTarget] = useState<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const technicalRef = useRef<HTMLDivElement>(null);
   const visualRef = useRef<HTMLDivElement>(null);
+  const technicalFocus = useRef<HTMLElement | null>(null);
+  const visualFocus = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => {
-    // Captured morph content belongs to both a document and its effective paint. A theme
-    // change during motion settles at the requested lens before painting the new profile.
+    // A document or paint change settles at the requested lens before showing new content.
+    technicalFocus.current = null;
+    visualFocus.current = null;
     lensActions.settleForDocument();
   }, [loadCount, style]);
-  // Re-read every render, not cached in state: this component already re-renders on every
-  // animation frame while `position` moves (`useLens`), so a preference flipped mid-session
-  // (taste profile) takes effect on the very next transition without a separate subscription.
-  const reduced = prefersReducedMotion();
   const atTechnical = position === 0;
   const atVisual = position === 1;
-  const morphing = !reduced && !atTechnical && !atVisual;
   // The pane that just went `inert` forces the browser to blur whatever it held focus — with
   // no next stop of its own, focus drops to `<body>` and a keyboard user has to tab in from
   // the top of the page again. Once a switch settles, reclaim it: land on the pane that is
@@ -247,38 +246,18 @@ export function CanvasPane(props: CanvasPaneProps) {
   // already lands on a specific node when there is one to frame, so this only fires when
   // nothing more specific claimed focus first).
   useEffect(() => {
-    if (morphing) return;
+    if (animating) return;
     if (document.activeElement !== document.body) return;
     const shown = atVisual ? visualRef.current : technicalRef.current;
-    shown?.focus();
-  }, [atVisual, atTechnical, morphing]);
-  // The real panes' DIAGRAM content used to drop to `opacity: 0` the instant a switch started
-  // and pop back at the end — "a swap, not a morph" (S10's own bar). Per §7's gather/dress
-  // phases, the technical pane's content now fades OUT over the first 120 ms ("settle") and the
-  // visual pane's fades IN over the last 200 ms ("dress"); the ghost overlay owns the screen
-  // only in between, so the first and last frames are always real content. This is content-only
-  // Chrome is outside these independently composited renderer layers.
-  const technicalOpacity = reduced
-    ? 1 - position
-    : morphing
-      ? 1 - subProgress(position, 0, GATHER_START)
-      : atVisual
-        ? 0
-        : 1;
-  const visualOpacity = reduced
-    ? position
-    : morphing
-      ? subProgress(position, DRESS_START, 1)
-      : atVisual
-        ? 1
-        : 0;
-  // `position !== 0` the instant a switch starts, not just once `atVisual` settles — React
-  // Flow's delete-key handling and drag/connect are document-level and ungated by
-  // `inert`/focus, so the technical pane must lock itself down (`deleteKeyCode: null`, no drag,
-  // no connect) for the whole time it is not the shown lens, including mid-morph. `inert`/
-  // `aria-hidden` below still only flip at the settled ends, so the pane keeps taking real
-  // focus/hit-testing while both sides cross-fade during a switch.
-  const technicalLensLocked = position !== 0 || target !== "technical";
+    const previous = atVisual ? visualFocus.current : technicalFocus.current;
+    if (previous?.isConnected && shown?.contains(previous)) previous.focus({ preventScroll: true });
+    if (document.activeElement === document.body) shown?.focus({ preventScroll: true });
+  }, [atVisual, atTechnical, animating]);
+  // Both renderers retain their actual routes, labels and viewports throughout the fade.
+  // Only the settled lens is interactive; preparation and reversal also lock both layers.
+  const visualOpacity = lensOpacity(position);
+  const technicalOpacity = 1 - visualOpacity;
+  const technicalLensLocked = animating || position !== 0 || target !== "technical";
   // Composite the pane itself: renderers can mount after layout completes, while this layer
   // exists from the first paint. Opacity is not inherited and chrome is portaled outside it.
   return (
@@ -288,15 +267,19 @@ export function CanvasPane(props: CanvasPaneProps) {
           <div
             ref={technicalRef}
             data-lens-pane="technical"
+            onFocusCapture={(event) => {
+              technicalFocus.current = event.target as HTMLElement;
+            }}
             className="absolute inset-0 focus-ring-inset"
             tabIndex={-1}
             style={{
               ...profileVariables(style.technical),
               visibility: atVisual ? "hidden" : "visible",
               opacity: technicalOpacity,
+              willChange: "opacity",
             }}
-            aria-hidden={atVisual || undefined}
-            inert={atVisual || undefined}
+            aria-hidden={!atTechnical || animating || undefined}
+            inert={!atTechnical || animating || undefined}
           >
             <TechnicalCanvasPane
               {...props}
@@ -306,24 +289,23 @@ export function CanvasPane(props: CanvasPaneProps) {
           <div
             ref={visualRef}
             data-lens-pane="visual"
+            onFocusCapture={(event) => {
+              visualFocus.current = event.target as HTMLElement;
+            }}
             className="absolute inset-0 focus-ring-inset"
             tabIndex={-1}
             style={{
               ...profileVariables(style.visual),
               visibility: atTechnical ? "hidden" : "visible",
               opacity: visualOpacity,
+              willChange: "opacity",
             }}
-            aria-hidden={!atVisual || undefined}
-            inert={!atVisual || undefined}
+            aria-hidden={!atVisual || animating || undefined}
+            inert={!atVisual || animating || undefined}
           >
             <VisualCanvasPane />
           </div>
-          <LensMorphOverlay
-            key={loadCount}
-            containerRef={containerRef}
-            position={position}
-            active={morphing}
-          />
+          <LensTransitionPreparation key={loadCount} containerRef={containerRef} />
           <div ref={setChromeTarget} className="pointer-events-none absolute inset-0 z-20" />
         </div>
       </LensChromeTarget.Provider>

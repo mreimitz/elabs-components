@@ -3,8 +3,9 @@ import type { StyleProfile } from "../style/types";
 import { MarkerType } from "@xyflow/react";
 import {
   LANE_HEADER_HEIGHT,
-  LANE_PADDING,
-  laneGap,
+  ROUTE_ROW_HEIGHT,
+  visualGutterTracks,
+  controlPlaneGap,
   skipLaneFlowIds,
   type Rect,
   type VisualLayout,
@@ -23,37 +24,36 @@ import {
 function routedPath(
   from: Rect,
   to: Rect,
-  index: number,
-  count: number,
-  gap: number,
+  sourceColumn: number,
+  targetColumn: number,
+  controlColumn: number,
+  approachLeft: boolean,
   skipIndex: number,
   dataTop: number,
   fromControl: boolean,
   toControl: boolean,
   sourceFraction: number,
   targetFraction: number,
+  adjacent: boolean,
+  controlGap: number,
+  controlFraction: number,
 ): { path: string; labelX: number; labelY: number; labelMaxWidth: number } {
-  const fraction = (index + 1) / (count + 1);
   const sourceY = from.y + 12 + sourceFraction * (from.height - 24);
   const targetY = to.y + 12 + targetFraction * (to.height - 24);
   const sameLane = from.x === to.x;
   const forward = to.x > from.x;
   const sourceX = sameLane || forward ? from.x + from.width : from.x;
   const targetX = sameLane || !forward ? to.x + to.width : to.x;
-  const offset = LANE_PADDING + 4 + fraction * (gap - 8);
-  const sourceColumn =
-    sameLane || forward ? sourceX + offset : sourceX - gap - 2 * LANE_PADDING + offset;
-  const targetColumn =
-    sameLane || !forward ? targetX + offset : targetX - gap - 2 * LANE_PADDING + offset;
   let points: [number, number][];
   if (fromControl || toControl) {
+    const fraction = controlFraction;
     const control = fromControl ? from : to;
     const other = fromControl ? to : from;
     const start: [number, number] = [
       control.x + control.width * fraction,
       control.y + control.height,
     ];
-    const corridor = dataTop - gap + 8 + fraction * (gap - 16);
+    const corridor = dataTop - controlGap + 8 + fraction * (controlGap - 16);
     if (fromControl && toControl) {
       points = [
         start,
@@ -62,26 +62,30 @@ function routedPath(
         [to.x + to.width * fraction, to.y + to.height],
       ];
     } else {
-      const sideX = other.x + other.width + LANE_PADDING + 8 + fraction * (gap - 16);
-      const sideY = other.y + 12 + fraction * (other.height - 24);
+      const sideX = controlColumn;
+      const sideY =
+        other.y + 12 + (fromControl ? targetFraction : sourceFraction) * (other.height - 24);
       points = [
         start,
         [start[0], corridor],
         [sideX, corridor],
         [sideX, sideY],
-        [other.x + other.width, sideY],
+        [approachLeft ? other.x : other.x + other.width, sideY],
       ];
       if (!fromControl) points.reverse();
     }
-  } else if (sameLane || Math.abs(to.x - from.x) <= from.width + 2 * LANE_PADDING + gap + 1) {
+  } else if (sameLane || adjacent) {
+    // Put the bend near the receiving box, leaving a full horizontal run for
+    // the label. A middle bend would halve the corridor reserved for that label.
+    const bend = sourceColumn;
     points = [
       [sourceX, sourceY],
-      [sourceColumn, sourceY],
-      [sourceColumn, targetY],
+      [bend, sourceY],
+      [bend, targetY],
       [targetX, targetY],
     ];
   } else {
-    const channelY = dataTop + LANE_HEADER_HEIGHT + 8 + skipIndex * 8;
+    const channelY = dataTop + LANE_HEADER_HEIGHT + 8 + skipIndex * ROUTE_ROW_HEIGHT;
     points = [
       [sourceX, sourceY],
       [sourceColumn, sourceY],
@@ -125,10 +129,34 @@ export function buildVisualGraph(
   profile?: StyleProfile,
 ): VisualGraph {
   const nodes: (LanePanelNodeType | CapabilityBoxNodeType)[] = [];
-  const portFraction = (box: string, flow: VisualFlow) => {
-    const incident = lens.flows.filter((item) => item.from === box || item.to === box);
-    return (incident.indexOf(flow) + 1) / (incident.length + 1);
-  };
+  const portRows = new Map<string, number>();
+  const occupiedRows: number[] = [];
+  for (const { box, rect } of [...layout.boxes].sort((a, b) => a.box.id.localeCompare(b.box.id))) {
+    const incident = lens.flows
+      .filter((flow) => flow.from === box.id || flow.to === box.id)
+      .sort((a, b) => a.id.localeCompare(b.id));
+    for (const [index, flow] of incident.entries()) {
+      const preferred = rect.y + 12 + ((index + 1) / (incident.length + 1)) * (rect.height - 24);
+      let row = preferred;
+      if (lens.composition !== "process") {
+        for (let offset = 0; offset < rect.height; offset += 8) {
+          const available = [preferred + offset, preferred - offset].find(
+            (candidate) =>
+              candidate >= rect.y + 12 &&
+              candidate <= rect.y + rect.height - 12 &&
+              occupiedRows.every((used) => Math.abs(candidate - used) >= 8),
+          );
+          if (available !== undefined) {
+            row = available;
+            break;
+          }
+        }
+      }
+      occupiedRows.push(row);
+      portRows.set(`${box.id}\0${flow.id}`, (row - rect.y - 12) / (rect.height - 24));
+    }
+  }
+  const portFraction = (box: string, flow: VisualFlow) => portRows.get(`${box}\0${flow.id}`) ?? 0.5;
   for (const { lane, rect } of layout.lanes) {
     nodes.push({
       id: `lane:${lane.id}`,
@@ -143,6 +171,9 @@ export function buildVisualGraph(
     });
   }
   const rectOf = new Map(layout.boxes.map(({ box, rect }) => [box.id, rect]));
+  const memberTitle = new Map(
+    lens.boxes.flatMap((box) => box.members.map((member) => [member.id, member.title] as const)),
+  );
   const titleOf = new Map(layout.boxes.map(({ box }) => [box.id, box.title]));
   for (const { box, rect } of layout.boxes) {
     nodes.push({
@@ -159,6 +190,8 @@ export function buildVisualGraph(
         processes: box.processes,
         sub: box.sub,
         provider: box.provider,
+        summary: box.summary,
+        boundaryOf: box.boundaryOf,
       },
       draggable: false,
       selectable: false,
@@ -167,11 +200,34 @@ export function buildVisualGraph(
     });
   }
 
+  const controlBoxes = new Set(lens.boxes.filter((box) => box.controlPlane).map((box) => box.id));
+  const controlFlows = lens.flows
+    .filter((flow) => controlBoxes.has(flow.from) || controlBoxes.has(flow.to))
+    .sort((a, b) => a.id.localeCompare(b.id));
+  const { uses, tracks } = visualGutterTracks(lens);
+  const laneRects = new Map(layout.lanes.map((item) => [item.lane.id, item.rect]));
+  const trackX = (corridor: string | undefined, flowId: string) => {
+    if (corridor === undefined) return 0;
+    const lane = laneRects.get(corridor)!;
+    return (
+      lane.x +
+      lane.width +
+      layout.gutters[corridor]! -
+      4 -
+      (tracks.get(corridor)?.indexOf(flowId) ?? 0) * 8
+    );
+  };
   const edges: VisualFlowEdgeType[] = lens.flows
-    .map((flow: VisualFlow, index) => {
+    .map((flow: VisualFlow) => {
+      const use = uses.get(flow.id)!;
       const from = rectOf.get(flow.from);
       const to = rectOf.get(flow.to);
       if (!from || !to) return null;
+      const sourceBox = lens.boxes.find((box) => box.id === flow.from)!;
+      const targetBox = lens.boxes.find((box) => box.id === flow.to)!;
+      const dataLanes = layout.lanes.filter((item) => item.lane.id !== "@control-plane");
+      const fromColumn = dataLanes.findIndex((item) => item.lane.id === sourceBox.lane);
+      const toColumn = dataLanes.findIndex((item) => item.lane.id === targetBox.lane);
       const fromTitle = titleOf.get(flow.from) ?? flow.from;
       const toTitle = titleOf.get(flow.to) ?? flow.to;
       const paint =
@@ -194,17 +250,27 @@ export function buildVisualGraph(
           ...routedPath(
             from,
             to,
-            index,
-            lens.flows.length,
-            laneGap(lens),
+            trackX(use.source, flow.id),
+            trackX(use.target, flow.id),
+            trackX(use.control, flow.id),
+            use.approachLeft,
             skipLaneFlowIds(lens).indexOf(flow.id),
             layout.dataTop,
-            lens.boxes.find((box) => box.id === flow.from)?.controlPlane ?? false,
-            lens.boxes.find((box) => box.id === flow.to)?.controlPlane ?? false,
+            lens.composition !== "process" && (sourceBox.controlPlane ?? false),
+            lens.composition !== "process" && (targetBox.controlPlane ?? false),
             portFraction(flow.from, flow),
             portFraction(flow.to, flow),
+            Math.abs(fromColumn - toColumn) === 1,
+            controlPlaneGap(lens),
+            (controlFlows.indexOf(flow) + 1) / (controlFlows.length + 1),
           ),
           label: flow.label,
+          relationshipDetails: flow.relationships
+            ?.map(
+              (item) =>
+                `${memberTitle.get(item.from) ?? item.from} → ${memberTitle.get(item.to) ?? item.to}: ${item.kind ?? "data"}${item.label ? ` — ${item.label}` : ""}`,
+            )
+            .join("\n"),
           process: flow.process,
           solid: flow.kind === "data",
           bidirectional: flow.bidirectional,

@@ -123,7 +123,7 @@ const ROWS: ExampleRow[] = [
  * `ROWS` above only proves a lens is non-empty and repeatable, not that any one derivation
  * rule is correct. `DERIVE_CASES` below covers a handful of rules on small synthetic
  * fixtures, never on the real files. This function restates the rules that generalize
- * (referential integrity, node coverage, the same-kind bidirectional flow merge, the actor
+ * (referential integrity, node coverage, the equivalent-relationship bidirectional flow merge, the actor
  * exemption from the network/access aside rule) as invariants any correctly-derived lens must
  * satisfy, run against every shipped example AND template so a regression in real content —
  * not just the hand-written cases — fails here too.
@@ -141,7 +141,7 @@ function structuralIssues(
   const memberCounts = new Map<string, number>();
   for (const box of lens.boxes) {
     if (!laneIds.has(box.lane)) issues.push(`box "${box.id}" has unknown lane "${box.lane}"`);
-    if (box.members.length === 0) issues.push(`box "${box.id}" has no members`);
+    if (box.members.length === 0 && !box.boundaryOf) issues.push(`box "${box.id}" has no members`);
     for (const member of box.members) {
       memberCounts.set(member.id, (memberCounts.get(member.id) ?? 0) + 1);
     }
@@ -158,7 +158,7 @@ function structuralIssues(
   for (const id of memberCounts.keys()) {
     if (!nodeIds.has(id)) issues.push(`box member "${id}" is not a node in the document`);
   }
-  // Two raw flows between the same box pair, opposite direction, of the SAME kind must merge
+  // Two raw flows between the same box pair, opposite direction, with identical semantics must merge
   // into one bidirectional flow (rule 3) — seeing both directions as separate rows here means
   // that merge did not happen.
   const pairDirections = new Map<string, { forward: boolean; back: boolean; kind: string }>();
@@ -167,7 +167,16 @@ function structuralIssues(
     if (!boxIds.has(flow.to)) issues.push(`flow "${flow.id}" has unknown target "${flow.to}"`);
     if (flow.from === flow.to) issues.push(`flow "${flow.id}" is a self-loop (should be dropped)`);
     const [a, b] = [flow.from, flow.to].sort();
-    const key = `${a}~${b}~${flow.kind}`;
+    const source = flow.relationships?.[0];
+    const key = JSON.stringify([
+      a,
+      b,
+      source?.kind ?? flow.kind,
+      source?.label ?? "",
+      source?.protocol ?? "",
+      source?.schedule ?? "",
+      source?.secure ?? "",
+    ]);
     const entry = pairDirections.get(key) ?? { forward: false, back: false, kind: flow.kind };
     if (flow.from === a) entry.forward = true;
     else entry.back = true;

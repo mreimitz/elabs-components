@@ -38,7 +38,10 @@ export function VisualFlowEdge({
           <span
             data-slot="visual-flow-label"
             className="pointer-events-auto absolute z-10 flex min-w-0 items-center gap-1 overflow-hidden rounded-md bg-canvas px-1 text-meta text-foreground"
-            title={[data.process?.toUpperCase(), data.label].filter(Boolean).join(": ")}
+            title={
+              data.relationshipDetails ??
+              [data.process?.toUpperCase(), data.label].filter(Boolean).join(": ")
+            }
             style={{
               maxWidth: Math.min(192, data.labelMaxWidth),
               transform: `translate(-50%, -50%) translate(${data.labelX}px, ${data.labelY}px)`,

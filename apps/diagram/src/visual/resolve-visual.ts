@@ -5,7 +5,7 @@ import { MAX_COMPONENT_DEPTH } from "../spec/compose/resolver";
 import { ID_RE, refFileOf } from "../spec/dialect/ids";
 import { issue, type ArchIssue } from "../spec/dialect/issues";
 import type { ArchDiagram, ArchNodeSpec, ArchZoneSpec } from "../spec/dialect/types";
-import { aggregateVisualFlows } from "./aggregate-flows";
+import { addVisualBoundaries, aggregateVisualFlows, visualRelationships } from "./aggregate-flows";
 import { deriveVisualLens } from "./derive-visual";
 import {
   LANE_ORDER,
@@ -102,7 +102,8 @@ function resolve(
   });
 
   const ownerOf = (id: string): VisualBox["owner"] => {
-    let parent = memberOf(ast, id, context.components).entry?.parent;
+    const entry = memberOf(ast, id, context.components).entry;
+    let parent = entry && "kind" in entry ? id : entry?.parent;
     const seen = new Set<string>();
     let hasZone = false;
     while (parent && !seen.has(parent)) {
@@ -198,6 +199,7 @@ function resolve(
   const boxes: VisualBox[] = [];
   const boxIds = new Map<string, string>();
   const claimed = new Set<string>();
+  const boundaries = new Set<string>();
   let memberCount = 0;
   written?.boxes?.forEach((box, index) => {
     const path = `visual.boxes[${index}]`;
@@ -207,6 +209,22 @@ function resolve(
     if (!laneIds.has(box.lane) && !LANE_ORDER.includes(box.lane as VisualLane["role"]))
       bad(`${path}.lane`, `No lane has id "${box.lane}".`);
     boxIds.set(box.id, `box:${box.id}`);
+    if (!box.members.length && !box.boundary)
+      bad(path, "A box needs members or an explicit boundary.");
+    if (box.boundary) {
+      const found = memberOf(ast, box.boundary, context.components, scopes);
+      if (!found.entry && !found.pending)
+        bad(path + ".boundary", "The boundary must name a technical zone or component.");
+      if (
+        found.entry &&
+        !("kind" in found.entry) &&
+        !("ref" in found.entry && found.entry.ref?.startsWith("ws/"))
+      )
+        bad(path + ".boundary", "The boundary must name a technical zone or component.");
+      if (boundaries.has(box.boundary))
+        bad(path + ".boundary", "This boundary is already represented by another box.");
+      boundaries.add(box.boundary);
+    }
     const members: VisualBox["members"] = [];
     box.members.forEach((id, item) => {
       if (++memberCount > MAX_VISUAL_MEMBERS) return;
@@ -219,6 +237,20 @@ function resolve(
       if (found.entry && "type" in found.entry)
         members.push({ id, title: found.entry.title, icon: found.entry.icon });
     });
+    if (box.boundary) {
+      for (const member of members) {
+        let entry = memberOf(ast, member.id, context.components).entry;
+        let inside = member.id === box.boundary || member.id.startsWith(`${box.boundary}.`);
+        const visited = new Set<string>();
+        while (!inside && entry?.parent && !visited.has(entry.parent)) {
+          inside = entry.parent === box.boundary;
+          visited.add(entry.parent);
+          entry = memberOf(ast, entry.parent, context.components).entry;
+        }
+        if (!inside)
+          bad(path + ".boundary", `Member "${member.id}" is outside boundary "${box.boundary}".`);
+      }
+    }
     const seenSub = new Set<string>();
     box.sub?.forEach((id, item) => {
       if (!box.members.includes(id) || seenSub.has(id))
@@ -236,9 +268,12 @@ function resolve(
       id: `box:${box.id}`,
       lane: box.lane,
       title: box.title,
+      ...(box.boundary && { boundaryOf: box.boundary }),
       members,
-      owner: ownerOf(box.members[0] ?? ""),
+      owner: ownerOf(box.boundary ?? box.members[0] ?? ""),
       ...(box.aside !== undefined && { aside: box.aside }),
+      ...(box.summary !== undefined && { summary: box.summary }),
+      ...(box.slot !== undefined && { slot: box.slot }),
       ...(box.sub && { sub: box.sub }),
       ...(box.processes && { processes: box.processes }),
     });
@@ -277,10 +312,13 @@ function resolve(
       bad(node.path + ".ref", `Cannot inherit visual layout: ${result.issues[0]?.message}`);
       continue;
     }
-    const visibleBoxes = result.lens.boxes.filter((box) =>
-      box.members.some(
-        (member) => ![...hidden, ...claimed].some((id) => overlaps(id, `${node.id}.${member.id}`)),
-      ),
+    const visibleBoxes = result.lens.boxes.filter(
+      (box) =>
+        Boolean(box.boundaryOf) ||
+        box.members.some(
+          (member) =>
+            ![...hidden, ...claimed].some((id) => overlaps(id, `${node.id}.${member.id}`)),
+        ),
     );
     for (const id of result.lens.hidden ?? [])
       if (![...claimed].some((member) => overlaps(member, `${node.id}.${id}`)))
@@ -300,7 +338,7 @@ function resolve(
       const members = box.members
         .map((member) => ({ ...member, id: `${node.id}.${member.id}` }))
         .filter((member) => ![...hidden, ...claimed].some((id) => overlaps(id, member.id)));
-      if (!members.length) continue;
+      if (!members.length && !box.boundaryOf) continue;
       const grouped = new Map<string, VisualBox["members"]>();
       for (const member of members) {
         inspect(member.id, node.path + ".ref", "node");
@@ -309,6 +347,7 @@ function resolve(
         group.push(member);
         grouped.set(lane, group);
       }
+      if (!members.length && box.boundaryOf) grouped.set(laneMap.get(box.lane)!, []);
       for (const [lane, group] of grouped) {
         let id = `box:${node.id}.${box.id.replace(/^box:/, "")}`;
         while (boxes.some((entry) => entry.id === id)) id += ":ref";
@@ -318,6 +357,7 @@ function resolve(
           id,
           lane,
           members: group,
+          boundaryOf: box.boundaryOf ? `${node.id}.${box.boundaryOf}` : undefined,
           sub: box.sub
             ?.map((entry) => `${node.id}.${entry}`)
             .filter((entry) => group.some((member) => member.id === entry)),
@@ -327,7 +367,20 @@ function resolve(
     for (const flow of result.lens.flows) {
       const from = boxMap.get(flow.from);
       const to = boxMap.get(flow.to);
-      if (from && to) inheritedFlows.push({ ...flow, id: `flow:${node.id}:${flow.id}`, from, to });
+      if (from && to)
+        inheritedFlows.push({
+          ...flow,
+          id: `flow:${node.id}:${flow.id}`,
+          from,
+          to,
+          sourceFlowIds: flow.sourceFlowIds?.map((id) => `${node.id}.${id}`),
+          relationships: flow.relationships?.map((entry) => ({
+            ...entry,
+            id: `${node.id}.${entry.id}`,
+            from: `${node.id}.${entry.from}`,
+            to: `${node.id}.${entry.to}`,
+          })),
+        });
     }
     inherited.add(node.id);
   }
@@ -375,10 +428,15 @@ function resolve(
       }
       return undefined;
     });
+    const boundary = box.boundaryOf
+      ? memberOf(ast, box.boundaryOf, context.components).entry
+      : undefined;
     box.provider =
-      providers.length && providers.every((provider) => provider === providers[0])
-        ? providers[0]
-        : undefined;
+      boundary && "provider" in boundary && boundary.provider
+        ? boundary.provider
+        : providers.length && providers.every((provider) => provider === providers[0])
+          ? providers[0]
+          : undefined;
   }
   for (const box of boxes)
     if (!lanes.some((lane) => lane.id === box.lane)) {
@@ -415,12 +473,20 @@ function resolve(
       })),
     );
   }
+  addVisualBoundaries(graph, boxes);
+  for (const box of boxes)
+    if (!lanes.some((lane) => lane.id === box.lane)) {
+      const role = LANE_ORDER.find((candidate) => candidate === box.lane) ?? "targets";
+      lanes.push({ id: box.lane, role, title: LANE_TITLE[role] });
+    }
   const flows = aggregateVisualFlows(graph, boxes);
   for (const flow of inheritedFlows) {
     const match = flows.find(
       (entry) => entry.kind === flow.kind && entry.from === flow.from && entry.to === flow.to,
     );
-    if (match) Object.assign(match, { label: flow.label, process: flow.process });
+    if (match && flow.annotated)
+      Object.assign(match, { label: flow.label, process: flow.process, annotated: true });
+    else if (match) continue;
     else flows.push(flow);
   }
   const overrides = new Set<string>();
@@ -446,15 +512,41 @@ function resolve(
         "A visual flow annotates an existing technical connection; this box pair has none.",
       );
     else
-      for (const edge of matches) Object.assign(edge, { label: flow.label, process: flow.process });
+      for (const edge of matches)
+        Object.assign(edge, { label: flow.label, process: flow.process, annotated: true });
   });
+  // An authored pair annotation explicitly chooses one displayed relationship.
+  // Bundle equivalent displayed arrows, but retain every source record for inspection.
+  const displayed = new Map<string, VisualLens["flows"][number]>();
+  for (const flow of flows) {
+    const key = flow.annotated
+      ? JSON.stringify([
+          flow.from,
+          flow.to,
+          flow.bidirectional,
+          flow.relationships?.[0]?.kind ?? flow.kind,
+          flow.label ?? "",
+          flow.process ?? "",
+        ])
+      : flow.id;
+    const previous = displayed.get(key);
+    if (previous && flow.annotated) {
+      previous.sourceFlowIds = [
+        ...new Set([...(previous.sourceFlowIds ?? []), ...(flow.sourceFlowIds ?? [])]),
+      ];
+      previous.relationships = [...(previous.relationships ?? []), ...(flow.relationships ?? [])];
+      previous.id = `flow:display:${key}`;
+    } else displayed.set(key, { ...flow });
+  }
   return {
     lens: {
+      composition: written?.composition,
+      relationships: visualRelationships(graph),
       lanes: lanes.filter(
         (lane) => !inheritedLaneIds.has(lane.id) || boxes.some((box) => box.lane === lane.id),
       ),
       boxes,
-      flows,
+      flows: [...displayed.values()],
       ...(hidden.size && { hidden: [...hidden] }),
     },
     issues,

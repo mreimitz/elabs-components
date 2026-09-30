@@ -232,6 +232,18 @@ try {
                 chrome: [...document.querySelectorAll("[data-lens-chrome]")].map(
                   (v) => getComputedStyle(v).visibility,
                 ),
+                interactiveLayers: [...document.querySelectorAll("[data-lens-pane]")].filter(
+                  (pane) => !pane.inert && getComputedStyle(pane).visibility === "visible",
+                ).length,
+                visibleText: [
+                  ...document.querySelectorAll("[data-lens-pane] .react-flow__node"),
+                ].some(
+                  (node) =>
+                    node.textContent.trim() && globalThis.__lensEffectiveOpacity(node) >= 0.5,
+                ),
+                edgeGeometry: [
+                  ...document.querySelectorAll("[data-lens-pane] .react-flow__edge path"),
+                ].map((path) => path.getAttribute("d")),
                 ghostVisible:
                   document
                     .querySelector("[data-morph-camera]")
@@ -273,25 +285,21 @@ try {
         data.every((f) => f.chrome.includes("visible")),
         `chrome disappeared: ${scenario}`,
       );
-      if (reducedMotion === "no-preference" && moving.length)
-        assert(
-          moving.every((f) => f.cameras[0] === f.cameras[1]),
-          "independent cameras during morph",
+      assert(
+        data.every((f) => !f.ghostVisible),
+        "synthetic geometry appeared",
+      );
+      const initial = moving[0];
+      for (const frame of moving) {
+        assert.deepEqual(frame.cameras, initial.cameras, "retained lens camera moved");
+        assert.deepEqual(frame.nodeGeometry, initial.nodeGeometry, "crossfade changed geometry");
+        assert.equal(frame.interactiveLayers, 0, "a moving pane remained interactive");
+        assert(frame.visibleText, "all real labels disappeared during transition");
+        assert.deepEqual(
+          frame.edgeGeometry,
+          initial.edgeGeometry,
+          "actual routes changed during transition",
         );
-      if (reducedMotion === "reduce") {
-        assert(
-          data.every((f) => !f.ghostVisible),
-          "reduced-motion geometry moved",
-        );
-        const initial = moving[0];
-        for (const frame of moving) {
-          assert.deepEqual(frame.cameras, initial.cameras, "reduced-motion camera moved");
-          assert.deepEqual(
-            frame.nodeGeometry,
-            initial.nodeGeometry,
-            "reduced-motion node geometry moved",
-          );
-        }
       }
       assert(moving.length > 0, `transition skipped: ${scenario}`);
       if (scenario === "reverse") {

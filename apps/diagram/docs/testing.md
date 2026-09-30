@@ -37,6 +37,8 @@ node --test scripts/tests/home-titles.test.mjs
 node --test scripts/tests/yaml-context.test.mjs
 node --test scripts/tests/visual-core.test.mjs
 node --test scripts/tests/visual-layout.test.mjs
+node --test scripts/tests/technical-composition.test.mjs
+node --test scripts/tests/lens-transition.test.mjs
 node --test scripts/tests/visual-completions.test.mjs
 node --test scripts/tests/story-completions.test.mjs
 node --test scripts/tests/story-dialect.test.mjs
@@ -58,6 +60,9 @@ done
 node tests/sidebar-search.mjs
 node tests/tab-bar.mjs
 node tests/lens-navigation.mjs
+node tests/lens-motion.mjs
+node tests/lens-roundtrip.mjs
+node tests/layout-composition.mjs
 node tests/editor-completions.mjs
 node tests/visual-authoring.mjs
 node tests/visual-mcp.mjs
@@ -81,22 +86,22 @@ node tests/lens-recovery.mjs
 node tests/lens-motion.mjs
 ```
 
-| Check                 | What it exercises                                                                                                                      |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Reference Node checks | Migration preserves compiled drawings, catalog appearances and copied stand-ins; invalid CLI inputs do not partially write files.      |
-| Reference browser     | Live catalog metadata, inspector controls, subtitle clear/restore, retained keyboard focus and Backspace safety.                       |
-| Component resolver    | Reference inheritance, missing and invalid files, bounded cycles/depth, shared dependency discovery and fresh contents across calls.   |
-| Inline expansion      | Namespaced instances, real inner endpoints, bounded projection, read-only imported content, manual fallback and source preservation.   |
-| Home Node checks      | YAML title-copy semantics, comments, line endings, template preservation and copy markers.                                             |
-| Home browser          | Real template copies, distinct names across navigation surfaces, Retry focus, clipboard fallback and phone layouts.                    |
-| Sidebar search        | Matching names and content, visible evidence at nested widths, sequential queries, keyboard access and folder-state restoration.       |
-| YAML context          | Scalar replacement, comments, quotes, flow mappings, array values and layout-dependent schema traversal.                               |
-| Editor completions    | Real Monaco popup, references, inherited metadata, icon previews, snippets, provider lifecycle and collapsed inner endpoints.          |
-| Tab bar               | Tab overflow and selection, responsive visibility, keyboard focus, close confirmation, and sidebar/theme controls.                     |
-| View mode             | Personal overrides, external edits, mode changes, mobile canvas, presentation controls and thumbnail readiness.                        |
-| Lens navigation       | Fresh loads paint one lens; rapid reversals, mid-morph tab changes, stable tab positions, delayed A-B-A reads, Back/Forward and Retry. |
-| Lens interactions     | Shipped diagrams, routing geometry, read-only write/history guards, keyboard drill-down, refit and export.                             |
-| Lens motion           | First switch, resize, reversal, shared camera, persistent controls and reduced motion, with frame measurements.                        |
+| Check                 | What it exercises                                                                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Reference Node checks | Migration preserves compiled drawings, catalog appearances and copied stand-ins; invalid CLI inputs do not partially write files.    |
+| Reference browser     | Live catalog metadata, inspector controls, subtitle clear/restore, retained keyboard focus and Backspace safety.                     |
+| Component resolver    | Reference inheritance, missing and invalid files, bounded cycles/depth, shared dependency discovery and fresh contents across calls. |
+| Inline expansion      | Namespaced instances, real inner endpoints, bounded projection, read-only imported content, manual fallback and source preservation. |
+| Home Node checks      | YAML title-copy semantics, comments, line endings, template preservation and copy markers.                                           |
+| Home browser          | Real template copies, distinct names across navigation surfaces, Retry focus, clipboard fallback and phone layouts.                  |
+| Sidebar search        | Matching names and content, visible evidence at nested widths, sequential queries, keyboard access and folder-state restoration.     |
+| YAML context          | Scalar replacement, comments, quotes, flow mappings, array values and layout-dependent schema traversal.                             |
+| Editor completions    | Real Monaco popup, references, inherited metadata, icon previews, snippets, provider lifecycle and collapsed inner endpoints.        |
+| Tab bar               | Tab overflow and selection, responsive visibility, keyboard focus, close confirmation, and sidebar/theme controls.                   |
+| View mode             | Personal overrides, external edits, mode changes, mobile canvas, presentation controls and thumbnail readiness.                      |
+| Lens navigation       | Fresh loads paint one lens; rapid reversals, mid-transition tab changes, stable tabs, delayed A-B-A reads, Back/Forward and Retry.   |
+| Lens interactions     | Shipped diagrams, routing geometry, read-only write/history guards, keyboard drill-down, refit and export.                           |
+| Lens motion           | First switch, resize, reversal, retained per-view cameras, persistent controls and reduced motion, with frame measurements.          |
 
 `CATALOG_EVIDENCE` saves real MCP catalog creation/update results, both theme/phone cases and axe scans. These checks create temporary catalog vendor files and verify that SSE refreshes do not reload the page or create duplicate stores.
 

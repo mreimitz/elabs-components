@@ -190,6 +190,11 @@
               "aside": {
                 "type": "boolean"
               },
+              "boundary": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Exact technical zone or component represented by this box."
+              },
               "id": {
                 "type": "string",
                 "minLength": 1
@@ -204,7 +209,6 @@
                   "type": "string",
                   "minLength": 1
                 },
-                "minItems": 1,
                 "maxItems": 1000
               },
               "processes": {
@@ -215,6 +219,12 @@
                 },
                 "maxItems": 20
               },
+              "slot": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000,
+                "description": "Stable row index shared by comparable boxes across lanes."
+              },
               "sub": {
                 "type": "array",
                 "items": {
@@ -222,6 +232,10 @@
                   "minLength": 1
                 },
                 "maxItems": 1000
+              },
+              "summary": {
+                "type": "boolean",
+                "description": "Show the capability title while retaining all members for drill-down."
               },
               "title": {
                 "type": "string",
@@ -232,6 +246,10 @@
             "additionalProperties": false
           },
           "maxItems": 1000
+        },
+        "composition": {
+          "enum": ["deployment", "process"],
+          "description": "Deployment separates a control plane; process lays out a compact stage journey."
         },
         "controlPlane": {
           "type": "array",
@@ -358,6 +376,14 @@
     "zone": {
       "type": "object",
       "properties": {
+        "align": {
+          "enum": ["start", "center"],
+          "description": "Alignment of direct children in an explicit arrangement."
+        },
+        "arrangement": {
+          "enum": ["sequence", "parallel"],
+          "description": "Place direct children in authored sequence or parallel branches across the flow axis."
+        },
         "children": {
           "type": "array",
           "description": "Nested zones and nodes.",
@@ -466,6 +492,14 @@
     "zoneAuto": {
       "type": "object",
       "properties": {
+        "align": {
+          "enum": ["start", "center"],
+          "description": "Alignment of direct children in an explicit arrangement."
+        },
+        "arrangement": {
+          "enum": ["sequence", "parallel"],
+          "description": "Place direct children in authored sequence or parallel branches across the flow axis."
+        },
         "children": {
           "type": "array",
           "description": "Nested zones and nodes.",
@@ -798,6 +832,10 @@
         "label": {
           "type": "string"
         },
+        "layoutRole": {
+          "enum": ["primary", "secondary"],
+          "description": "Secondary lowers direction priority during cycle breaking; the relationship still renders."
+        },
         "protocol": {
           "type": "string",
           "description": "Mono badge, e.g. HTTPS 443, JDBC, Kafka."
@@ -845,6 +883,10 @@
         },
         "label": {
           "type": "string"
+        },
+        "layoutRole": {
+          "enum": ["primary", "secondary"],
+          "description": "Secondary lowers direction priority during cycle breaking; the relationship still renders."
         },
         "protocol": {
           "type": "string",

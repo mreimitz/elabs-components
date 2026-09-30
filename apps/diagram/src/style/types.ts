@@ -41,7 +41,7 @@ export interface StyleProfile {
   boxes: {
     anatomy: "capability-list";
     title: { weight: 400 | 500 | 600 | 700; align: "left" | "center" };
-    items: { icon: "mono" | "brand"; bullet: "ring" | "none" };
+    items: { icon: "mono" | "brand" | "semantic"; bullet: "ring" | "none" };
   };
   pills: {
     enabled: boolean;

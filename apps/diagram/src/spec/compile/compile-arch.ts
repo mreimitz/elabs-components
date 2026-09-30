@@ -77,12 +77,15 @@ export type CompiledZoneData = {
   provider?: string;
   icon?: string;
   direction?: Direction;
+  arrangement?: "sequence" | "parallel";
+  align?: "start" | "center";
   classes?: string[];
   docs?: string;
   status?: NodeStatus;
 };
 
 export type CompiledFlowData = {
+  layoutRole?: "primary" | "secondary";
   inner?: true;
   label?: string;
   kind: FlowKind;
@@ -281,6 +284,8 @@ export function compileArch(
       provider: zone.provider,
       icon: zone.icon,
       direction: zone.direction,
+      arrangement: zone.arrangement,
+      align: zone.align,
       classes: zone.class ? [...zone.class] : undefined,
       docs: zone.docs,
       status: zone.status,
@@ -451,6 +456,7 @@ export function compileArch(
       animated: flow.animated,
       secure: flow.secure,
       direction: flow.direction,
+      layoutRole: flow.layoutRole,
       step: flow.step,
       protocol: flow.protocol,
       schedule: flow.schedule,

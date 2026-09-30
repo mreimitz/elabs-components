@@ -37,11 +37,7 @@ export function authoredVisual(lens: VisualLens): ArchVisualSpec {
   }
   const flows = new Map<string, NonNullable<ArchVisualSpec["flows"]>[number]>();
   for (const flow of lens.flows)
-    if (
-      flow.label !== undefined ||
-      flow.process !== undefined ||
-      flow.id.startsWith("flow:override:")
-    ) {
+    if (flow.annotated || flow.process !== undefined || flow.id.startsWith("flow:override:")) {
       const from = ids.get(flow.from)!;
       const to = ids.get(flow.to)!;
       flows.set([from, to].sort().join("\0"), {
@@ -52,12 +48,16 @@ export function authoredVisual(lens: VisualLens): ArchVisualSpec {
       });
     }
   return {
+    ...(lens.composition && { composition: lens.composition }),
     lanes: lens.lanes.map(({ id, role, title, of }) => ({ id, role, title, ...(of && { of }) })),
     boxes: lens.boxes.map((box) => ({
       id: ids.get(box.id)!,
       lane: box.lane,
       title: box.title,
       members: box.members.map((member) => member.id),
+      ...(box.boundaryOf && { boundary: box.boundaryOf }),
+      ...(box.summary !== undefined && { summary: box.summary }),
+      ...(box.slot !== undefined && { slot: box.slot }),
       ...(box.processes && { processes: box.processes }),
       ...(box.sub && { sub: box.sub }),
       ...(box.aside !== undefined && { aside: box.aside }),

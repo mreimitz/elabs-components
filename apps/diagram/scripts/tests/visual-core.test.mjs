@@ -405,3 +405,173 @@ test("nested qualified ownership follows the immediate reference instance's cont
   const result = resolveVisual(checked.ast, { components: checked.components });
   assert.equal(result.lens.boxes.find((box) => box.id === "box:x").owner, "saas");
 });
+
+test("summary composition and row slots retain drill-down membership and materialize", () => {
+  const v = {
+    ...visual,
+    composition: "process",
+    boxes: [{ ...visual.boxes[0], summary: true, slot: 3 }],
+  };
+  const result = resolve(text(v));
+  assert.equal(result.lens.composition, "process");
+  const box = result.lens.boxes.find((b) => b.id === "box:ab");
+  assert.equal(box.summary, true);
+  assert.equal(box.slot, 3);
+  assert.deepEqual(
+    box.members.map((m) => m.id),
+    ["a", "b"],
+  );
+  const materialized = materializeVisual(text(v), result.lens);
+  assert.equal(materialized.ok, true);
+  const roundtrip = resolve(materialized.text);
+  assert.equal(roundtrip.lens.composition, "process");
+  assert.equal(roundtrip.lens.boxes.find((b) => b.id === "box:ab").summary, true);
+});
+
+test("source relationship identity and metadata survive insertion and parallel aggregation", () => {
+  const yaml = `diagram: "1"
+nodes: [{id: a}, {id: b, type: actor}, {id: c}]
+flows:
+ - a -> b: {label: Read, protocol: HTTPS, secure: tls, schedule: hourly}
+ - b -> a: {label: Write, kind: control}
+`;
+  const before = resolve(yaml).lens;
+  assert.equal(before.relationships.length, 2);
+  const after = resolve(
+    yaml +
+      ` - c -> b: {label: Other}
+`,
+  ).lens;
+  assert.deepEqual(
+    before.relationships.map((f) => f.id),
+    after.relationships.slice(0, 2).map((f) => f.id),
+  );
+  const read = before.flows.find((f) => f.label === "Read");
+  assert.equal(read.relationships[0].secure, "tls");
+  assert.equal(read.relationships[0].schedule, "hourly");
+  assert.equal(read.relationships[0].protocol, "HTTPS");
+  assert.equal(read.relationships[0].from, "a");
+  assert.ok(after.flows.some((f) => f.id === read.id));
+});
+
+test("zone endpoint uses exact boundary proxy instead of majority child", () => {
+  const yaml = `diagram: "1"
+zones: [{id: z, title: Boundary}]
+nodes: [{id: a, parent: z}, {id: b, parent: z, type: datastore}, {id: c, type: actor}]
+flows: ["c -> z"]
+`;
+  const result = resolve(yaml).lens;
+  const boundary = result.boxes.find((b) => b.boundaryOf === "z");
+  assert.ok(boundary);
+  assert.deepEqual(boundary.members, []);
+  assert.equal(boundary.title, "Boundary");
+  assert.equal(result.flows[0].to, boundary.id);
+  const materialized = materializeVisual(yaml, result);
+  assert.equal(materialized.ok, true);
+  assert.deepEqual(errors(check(materialized.text)), []);
+});
+
+test("explicit boundary capability rejects members outside its technical zone", () => {
+  const v = {
+    boxes: [
+      {
+        id: "z",
+        title: "Boundary",
+        lane: "targets",
+        boundary: "z",
+        members: ["a", "b"],
+        summary: true,
+      },
+    ],
+  };
+  const result = resolve(text(v));
+  assert.equal(result.lens.boxes.find((b) => b.id === "box:z").boundaryOf, "z");
+  assert.ok(errors(check(text({ boxes: [{ ...v.boxes[0], members: ["c"] }] }))).length);
+});
+
+test("technical sequence constraints and secondary relationships normalize without guessing", () => {
+  const yaml = `diagram: "1"
+zones: [{id: z, arrangement: parallel, align: start}]
+nodes: [{id: a, parent: z}, {id: b}]
+flows: [{from: a, to: b, layoutRole: secondary}]
+`;
+  const result = check(yaml);
+  assert.deepEqual(errors(result), []);
+  assert.equal(result.ast.zones[0].arrangement, "parallel");
+  assert.equal(result.ast.zones[0].align, "start");
+  assert.equal(result.ast.flows[0].layoutRole, "secondary");
+});
+
+test("materializing source labels never turns the last parallel label into a pair-wide override", () => {
+  const yaml = `diagram: "1"
+nodes: [{id: a}, {id: b, type: datastore}]
+flows:
+ - a -> b: {label: Read}
+ - b -> a: {label: Write}
+visual:
+ boxes:
+  - {id: a, lane: sources, title: A, members: [a]}
+  - {id: b, lane: targets, title: B, members: [b]}
+`;
+  const lens = resolve(yaml).lens;
+  const result = materializeVisual(yaml, lens);
+  assert.equal(result.ok, true);
+  assert.deepEqual(
+    resolve(result.text).lens.flows.map((f) => f.label),
+    ["Read", "Write"],
+  );
+  assert.equal(resolve(result.text).lens.relationships.length, 2);
+});
+
+test("internal capability relationships remain available through the projection contract", () => {
+  const yaml = text({
+    boxes: [
+      { id: "all", lane: "sources", title: "Capability", members: ["a", "b", "c"], summary: true },
+    ],
+  });
+  const lens = resolve(yaml).lens;
+  assert.equal(lens.flows.length, 0);
+  assert.equal(lens.relationships.length, 1);
+  assert.equal(lens.relationships[0].from, "a");
+  assert.equal(lens.relationships[0].to, "c");
+});
+
+test("boundary-only authored boxes retain their zone owner and provider", () => {
+  const result = resolve(`diagram: "1"
+zones: [{id: z, owner: saas, provider: aws}]
+nodes: [{id: a, parent: z}, {id: b}]
+flows: ["b -> z"]
+visual:
+ boxes:
+  - {id: boundary, lane: targets, title: Owned boundary, boundary: z, members: []}
+`);
+  const box = result.lens.boxes.find((b) => b.id === "box:boundary");
+  assert.equal(box.owner, "saas");
+  assert.equal(box.provider, "aws");
+});
+
+test("explicit summary arrows bundle display-equivalent paths without discarding provenance", () => {
+  const result = resolve(`diagram: "1"
+nodes: [{id: a}, {id: b, type: datastore}]
+flows:
+ - a -> b: {label: Charts}
+ - a -> b: {label: Expressions}
+visual:
+ boxes:
+  - {id: a, lane: sources, title: A, members: [a]}
+  - {id: b, lane: targets, title: B, members: [b]}
+ flows:
+  - {from: a, to: b, label: ""}
+`);
+  assert.equal(result.lens.flows.length, 1);
+  assert.equal(result.lens.flows[0].sourceFlowIds.length, 2);
+  assert.deepEqual(
+    result.lens.flows[0].relationships.map((f) => f.label),
+    ["Charts", "Expressions"],
+  );
+});
+
+test("alignment cannot silently do nothing without an arrangement", () => {
+  const result = check('diagram: "1"\nzones: [{id: z, align: start}]\n');
+  assert.ok(errors(result).some((issue) => issue.code === "missing-prop"));
+});

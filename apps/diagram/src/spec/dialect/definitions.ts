@@ -142,6 +142,11 @@ const STORY = field.object({
 const VISUAL_IDS = field.array({ max: 1000, of: field.string({ min: 1 }) });
 const VISUAL = field.object({
   fields: {
+    composition: field.enum({
+      values: ["deployment", "process"],
+      description:
+        "Deployment separates a control plane; process lays out a compact stage journey.",
+    }),
     controlPlane: VISUAL_IDS,
     hide: VISUAL_IDS,
     lanes: field.array({
@@ -162,10 +167,22 @@ const VISUAL = field.object({
           id: field.string({ required: true, min: 1 }),
           lane: field.string({ required: true, min: 1 }),
           title: field.string({ required: true, min: 1 }),
-          members: field.array({ required: true, min: 1, max: 1000, of: field.string({ min: 1 }) }),
+          members: field.array({ required: true, max: 1000, of: field.string({ min: 1 }) }),
+          boundary: field.string({
+            min: 1,
+            description: "Exact technical zone or component represented by this box.",
+          }),
           processes: field.array({ max: 20, of: field.string({ min: 1 }) }),
           sub: VISUAL_IDS,
           aside: field.boolean(),
+          summary: field.boolean({
+            description: "Show the capability title while retaining all members for drill-down.",
+          }),
+          slot: field.integer({
+            min: 0,
+            max: 1000,
+            description: "Stable row index shared by comparable boxes across lanes.",
+          }),
         },
       }),
     }),
@@ -282,6 +299,8 @@ export const ROOT_DEF = defineComponent<RootInput>()({
 });
 
 export interface ZoneInput extends HeaderGroupProps {
+  arrangement?: "sequence" | "parallel";
+  align?: "start" | "center";
   id: string;
   kind?: ZoneKind;
   owner?: ZoneOwner;
@@ -318,6 +337,15 @@ export const ZONE_DEF = defineComponent<ZoneInput>()({
     }),
     icon: field.string({ description: "Icon name vendor/name.", tier: "essential" }),
     class: CLASS_LIST,
+    arrangement: field.enum({
+      values: ["sequence", "parallel"],
+      description:
+        "Place direct children in authored sequence or parallel branches across the flow axis.",
+    }),
+    align: field.enum({
+      values: ["start", "center"],
+      description: "Alignment of direct children in an explicit arrangement.",
+    }),
     collapsed: field.boolean({ default: false }),
     direction: field.enum({ values: DIRECTIONS }),
     parent: field.string({
@@ -390,6 +418,7 @@ export const NODE_DEF = defineComponent<NodeInput>()({
 });
 
 export interface FlowInput {
+  layoutRole?: "primary" | "secondary";
   from: string;
   to: string;
   direction?: FlowDirection;
@@ -416,6 +445,11 @@ export const FLOW_DEF = defineComponent<FlowInput>()({
     label: field.string({ tier: "essential" }),
     kind: field.enum({ values: FLOW_KINDS, default: "data", tier: "essential" }),
     style: field.enum({ values: FLOW_STYLES }),
+    layoutRole: field.enum({
+      values: ["primary", "secondary"],
+      description:
+        "Secondary lowers direction priority during cycle breaking; the relationship still renders.",
+    }),
     animated: field.boolean({ default: false }),
     secure: field.enum({ values: FLOW_SECURE, tier: "essential" }),
     protocol: field.string({

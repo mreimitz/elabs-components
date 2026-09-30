@@ -1,4 +1,4 @@
-import type { ZoneOwner } from "../spec/dialect";
+import type { ArchFlowSpec, ZoneOwner } from "../spec/dialect";
 
 /**
  * Where a lane sits, left → right (`docs/2026-09-27-visual-lens-concept.md` §3 rule 1). No
@@ -40,6 +40,10 @@ export interface VisualBoxMember {
 }
 
 export interface VisualBox {
+  summary?: boolean;
+  slot?: number;
+  /** Exact technical boundary represented independently of its children. */
+  boundaryOf?: string;
   id: string;
   lane: string;
   title: string;
@@ -57,7 +61,15 @@ export interface VisualBox {
 /** Aggregated box→box flow (concept §3 rule 3): `data` → solid, everything else → dashed. */
 export type VisualFlowKind = "data" | "other";
 
+export interface VisualRelationship extends Omit<ArchFlowSpec, "path" | "form"> {
+  id: string;
+}
+
 export interface VisualFlow {
+  /** Explicit visual annotation; derived source labels must not become broad pair overrides. */
+  annotated?: boolean;
+  sourceFlowIds?: readonly string[];
+  relationships?: readonly VisualRelationship[];
   id: string;
   from: string;
   to: string;
@@ -68,6 +80,9 @@ export interface VisualFlow {
 }
 
 export interface VisualLens {
+  /** All technical relationships, including those internal to a capability. */
+  relationships?: readonly VisualRelationship[];
+  composition?: "deployment" | "process";
   hidden?: readonly string[];
   lanes: VisualLane[];
   boxes: VisualBox[];

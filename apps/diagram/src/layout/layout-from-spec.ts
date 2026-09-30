@@ -231,6 +231,7 @@ async function layoutVisible(
   const result = await runElk(leaves, layoutEdges, {
     direction: options.direction,
     zoneDirection: zoneDirections(shown),
+    composition: new Map(shown.filter(isZoneNode).map((zone) => [zone.id, zone.data])),
     groups,
     routing: {
       ...edgeRouting(shown, shownEdges, options.direction, options.handleAnchors),

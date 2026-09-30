@@ -25,6 +25,8 @@ export interface CapabilityBoxData extends Record<string, unknown> {
   processes?: readonly string[];
   sub?: readonly string[];
   provider?: string;
+  summary?: boolean;
+  boundaryOf?: string;
 }
 export type CapabilityBoxNodeType = Node<CapabilityBoxData, typeof VISUAL_BOX_TYPE>;
 
@@ -36,6 +38,7 @@ export interface VisualFlowEdgeData extends Record<string, unknown> {
   labelY: number;
   labelMaxWidth: number;
   label?: string;
+  relationshipDetails?: string;
   process?: string;
   solid: boolean;
   bidirectional: boolean;

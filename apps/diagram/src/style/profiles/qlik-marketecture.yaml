@@ -3,7 +3,7 @@ schemaVersion: 1
 lens: visual
 title: Qlik Marketecture
 fidelity: approximate
-source: Atlas Qlik style-system drawing reference; approximate reproduction
+source: Qlik Style Guide July 2026; contrast-safe green and dark pill text are deliberate adaptations
 ground:
   fill: "#0E2340"
   followTheme: false
@@ -69,7 +69,7 @@ boxes:
     weight: 700
     align: center
   items:
-    icon: mono
+    icon: semantic
     bullet: ring
 pills:
   enabled: true

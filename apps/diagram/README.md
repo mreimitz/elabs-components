@@ -17,3 +17,5 @@ In Edit mode, YAML suggestions open as you type or with **Ctrl+Space**. Complete
 Flows that share a source or target port and the same label and details display one shared caption with a flow count. The caption sits by their common endpoint; each connection stays independently selectable and animated. Different schedules, protocols, security, direction, styling or story step numbers keep separate captions.
 
 Zones can be flow sources or targets just like nodes: for example, `tables -> dwh: Mirror` connects to the `dwh` zone's border. Its children can show examples or referenced systems; the flow does not automatically connect to each child.
+
+See [diagram composition and view switching](docs/layout-composition.md) for ordered stages, parallel branches, capability summaries, exact zone boundaries and stable technical/visual navigation.

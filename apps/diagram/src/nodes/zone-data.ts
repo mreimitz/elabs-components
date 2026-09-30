@@ -35,6 +35,8 @@ export interface ZoneData extends Record<string, unknown> {
   /** Written by `useFlowGroups().collapseGroup` / `expandGroup` (and the header toggle). */
   collapsed?: boolean;
   direction?: "LR" | "TB";
+  arrangement?: "sequence" | "parallel";
+  align?: "start" | "center";
   /**
    * `"auto"` (default): `useZoneAutofit` keeps the zone wrapped around its children.
    * `"manual"`: the zone keeps its own size — resizing a zone by hand switches it here.

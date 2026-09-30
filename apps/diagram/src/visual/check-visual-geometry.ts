@@ -1,5 +1,5 @@
 import { buildVisualGraph } from "./build-visual-graph";
-import { layoutVisualLens } from "./lane-layout";
+import { layoutVisualLens, visualTextWidth } from "./lane-layout";
 import type { VisualLens } from "./visual-model";
 
 type Point = [number, number];
@@ -13,6 +13,35 @@ export function visualGeometryIssues(lens: VisualLens): string[] {
   const layout = layoutVisualLens(lens);
   const graph = buildVisualGraph(lens, layout);
   const issues: string[] = [];
+  const overlaps = (
+    a: { x: number; y: number; width: number; height: number },
+    b: { x: number; y: number; width: number; height: number },
+  ) =>
+    Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) > epsilon &&
+    Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > epsilon;
+  layout.boxes.forEach((item, index) => {
+    for (const other of layout.boxes.slice(index + 1))
+      if (overlaps(item.rect, other.rect)) issues.push(`${item.box.id} overlaps ${other.box.id}`);
+  });
+  const labels = graph.edges.flatMap((edge) => {
+    const data = edge.data;
+    if (!data || (!data.label && !data.process)) return [];
+    const width = Math.min(
+      192,
+      data.labelMaxWidth,
+      visualTextWidth([data.process, data.label].filter(Boolean).join(": ")) + 16,
+    );
+    return [
+      { id: edge.id, rect: { x: data.labelX - width / 2, y: data.labelY - 10, width, height: 20 } },
+    ];
+  });
+  labels.forEach((label, index) => {
+    for (const { box, rect } of layout.boxes)
+      if (overlaps(label.rect, rect)) issues.push(`${label.id} label overlaps ${box.id}`);
+    for (const other of labels.slice(index + 1))
+      if (overlaps(label.rect, other.rect))
+        issues.push(`${label.id} label overlaps ${other.id} label`);
+  });
   const routes = graph.edges.map((edge) => {
     const values = (edge.data?.path.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
     const points: Point[] = [];

@@ -176,17 +176,28 @@ story:
 # plane band on top. `controlPlane` lists the technical ids in that band, as the
 # visual-lens concept (§3) does.
 visual:
-  controlPlane: [tenant]
   lanes:
     - { id: sources, role: sources, title: Data sources, of: [onprem] }
     # Derivation would call an Azure cloud account "customer-vpc"; the item names this lane
     # "Customer managed env — Azure", so the role is set by hand.
-    - { id: managed, role: customer-managed, title: Customer managed env — Azure, of: [azure] }
+    - { id: managed, role: customer-managed, title: Azure subscription, of: [azure] }
     - { id: qlik-cloud, role: vendor-cloud, title: Qlik Cloud, of: [qlik] }
-    - { id: targets, role: targets, title: Targets / consumers, of: [dwh] }
+    - { id: targets, role: targets, title: Consumers, of: [dwh] }
   boxes:
-    - { id: cdc-batch, lane: sources, title: CDC & Batch Sources, members: [sap, erp] }
-    - { id: files-saas, lane: sources, title: Files & SaaS, members: [sharepoint, salesforce] }
+    - {
+        id: cdc-batch,
+        lane: sources,
+        title: Operational systems,
+        summary: true,
+        members: [sap, erp],
+      }
+    - {
+        id: files-saas,
+        lane: sources,
+        title: Files & SaaS,
+        summary: true,
+        members: [sharepoint, salesforce],
+      }
     - id: data-gateway
       lane: managed
       title: Data Gateway
@@ -199,9 +210,19 @@ visual:
       title: Cloud DWH
       members: [warehouse]
       processes: [storage]
-    - { id: consumers, lane: targets, title: Consumers, members: [users, answers-users, app] }
+    - {
+        id: consumers,
+        lane: targets,
+        title: Consumers,
+        summary: true,
+        members: [users, answers-users, app],
+      }
   flows:
     # The technical flow starts at the `onprem` zone, which spans two boxes; this names the line.
-    - { from: cdc-batch, to: data-gateway, label: VPN / ExpressRoute }
+    - { from: cdc-batch, to: data-gateway, label: Private network }
+    - { from: files-saas, to: analytics, label: Business content }
+    - { from: data-gateway, to: analytics, label: Secure access }
+    - { from: analytics, to: cloud-dwh, label: Analytics data }
+    - { from: analytics, to: consumers, label: Analytics & answers }
   # Entra ID has only access flows; the item gives it no box (visual-lens concept §3, rule 6).
   hide: [idp]

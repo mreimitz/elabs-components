@@ -303,6 +303,11 @@ const NODE_SPACING = 48;
  * P4: library gap — `layoutFlowElk` takes one `direction` for the whole graph and no
  * per-group layout options (proposed: `groups[].layoutOptions` or a `decorateGraph` hook).
  */
+export interface ZoneComposition {
+  arrangement?: "sequence" | "parallel";
+  align?: "start" | "center";
+}
+
 export function decorateElkGraph(
   graph: FlowElkGraph,
   zoneDirection: ReadonlyMap<string, DiagramDirection>,
@@ -310,7 +315,9 @@ export function decorateElkGraph(
   routing?: ElkRouting,
   /** Filled with the edges re-targeted to a separate zone: edge id → the zone per end. */
   lifted: Map<string, { source?: string; target?: string }> = new Map(),
+  composition: ReadonlyMap<string, ZoneComposition> = new Map(),
 ): FlowElkGraph {
+  const alignmentPorts = new Map<string, { source: string; target: string }>();
   const parentOf = new Map<string, string>();
   const containers: FlowElkGraph[] = [];
   const walk = (node: FlowElkGraph, parent: string | undefined) => {
@@ -334,12 +341,21 @@ export function decorateElkGraph(
     return rootDirection;
   };
 
+  const layoutDirection = (id: string | undefined): DiagramDirection => {
+    const direction = effective(id);
+    return id !== undefined && composition.get(id)?.arrangement === "parallel"
+      ? direction === "LR"
+        ? "TB"
+        : "LR"
+      : direction;
+  };
   graph.layoutOptions = { ...graph.layoutOptions, ...CYCLE_BREAKING };
 
   // `containers` is in pre-order, so a parent is decided before its children.
   const separate = new Set<string>();
   for (const zone of containers) {
-    const direction = effective(zone.id);
+    const direction = layoutDirection(zone.id);
+    const intent = composition.get(zone.id);
     const options: Record<string, string> = {
       ...zone.layoutOptions,
       "elk.direction": ELK_DIRECTION[direction],
@@ -357,7 +373,67 @@ export function decorateElkGraph(
     if ((zone.children ?? []).filter((child) => child.children?.length).length >= 2) {
       options["elk.layered.nodePlacement.bk.edgeStraightening"] = "NONE";
     }
-    if (direction !== effective(parentOf.get(zone.id))) {
+    if (intent?.arrangement) {
+      options["elk.partitioning.activate"] = "true";
+      options["elk.layered.considerModelOrder.strategy"] = "NODES_AND_EDGES";
+      options["elk.layered.crossingMinimization.forceNodeModelOrder"] = "true";
+      // Parallel branches progress across the primary axis; each branch retains
+      // its own inherited flow direction. Sequence follows the primary axis.
+      for (const [index, child] of (zone.children ?? []).entries()) {
+        child.layoutOptions = {
+          ...child.layoutOptions,
+          "elk.partitioning.partition": String(index),
+        };
+      }
+      // Keep disconnected stages in the same layout component. These constraints
+      // exist only in the ELK input, never in the rendered relationship model.
+      const children = zone.children ?? [];
+      for (let index = 1; index < children.length; index++) {
+        graph.edges ??= [];
+        graph.edges.push({
+          id: `__layout-order:${zone.id}:${index}`,
+          sources: [children[index - 1]!.id],
+          targets: [children[index]!.id],
+          layoutOptions: { "elk.layered.priority.direction": "100" },
+        });
+      }
+    }
+    if (intent?.align === "start" && intent.arrangement) {
+      options["elk.layered.nodePlacement.strategy"] = "NETWORK_SIMPLEX";
+      // ELK aligns connected ports, not node borders. Zero-offset layout-only
+      // ports make the ordering constraints align the leading borders themselves.
+      // ELK still computes every node position and routes every real connection.
+      const children = zone.children ?? [];
+      for (const child of children) {
+        const routed = child as ElkRoutedNode;
+        routed.ports ??= [];
+        for (const kind of ["in", "out"] as const)
+          routed.ports.push({
+            id: `__layout-align:${zone.id}:${child.id}:${kind}`,
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+            layoutOptions: {
+              "elk.port.side":
+                direction === "LR"
+                  ? kind === "in"
+                    ? "WEST"
+                    : "EAST"
+                  : kind === "in"
+                    ? "NORTH"
+                    : "SOUTH",
+            },
+          });
+        child.layoutOptions = { ...child.layoutOptions, "elk.portConstraints": "FIXED_POS" };
+      }
+      for (let index = 1; index < children.length; index++)
+        alignmentPorts.set(`__layout-order:${zone.id}:${index}`, {
+          source: `__layout-align:${zone.id}:${children[index - 1]!.id}:out`,
+          target: `__layout-align:${zone.id}:${children[index]!.id}:in`,
+        });
+    }
+    if (intent?.arrangement || direction !== layoutDirection(parentOf.get(zone.id))) {
       separate.add(zone.id);
       options["elk.algorithm"] = "layered";
       options["elk.hierarchyHandling"] = "SEPARATE_CHILDREN";
@@ -405,6 +481,14 @@ export function decorateElkGraph(
   }
   const decorated = { ...graph, edges };
   if (routing) attachRouting(decorated, routing, lifted, turned);
+  for (const edge of decorated.edges ?? []) {
+    const ports = alignmentPorts.get(edge.id);
+    if (ports) {
+      edge.layoutOptions = { ...edge.layoutOptions, "elk.layered.priority.straightness": "1000" };
+      edge.sources = [ports.source];
+      edge.targets = [ports.target];
+    }
+  }
   return decorated;
 }
 
@@ -420,6 +504,7 @@ export interface RunElkOptions {
   direction: DiagramDirection;
   /** Zone id → its own `direction:` (zones without one inherit). */
   zoneDirection: ReadonlyMap<string, DiagramDirection>;
+  composition?: ReadonlyMap<string, ZoneComposition>;
   /** Compound nodes: zones that have at least one child in `nodes`. */
   groups: { id: string; children: string[] }[];
   /** Labels, ports and zone minimum widths (wave-2 review M2/M5). */
@@ -448,6 +533,7 @@ export async function runElk(
   // result, and `collectRoutes` reads each edge's sections and label from it.
   let laidOut: ElkRoutedNode | undefined;
   const lifted: Lifted = new Map();
+  const edgeById = new Map(edges.map((edge) => [edge.id, edge]));
   const result = await layoutFlowElk(nodes, edges, {
     direction: options.direction,
     groups: options.groups,
@@ -464,7 +550,18 @@ export async function runElk(
             options.direction,
             options.routing,
             lifted,
+            options.composition,
           );
+          for (const edge of decorated.edges ?? []) {
+            const original = edgeById.get(edge.id);
+            if (original?.data?.layoutRole) {
+              edge.layoutOptions = {
+                ...edge.layoutOptions,
+                "elk.layered.priority.direction":
+                  original.data.layoutRole === "secondary" ? "0" : "10",
+              };
+            }
+          }
           const out = await engine.layout(decorated);
           laidOut = out as ElkRoutedNode;
           return out;

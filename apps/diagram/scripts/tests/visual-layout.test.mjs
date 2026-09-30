@@ -6,7 +6,7 @@ const root = fileURLToPath(new URL("../../", import.meta.url));
 const load = async (file) =>
   (await runnerImport(`${root}src/visual/${file}`, { root, configFile: false, logLevel: "error" }))
     .module;
-const { layoutVisualLens } = await load("lane-layout.ts");
+const { layoutVisualLens, boxHeight, visualTextWidth } = await load("lane-layout.ts");
 const { buildVisualGraph } = await load("build-visual-graph.ts");
 const { visualGeometryIssues } = await load("check-visual-geometry.ts");
 const fixture = () => ({
@@ -167,7 +167,186 @@ test("opposite labeled flows have independent label rows and bounded widths", ()
   };
   const graph = buildVisualGraph(lens, layoutVisualLens(lens));
   const [first, second] = graph.edges.map((edge) => edge.data);
-  assert(Math.abs(first.labelY - second.labelY) >= 32);
+  assert(Math.abs(first.labelY - second.labelY) >= 24);
+  assert.deepEqual(visualGeometryIssues(lens), []);
   assert(first.labelMaxWidth > 0 && second.labelMaxWidth > 0);
   assert(graph.edges.every((edge) => edge.ariaLabel.includes("A long transfer label")));
+});
+
+const journey = () => ({
+  composition: "process",
+  lanes: ["Connect", "Prepare", "Ask", "Explain", "Review"].map((title, index) => ({
+    id: `lane-${index}`,
+    role: "customer-managed",
+    title,
+  })),
+  boxes: [
+    "Enterprise connectors",
+    "Managed knowledge base",
+    "Embeddable assistant",
+    "Explainable answers",
+    "Answer review portal",
+  ].map((title, index) => ({
+    id: `step-${index}`,
+    lane: `lane-${index}`,
+    title,
+    summary: true,
+    slot: 0,
+    owner: "saas",
+    members: [{ id: `technical-${index}`, title: "Underlying implementation detail" }],
+  })),
+  flows: Array.from({ length: 4 }, (_, index) => ({
+    id: `flow-${index}`,
+    from: `step-${index}`,
+    to: `step-${index + 1}`,
+    kind: "data",
+    bidirectional: false,
+  })),
+});
+test("process journey fits a readable desktop overview and retains drilldown members", () => {
+  const lens = journey(),
+    layout = layoutVisualLens(lens),
+    graph = buildVisualGraph(lens, layout);
+  assert(layout.bounds.width <= 1420);
+  assert.equal(layout.bounds.width, layout.lanes.at(-1).rect.x + layout.lanes.at(-1).rect.width);
+  assert.equal(new Set(layout.boxes.map((item) => item.rect.y)).size, 1);
+  assert(
+    graph.nodes
+      .filter((node) => node.type === "visual/box")
+      .every((node) => node.data.summary && node.data.members.length === 1),
+  );
+  assert.deepEqual(visualGeometryIssues(lens), []);
+});
+test("an edge label only enlarges its local corridor", () => {
+  const lens = journey(),
+    before = layoutVisualLens(lens);
+  lens.flows[1].label = "A detailed transfer label";
+  const after = layoutVisualLens(lens);
+  assert(after.gutters["lane-1"] > before.gutters["lane-1"]);
+  for (const id of ["lane-0", "lane-2", "lane-3", "lane-4"])
+    assert.equal(after.gutters[id], before.gutters[id]);
+  assert(after.bounds.width - before.bounds.width < 170);
+  assert.deepEqual(visualGeometryIssues(lens), []);
+});
+test("semantic slots align comparable rows and vendor changes preserve positions", () => {
+  const lens = journey();
+  lens.boxes[0].summary = false;
+  lens.boxes[0].members.push({ id: "extra", title: "Another underlying member" });
+  const before = layoutVisualLens(lens);
+  assert.equal(new Set(before.boxes.map((item) => item.rect.y)).size, 1);
+  assert.equal(new Set(before.boxes.map((item) => item.rect.height)).size, 1);
+  lens.boxes.forEach((box) => {
+    box.provider = "gcp";
+    box.members.forEach((member) => (member.icon = "gcp/storage"));
+  });
+  assert.deepEqual(
+    layoutVisualLens(lens).boxes.map((item) => item.rect),
+    before.boxes.map((item) => item.rect),
+  );
+});
+test("process composition does not pull logical workflow steps into a deployment band", () => {
+  const lens = journey();
+  lens.boxes[1].controlPlane = true;
+  const layout = layoutVisualLens(lens);
+  assert(!layout.lanes.some((item) => item.lane.id === "@control-plane"));
+  assert.deepEqual(visualGeometryIssues(lens), []);
+});
+test("skipping lanes and reverse flows stay in their local corridors", () => {
+  const lens = journey();
+  lens.flows.push({
+    id: "skip",
+    from: "step-0",
+    to: "step-3",
+    kind: "other",
+    bidirectional: false,
+    label: "Govern",
+  });
+  lens.flows.push({
+    id: "back",
+    from: "step-4",
+    to: "step-1",
+    kind: "other",
+    bidirectional: false,
+    label: "Feedback",
+  });
+  assert.deepEqual(visualGeometryIssues(lens), []);
+});
+
+// The control plane routes through bottom ports, so side-port spacing must not inflate it.
+test("control-plane summaries size to content while retaining distinct bottom-port routes", () => {
+  const lens = fixture();
+  const control = lens.boxes.find((box) => box.controlPlane);
+  control.summary = true;
+  lens.flows.push({
+    id: "another-control",
+    from: control.id,
+    to: "box:source",
+    kind: "other",
+    bidirectional: false,
+    label: "Configure",
+  });
+  const layout = layoutVisualLens(lens);
+  assert.equal(layout.boxes.find((item) => item.box === control).rect.height, boxHeight(control));
+  assert.deepEqual(visualGeometryIssues(lens), []);
+});
+
+test("adjacent opposite flows retain full label corridors without overlaps", () => {
+  const lens = journey();
+  lens.composition = "deployment";
+  lens.flows[0].label = "Analytics data";
+  lens.flows.push({
+    id: "return",
+    from: "step-1",
+    to: "step-0",
+    kind: "data",
+    bidirectional: false,
+    label: "Analytics data",
+  });
+  const graph = buildVisualGraph(lens, layoutVisualLens(lens));
+  for (const edge of graph.edges.filter((edge) => edge.data.label))
+    assert.ok(edge.data.labelMaxWidth >= visualTextWidth(edge.data.label) + 8);
+  assert.deepEqual(visualGeometryIssues(lens), []);
+});
+
+test("an unrelated corridor does not move an existing route", () => {
+  const lens = journey();
+  const first = lens.flows[0].id;
+  const before = buildVisualGraph(lens, layoutVisualLens(lens)).edges.find(
+    (edge) => edge.id === first,
+  ).data.path;
+  lens.flows.push({
+    id: "unrelated",
+    from: "step-3",
+    to: "step-4",
+    kind: "other",
+    bidirectional: false,
+  });
+  const after = buildVisualGraph(lens, layoutVisualLens(lens)).edges.find(
+    (edge) => edge.id === first,
+  ).data.path;
+  assert.equal(after, before);
+});
+
+test("derived ClickHouse adjacent and skipping flows use distinct physical gutter tracks", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const { module: api } = await runnerImport(`${root}src/server-surface.ts`, {
+    root,
+    configFile: false,
+    logLevel: "error",
+  });
+  const { deriveVisualLens } = await load("derive-visual.ts");
+  const text = await readFile(`${root}workspace/examples/clickhouse-cloud-stack.yaml`, "utf8");
+  const checked = api.checkText(text, api.ICON_NAMES);
+  assert(checked.ast);
+  const lens = deriveVisualLens(checked.ast);
+  assert.deepEqual(visualGeometryIssues(lens), []);
+  const graph = buildVisualGraph(lens, layoutVisualLens(lens));
+  const reversed = { ...lens, flows: [...lens.flows].reverse() };
+  const reverseGraph = buildVisualGraph(reversed, layoutVisualLens(reversed));
+  // Track ownership follows stable relationship IDs, independent of flow declaration order.
+  for (const edge of graph.edges)
+    assert.equal(
+      reverseGraph.edges.find((other) => other.id === edge.id).data.path,
+      edge.data.path,
+    );
 });

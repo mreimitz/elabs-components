@@ -13,7 +13,7 @@ pipeline, the zones/nodes/flows/styles/notes keys, ids and positions unchanged f
 | ----------- | ---------- | ------------------------------------------- | ------- | --------------------------------------- |
 | `component` | root       | `{ icon?, description?, extensionPoints? }` | none    | `component: { description: A tenant. }` |
 | `story`     | root       | `{ steps, autoplay? }` (Stories)            | none    | `story: { steps: [] }`                  |
-| `visual`    | root       | open object (DG-36 defines it)              | none    | `visual: {}`                            |
+| `visual`    | root       | typed visual structure (DG-36)              | none    | `visual: {}`                            |
 | `docs`      | zone, node | string (a URL)                              | none    | `docs: https://cloud.qlik.com/docs`     |
 | `status`    | zone, node | enum: `ok`, `degraded`, `down`, `planned`   | none    | `status: degraded`                      |
 | `ref`       | node       | string, a reference path (§2)               | none    | `ref: catalog/aws/rds`                  |
@@ -21,7 +21,7 @@ pipeline, the zones/nodes/flows/styles/notes keys, ids and positions unchanged f
 
 `component` marks and describes a diagram meant to be referenced by another one (its icon and
 one-sentence description, shown where the reference collapses). `story` defines a guided
-walkthrough (§3). `visual` is an open object consumed by the visual lens.
+walkthrough (§3). `visual` is a typed structure consumed by the visual lens. See [composition and view switching](layout-composition.md) for grouping, summaries, exact zone boundaries and flow provenance.
 `docs` and `status` appear in node details. Status is authored on the node; catalog references
 can supply description and documentation when those fields are unwritten (§2.2). The details
 reader resolves that catalog metadata without adding fields to the source YAML. Any

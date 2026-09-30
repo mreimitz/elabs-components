@@ -42,6 +42,9 @@ export interface ArchVisualLane {
   of?: readonly string[];
 }
 export interface ArchVisualBox {
+  boundary?: string;
+  summary?: boolean;
+  slot?: number;
   id: string;
   lane: string;
   title: string;
@@ -57,6 +60,7 @@ export interface ArchVisualFlow {
   label?: string;
 }
 export interface ArchVisualSpec {
+  composition?: "deployment" | "process";
   lanes?: readonly ArchVisualLane[];
   boxes?: readonly ArchVisualBox[];
   flows?: readonly ArchVisualFlow[];
@@ -116,6 +120,8 @@ export interface Point {
 // issues and the source map use the same paths.
 
 export interface ArchZoneSpec {
+  arrangement?: "sequence" | "parallel";
+  align?: "start" | "center";
   path: string;
   id: string;
   parent?: string;
@@ -164,6 +170,7 @@ export interface ArchNodeSpec {
 }
 
 export interface ArchFlowSpec {
+  layoutRole?: "primary" | "secondary";
   path: string;
   /** How it was written: `- a -> b`, `- a -> b: …`, or `- { from, to }`. DG-14 writes back in the same form. */
   form: "string" | "shorthand" | "object";

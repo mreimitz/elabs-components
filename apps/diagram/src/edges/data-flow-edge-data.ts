@@ -18,6 +18,7 @@ export type FlowDirection = "forward" | "back" | "both";
 /** Per-edge `data` of a `DataFlowEdge` — every D12 axis, all optional. */
 export interface DataFlowEdgeData extends Record<string, unknown> {
   label?: string;
+  layoutRole?: "primary" | "secondary";
   kind?: FlowKind;
   style?: FlowLineStyle;
   animated?: boolean;

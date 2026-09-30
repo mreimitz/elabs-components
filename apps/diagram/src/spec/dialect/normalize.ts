@@ -313,12 +313,22 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
       status: pick<NodeStatus>(entry, "status", bad), // DG-26
     };
     if (kind === "zone") {
+      if (pick(entry, "align", bad) !== undefined && pick(entry, "arrangement", bad) === undefined)
+        issues.push(
+          issue(
+            "missing-prop",
+            joinPath(path, "arrangement"),
+            '"align" requires an explicit "arrangement": sequence or parallel.',
+          ),
+        );
       zones.push({
         ...common,
         kind: pick(entry, "kind", bad) ?? "generic",
         owner: pick(entry, "owner", bad),
         provider: pick(entry, "provider", bad),
         role: pick(entry, "role", bad),
+        arrangement: pick(entry, "arrangement", bad),
+        align: pick(entry, "align", bad),
         collapsed: pick<boolean>(entry, "collapsed", bad) ?? false,
         direction: pick(entry, "direction", bad),
       });
@@ -452,6 +462,7 @@ export function normalizeArch(raw: unknown, map: SourceMap): NormalizeResult {
       label: pick(rec, "label", bad),
       style: pick(rec, "style", bad),
       secure: pick(rec, "secure", bad),
+      layoutRole: pick(rec, "layoutRole", bad),
       protocol: pick(rec, "protocol", bad),
       schedule: pick(rec, "schedule", bad),
       step: pick(rec, "step", bad),

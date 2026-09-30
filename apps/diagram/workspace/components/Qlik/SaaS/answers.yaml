@@ -11,8 +11,8 @@ nodeStyle: icon
 legend: auto
 component:
   icon: qlik/answers
-  description: A managed assistant combining Qlik applications and knowledge bases
-    into explainable answers, with human review.
+  description: A managed assistant combining Qlik applications and knowledge bases into
+    explainable answers, with human review.
 zones:
   - id: sources
     title: Enterprise connectivity
@@ -31,6 +31,7 @@ zones:
         icon: qlik/qlik
         title: Qlik applications
         subtitle: Governed measures and dimensions
+    direction: TB
   - id: knowledge
     title: Managed knowledge
     owner: saas
@@ -44,8 +45,8 @@ zones:
         icon: lucide/database
         title: Managed knowledge bases
         subtitle: Document references and vector index
-        description: Domain-specific indexes; source documents remain at the source
-          unless Qlik DataFiles is used.
+        description: Domain-specific indexes; source documents remain at the source unless Qlik
+          DataFiles is used.
     direction: TB
   - id: parsing
     title: Question parsing · Answers Agent
@@ -60,66 +61,83 @@ zones:
         icon: qlik/answers
         title: Plan the answer
         subtitle: Intent, subtasks and relevant sources
-        description: Decompose the question and select tools and accessible resources.
-          Route to structured, unstructured or both paths as needed.
+        description: Decompose the question and select tools and accessible resources. Route to
+          structured, unstructured or both paths as needed.
       - id: access
         icon: lucide/shield
         title: Governed source selection
         subtitle: Space, role and section access
-  - id: structured
-    title: Structured · application insights
-    owner: saas
-    children:
-      - id: semantic
-        icon: lucide/brain
-        title: Semantic search agent
-        subtitle: Find measures and dimensions
-        description: Semantic search tool identifies relevant application items.
-      - id: analyst
-        icon: lucide/bar-chart
-        title: Data Analyst Agent
-        subtitle: Build expressions and analysis package
-        description: Prefer master measures and dimensions; specify data, analysis and
-          output.
-      - id: chart
-        icon: lucide/bar-chart
-        title: Chart agent
-        subtitle: Chart generator tool
-      - id: dashboard
-        icon: lucide/monitor
-        title: Dashboard Authoring agent
-        subtitle: Dashboard generator tool
     direction: TB
-  - id: unstructured
-    title: Unstructured · knowledge retrieval
+    arrangement: sequence
+  - id: formulation
+    title: Answer formulation
     owner: saas
+    direction: LR
+    arrangement: parallel
+    align: start
     children:
-      - id: retrieval
-        icon: lucide/layers
-        title: Retrieval context
-        subtitle: Metadata, glossary and synonyms
-        description: Discover filterable fields such as date, topic and department, and
-          available glossary terms.
-      - id: kb-agent
-        icon: lucide/database
-        title: Knowledge base agent
-        subtitle: Semantic search and RAG
-      - id: help-agent
-        icon: lucide/bot
-        title: Qlik Help agent
-        subtitle: Qlik Cloud documentation
+      - id: structured
+        title: Structured · application insights
+        owner: saas
+        children:
+          - id: semantic
+            icon: lucide/brain
+            title: Semantic search agent
+            subtitle: Find measures and dimensions
+            description: Semantic search tool identifies relevant application items.
+          - id: analyst
+            icon: lucide/bar-chart
+            title: Data Analyst Agent
+            subtitle: Build expressions and analysis package
+            description: Prefer master measures and dimensions; specify data, analysis and output.
+          - id: chart
+            icon: lucide/bar-chart
+            title: Chart agent
+            subtitle: Chart generator tool
+          - id: dashboard
+            icon: lucide/monitor
+            title: Dashboard Authoring agent
+            subtitle: Dashboard generator tool
+        direction: LR
+        arrangement: sequence
+        align: start
+      - id: unstructured
+        title: Unstructured · knowledge retrieval
+        owner: saas
+        children:
+          - id: retrieval
+            icon: lucide/layers
+            title: Retrieval context
+            subtitle: Metadata, glossary and synonyms
+            description:
+              Discover filterable fields such as date, topic and department, and available
+              glossary terms.
+          - id: kb-agent
+            icon: lucide/database
+            title: Knowledge base agent
+            subtitle: Semantic search and RAG
+          - id: help-agent
+            icon: lucide/bot
+            title: Qlik Help agent
+            subtitle: Qlik Cloud documentation
+        direction: LR
   - id: collation
     title: Results collation · Answers Agent
     owner: saas
     children:
-      - id: artifacts
-        icon: lucide/bar-chart
-        title: Analytical artifacts
-        subtitle: Charts, hypercubes and expressions
-      - id: chunks
-        icon: lucide/file
-        title: Relevant text chunks
-        subtitle: Source document references
+      - id: results
+        title: Agent results
+        direction: LR
+        arrangement: parallel
+        children:
+          - id: artifacts
+            icon: lucide/bar-chart
+            title: Analytical artifacts
+            subtitle: Charts, hypercubes and expressions
+          - id: chunks
+            icon: lucide/file
+            title: Relevant text chunks
+            subtitle: Source document references
       - id: compose
         icon: qlik/answers
         title: Compose the answer
@@ -132,9 +150,10 @@ zones:
         icon: lucide/check
         title: Answer review portal
         subtitle: Questions, feedback and human review
-        description: Administrators review questions and user feedback to identify
-          improvements. This is human review, not automatic model training.
+        description: Administrators review questions and user feedback to identify improvements.
+          This is human review, not automatic model training.
     direction: TB
+    arrangement: sequence
   - id: inference
     title: Shared inference service · AWS
     owner: saas
@@ -144,9 +163,9 @@ zones:
         icon: lucide/brain
         title: Amazon Bedrock
         subtitle: Foundation model inference
-        description: Logical shared dependency, not an extra final pipeline step.
-          Inference content is processed in memory, not retained or used for
-          model training. Cross-region routing is tenant-controlled.
+        description: Logical shared dependency, not an extra final pipeline step. Inference
+          content is processed in memory, not retained or used for model training.
+          Cross-region routing is tenant-controlled.
         docs: https://help.qlik.com/en-US/evaluation-guides/Content/ai/answers-security.htm
 flows:
   - documents -> connectors: Content
@@ -182,11 +201,11 @@ flows:
       secure: tls
 notes:
   - at: structured
-    text: Use the agents needed for the question; charts and dashboards are not
-      mandatory outputs.
+    text: Use the agents needed for the question; charts and dashboards are not mandatory
+      outputs.
   - at: inference
-    text: Private AWS connectivity. Tenant data, indexes and history are encrypted
-      in the home region.
+    text: Private AWS connectivity. Tenant data, indexes and history are encrypted in the home
+      region.
 visual:
   lanes:
     - id: connect
@@ -204,8 +223,7 @@ visual:
       title: Ask
       of:
         - parsing
-        - structured
-        - unstructured
+        - formulation
     - id: explain
       role: vendor-cloud
       title: Explain
@@ -217,36 +235,55 @@ visual:
   boxes:
     - id: enterprise
       lane: connect
-      title: Enterprise connectivity
+      title: Enterprise connectors
       members:
+        - documents
         - connectors
+      summary: true
     - id: applications
       lane: prepare
       title: Qlik applications
       members:
         - apps
+      summary: true
     - id: managed-knowledge
       lane: prepare
       title: Managed knowledge bases
       members:
         - indexing
         - index
+      summary: true
     - id: assistant
       lane: ask
       title: Embeddable assistant
       members:
+        - question
         - answers
+        - access
+        - semantic
+        - analyst
+        - chart
+        - dashboard
+        - retrieval
+        - kb-agent
+        - help-agent
+      summary: true
     - id: explainable
       lane: explain
       title: Explainable answers
       members:
+        - artifacts
+        - chunks
         - compose
         - answer
+        - bedrock
+      summary: true
     - id: human-review
       lane: improve
       title: Answer review portal
       members:
         - review
+      summary: true
   flows:
     - from: enterprise
       to: managed-knowledge
@@ -263,20 +300,7 @@ visual:
     - from: explainable
       to: human-review
       label: ""
-  hide:
-    - documents
-    - question
-    - access
-    - semantic
-    - analyst
-    - chart
-    - dashboard
-    - retrieval
-    - kb-agent
-    - help-agent
-    - artifacts
-    - chunks
-    - bedrock
+  composition: process
 story:
   autoplay: false
   steps:
@@ -284,28 +308,28 @@ story:
       targets:
         - sources
         - knowledge
-      text: Connect enterprise content to managed knowledge bases and use existing
-        Qlik applications for structured insights.
+      text: Connect enterprise content to managed knowledge bases and use existing Qlik
+        applications for structured insights.
     - title: Understand the question
       targets:
         - question
         - parsing
-      text: The assistant plans relevant subtasks and selects sources within the
-        user's access rights.
+      text: The assistant plans relevant subtasks and selects sources within the user's access
+        rights.
     - title: Choose the right capabilities
       targets:
         - structured
         - unstructured
-      text: Application agents produce analytical artifacts; knowledge and Help agents
-        retrieve relevant passages. A question can use either path or both.
+      text: Application agents produce analytical artifacts; knowledge and Help agents retrieve
+        relevant passages. A question can use either path or both.
     - title: Explain the result
       targets:
         - collation
         - answer
-      text: The Answers Agent combines the relevant outputs into one coherent answer
-        with supporting references.
+      text: The Answers Agent combines the relevant outputs into one coherent answer with
+        supporting references.
     - title: Review and improve
       targets:
         - review
-      text: People review questions and feedback to identify gaps in content and
-        assistant configuration.
+      text: People review questions and feedback to identify gaps in content and assistant
+        configuration.

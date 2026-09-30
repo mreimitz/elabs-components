@@ -96,7 +96,9 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
           onKeyDown={(event) => {
             if (event.altKey && (event.key === "Enter" || event.key === " ")) {
               event.preventDefault();
-              lensActions.setLens("technical", { frameNodeIds: data.members.map((m) => m.id) });
+              lensActions.setLens("technical", {
+                frameNodeIds: data.boundaryOf ? [data.boundaryOf] : data.members.map((m) => m.id),
+              });
             }
           }}
           // One `data-slot` name for the component; "aside or not" is state, so it is its own
@@ -113,13 +115,15 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
                   backgroundImage: "none",
                   color: paint.text,
                   borderColor: paint.stroke,
-                  borderStyle: "solid",
+                  borderStyle: data.boundaryOf ? "dashed" : "solid",
                 }
               : undefined
           }
           onClick={(event) => {
             if (!event.altKey) return;
-            lensActions.setLens("technical", { frameNodeIds: data.members.map((m) => m.id) });
+            lensActions.setLens("technical", {
+              frameNodeIds: data.boundaryOf ? [data.boundaryOf] : data.members.map((m) => m.id),
+            });
           }}
           className={cn(
             // `zoneVariants` FIRST — its own base class is `shadow-none` (a zone is a region,
@@ -128,6 +132,8 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
             // keeping whichever comes LAST.
             !fixed && zoneVariants({ owner, kind: "generic", fill, capped }),
             !fixed && zoneBodyVariants({ owner }),
+            data.boundaryOf && "border-dashed",
+            data.summary && "justify-center",
             // The node is deliberately not selectable/draggable/connectable, so React Flow's
             // own node wrapper (`.react-flow__node`) sets itself `pointer-events: none` — with
             // no ancestor opting back in, a mouse could never hover or click this button at all
@@ -138,7 +144,7 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
             // hairline reads visibly fainter than its own token colour at that weight (the same
             // problem `zoneVariants`'s `trust-boundary` kind solves with `border-2` for the
             // same reason).
-            "border-muted-foreground focus-ring pointer-events-auto flex h-full w-full flex-col gap-2 border-2 p-3 text-start shadow-xs",
+            "border-muted-foreground focus-ring pointer-events-auto relative flex h-full w-full flex-col gap-2 border-2 p-3 text-start shadow-xs",
           )}
         >
           <span
@@ -153,27 +159,35 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
                   }
                 : undefined
             }
-            className="text-caption flex min-w-0 items-center gap-1.5 truncate font-medium"
+            className="text-caption flex min-w-0 items-center gap-1.5 font-medium"
           >
             {data.aside ? <Network aria-hidden="true" className="size-3.5 shrink-0" /> : null}
             {soleMember ? (
-              // `data-member-id`: the morph overlay's ghost for this member flies to THIS row
-              // (`lens-morph-overlay.tsx`'s `capturePlan`), not a synthetic estimate — a sole
-              // member is named in the header, not the list below, so its row is here. A plain
-              // `<span>`, not `display: contents` — the overlay reads its real, laid-out rect,
-              // which a contents box never has (it generates none of its own).
+              // Preserve the technical member identity on its visible title for
+              // drill-down and rendered membership checks.
               <span className="shrink-0">
                 <ArchMark
                   icon={soleMember.icon}
                   size={14}
-                  variant={fixed ? profile.boxes.items.icon : "mono"}
+                  variant={
+                    fixed && profile.boxes.items.icon === "semantic"
+                      ? soleMember.icon?.startsWith("lucide/")
+                        ? "mono"
+                        : "brand"
+                      : fixed
+                        ? (profile.boxes.items.icon as "mono" | "brand")
+                        : "mono"
+                  }
                 />
               </span>
             ) : null}
-            <span className="min-w-0 truncate">{data.title}</span>
+            <span className="min-w-0 leading-snug line-clamp-2">{data.title}</span>
           </span>
           {profile.pills.enabled && data.processes?.length ? (
-            <span data-slot="visual-processes" className="grid grid-cols-2 gap-1">
+            <span
+              data-slot="visual-processes"
+              className="absolute end-3 bottom-full mb-2 flex flex-col items-end gap-1"
+            >
               {data.processes.map((process) => (
                 <Badge
                   key={process}
@@ -203,11 +217,10 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
               so each is named without a hover, not folded into a single wrapped row of icons.
               A `soleMember` box already named and iconed itself in the header above; the list
               would only repeat it. */}
-          {soleMember ? null : (
+          {soleMember || data.summary ? null : (
             <span aria-hidden="true" className="flex min-h-0 flex-1 flex-col gap-1 overflow-hidden">
               {data.members.map((member) => (
-                // `data-member-id`: see the header's own note above — the morph overlay reads
-                // this row's real, on-screen rect as the member ghost's landing spot.
+                // Keep each displayed row associated with its technical member.
                 <span
                   key={member.id}
                   data-member-id={member.id}
@@ -237,7 +250,15 @@ export function CapabilityBoxNode({ data }: NodeProps<CapabilityBoxNodeType>) {
                   <ArchMark
                     icon={member.icon}
                     size={16}
-                    variant={fixed ? profile.boxes.items.icon : "mono"}
+                    variant={
+                      fixed && profile.boxes.items.icon === "semantic"
+                        ? member.icon?.startsWith("lucide/")
+                          ? "mono"
+                          : "brand"
+                        : fixed
+                          ? (profile.boxes.items.icon as "mono" | "brand")
+                          : "mono"
+                    }
                     className="shrink-0"
                   />
                   <span className="text-meta min-w-0 truncate">{member.title}</span>
