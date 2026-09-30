@@ -1232,8 +1232,8 @@ PieChartBase.displayName = "PieChartBase";
 /**
  * @dataShape parts of a whole across a few categories, read as proportions of the total
  * @avoidWhen more than 5 slices — use a bar or unit chart
+ * @chartsResponsiveExempt renders PieChartBase through RadialChartSizing
  */
-// charts-responsive-exempt: renders PieChartBase, which is itself exempt (renders through RadialChartSizing)
 export const PieChart = forwardRef<HTMLDivElement, PieChartProps>(function PieChart(rawProps, ref) {
   // RM-183: every default comes from the definition (`PIE_CHART`).
   const props = useResolvedChartProps(PIE_CHART, rawProps);

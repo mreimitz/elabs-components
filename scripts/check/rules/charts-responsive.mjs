@@ -14,7 +14,8 @@
  * RM-173 split `resolveResponsive`/`isResponsiveByBreakpoint` into the latter, a pure leaf;
  * `chart-breakpoint.ts` re-exports them and still resolves `resolveDensityForBreakpoint`'s own
  * narrow-override check directly). Comments are blanked first.
- * Escape hatch: `// charts-responsive-exempt: <reason>` on the flagged line or the line above.
+ * Escape hatch: `// charts-responsive-exempt: <reason>` on the flagged line or the line above,
+ * or `@chartsResponsiveExempt <reason>` in the export's attached JSDoc.
  */
 
 export const CHARTS_ROOT = "packages/charts/src";
@@ -41,9 +42,15 @@ function isExempt(src, line) {
   const lines = src.split("\n");
   const here = lines[line - 1] ?? "";
   const above = lines[line - 2] ?? "";
-  return (
-    /charts-responsive-exempt:\s*\S/.test(here) || /charts-responsive-exempt:\s*\S/.test(above)
-  );
+  if (/charts-responsive-exempt:\s*\S/.test(here) || /charts-responsive-exempt:\s*\S/.test(above))
+    return true;
+  if (above.trim() !== "*/") return false;
+  for (let index = line - 3; index >= 0; index--) {
+    const commentLine = lines[index];
+    if (/^\s*\*\s*@chartsResponsiveExempt\s+\S/.test(commentLine)) return true;
+    if (/^\s*\/\*\*/.test(commentLine)) break;
+  }
+  return false;
 }
 
 // ── Rule 1 ──────────────────────────────────────────────────────────────────
@@ -172,6 +179,10 @@ export default {
       at(
         "charts/pie-chart.tsx",
         "// charts-responsive-exempt: sized by the host, never by its container\nexport const PieChart = forwardRef(function PieChart(p, ref) {\n  return <div ref={ref} />;\n});",
+      ),
+      at(
+        "charts/ring-chart.tsx",
+        "/**\n * @dataShape one proportion\n * @chartsResponsiveExempt sized by a shared radial container\n */\nexport const RingChart = forwardRef(function RingChart(p, ref) {\n  return <div ref={ref} />;\n});",
       ),
       // not a container module: only `*-chart.tsx` files are held to rule 1
       at(

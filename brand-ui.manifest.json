@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-28T01:09:57.205Z",
+  "generatedAt": "2026-09-30T17:16:03.755Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -23296,7 +23296,7 @@
               "name": "disabled",
               "optional": true,
               "type": "boolean",
-              "description": "Defaults to `!onDatapointClick && !copyValueOnActivate` — the provider is its own gate, so every family can mount it unconditionally: descendants see no provider (`useChartDatapointsEnabled()` is `false`, no layer, no copy live region), exactly as if it were absent, whenever neither prop is set. Keeping ONE element tree whether or not a handler is set also means adding a handler later does not remount the chart body and lose its state. Pass it explicitly only to override that default."
+              "description": "Provide nothing: descendants see no provider (`useChartDatapointsEnabled()` is `false`, no layer, no copy live region), exactly as if it were absent. For a chart that must keep ONE element tree whether or not a handler is set, so adding a handler later does not remount its body and lose state."
             },
             {
               "name": "children",

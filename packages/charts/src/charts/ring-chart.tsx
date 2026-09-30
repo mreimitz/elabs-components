@@ -642,8 +642,8 @@ RingChartBase.displayName = "RingChartBase";
 /**
  * @dataShape one proportion against its maximum, read as a single ring
  * @avoidWhen several categories matter — use a pie or unit chart
+ * @chartsResponsiveExempt renders RingChartBase through RadialChartSizing
  */
-// charts-responsive-exempt: renders RingChartBase, which is itself exempt (renders through RadialChartSizing)
 export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(
   function RingChart(rawProps, ref) {
     // RM-183: every default comes from the definition (`RING_CHART`).
