@@ -38,7 +38,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn, Skeleton, StatePanel, useLocale } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, Skeleton, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { Leader } from "../marks/leader";
 import { UnitStack } from "../marks/unit-stack";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
@@ -46,7 +46,7 @@ import { type ChartPalette, resolvePalette } from "./chart-context";
 import type { ChartInteractionProps } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useActivateDatapoint,
@@ -292,17 +292,7 @@ export const UnitChartBody = forwardRef<HTMLDivElement, UnitChartProps>(function
     },
     [measureRef],
   );
-  const ref = useCallback(
-    (node: HTMLDivElement | null) => {
-      internalRef.current = node;
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        (forwardedRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [forwardedRef],
-  );
+  const ref = useMemo(() => mergeRefs(internalRef, forwardedRef), [forwardedRef]);
 
   const {
     role,
@@ -816,18 +806,15 @@ UnitChartBody.displayName = "UnitChartBody";
 // Unwrapped implementation; the public docblock sits on `UnitChart` below.
 const UnitChartBase = forwardRef<HTMLDivElement, UnitChartProps>(function UnitChart(props, ref) {
   const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } = props;
-  if (!onDatapointClick && !copyValueOnActivate) {
-    return <UnitChartBody {...props} ref={ref} />;
-  }
   return (
-    <ChartDatapointProvider
+    <AutoChartDatapointProvider
       copyValueOnActivate={copyValueOnActivate}
       datapointLabel={datapointLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       onDatapointClick={onDatapointClick}
     >
       <UnitChartBody {...props} ref={ref} />
-    </ChartDatapointProvider>
+    </AutoChartDatapointProvider>
   );
 });
 UnitChartBase.displayName = "UnitChartBase";

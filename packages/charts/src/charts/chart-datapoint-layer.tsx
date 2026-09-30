@@ -50,7 +50,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { cn, useCopyToClipboard, useLocale } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, useCopyToClipboard, useLocale } from "@elabs-ai/components-ui";
 import type {
   ChartDatapoint,
   ChartDatapointClickHandler,
@@ -305,9 +305,9 @@ export function ChartDatapointProvider({
   children,
   copyValueOnActivate = false,
   datapointLabel,
-  disabled = false,
   maxInteractiveDatapoints = DEFAULT_MAX_INTERACTIVE_DATAPOINTS,
   onDatapointClick,
+  disabled = false,
 }: ChartDatapointProviderProps) {
   const { locale } = useLocale();
   const t = useChartTranslate();
@@ -413,6 +413,35 @@ export function ChartDatapointProvider({
         </span>
       ) : null}
     </ChartDatapointContext>
+  );
+}
+
+/**
+ * The internal self-gating wrapper every chart family mounts UNCONDITIONALLY
+ * around its body: `disabled` defaults to `!onDatapointClick &&
+ * !copyValueOnActivate`, so with neither prop set it renders exactly like
+ * `<ChartDatapointProvider disabled>` — no context value, no layer, no DOM —
+ * and adding a handler later never remounts the body (ONE element tree either
+ * way). Not part of the package's public API: a consumer composing a custom
+ * chart from primitives gets the real `ChartDatapointProvider`, whose own
+ * `disabled` default is `false` (it has no handler props of its own to gate
+ * on, and disabling by default would silently drop keyboard datapoint targets
+ * and selection-session activation the moment someone mounts it with no
+ * props).
+ */
+export function AutoChartDatapointProvider({
+  onDatapointClick,
+  copyValueOnActivate,
+  disabled,
+  ...rest
+}: ChartDatapointProviderProps) {
+  return (
+    <ChartDatapointProvider
+      onDatapointClick={onDatapointClick}
+      copyValueOnActivate={copyValueOnActivate}
+      disabled={disabled ?? (!onDatapointClick && !copyValueOnActivate)}
+      {...rest}
+    />
   );
 }
 
@@ -757,14 +786,7 @@ export const ChartDatapointLayer = forwardRef<HTMLDivElement, ChartDatapointLaye
         className={cn("pointer-events-none absolute inset-0", className)}
         data-chart-export="exclude"
         data-slot="chart-datapoint-layer"
-        ref={(node) => {
-          rootRef.current = node;
-          if (typeof ref === "function") {
-            ref(node);
-          } else if (ref) {
-            ref.current = node;
-          }
-        }}
+        ref={mergeRefs(rootRef, ref)}
         role="group"
         {...props}
       >

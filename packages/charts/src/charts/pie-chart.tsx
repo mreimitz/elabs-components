@@ -1,7 +1,7 @@
 "use client";
 
 import { Group } from "@visx/group";
-import { ChartParentSize } from "./chart-parent-size";
+import { getChartChildComponentName } from "./chart-defs";
 import { pie as d3Pie } from "d3-shape";
 import type { Transition } from "motion/react";
 import {
@@ -13,15 +13,16 @@ import {
   type ReactElement,
   type ReactNode,
   useCallback,
-  useId,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { cn, StatePanel } from "@elabs-ai/components-ui";
+import { useSvgId } from "./svg-id";
+import { mergeRefs, StatePanel } from "@elabs-ai/components-ui";
 import { useArcChartLoaded } from "./use-arc-chart-loaded";
 import { generateArcPath, isNamedChartChild } from "./pie-ring-engine";
-import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
+import { RadialChartSizing } from "./radial-chart-sizing";
+import { type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
 import type { ChartStateGroupProps } from "./props/chart-state";
 import type { FrameSizeGroupProps } from "./props/frame-size";
@@ -44,7 +45,7 @@ import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-da
 import {
   ChartDatapointLayer,
   type ChartDatapointTarget,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
@@ -65,7 +66,6 @@ import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "./series-patt
 import { useHighDecorationOf } from "./use-high-decoration";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
 import {
-  ChartPlotRoot,
   type ChartPlotHeight,
   type Responsive,
   type ResponsiveByBreakpoint,
@@ -392,10 +392,7 @@ interface PieChartInnerProps {
 
 // Helper to check if a component is a gradient or pattern definition
 function isDefsComponent(child: ReactElement): boolean {
-  const displayName =
-    (child.type as { displayName?: string })?.displayName ||
-    (child.type as { name?: string })?.name ||
-    "";
+  const displayName = getChartChildComponentName(child);
   return (
     displayName.includes("Gradient") ||
     displayName.includes("Pattern") ||
@@ -512,7 +509,7 @@ const PieChartCore = memo(function PieChartCore({
 
   // Decoration pattern fills
   const high = useHighDecorationOf(containerRef);
-  const patternScope = useId().replace(/:/g, "");
+  const patternScope = useSvgId();
 
   // radiusKey (#RM-030) — the max value of the second measure across `data`,
   // used to normalize every slice's radius scale. 0 when radiusKey is unset
@@ -961,6 +958,7 @@ function pieChartCorePropsEqual(prev: PieChartInnerProps, next: PieChartInnerPro
 // Exported (RM-183 review fix3, `defaults reality` in `definitions.test.ts`
 // only) so that suite can compare its OWN destructuring defaults — never
 // `CHART_DEFINITIONS.PieChart.defaults` — against the public component's DOM.
+// charts-responsive-exempt: renders through RadialChartSizing, which renders <ChartPlotRoot> itself — not a *-chart.tsx file, so the static scan below can't see it
 export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function PieChart(
   {
     data,
@@ -1110,21 +1108,9 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
     locale,
   });
 
-  // containerRef anchors tooltips; merged with the forwarded ref via callback ref
+  // containerRef anchors tooltips; merged with the forwarded ref via mergeRefs
   const containerRef = useRef<HTMLDivElement>(null);
-  const mergedRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      // Keep internal containerRef in sync for tooltip positioning
-      (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      // Forward to the caller's ref
-      if (typeof ref === "function") {
-        ref(node);
-      } else if (ref) {
-        (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [ref],
-  );
+  const mergedRef = useMemo(() => mergeRefs(containerRef, ref), [ref]);
 
   // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.
   const description = useChartAutoSummary("pie", {
@@ -1140,22 +1126,19 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
     descId,
   } = useChartA11yContainerProps(accessibleLabel, description); // Labels — RM-110
 
-  // If fixed size is provided, use it directly
   // The provider sits ABOVE the chart body so `PieSlice` can read the
-  // drill-down activator and the core can register slice targets (#349).
-  const withInteraction = (chart: ReactNode) =>
-    onDatapointClick || copyValueOnActivate ? (
-      <ChartDatapointProvider
-        datapointLabel={datapointLabel}
-        maxInteractiveDatapoints={maxInteractiveDatapoints}
-        copyValueOnActivate={copyValueOnActivate}
-        onDatapointClick={onDatapointClick}
-      >
-        {chart}
-      </ChartDatapointProvider>
-    ) : (
-      chart
-    );
+  // drill-down activator and the core can register slice targets (#349). Its
+  // own `disabled` default makes it a no-op with neither prop set.
+  const withInteraction = (chart: ReactNode) => (
+    <AutoChartDatapointProvider
+      datapointLabel={datapointLabel}
+      maxInteractiveDatapoints={maxInteractiveDatapoints}
+      copyValueOnActivate={copyValueOnActivate}
+      onDatapointClick={onDatapointClick}
+    >
+      {chart}
+    </AutoChartDatapointProvider>
+  );
 
   // frame-size group (RM-183): `margin` shrinks the plot's content box —
   // padding on `ChartPlotRoot` (a normal-flow box, unlike Funnel/Unit's
@@ -1165,76 +1148,46 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
   const marginStyle = marginPaddingStyle(marginBox);
 
   // chart-state group (RM-183): `status`/`empty`. Neither family had a
-  // loading/empty vocabulary before (F11) — both branches below reuse the
-  // SAME `ChartPlotRoot` sizing as the real chart so the box never jumps
-  // size when data arrives.
+  // loading/empty vocabulary before (F11) — loading/empty and the real chart
+  // route through the SAME `RadialChartSizing` call (`statePanel` swaps in
+  // for the chart body) so the box never jumps size AND the root never
+  // remounts when `status` flips to `"ready"` (a focused root would lose
+  // focus, and every ref callback would fire `null` then a new node).
   const isLoading = status === "loading";
   const isEmptyState = Boolean(empty) && groupedData.length === 0;
-  if (isLoading || isEmptyState) {
-    const statePanel = (
+  const statePanel =
+    isLoading || isEmptyState ? (
       <StatePanel
         kind={isLoading ? "loading" : "empty"}
         title={empty?.title}
         description={empty?.message}
         actions={empty?.action}
       />
-    );
-    // RM-183 review (minor): wrapped in `containerLegend.wrap` — Pie's ready
-    // branch mounts the legend, so loading/empty must too, or the layout
-    // jumps (and the legend's height is un-reserved) the moment `status`
-    // flips to `"ready"`.
-    return fixedSize
-      ? containerLegend.wrap(
-          <ChartPlotRoot
-            aria-describedby={ariaDescribedby}
-            aria-label={ariaLabel}
-            className={cn("relative flex items-center justify-center", className)}
-            ref={mergedRef}
-            role={role}
-            style={{ width: fixedSize, height: fixedSize, ...marginStyle }}
-            tabIndex={tabIndex}
-          >
-            <ChartA11yLabel descId={descId} description={description} />
-            {statePanel}
-          </ChartPlotRoot>,
-        )
-      : containerLegend.wrap(
-          <ChartPlotRoot
-            plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
-            aria-describedby={ariaDescribedby}
-            aria-label={ariaLabel}
-            className={cn("relative w-full", className)}
-            ref={mergedRef}
-            role={role}
-            style={marginStyle}
-            tabIndex={tabIndex}
-          >
-            <ChartA11yLabel descId={descId} description={description} />
-            {statePanel}
-          </ChartPlotRoot>,
-        );
-  }
+    ) : undefined;
 
-  if (fixedSize) {
-    // Explicit-size branch: `PieChartInner` sizes its own SVG from these JS
-    // numbers rather than measuring the DOM, so — unlike the responsive
-    // branch below, where `ChartParentSize` measures the already-padded content
-    // box for free — margin has to shrink them by hand. Byte-identical to
-    // `fixedSize` at the default `ZERO_MARGIN`.
-    const plotWidth = fixedSize - marginBox.left - marginBox.right;
-    const plotHeightPx = fixedSize - marginBox.top - marginBox.bottom;
-    return containerLegend.wrap(
-      <ChartPlotRoot
-        aria-describedby={ariaDescribedby}
-        aria-label={ariaLabel}
-        className={cn("relative flex items-center justify-center", className)}
-        ref={mergedRef}
-        role={role}
-        style={{ width: fixedSize, height: fixedSize, ...marginStyle }}
-        tabIndex={tabIndex}
-      >
-        <ChartA11yLabel descId={descId} description={description} />
-        {withInteraction(
+  // Explicit `fixedSize`: `PieChartInner` sizes its own SVG from JS numbers
+  // shrunk by margin by hand. No `fixedSize`: `ChartParentSize` measures the
+  // already-padded content box for free. Shared with `RingChart` —
+  // `RadialChartSizing` (`radial-chart-sizing.tsx`). Byte-identical to
+  // `fixedSize` at the default `ZERO_MARGIN`.
+  return containerLegend.wrap(
+    <RadialChartSizing
+      ariaDescribedby={ariaDescribedby}
+      ariaLabel={ariaLabel}
+      className={className}
+      descId={descId}
+      description={description}
+      fixedSize={fixedSize}
+      innerRef={mergedRef}
+      marginBox={marginBox}
+      marginStyle={marginStyle}
+      plotHeight={plotHeight}
+      role={role}
+      statePanel={statePanel}
+      tabIndex={tabIndex}
+    >
+      {({ width, height }) =>
+        withInteraction(
           <PieChartInner
             palette={palette}
             containerRef={containerRef}
@@ -1246,7 +1199,7 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
             geometryScrubbing={geometryScrubbing}
             align={align}
             half={half}
-            height={plotHeightPx}
+            height={height}
             hoveredIndexProp={effectiveHoveredIndex}
             hoverOffset={hoverOffset}
             innerRadius={innerRadius}
@@ -1262,66 +1215,13 @@ export const PieChartBase = forwardRef<HTMLDivElement, PieChartProps>(function P
             locale={locale}
             maxFractionDigits={maxFractionDigits}
             valueFormat={valueFormat}
-            width={plotWidth}
+            width={width}
           >
             {effectiveChildren}
           </PieChartInner>,
-        )}
-      </ChartPlotRoot>,
-    );
-  }
-
-  // Otherwise use ChartParentSize for responsive sizing
-  return containerLegend.wrap(
-    <ChartPlotRoot
-      plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
-      aria-describedby={ariaDescribedby}
-      aria-label={ariaLabel}
-      className={cn("relative w-full", className)}
-      ref={mergedRef}
-      role={role}
-      style={marginStyle}
-      tabIndex={tabIndex}
-    >
-      <ChartA11yLabel descId={descId} description={description} />
-      <ChartParentSize>
-        {({ width, height }) =>
-          withInteraction(
-            <PieChartInner
-              palette={palette}
-              containerRef={containerRef}
-              cornerRadius={cornerRadius}
-              data={groupedData}
-              endAngle={effectiveEndAngle}
-              enterStaggerScale={enterStaggerScale}
-              enterTransition={enterTransition}
-              geometryScrubbing={geometryScrubbing}
-              align={align}
-              half={half}
-              height={height}
-              hoveredIndexProp={effectiveHoveredIndex}
-              hoverOffset={hoverOffset}
-              innerRadius={innerRadius}
-              labels={labels}
-              onHoverChange={handleHoverChange}
-              padAngle={padAngle}
-              radiusKey={radiusKey}
-              referenceRings={referenceRings}
-              seams={seams}
-              sort={effectiveSort}
-              startAngle={effectiveStartAngle}
-              currency={currency}
-              locale={locale}
-              maxFractionDigits={maxFractionDigits}
-              valueFormat={valueFormat}
-              width={width}
-            >
-              {effectiveChildren}
-            </PieChartInner>,
-          )
-        }
-      </ChartParentSize>
-    </ChartPlotRoot>,
+        )
+      }
+    </RadialChartSizing>,
   );
 });
 
@@ -1333,6 +1233,7 @@ PieChartBase.displayName = "PieChartBase";
  * @dataShape parts of a whole across a few categories, read as proportions of the total
  * @avoidWhen more than 5 slices — use a bar or unit chart
  */
+// charts-responsive-exempt: renders PieChartBase, which is itself exempt (renders through RadialChartSizing)
 export const PieChart = forwardRef<HTMLDivElement, PieChartProps>(function PieChart(rawProps, ref) {
   // RM-183: every default comes from the definition (`PIE_CHART`).
   const props = useResolvedChartProps(PIE_CHART, rawProps);

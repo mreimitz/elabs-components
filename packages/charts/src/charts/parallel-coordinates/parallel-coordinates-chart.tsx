@@ -62,9 +62,10 @@ import { curveLinear, curveMonotoneX } from "@visx/curve";
 import { line as d3Line } from "d3-shape";
 import { forwardRef, useCallback, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { useLayoutMeasure } from "../layout-size";
-import { cn, Skeleton, StatePanel, useLocale } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, Skeleton, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, seededRnd, stagger } from "../../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
+import { warnChartOnce } from "../chart-breakpoint";
 import { type ChartPalette, type Margin, resolvePalette } from "../chart-context";
 import { ChartLoadingLabel } from "../chart-loading-label";
 import { DEFAULT_CHART_STATUS, type ChartStatus } from "../chart-phase";
@@ -80,7 +81,7 @@ import type {
 } from "../chart-datapoint";
 import {
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useActivateDatapoint,
@@ -237,17 +238,8 @@ export function buildParallelRows(
 
 // ─── Axis-count guard (dev-only, warn-and-clamp — never throws) ────────────
 
-const warnedDimensionMessages = new Set<string>();
-
 function warnDimensionCount(message: string): void {
-  if (process.env.NODE_ENV === "production") {
-    return;
-  }
-  if (warnedDimensionMessages.has(message)) {
-    return;
-  }
-  warnedDimensionMessages.add(message);
-  console.warn(`[ParallelCoordinatesChart] ${message}`);
+  warnChartOnce(message, `[ParallelCoordinatesChart] ${message}`);
 }
 
 /**
@@ -813,18 +805,15 @@ function ParallelCoordinatesBody({
 }: BodyProps) {
   const defaultDatapointLabel = useDefaultParallelDatapointLabel(plotProps.rows, plotProps.axes);
   const core = <ParallelCoordinatesPlot {...plotProps} />;
-  if (!onDatapointClick && !copyValueOnActivate) {
-    return core;
-  }
   return (
-    <ChartDatapointProvider
+    <AutoChartDatapointProvider
       copyValueOnActivate={copyValueOnActivate}
       datapointLabel={datapointLabel ?? defaultDatapointLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       onDatapointClick={onDatapointClick}
     >
       {core}
-    </ChartDatapointProvider>
+    </AutoChartDatapointProvider>
   );
 }
 
@@ -863,15 +852,7 @@ const ParallelCoordinatesChartUnscoped = forwardRef<HTMLDivElement, ParallelCoor
       descId,
     } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
-    const setContainerRef = (node: HTMLDivElement | null) => {
-      containerRef.current = node;
-      measureRef(node);
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        forwardedRef.current = node;
-      }
-    };
+    const setContainerRef = mergeRefs(containerRef, measureRef, forwardedRef);
 
     const resolvedDimensions = useMemo(() => resolveParallelDimensions(dimensions), [dimensions]);
     const rows = useMemo(

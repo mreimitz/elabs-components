@@ -1,7 +1,6 @@
 "use client";
 
 import { Group } from "@visx/group";
-import { ChartParentSize } from "./chart-parent-size";
 import type { Transition } from "motion/react";
 import {
   Children,
@@ -13,14 +12,14 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn, StatePanel } from "@elabs-ai/components-ui";
+import { mergeRefs, StatePanel } from "@elabs-ai/components-ui";
 import { DEFAULT_ANIMATION_DURATION_MS, enterTransitionForDuration } from "./animation";
-import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
+import { type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
   type ChartDatapointTarget,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   useChartDatapointsEnabled,
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
@@ -39,11 +38,12 @@ import type { ChartStateGroupProps } from "./props/chart-state";
 import type { FrameSizeGroupProps } from "./props/frame-size";
 import { useHighDecorationOf } from "./use-high-decoration";
 import { type ChartSelectionProps, ChartSelectionProvider } from "./chart-selection";
-import { ChartPlotRoot, type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
+import { type ChartPlotHeight, type Responsive } from "./chart-breakpoint";
 import { RING_CHART } from "../definitions/ring-chart.definition";
 import { useResolvedChartProps } from "./use-resolved-chart-props";
 import { useArcChartLoaded } from "./use-arc-chart-loaded";
 import { generateArcPath, isNamedChartChild } from "./pie-ring-engine";
+import { RadialChartSizing } from "./radial-chart-sizing";
 
 /** Stable empty array so a non-interactive RingChart never re-registers targets. */
 const EMPTY_RING_TARGETS: ChartDatapointTarget[] = [];
@@ -491,6 +491,7 @@ function ringChartCorePropsEqual(prev: RingChartInnerProps, next: RingChartInner
 // Exported (RM-183 review fix3, `defaults reality` in `definitions.test.ts`
 // only) so that suite can compare its OWN destructuring defaults — never
 // `CHART_DEFINITIONS.RingChart.defaults` — against the public component's DOM.
+// charts-responsive-exempt: renders through RadialChartSizing, which renders <ChartPlotRoot> itself — not a *-chart.tsx file, so the static scan below can't see it
 export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function RingChart(
   {
     data,
@@ -532,21 +533,11 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
     [enterTransitionProp, animationDuration],
   );
 
-  // Internal ref anchors tooltips; we merge it with any forwarded ref via a
-  // callback ref so both stay in sync.
+  // Internal ref anchors tooltips; we merge it with any forwarded ref via mergeRefs
+  // so both stay in sync.
   const internalRef = useRef<HTMLDivElement>(null);
 
-  const callbackRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      (internalRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      if (typeof ref === "function") {
-        ref(node);
-      } else if (ref) {
-        (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [ref],
-  );
+  const callbackRef = useMemo(() => mergeRefs(internalRef, ref), [ref]);
 
   const {
     role,
@@ -557,20 +548,18 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
   } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
   // The provider sits ABOVE the chart body so `Ring` can read the drill-down
-  // activator and the core can register ring targets (#349).
-  const withInteraction = (chart: ReactNode) =>
-    onDatapointClick || copyValueOnActivate ? (
-      <ChartDatapointProvider
-        datapointLabel={datapointLabel}
-        maxInteractiveDatapoints={maxInteractiveDatapoints}
-        copyValueOnActivate={copyValueOnActivate}
-        onDatapointClick={onDatapointClick}
-      >
-        {chart}
-      </ChartDatapointProvider>
-    ) : (
-      chart
-    );
+  // activator and the core can register ring targets (#349). Its own
+  // `disabled` default makes it a no-op with neither prop set.
+  const withInteraction = (chart: ReactNode) => (
+    <AutoChartDatapointProvider
+      datapointLabel={datapointLabel}
+      maxInteractiveDatapoints={maxInteractiveDatapoints}
+      copyValueOnActivate={copyValueOnActivate}
+      onDatapointClick={onDatapointClick}
+    >
+      {chart}
+    </AutoChartDatapointProvider>
+  );
 
   // frame-size group (RM-183): `margin` shrinks the plot's content box —
   // padding on `ChartPlotRoot` (a normal-flow box), `undefined`/no-op at the
@@ -580,78 +569,46 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
   const marginStyle = marginPaddingStyle(marginBox);
 
   // chart-state group (RM-183): `status`/`empty`. Neither family had a
-  // loading/empty vocabulary before (F11) — both branches below reuse the
-  // SAME `ChartPlotRoot` sizing as the real chart so the box never jumps
-  // size when data arrives.
+  // loading/empty vocabulary before (F11) — loading/empty and the real chart
+  // route through the SAME `RadialChartSizing` call (`statePanel` swaps in
+  // for the chart body) so the box never jumps size AND the root never
+  // remounts when `status` flips to `"ready"` (a focused root would lose
+  // focus, and every ref callback would fire `null` then a new node).
   const isLoading = status === "loading";
   const isEmptyState = Boolean(empty) && data.length === 0;
-  if (isLoading || isEmptyState) {
-    const statePanel = (
+  const statePanel =
+    isLoading || isEmptyState ? (
       <StatePanel
         kind={isLoading ? "loading" : "empty"}
         title={empty?.title}
         description={empty?.message}
         actions={empty?.action}
       />
-    );
-    // RM-183 review (minor): `aria-describedby={ariaDescribedby}` here points
-    // at `descId` — the ready branch below renders the `ChartA11yLabel` that
-    // owns that id; loading/empty must render it too, or the id dangles.
-    if (fixedSize) {
-      return (
-        <ChartPlotRoot
-          aria-describedby={ariaDescribedby}
-          aria-label={ariaLabel}
-          className={cn("relative flex items-center justify-center", className)}
-          ref={callbackRef}
-          role={role}
-          style={{ width: fixedSize, height: fixedSize, ...marginStyle }}
-          tabIndex={tabIndex}
-        >
-          <ChartA11yLabel descId={descId} description={accessibleDescription} />
-          {statePanel}
-        </ChartPlotRoot>
-      );
-    }
-    return (
-      <ChartPlotRoot
-        plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
-        aria-describedby={ariaDescribedby}
-        aria-label={ariaLabel}
-        className={cn("relative w-full", className)}
-        ref={callbackRef}
-        role={role}
-        style={marginStyle}
-        tabIndex={tabIndex}
-      >
-        <ChartA11yLabel descId={descId} description={accessibleDescription} />
-        {statePanel}
-      </ChartPlotRoot>
-    );
-  }
+    ) : undefined;
 
-  // If fixed size is provided, use it directly
-  if (fixedSize) {
-    // Explicit-size branch: `RingChartInner` sizes its own SVG from these JS
-    // numbers rather than measuring the DOM, so — unlike the responsive
-    // branch below, where `ChartParentSize` measures the already-padded content
-    // box for free — margin has to shrink them by hand, exactly as
-    // `PieChart` does. Byte-identical to `fixedSize` at the default
-    // `ZERO_MARGIN`.
-    const plotWidth = fixedSize - marginBox.left - marginBox.right;
-    const plotHeightPx = fixedSize - marginBox.top - marginBox.bottom;
-    return (
-      <ChartPlotRoot
-        aria-describedby={ariaDescribedby}
-        aria-label={ariaLabel}
-        className={cn("relative flex items-center justify-center", className)}
-        ref={callbackRef}
-        role={role}
-        style={{ width: fixedSize, height: fixedSize, ...marginStyle }}
-        tabIndex={tabIndex}
-      >
-        <ChartA11yLabel descId={descId} description={accessibleDescription} />
-        {withInteraction(
+  // Explicit `fixedSize`: `RingChartInner` sizes its own SVG from JS numbers
+  // shrunk by margin by hand. No `fixedSize`: `ChartParentSize` measures the
+  // already-padded content box for free. Shared with `PieChart` —
+  // `RadialChartSizing` (`radial-chart-sizing.tsx`). Byte-identical to
+  // `fixedSize` at the default `ZERO_MARGIN`.
+  return (
+    <RadialChartSizing
+      ariaDescribedby={ariaDescribedby}
+      ariaLabel={ariaLabel}
+      className={className}
+      descId={descId}
+      description={accessibleDescription}
+      fixedSize={fixedSize}
+      innerRef={callbackRef}
+      marginBox={marginBox}
+      marginStyle={marginStyle}
+      plotHeight={plotHeight}
+      role={role}
+      statePanel={statePanel}
+      tabIndex={tabIndex}
+    >
+      {({ width, height }) =>
+        withInteraction(
           <RingChartInner
             palette={palette}
             baseInnerRadius={baseInnerRadius}
@@ -661,62 +618,20 @@ export const RingChartBase = forwardRef<HTMLDivElement, RingChartProps>(function
             enterStaggerScale={enterStaggerScale}
             enterTransition={enterTransition}
             geometryScrubbing={geometryScrubbing}
-            height={plotHeightPx}
+            height={height}
             hoveredIndexProp={hoveredIndex}
             labels={labels}
             onHoverChange={onHoverChange}
             ringGap={ringGap}
             startAngle={startAngle}
             strokeWidth={strokeWidth}
-            width={plotWidth}
+            width={width}
           >
             {children}
           </RingChartInner>,
-        )}
-      </ChartPlotRoot>
-    );
-  }
-
-  // Otherwise use ChartParentSize for responsive sizing
-  return (
-    <ChartPlotRoot
-      plotBox={{ plotHeight, defaultPlotHeight: { aspect: 1 } }}
-      aria-describedby={ariaDescribedby}
-      aria-label={ariaLabel}
-      className={cn("relative w-full", className)}
-      ref={callbackRef}
-      role={role}
-      style={marginStyle}
-      tabIndex={tabIndex}
-    >
-      <ChartA11yLabel descId={descId} description={accessibleDescription} />
-      <ChartParentSize>
-        {({ width, height }) =>
-          withInteraction(
-            <RingChartInner
-              palette={palette}
-              baseInnerRadius={baseInnerRadius}
-              containerRef={internalRef}
-              data={data}
-              endAngle={endAngle}
-              enterStaggerScale={enterStaggerScale}
-              enterTransition={enterTransition}
-              geometryScrubbing={geometryScrubbing}
-              height={height}
-              hoveredIndexProp={hoveredIndex}
-              labels={labels}
-              onHoverChange={onHoverChange}
-              ringGap={ringGap}
-              startAngle={startAngle}
-              strokeWidth={strokeWidth}
-              width={width}
-            >
-              {children}
-            </RingChartInner>,
-          )
-        }
-      </ChartParentSize>
-    </ChartPlotRoot>
+        )
+      }
+    </RadialChartSizing>
   );
 });
 
@@ -728,6 +643,7 @@ RingChartBase.displayName = "RingChartBase";
  * @dataShape one proportion against its maximum, read as a single ring
  * @avoidWhen several categories matter — use a pie or unit chart
  */
+// charts-responsive-exempt: renders RingChartBase, which is itself exempt (renders through RadialChartSizing)
 export const RingChart = forwardRef<HTMLDivElement, RingChartProps>(
   function RingChart(rawProps, ref) {
     // RM-183: every default comes from the definition (`RING_CHART`).

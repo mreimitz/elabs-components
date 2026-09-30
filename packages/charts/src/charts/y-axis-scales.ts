@@ -1,6 +1,8 @@
 import { scaleLinear, scaleLog, scaleSqrt } from "@visx/scale";
 import { Children, isValidElement, type ReactNode } from "react";
 import type { LineConfig } from "./chart-context";
+import { warnChartOnce } from "./chart-breakpoint";
+import { getChartChildComponentName } from "./chart-defs";
 
 /** Default axis id when `yAxisId` is omitted (Recharts-style `0` / primary left axis). */
 export const DEFAULT_Y_AXIS_ID = "left";
@@ -188,24 +190,14 @@ export function buildValueScale(
   return scaleLinear<number>({ domain, range });
 }
 
-const warnedValueAxisMessages = new Set<string>();
-
 /** Print each distinct value-axis warning once per session, in development only. */
 export function warnValueAxisOnce(
   axisId: string,
   warnings: string[],
   component: "YAxis" | "XAxis" = "YAxis",
 ): void {
-  if (process.env.NODE_ENV === "production") {
-    return;
-  }
   for (const message of warnings) {
-    const key = `${component}:${axisId}:${message}`;
-    if (warnedValueAxisMessages.has(key)) {
-      continue;
-    }
-    warnedValueAxisMessages.add(key);
-    console.warn(`[${component} ${axisId}] ${message}`);
+    warnChartOnce(`${component}:${axisId}:${message}`, `[${component} ${axisId}] ${message}`);
   }
 }
 
@@ -222,11 +214,10 @@ export function collectValueAxisConfigs(
 ): Record<string, ValueAxisConfig> {
   const configs: Record<string, ValueAxisConfig> = {};
   Children.forEach(children, (child) => {
-    if (!isValidElement(child) || typeof child.type !== "function") {
+    if (!isValidElement(child)) {
       return;
     }
-    const type = child.type as { displayName?: string; name?: string };
-    const name = type.displayName || type.name || "";
+    const name = getChartChildComponentName(child);
     if (!componentNames.includes(name)) {
       return;
     }

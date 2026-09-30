@@ -21,7 +21,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { cn, useLocale } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, useLocale } from "@elabs-ai/components-ui";
 
 import type { ChartAnnotation } from "../charts/annotations/annotation-types";
 import {
@@ -208,11 +208,6 @@ function useElementWidth(): [(node: HTMLDivElement | null) => void, number] {
   return [setNode, width];
 }
 
-function assignRef<E>(ref: ForwardedRef<E>, value: E | null) {
-  if (typeof ref === "function") ref(value);
-  else if (ref) ref.current = value;
-}
-
 function DefaultPanelTitle({ title, value }: { title: string; value: number | null | undefined }) {
   const format = useChartValueFormatter();
   return (
@@ -258,13 +253,7 @@ function ChartMultiplesInner<T extends Record<string, unknown>>(
   const { locale } = useLocale();
   const { breakpoint: forcedBreakpoint } = useChartConfig();
   const [measureRef, width] = useElementWidth();
-  const setRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      measureRef(node);
-      assignRef(ref, node);
-    },
-    [measureRef, ref],
-  );
+  const setRef = useMemo(() => mergeRefs(measureRef, ref), [measureRef, ref]);
   const breakpoint = forcedBreakpoint ?? breakpointForWidth(width);
 
   // 1. Panels in input order (explicit, or split by `by`), baseline joined in.

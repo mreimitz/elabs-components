@@ -2,7 +2,8 @@
 
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
-import { memo, useId, useMemo } from "react";
+import { memo, useMemo } from "react";
+import { useSvgId } from "./svg-id";
 import { chartCssVars, resolveSignPalette, useChart, useChartPalette } from "./chart-context";
 import { useChartLegendHover } from "./legend/legend-hover";
 import { transitionWithDelay } from "./motion-utils";
@@ -482,7 +483,7 @@ export function Candlestick({
   // none, unless an author's `bodyPatternPositive` fills it. Wick and outline
   // stay solid.
   const high = useHighDecoration();
-  const patternScope = useId().replace(/:/g, "");
+  const patternScope = useSvgId();
   const decoration = useMemo<CandleDecoration>(() => {
     if (!high) {
       return NO_CANDLE_DECORATION;

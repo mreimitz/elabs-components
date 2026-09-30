@@ -10,6 +10,7 @@
  * fold.
  */
 
+import { foldTail } from "./tail-fold";
 import type { PieData } from "./pie-context";
 import type { LegendItemShape } from "./legend/chart-legend-item";
 
@@ -91,24 +92,16 @@ export function groupSmallSlices(
     fold.delete(ascByValue[ascByValue.length - 1]!.i);
   }
 
-  const kept: PieData[] = [];
-  const foldedCategories: string[] = [];
-  let foldedValue = 0;
-  data.forEach((d, i) => {
-    if (fold.has(i)) {
-      foldedValue += Number.isFinite(d.value) ? d.value : 0;
-      foldedCategories.push(d.label);
-    } else {
-      kept.push(d);
-    }
-  });
+  const { kept, folded, foldedValue } = foldTail(data, fold, (d) =>
+    Number.isFinite(d.value) ? d.value : 0,
+  );
 
   const other: PieData = {
     label: options.label ?? DEFAULT_OTHER_LABEL,
     value: foldedValue,
-    categories: foldedCategories,
+    categories: folded.map((d) => d.label),
   };
-  return { data: [...kept, other], foldedCount: foldedCategories.length };
+  return { data: [...kept, other], foldedCount: folded.length };
 }
 
 /** A `ChartLegend` item (`LegendItem` shape) with the fields a pie legend needs, every one set. */

@@ -8,6 +8,7 @@
  */
 
 import { type ChartTranslate, defaultChartTranslate } from "../chart-formatters";
+import { areaRadius } from "../../marks/area-radius";
 
 /** One countable step of the legend ramp. */
 export interface HeatmapBucket {
@@ -95,8 +96,14 @@ export function bucketIndexOf(buckets: readonly HeatmapBucket[], value: number):
  */
 export function dotRadius(value: number, maxAbs: number, maxRadius: number): number {
   if (maxAbs <= 0 || maxRadius <= 0) return 0;
-  const ratio = Math.min(1, Math.abs(value) / maxAbs);
-  return Math.sqrt(ratio) * maxRadius;
+  // A NaN `value`/`maxAbs`/`maxRadius` that survives the guard above (NaN
+  // fails every `<= 0` comparison) must still propagate to NaN, matching
+  // ordinary floating-point math — `areaRadius`'s OWN `!(max > 0)` guard
+  // would otherwise treat a NaN `max` as "no data" and clamp it to 0.
+  if (Number.isNaN(value) || Number.isNaN(maxAbs) || Number.isNaN(maxRadius)) {
+    return NaN;
+  }
+  return areaRadius(Math.min(Math.abs(value), maxAbs), maxAbs, maxRadius);
 }
 
 /** The facts a heatmap's accessible summary is built from. */

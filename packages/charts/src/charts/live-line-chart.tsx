@@ -1,6 +1,7 @@
 "use client";
 
 import { localPoint } from "@visx/event";
+import { getChartChildComponentName } from "./chart-defs";
 import { ChartParentSize } from "./chart-parent-size";
 import { scaleLinear, scaleTime } from "@visx/scale";
 import { bisector } from "d3-array";
@@ -11,7 +12,6 @@ import {
   forwardRef,
   isValidElement,
   memo,
-  type MutableRefObject,
   type ReactNode,
   startTransition,
   useCallback,
@@ -20,7 +20,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import {
   applySeriesPalette,
@@ -222,9 +222,7 @@ function extractLiveLineConfigs(children: ReactNode): LineConfig[] {
     if (!isValidElement(child)) {
       return;
     }
-    const childType = child.type as { displayName?: string; name?: string };
-    const name =
-      typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
+    const name = getChartChildComponentName(child);
     const props = child.props as LiveLineProps | undefined;
     if ((name === "LiveLine" || (props && "dataKey" in props)) && props?.dataKey) {
       configs.push({
@@ -688,18 +686,8 @@ export const LiveLineChart = forwardRef<HTMLDivElement, LiveLineChartProps>(
     // Internal ref anchors tooltips (passed to chart context).
     const internalRef = useRef<HTMLDivElement>(null);
 
-    // Callback ref merges the forwarded ref with the internal ref so both are satisfied.
-    const containerRef = useCallback(
-      (node: HTMLDivElement | null) => {
-        (internalRef as MutableRefObject<HTMLDivElement | null>).current = node;
-        if (typeof forwardedRef === "function") {
-          forwardedRef(node);
-        } else if (forwardedRef) {
-          (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
-        }
-      },
-      [forwardedRef],
-    );
+    // Merges the forwarded ref with the internal ref so both are satisfied.
+    const containerRef = useMemo(() => mergeRefs(internalRef, forwardedRef), [forwardedRef]);
 
     const margin = resolveChartMargin(marginProp, DEFAULT_MARGIN);
     const {

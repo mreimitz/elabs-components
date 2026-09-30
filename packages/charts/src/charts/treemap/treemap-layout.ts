@@ -31,6 +31,7 @@ import {
   treemapSquarify,
 } from "d3-hierarchy";
 import { type ChartPalette, chartSequentialRamp, resolvePalette } from "../chart-context";
+import { foldTail } from "../tail-fold";
 
 // ── Public data shape ────────────────────────────────────────────────────────
 
@@ -280,29 +281,30 @@ function mergeLongTail(
   let mergedCount = 0;
 
   if (otherThreshold > 0 && total > 0) {
-    const above: FlatNode[] = [];
-    const below: FlatNode[] = [];
-    for (const child of children) {
-      if (child.value / total < otherThreshold) {
-        below.push(child);
-      } else {
-        above.push(child);
-      }
-    }
-    if (below.length >= 2) {
-      kept = above;
-      mergedValue += below.reduce((acc, child) => acc + child.value, 0);
-      mergedCount += below.length;
+    const belowIndices = new Set<number>();
+    children.forEach((child, i) => {
+      if (child.value / total < otherThreshold) belowIndices.add(i);
+    });
+    if (belowIndices.size >= 2) {
+      const partitioned = foldTail(children, belowIndices, (child) => child.value);
+      kept = partitioned.kept;
+      mergedValue += partitioned.foldedValue;
+      mergedCount += partitioned.folded.length;
     }
   }
 
   if (kept.length > TREEMAP_MAX_LEAVES) {
     const sorted = [...kept].sort((a, b) => b.value - a.value);
-    const head = sorted.slice(0, TREEMAP_MAX_LEAVES - 1);
-    const tail = sorted.slice(TREEMAP_MAX_LEAVES - 1);
-    kept = head;
-    mergedValue += tail.reduce((acc, child) => acc + child.value, 0);
-    mergedCount += tail.length;
+    const tailIndices = new Set(
+      Array.from(
+        { length: sorted.length - (TREEMAP_MAX_LEAVES - 1) },
+        (_, k) => k + TREEMAP_MAX_LEAVES - 1,
+      ),
+    );
+    const partitioned = foldTail(sorted, tailIndices, (child) => child.value);
+    kept = partitioned.kept;
+    mergedValue += partitioned.foldedValue;
+    mergedCount += partitioned.folded.length;
   }
 
   if (mergedCount === 0) {

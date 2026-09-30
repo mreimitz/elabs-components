@@ -10,10 +10,11 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useId,
   useMemo,
   useRef,
 } from "react";
+import { mergeRefs } from "@elabs-ai/components-ui";
+import { useSvgId } from "../svg-id";
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { HaloText } from "../../marks/halo-text";
 import { Marginalia, noteLineHeight, wrapNote } from "../../marks/marginalia";
@@ -762,7 +763,7 @@ export const ChartAnnotations = forwardRef<SVGGElement, ChartAnnotationsProps>(
     const breakpoint = useChartBreakpoint();
     const stable = useContext(ChartStableContext);
     const lines = stable?.lines ?? NO_LINES;
-    const patternId = `chart-annotations-stripes-${useId().replace(/:/g, "")}`;
+    const patternId = `chart-annotations-stripes-${useSvgId()}`;
     const back = layer !== "front";
     const front = layer !== "back";
     const striped = back && annotations.some((a) => a.kind === "range" && a.pattern === "stripes");
@@ -770,14 +771,7 @@ export const ChartAnnotations = forwardRef<SVGGElement, ChartAnnotationsProps>(
     // Text is measured in the chart container's font; a container without a
     // chart context (DumbbellChart) measures inside the layer itself.
     const ownRef = useRef<SVGGElement | null>(null);
-    const setRef = useCallback(
-      (node: SVGGElement | null) => {
-        ownRef.current = node;
-        if (typeof ref === "function") ref(node);
-        else if (ref) ref.current = node;
-      },
-      [ref],
-    );
+    const setRef = useMemo(() => mergeRefs(ownRef, ref), [ref]);
     const measurer = useTextMeasurerOf(stable?.containerRef ?? ownRef);
     const measureNote = useCallback<MeasureNote>(
       (text) => {

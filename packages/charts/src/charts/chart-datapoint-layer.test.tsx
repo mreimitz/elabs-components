@@ -46,7 +46,13 @@ import {
   DEFAULT_CHART_INTERACTIONS,
   type ChartInteractions,
 } from "./chart-config-context";
-import { clampDatapointRectToPlot, MIN_DATAPOINT_TARGET_SIZE } from "./chart-datapoint-layer";
+import {
+  AutoChartDatapointProvider,
+  ChartDatapointProvider,
+  clampDatapointRectToPlot,
+  MIN_DATAPOINT_TARGET_SIZE,
+  useChartDatapointsEnabled,
+} from "./chart-datapoint-layer";
 import { LineChart } from "./line-chart";
 import { XAxis } from "./x-axis";
 
@@ -99,6 +105,86 @@ describe("ChartDatapointLayer — opt-out (#349)", () => {
     const { container } = renderLineChart();
     expect(container.querySelector('[data-slot="chart-datapoint-layer"]')).toBeNull();
     expect(container.querySelectorAll("button")).toHaveLength(0);
+  });
+});
+
+/** Reports whether a `ChartDatapointProvider` ancestor is enabled. */
+function EnabledProbe({ onEnabled }: { onEnabled: (enabled: boolean) => void }) {
+  onEnabled(useChartDatapointsEnabled());
+  return null;
+}
+
+function renderProvider(
+  Provider: typeof ChartDatapointProvider | typeof AutoChartDatapointProvider,
+  props: {
+    onDatapointClick?: () => void;
+    copyValueOnActivate?: boolean;
+    disabled?: boolean;
+  },
+) {
+  let enabled: boolean | undefined;
+  render(
+    <Provider {...props}>
+      <EnabledProbe onEnabled={(value) => (enabled = value)} />
+    </Provider>,
+  );
+  return enabled;
+}
+
+describe("ChartDatapointProvider — the public provider's own default", () => {
+  // The exported `ChartDatapointProvider` has no handler props of its own to
+  // gate on: with no props at all, it stays enabled, exactly like every other
+  // provider in this package — a consumer composing a custom chart from
+  // primitives gets a working `useChartDatapointsEnabled()`/keyboard-target
+  // registry the moment they mount it, with no extra prop required.
+  it("stays enabled with no props at all", () => {
+    expect(renderProvider(ChartDatapointProvider, {})).toBe(true);
+  });
+
+  it("stays enabled with onDatapointClick unset", () => {
+    expect(renderProvider(ChartDatapointProvider, { onDatapointClick: undefined })).toBe(true);
+  });
+
+  it("an explicit disabled={true} still opts out", () => {
+    expect(renderProvider(ChartDatapointProvider, { disabled: true })).toBe(false);
+  });
+});
+
+describe("AutoChartDatapointProvider — the internal self-gating wrapper (RM-204)", () => {
+  // Not part of the public API: `AutoChartDatapointProvider` computes
+  // `!onDatapointClick && !copyValueOnActivate` as its own `disabled` default,
+  // so every one of the 17 chart families can mount it UNCONDITIONALLY —
+  // the one seam they all share — instead of each computing that expression
+  // itself and conditionally rendering the public `ChartDatapointProvider`.
+  it("is disabled with neither onDatapointClick nor copyValueOnActivate", () => {
+    expect(renderProvider(AutoChartDatapointProvider, {})).toBe(false);
+  });
+
+  it("is enabled with only onDatapointClick", () => {
+    expect(renderProvider(AutoChartDatapointProvider, { onDatapointClick: () => {} })).toBe(true);
+  });
+
+  it("is enabled with only copyValueOnActivate", () => {
+    expect(renderProvider(AutoChartDatapointProvider, { copyValueOnActivate: true })).toBe(true);
+  });
+
+  it("is enabled with both onDatapointClick and copyValueOnActivate", () => {
+    expect(
+      renderProvider(AutoChartDatapointProvider, {
+        onDatapointClick: () => {},
+        copyValueOnActivate: true,
+      }),
+    ).toBe(true);
+  });
+
+  it("an explicit disabled={true} wins over an active handler (Tree's own-tree-shape case)", () => {
+    expect(
+      renderProvider(AutoChartDatapointProvider, { onDatapointClick: () => {}, disabled: true }),
+    ).toBe(false);
+  });
+
+  it("an explicit disabled={false} wins with neither prop set", () => {
+    expect(renderProvider(AutoChartDatapointProvider, { disabled: false })).toBe(true);
   });
 });
 

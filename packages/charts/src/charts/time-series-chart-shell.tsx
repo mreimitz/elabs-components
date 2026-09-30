@@ -1,6 +1,7 @@
 "use client";
 
 import { scaleLinear, scaleTime } from "@visx/scale";
+import { getChartChildComponentName } from "./chart-defs";
 import { extent } from "d3-array";
 import type { Transition } from "motion/react";
 import {
@@ -221,10 +222,7 @@ const CLIP_EXCLUDED_COMPONENT_NAMES = new Set([
 
 /** Grid and axes stay visible during series clip reveal (e.g. loading → ready). */
 export function isClipExcludedComponent(child: ReactElement): boolean {
-  const childType = child.type as { displayName?: string; name?: string };
-  const componentName =
-    typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
-  return CLIP_EXCLUDED_COMPONENT_NAMES.has(componentName);
+  return CLIP_EXCLUDED_COMPONENT_NAMES.has(getChartChildComponentName(child));
 }
 
 /** `<YAxis>`'s `unit`/`valueFormat`/`currency`, carried to the default `ChartTooltip` row builder (RM-109). */
@@ -232,11 +230,6 @@ export interface YAxisTooltipHint {
   unit?: string;
   valueFormat?: ChartValueFormat;
   currency?: string;
-}
-
-function componentNameOf(child: ReactElement): string {
-  const childType = child.type as { displayName?: string; name?: string };
-  return typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
 }
 
 /**
@@ -250,7 +243,7 @@ function componentNameOf(child: ReactElement): string {
 export function findYAxisTooltipHint(children: ReactNode): YAxisTooltipHint | undefined {
   let hint: YAxisTooltipHint | undefined;
   Children.forEach(children, (child) => {
-    if (hint || !isValidElement(child) || componentNameOf(child) !== "YAxis") {
+    if (hint || !isValidElement(child) || getChartChildComponentName(child) !== "YAxis") {
       return;
     }
     const { unit, valueFormat, currency } = child.props as YAxisTooltipHint;
@@ -271,7 +264,7 @@ export function withYAxisTooltipHint(
   child: ReactElement,
   hint: YAxisTooltipHint | undefined,
 ): ReactElement {
-  if (!hint || componentNameOf(child) !== "ChartTooltip") {
+  if (!hint || getChartChildComponentName(child) !== "ChartTooltip") {
     return child;
   }
   const props = child.props as YAxisTooltipHint;

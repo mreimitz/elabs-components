@@ -59,7 +59,7 @@ import {
   useState,
 } from "react";
 import { useLayoutMeasure } from "../layout-size";
-import { cn, useControllableState, useLocale } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, useControllableState, useLocale } from "@elabs-ai/components-ui";
 import { resolveTokenColor } from "@elabs-ai/components-tokens";
 import { CHART_HAIRLINE_WIDTH } from "../../chart-hairline";
 import { ChartA11yLabel, useChartA11yContainerProps } from "../chart-a11y";
@@ -929,13 +929,8 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
       }),
       [width, height, autoLeft, autoRight, margin.top, autoBottom],
     );
-    const setRootRef = useCallback(
-      (node: HTMLDivElement | null) => {
-        rootRef.current = node;
-        measureRef(node);
-        if (typeof forwardedRef === "function") forwardedRef(node);
-        else if (forwardedRef) forwardedRef.current = node;
-      },
+    const setRootRef = useMemo(
+      () => mergeRefs(rootRef, measureRef, forwardedRef),
       [forwardedRef, measureRef],
     );
 

@@ -57,11 +57,11 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
 } from "react";
+import { useSvgId } from "../svg-id";
 import { cn, mergeRefs, StatePanel, useLocale } from "@elabs-ai/components-ui";
 import { type ChartRevealOn, getChartStaggerDotMs } from "../animation";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
@@ -70,7 +70,7 @@ import { warnChartOnce } from "../chart-breakpoint";
 import type { ChartInteractionProps } from "../chart-datapoint";
 import {
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useActivateDatapoint,
@@ -675,7 +675,7 @@ function HeatmapBody({
   useEffect(() => {
     onHoverChange?.(hover);
   }, [hover, onHoverChange]);
-  const hatchId = `heatmap-neg-${useId().replace(/:/g, "")}`;
+  const hatchId = `heatmap-neg-${useSvgId()}`;
   const datapointsEnabled = useChartDatapointsEnabled();
   const activate = useActivateDatapoint();
 
@@ -1553,18 +1553,15 @@ const HeatmapChartBase = forwardRef<HTMLDivElement, HeatmapChartShellProps>(
   function HeatmapChart(props, ref) {
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
-    if (!(onDatapointClick || copyValueOnActivate)) {
-      return <HeatmapChartShell {...props} ref={ref} />;
-    }
     return (
-      <ChartDatapointProvider
+      <AutoChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}
         datapointLabel={datapointLabel}
         maxInteractiveDatapoints={maxInteractiveDatapoints}
         onDatapointClick={onDatapointClick}
       >
         <HeatmapChartShell {...props} ref={ref} />
-      </ChartDatapointProvider>
+      </AutoChartDatapointProvider>
     );
   },
 );

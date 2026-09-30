@@ -65,7 +65,6 @@ import {
   type ReactElement,
   type ReactNode,
   type RefAttributes,
-  useCallback,
   useEffect,
   useId,
   useMemo,
@@ -73,7 +72,7 @@ import {
   useState,
 } from "react";
 import { useLayoutMeasure } from "../layout-size";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import { ChartA11yLabel } from "../chart-a11y";
 import { useChartInteractionPolicy } from "../chart-config-context";
 import type { Margin } from "../chart-context";
@@ -233,16 +232,8 @@ function CanvasLayerImpl<T>(
     width,
   });
 
-  const setRootRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      rootRef.current = node;
-      measureRef(node);
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        forwardedRef.current = node;
-      }
-    },
+  const setRootRef = useMemo(
+    () => mergeRefs(rootRef, measureRef, forwardedRef),
     [forwardedRef, measureRef],
   );
 

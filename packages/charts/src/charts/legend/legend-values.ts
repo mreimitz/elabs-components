@@ -10,6 +10,7 @@
  */
 
 import { Children, isValidElement, type ReactNode } from "react";
+import { getChartChildComponentName } from "../chart-defs";
 import type { ChartValueFormat, ChartValueFormatSpec } from "../value-format";
 import { DEFAULT_Y_AXIS_ID, normalizeYAxisId } from "../y-axis-scales";
 import type { ContainerLegendProp } from "./use-container-legend";
@@ -102,9 +103,8 @@ export function findAxisValueFormat(
 ): LegendAxisValueFormat {
   const byAxis = new Map<string, LegendAxisValueFormat>();
   Children.forEach(children, (child) => {
-    if (!isValidElement(child) || typeof child.type !== "function") return;
-    const type = child.type as { displayName?: string; name?: string };
-    if (!names.includes(type.displayName || type.name || "")) return;
+    if (!isValidElement(child)) return;
+    if (!names.includes(getChartChildComponentName(child))) return;
     const { valueFormat, currency, yAxisId } = child.props as LegendAxisValueFormat & {
       yAxisId?: string | number;
     };

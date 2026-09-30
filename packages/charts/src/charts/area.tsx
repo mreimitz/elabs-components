@@ -12,6 +12,7 @@ import {
   stackOrderNone,
 } from "d3-shape";
 import { useCallback, useId, useMemo, useRef, useState } from "react";
+import { useSvgId } from "./svg-id";
 import { HaloText } from "../marks/halo-text";
 import { AreaGradientDefs } from "./area-gradient-defs";
 import { type AreaStackOffset, useAreaStackConfig } from "./area-stacked";
@@ -439,7 +440,7 @@ export function Area(rawProps: AreaProps) {
   const high = useHighDecoration();
   const isSingleSeries = lines.length <= 1;
   const useHairline = high && isSingleSeries && !isStacked && isPaletteFill(fill);
-  const patternRawScope = useId().replace(/:/g, "");
+  const patternRawScope = useSvgId();
   const useDecorationPattern = high && !useHairline && isPaletteFill(fill);
   const bpPatternId = seriesPatternId(seriesIndex, patternRawScope);
 

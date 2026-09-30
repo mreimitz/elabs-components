@@ -1,5 +1,6 @@
 "use client";
 
+import { getChartChildComponentName } from "./chart-defs";
 import { ChartParentSize } from "./chart-parent-size";
 import type { Transition } from "motion/react";
 import {
@@ -13,9 +14,9 @@ import {
   useMemo,
   useRef,
   useState,
-  useId,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { useSvgId } from "./svg-id";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
 import { useAnnotatedChart } from "./annotations/with-chart-annotations";
@@ -32,7 +33,7 @@ import {
   type SeriesPaletteSlots,
 } from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
-import { ChartDatapointProvider } from "./chart-datapoint-layer";
+import { AutoChartDatapointProvider } from "./chart-datapoint-layer";
 import {
   type ChartHoverLinkProps,
   ChartHoverLinkIndicator,
@@ -211,17 +212,12 @@ const LINE_DOMAIN_EXCLUDED_NAMES = new Set([
   "PatternArea",
 ]);
 
-function getChildComponentName(child: ReactElement) {
-  const childType = child.type as { displayName?: string; name?: string };
-  return typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
-}
-
 function registersLineDomain(child: ReactElement, props: LineProps | undefined) {
   if (!props?.dataKey) {
     return false;
   }
 
-  const componentName = getChildComponentName(child);
+  const componentName = getChartChildComponentName(child);
   if (componentName === "Line" || child.type === Line) {
     return true;
   }
@@ -368,7 +364,7 @@ function ChartInner({
 
   // One clip per chart instance: a fixed id makes every chart on a page
   // clip to the FIRST chart's rect (`url(#…)` resolves document-wide).
-  const clipPathId = `chart-grow-clip-${useId().replace(/:/g, "")}`;
+  const clipPathId = `chart-grow-clip-${useSvgId()}`;
   const chart = (
     // Mirrors `AreaChart`'s `AreaStackProvider` placement: the provider wraps
     // the WHOLE `TimeSeriesChartInner` tree, not `children`, so a
@@ -426,21 +422,17 @@ function ChartInner({
   );
 
   // The provider sits ABOVE the chart body so the shell (and every shape
-  // primitive under it) can read the drill-down registry from context. It is
-  // mounted only when a handler exists — the opt-out path gains no context.
-  if (!onDatapointClick && !copyValueOnActivate) {
-    return chart;
-  }
-
+  // primitive under it) can read the drill-down registry from context. Its
+  // own `disabled` default makes it a no-op with neither prop set.
   return (
-    <ChartDatapointProvider
+    <AutoChartDatapointProvider
       datapointLabel={datapointLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       copyValueOnActivate={copyValueOnActivate}
       onDatapointClick={onDatapointClick}
     >
       {chart}
-    </ChartDatapointProvider>
+    </AutoChartDatapointProvider>
   );
 }
 
@@ -582,17 +574,7 @@ const LineChartPlot = forwardRef<HTMLDivElement, LineChartPlotProps>(function Li
     currency: legendFormat.currency,
   });
 
-  const mergedRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      if (typeof ref === "function") {
-        ref(node);
-      } else if (ref) {
-        (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [ref],
-  );
+  const mergedRef = useMemo(() => mergeRefs(containerRef, ref), [ref]);
 
   const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
   // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.

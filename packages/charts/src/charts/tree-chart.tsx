@@ -66,12 +66,11 @@ import {
   useMemo,
   useRef,
   useState,
-  type MutableRefObject,
   type ReactElement,
   type ReactNode,
   type RefAttributes,
 } from "react";
-import { cn, Skeleton, useControllableState } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, Skeleton, useControllableState } from "@elabs-ai/components-ui";
 import { useReducedMotion } from "@elabs-ai/components-tokens";
 import { CHART_STAGGER_BAR_MS, DrawPath, HaloText, stagger } from "../marks";
 import { readChartMotionMs } from "./animation";
@@ -79,8 +78,9 @@ import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from 
 import { useChartInteractionPolicy } from "./chart-config-context";
 import type { ChartDatapoint, ChartInteractionProps } from "./chart-datapoint";
 import {
+  AutoChartDatapointProvider,
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  type ChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useActivateDatapoint,
@@ -1017,16 +1017,9 @@ export const TreeChartBody = forwardRef<HTMLDivElement, TreeChartProps>(function
   const outerRef = useRef<HTMLDivElement | null>(null);
   const [measureViewport, viewport] = useLayoutMeasure(VIEWPORT_MEASURE);
   const setOuterRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      outerRef.current = node;
-      // Only a free canvas needs the box (its pan room), so only it measures.
-      if (zoomEnabled) measureViewport(node);
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
+    // Only a free canvas needs the box (its pan room), so only it measures.
+    (node: HTMLDivElement | null) =>
+      mergeRefs(outerRef, zoomEnabled ? measureViewport : undefined, forwardedRef)(node),
     [forwardedRef, zoomEnabled, measureViewport],
   );
   const canvasRef = useRef<HTMLDivElement | null>(null);
@@ -1936,12 +1929,12 @@ const TreeChartUnscoped = forwardRef<HTMLDivElement, TreeChartProps>(
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       resolved;
     // ALWAYS the same element tree: adding or dropping a handler must not
-    // remount the body (and lose its open branches, focus and flight). Without
-    // one the provider is `disabled`: no context, no layer, no extra DOM.
+    // remount the body (and lose its open branches, focus and flight).
+    // `AutoChartDatapointProvider`'s own `disabled` default covers this:
+    // without a handler, no context, no layer, no extra DOM.
     return (
-      <ChartDatapointProvider
+      <AutoChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}
-        disabled={!onDatapointClick && !copyValueOnActivate}
         datapointLabel={
           (datapointLabel ?? defaultTreeDatapointLabel) as unknown as ChartDatapointProviderLabel
         }
@@ -1949,7 +1942,7 @@ const TreeChartUnscoped = forwardRef<HTMLDivElement, TreeChartProps>(
         onDatapointClick={onDatapointClick}
       >
         <TreeChartBody {...resolved} ref={ref} />
-      </ChartDatapointProvider>
+      </AutoChartDatapointProvider>
     );
   },
 ) as (<TData = unknown>(

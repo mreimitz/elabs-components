@@ -5,6 +5,7 @@ import {
   type ArcChartHoverContextValue,
   type ArcChartStableContextValue,
   arcChartStableKeys,
+  arcMidpointPoint,
   createArcChartContexts,
   defaultArcChartColors,
   useArcChartHover,
@@ -53,10 +54,10 @@ export function ringDatapointTarget(
   ring: RingData,
   geometry: { center: number; innerRadius: number; outerRadius: number; startAngle: number },
 ): ChartDatapointTarget {
-  const radius = (geometry.innerRadius + geometry.outerRadius) / 2;
   // Anchor a little way into the arc so the target sits ON the ring, not at the
   // exact 12 o'clock seam where every ring would overlap.
   const angle = geometry.startAngle + 0.35;
+  const { x, y } = arcMidpointPoint(geometry, angle);
   return {
     id: `ring:${index}`,
     index,
@@ -64,12 +65,7 @@ export function ringDatapointTarget(
     datum: ring as unknown as Record<string, unknown>,
     value: ring.value,
     category: ring.label,
-    rect: padDatapointRect({
-      x: geometry.center + Math.sin(angle) * radius,
-      y: geometry.center - Math.cos(angle) * radius,
-      width: 0,
-      height: 0,
-    }),
+    rect: padDatapointRect({ x, y, width: 0, height: 0 }),
   };
 }
 

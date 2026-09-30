@@ -3,6 +3,7 @@
 import { type GeoPermissibleObjects, Mercator } from "@visx/geo";
 import { geoCentroid, type GeoProjection } from "d3-geo";
 import { ChartParentSize } from "../chart-parent-size";
+import { useSvgId } from "../svg-id";
 import type { TransformMatrix } from "@visx/zoom";
 import { Zoom } from "@visx/zoom";
 import type { FeatureCollection, Geometry } from "geojson";
@@ -13,7 +14,6 @@ import React, {
   type ReactNode,
   useCallback,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -105,17 +105,14 @@ import { ChartLoadingPlot } from "../chart-loading-plot";
 import type { ChartStatus } from "../chart-phase";
 import type { ChartEmptyState, ChartStateGroupProps } from "../props/chart-state";
 import type { FrameSizeGroupProps } from "../props/frame-size";
+import { warnChartOnce } from "../chart-breakpoint";
 import { type ChartPalette, ChartPaletteProvider } from "../chart-context";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
 import type { ChartMessages } from "../props/messages";
 import { ChartMessagesScope, useChartTranslate } from "../chart-messages";
 
-/** Messages already logged, so a re-rendering chart does not re-log every frame. */
-const warnedMessages = new Set<string>();
 function warnOnce(message: string): void {
-  if (process.env.NODE_ENV === "production" || warnedMessages.has(message)) return;
-  warnedMessages.add(message);
-  console.warn(message);
+  warnChartOnce(message, message);
 }
 
 /** True when `data` really is a collection carrying a `features` array. */
@@ -924,7 +921,7 @@ function ChoroplethColorKey({
   config: ChoroplethLegendConfig;
   hoverValue: ColorScaleValue;
 }) {
-  const patternScope = useId().replace(/:/g, "");
+  const patternScope = useSvgId();
   const keyRef = useRef<HTMLDivElement>(null);
   const inkFor = useOnMarkInk(keyRef);
   const bounds = useMemo(

@@ -492,6 +492,55 @@ describe("RingChart re-renders after status flips from loading to ready", () => 
     );
     expect(ringPaths(container).length).toBeGreaterThan(0);
   });
+
+  it.each([
+    ["responsive", undefined],
+    ["fixedSize", 280],
+  ] as const)("keeps the same root element and DOM focus across the flip (%s)", (_label, size) => {
+    const refCalls: (HTMLDivElement | null)[] = [];
+    // A STABLE callback (not recreated per render) — its own identity never
+    // changes across the rerender below, so any extra call it receives can
+    // only mean React tore the node down and mounted a new one.
+    const refSpy = (node: HTMLDivElement | null) => {
+      refCalls.push(node);
+    };
+    const { container, rerender } = render(
+      <RingChart
+        ref={refSpy}
+        data={sampleData}
+        size={size}
+        status="loading"
+        accessibleLabel="Channel performance"
+      >
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+    const root = container.querySelector('[aria-label="Channel performance"]') as HTMLElement;
+    root.focus();
+    expect(document.activeElement).toBe(root);
+    const callsBeforeFlip = refCalls.length;
+
+    rerender(
+      <RingChart
+        ref={refSpy}
+        data={sampleData}
+        size={size}
+        status="ready"
+        accessibleLabel="Channel performance"
+      >
+        {sampleData.map((item, i) => (
+          <Ring index={i} key={item.label} />
+        ))}
+      </RingChart>,
+    );
+
+    const rootAfter = container.querySelector('[aria-label="Channel performance"]');
+    expect(rootAfter).toBe(root);
+    expect(document.activeElement).toBe(root);
+    expect(refCalls.length).toBe(callsBeforeFlip);
+  });
 });
 
 // RM-183 review: thin-tests minor — `margin` (frame-size group) had no

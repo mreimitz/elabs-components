@@ -5,6 +5,7 @@ import {
   type ArcChartHoverContextValue,
   type ArcChartStableContextValue,
   arcChartStableKeys,
+  arcMidpointPoint,
   createArcChartContexts,
   defaultArcChartColors,
   useArcChartHover,
@@ -82,10 +83,7 @@ export function pieDatapointTarget(
   geometry: { center: number; innerRadius: number; outerRadius: number },
 ): ChartDatapointTarget {
   const midAngle = (arc.startAngle + arc.endAngle) / 2;
-  const radius = (geometry.innerRadius + geometry.outerRadius) / 2;
-  // d3-shape puts 0 rad at 12 o'clock and increases clockwise.
-  const centroidX = geometry.center + Math.sin(midAngle) * radius;
-  const centroidY = geometry.center - Math.cos(midAngle) * radius;
+  const { x, y } = arcMidpointPoint(geometry, midAngle);
   return {
     id: `slice:${arc.index}`,
     index: arc.index,
@@ -93,7 +91,7 @@ export function pieDatapointTarget(
     datum: arc.data as unknown as Record<string, unknown>,
     value: arc.value,
     category: arc.data.label,
-    rect: padDatapointRect({ x: centroidX, y: centroidY, width: 0, height: 0 }),
+    rect: padDatapointRect({ x, y, width: 0, height: 0 }),
   };
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { localPoint } from "@visx/event";
+import { getChartChildComponentName } from "./chart-defs";
 import { ChartParentSize } from "./chart-parent-size";
 import { scaleBand, scaleLinear, type scaleTime } from "@visx/scale";
 import type { Transition } from "motion/react";
@@ -10,7 +11,6 @@ import {
   forwardRef,
   isValidElement,
   memo,
-  type MutableRefObject,
   type ReactElement,
   type ReactNode,
   useCallback,
@@ -18,7 +18,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import { ChartFallback } from "./chart-fallback";
 import { useChartFacetScope } from "./chart-config-context"; // ChartMultiples — RM-120
 import { useFacetScopedChildren } from "../multiples/facet-scope"; // ChartMultiples — RM-120
@@ -95,7 +95,7 @@ import {
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   useChartDatapointsEnabled,
 } from "./chart-datapoint-layer";
 import {
@@ -355,9 +355,7 @@ function isBarChild(child: ReactNode): child is ReactElement<BarProps> {
   if (!isValidElement(child)) {
     return false;
   }
-  const childType = child.type as { displayName?: string; name?: string };
-  const componentName =
-    typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
+  const componentName = getChartChildComponentName(child);
   const props = child.props as BarProps | undefined;
   return (
     componentName === "Bar" || Boolean(props && typeof props.dataKey === "string" && props.dataKey)
@@ -605,9 +603,7 @@ function extractCategoryAxisConfig(children: ReactNode): CategoryAxisChildConfig
       return;
     }
 
-    const childType = child.type as { displayName?: string; name?: string };
-    const componentName =
-      typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
+    const componentName = getChartChildComponentName(child);
 
     let placement: CategoryAxisPlacement | null = null;
     if (componentName === "BarXAxis") {
@@ -713,19 +709,17 @@ function ChartInner(props: ChartInnerProps) {
   }
   const core = <ChartCore {...props} />;
   // The provider sits ABOVE the chart body so `Bar` can publish its own bar
-  // geometry as keyboard targets. Mounted only when a handler exists (#349).
-  if (!onDatapointClick && !copyValueOnActivate) {
-    return core;
-  }
+  // geometry as keyboard targets (#349). Its own `disabled` default makes it
+  // a no-op with neither `onDatapointClick` nor `copyValueOnActivate` set.
   return (
-    <ChartDatapointProvider
+    <AutoChartDatapointProvider
       datapointLabel={datapointLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       copyValueOnActivate={copyValueOnActivate}
       onDatapointClick={onDatapointClick}
     >
       {core}
-    </ChartDatapointProvider>
+    </AutoChartDatapointProvider>
   );
 }
 
@@ -1983,19 +1977,8 @@ const BarChartPlot = forwardRef<HTMLDivElement, BarChartPlotProps>(function BarC
     currency: legendFormat.currency,
   });
 
-  const mergedRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      // Keep internal ref working for tooltip positioning.
-      (containerRef as MutableRefObject<HTMLDivElement | null>).current = node;
-      // Forward to the caller's ref.
-      if (typeof ref === "function") {
-        ref(node);
-      } else if (ref) {
-        (ref as MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [ref],
-  );
+  // Keeps `containerRef` working for tooltip positioning while still forwarding to the caller's ref.
+  const mergedRef = useMemo(() => mergeRefs(containerRef, ref), [ref]);
 
   const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
   // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.

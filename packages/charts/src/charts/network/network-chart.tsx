@@ -30,7 +30,6 @@ import {
   type CSSProperties,
   type FocusEvent as ReactFocusEvent,
   forwardRef,
-  type MutableRefObject,
   type PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
@@ -38,8 +37,9 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn, Skeleton, StatePanel } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, Skeleton, StatePanel } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
+import { warnChartOnce } from "../chart-breakpoint";
 import { useChartInteractionPolicy } from "../chart-config-context";
 import type { ChartPalette } from "../chart-context";
 import type { ChartDatapoint, ChartInteractionProps } from "../chart-datapoint";
@@ -49,8 +49,9 @@ import type { ChartEmptyState } from "../props/chart-state";
 import { useResolvedChartProps } from "../use-resolved-chart-props";
 import { NETWORK_CHART } from "../../definitions/network-chart.definition";
 import {
+  AutoChartDatapointProvider,
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  type ChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useChartDatapointsEnabled,
@@ -186,12 +187,8 @@ interface TooltipState {
 const ZERO_OFFSET: NetworkPoint = { x: 0, y: 0 };
 const EMPTY_TARGETS: ChartDatapointTarget[] = [];
 
-/** Messages already logged, so a re-rendering chart does not re-log every frame. */
-const warnedMessages = new Set<string>();
 function warnOnce(message: string): void {
-  if (process.env.NODE_ENV === "production" || warnedMessages.has(message)) return;
-  warnedMessages.add(message);
-  console.warn(message);
+  warnChartOnce(message, message);
 }
 
 /**
@@ -243,16 +240,8 @@ const NetworkChartBody = forwardRef<HTMLDivElement, NetworkChartProps>(function 
   const tChart = useChartTranslate();
   const internalRef = useRef<HTMLDivElement | null>(null);
   const [measureRef, measuredBox] = useLayoutMeasure();
-  const ref = useCallback(
-    (node: HTMLDivElement | null) => {
-      internalRef.current = node;
-      measureRef(node);
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
+  const ref = useMemo(
+    () => mergeRefs(internalRef, measureRef, forwardedRef),
     [forwardedRef, measureRef],
   );
 
@@ -608,11 +597,8 @@ const NetworkChartUnscoped = forwardRef<HTMLDivElement, NetworkChartProps>(
     const resolved = useResolvedChartProps(NETWORK_CHART, props);
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       resolved;
-    if (!onDatapointClick && !copyValueOnActivate) {
-      return <NetworkChartBody {...resolved} ref={ref} />;
-    }
     return (
-      <ChartDatapointProvider
+      <AutoChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}
         datapointLabel={
           (datapointLabel ?? defaultNetworkDatapointLabel) as unknown as ChartDatapointProviderLabel
@@ -621,7 +607,7 @@ const NetworkChartUnscoped = forwardRef<HTMLDivElement, NetworkChartProps>(
         onDatapointClick={onDatapointClick as unknown as ChartDatapointProviderHandler}
       >
         <NetworkChartBody {...resolved} ref={ref} />
-      </ChartDatapointProvider>
+      </AutoChartDatapointProvider>
     );
   },
 );

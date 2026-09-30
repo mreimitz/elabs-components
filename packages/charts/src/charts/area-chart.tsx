@@ -1,5 +1,6 @@
 "use client";
 
+import { getChartChildComponentName } from "./chart-defs";
 import { ChartParentSize } from "./chart-parent-size";
 import type { Transition } from "motion/react";
 import {
@@ -12,9 +13,9 @@ import {
   useMemo,
   useRef,
   useState,
-  useId,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { useSvgId } from "./svg-id";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import { Area, type AreaProps, type AreaStackOffset, AreaStackProvider } from "./area";
 import { type ChartAnnotation } from "./annotations/annotation-types";
 import type { ChartAnalytic } from "./analytics/types"; // Analytics — RM-138
@@ -32,7 +33,7 @@ import {
   type SeriesPaletteSlots,
 } from "./chart-context";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
-import { ChartDatapointProvider } from "./chart-datapoint-layer";
+import { AutoChartDatapointProvider } from "./chart-datapoint-layer";
 import {
   type ChartHoverLinkProps,
   ChartHoverLinkIndicator,
@@ -229,12 +230,7 @@ function extractAreaConfigs(children: ReactNode): LineConfig[] {
       return;
     }
 
-    const childType = child.type as {
-      displayName?: string;
-      name?: string;
-    };
-    const componentName =
-      typeof child.type === "function" ? childType.displayName || childType.name || "" : "";
+    const componentName = getChartChildComponentName(child);
 
     const props = child.props as AreaProps | undefined;
     const isPatternArea = componentName === "PatternArea" || child.type === PatternArea;
@@ -370,7 +366,7 @@ function ChartInner({
 
   // One clip per chart instance: a fixed id makes every chart on a page
   // clip to the FIRST chart's rect (`url(#…)` resolves document-wide).
-  const clipPathId = `chart-area-grow-clip-${useId().replace(/:/g, "")}`;
+  const clipPathId = `chart-area-grow-clip-${useSvgId()}`;
   const chart = (
     // The provider wraps the WHOLE `TimeSeriesChartInner` tree, not `children`
     // — so `Children.forEach`'s series/def/axis classification inside the
@@ -429,21 +425,17 @@ function ChartInner({
   );
 
   // The provider sits ABOVE the chart body so the shell (and every shape
-  // primitive under it) can read the drill-down registry from context. It is
-  // mounted only when a handler exists — the opt-out path gains no context.
-  if (!onDatapointClick && !copyValueOnActivate) {
-    return chart;
-  }
-
+  // primitive under it) can read the drill-down registry from context. Its
+  // own `disabled` default makes it a no-op with neither prop set.
   return (
-    <ChartDatapointProvider
+    <AutoChartDatapointProvider
       datapointLabel={datapointLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       copyValueOnActivate={copyValueOnActivate}
       onDatapointClick={onDatapointClick}
     >
       {chart}
-    </ChartDatapointProvider>
+    </AutoChartDatapointProvider>
   );
 }
 
@@ -589,19 +581,8 @@ const AreaChartPlot = forwardRef<HTMLDivElement, AreaChartPlotProps>(function Ar
     currency: legendFormat.currency,
   });
 
-  const mergedRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      // Keep internal ref working for tooltip positioning.
-      (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      // Forward to the caller's ref.
-      if (typeof ref === "function") {
-        ref(node);
-      } else if (ref) {
-        (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
-    [ref],
-  );
+  // Keeps `containerRef` working for tooltip positioning while still forwarding to the caller's ref.
+  const mergedRef = useMemo(() => mergeRefs(containerRef, ref), [ref]);
 
   const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
   // Labels — RM-110: the auto summary stands in for a missing accessibleDescription.

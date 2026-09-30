@@ -2,7 +2,7 @@
 
 import { ChartParentSize } from "./chart-parent-size";
 import { useChartEnterReveal, useDateBisector } from "./cartesian-shell-hooks";
-import { isChartDefsComponent } from "./chart-defs";
+import { isChartDefsComponent, isNamedChartChild } from "./chart-defs";
 import { scaleLinear, scaleTime } from "@visx/scale";
 import type { Transition } from "motion/react";
 import {
@@ -10,15 +10,14 @@ import {
   forwardRef,
   isValidElement,
   memo,
-  type MutableRefObject,
   type ReactElement,
   type ReactNode,
   useCallback,
-  useId,
   useMemo,
   useRef,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { useSvgId } from "./svg-id";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 // Analytics — RM-138 / RM-139
 import type { ChartAnalytic } from "./analytics/types";
 import type { ChartAnnotation } from "./annotations/annotation-types";
@@ -300,11 +299,9 @@ const ChartCore = memo(function ChartCore({
   // box; furniture (axes, grid, tooltip, annotations) stays unclipped, and an
   // unwindowed chart keeps its exact DOM.
   const clipMarks = xDomain !== undefined;
-  const marksClipId = `candlestick-plot-clip-${useId().replace(/:/g, "")}`;
-  const isMarkComponent = (child: ReactElement): boolean => {
-    const displayName = (child.type as { displayName?: string })?.displayName ?? "";
-    return displayName === "Candlestick" || displayName === "AnalyticSeriesLayer";
-  };
+  const marksClipId = `candlestick-plot-clip-${useSvgId()}`;
+  const isMarkComponent = (child: ReactElement): boolean =>
+    isNamedChartChild(child, "Candlestick") || isNamedChartChild(child, "AnalyticSeriesLayer");
 
   const defsChildren: ReactElement[] = [];
   const restChildren: ReactElement[] = [];
@@ -436,19 +433,9 @@ const CandlestickChartBase = forwardRef<HTMLDivElement, CandlestickChartBaseProp
     },
     forwardedRef,
   ) {
-    // Internal ref anchors tooltips; callback ref merges both.
+    // Internal ref anchors tooltips; merged with the forwarded ref via mergeRefs.
     const internalRef = useRef<HTMLDivElement>(null);
-    const callbackRef = useCallback(
-      (node: HTMLDivElement | null) => {
-        (internalRef as MutableRefObject<HTMLDivElement | null>).current = node;
-        if (typeof forwardedRef === "function") {
-          forwardedRef(node);
-        } else if (forwardedRef) {
-          (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
-        }
-      },
-      [forwardedRef],
-    );
+    const callbackRef = useMemo(() => mergeRefs(internalRef, forwardedRef), [forwardedRef]);
 
     const margin = resolveChartMargin(marginProp, DEFAULT_CARTESIAN_MARGIN);
     const dataAsRecords = data as unknown as Record<string, unknown>[];

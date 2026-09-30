@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, forwardRef, useId, useMemo } from "react";
+import { useSvgId } from "./svg-id";
 import { scaleLinear } from "@visx/scale";
 import { cn } from "@elabs-ai/components-ui";
 import {
@@ -492,7 +493,7 @@ function WaterfallBars({
   // increase/decrease/total split survives without hue. An author's literal or
   // url() fill, and the countable `unit` rungs (strokes), are left as drawn.
   const high = useHighDecoration();
-  const patternScope = useId().replace(/:/g, "");
+  const patternScope = useSvgId();
   const patternFills = useMemo(() => {
     if (!high) {
       return [];

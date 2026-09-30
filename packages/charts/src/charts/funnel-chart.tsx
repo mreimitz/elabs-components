@@ -6,7 +6,6 @@ import { REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
 import { useStillEntrance } from "./use-still-entrance";
 import {
   type CSSProperties,
-  type MutableRefObject,
   type ReactNode,
   forwardRef,
   useCallback,
@@ -14,12 +13,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { cn, StatePanel } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, StatePanel } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import type { ChartDatapointClickHandler, ChartDatapointLabel } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useActivateDatapoint,
@@ -971,18 +970,7 @@ export const FunnelChartBody = forwardRef<HTMLDivElement, FunnelChartProps>(
       [measureRef],
     );
     // `ChartPlotRoot`'s own node — the public `ref` forwards to this, unchanged.
-    const plotRootRef = useCallback(
-      (node: HTMLDivElement | null) => {
-        if (typeof forwardedRef === "function") {
-          forwardedRef(node);
-        } else if (forwardedRef) {
-          (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
-        }
-      },
-      // forwardedRef is stable across renders (provided by React)
-      // forwardedRef is stable.
-      [forwardedRef],
-    );
+    const plotRootRef = useMemo(() => mergeRefs(forwardedRef), [forwardedRef]);
     const {
       role,
       "aria-label": ariaLabel,
@@ -1468,18 +1456,15 @@ export const FunnelChart = forwardRef<HTMLDivElement, FunnelChartProps>(
         : resolved;
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
-    if (!onDatapointClick && !copyValueOnActivate) {
-      return <FunnelChartBody {...props} ref={ref} />;
-    }
     return (
-      <ChartDatapointProvider
+      <AutoChartDatapointProvider
         datapointLabel={datapointLabel}
         maxInteractiveDatapoints={maxInteractiveDatapoints}
         copyValueOnActivate={copyValueOnActivate}
         onDatapointClick={onDatapointClick}
       >
         <FunnelChartBody {...props} ref={ref} />
-      </ChartDatapointProvider>
+      </AutoChartDatapointProvider>
     );
   },
 );

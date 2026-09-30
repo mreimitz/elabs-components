@@ -1,6 +1,7 @@
 "use client";
 
-import { useId } from "react";
+import {} from "react";
+import { useSvgId } from "./svg-id";
 import { HaloText } from "../marks";
 import {
   chartCssVars,
@@ -338,7 +339,7 @@ export function BarOverlayLayer({
   overlays,
   ...geometry
 }: BarLayerGeometry & { overlays: readonly BarOverlay[] }) {
-  const scope = useId().replace(/:/g, "");
+  const scope = useSvgId();
   const rows = realRows(geometry.rows);
   let rangeIndex = 0;
   return (

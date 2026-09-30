@@ -46,7 +46,7 @@ import { scaleLinear, scalePoint } from "@visx/scale";
 import { LinePath } from "@visx/shape";
 import { forwardRef, useCallback, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { useLayoutMeasure } from "./layout-size";
-import { cn } from "@elabs-ai/components-ui";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import { HaloText, QuietDot } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { type ChartPalette, type Margin, resolvePalette } from "./chart-context";
@@ -57,7 +57,7 @@ import type {
 } from "./chart-datapoint";
 import {
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useActivateDatapoint,
@@ -65,10 +65,10 @@ import {
   useRegisterDatapointTargets,
 } from "./chart-datapoint-layer";
 import { useChartFormatters, useChartValueFormatter } from "./chart-formatters";
-// Reuses the dumbbell "slope" collision-avoidance pass — see spaceSlopeLabels'
-// own docblock. One shared implementation is what stops the two charts'
-// "no overlapping end labels" guarantees from drifting apart.
-import { spaceSlopeLabels } from "./dumbbell-chart";
+// Shared with Dumbbell's "slope" variant — see spaceSlopeLabels' own docblock.
+// One implementation is what stops the two charts' "no overlapping end
+// labels" guarantees from drifting apart.
+import { spaceSlopeLabels } from "./labels/space-slope-labels";
 import { profitLossColor } from "./profit-loss-line";
 import { ChartTooltipBox, type ChartTooltipRect } from "./tooltip/tooltip-box";
 import { ChartTooltipContent, type TooltipRow } from "./tooltip/tooltip-content";
@@ -78,6 +78,7 @@ import {
   type ChartPlotHeight,
   DEFAULT_CHART_PLOT_HEIGHT,
   type Responsive,
+  warnChartOnceFor,
 } from "./chart-breakpoint";
 import { CHART_TOUCH_ACTION } from "./gestures/touch-action";
 import { BUMP_CHART } from "../definitions/bump-chart.definition";
@@ -362,13 +363,10 @@ export function buildBumpMatrix(
   return { periods, series, maxRank };
 }
 
-const warnedMaxEntities = new WeakSet<object>();
-
 function warnMaxEntities(instanceKey: object, total: number, max: number): void {
-  if (process.env.NODE_ENV === "production") return;
-  if (warnedMaxEntities.has(instanceKey)) return;
-  warnedMaxEntities.add(instanceKey);
-  console.warn(
+  warnChartOnceFor(
+    instanceKey,
+    "bump-max-entities",
     `[BumpChart] ${total} entities exceeds maxEntities (${max}) — showing the top ${max} by ` +
       "final rank. Raise maxEntities, or pre-filter the data, to plot the rest.",
   );
@@ -418,13 +416,10 @@ export function deriveStripMaxEntities(innerHeight: number): number {
   return Math.max(1, Math.floor((innerHeight * STRIP_LABEL_HEIGHT_FACTOR) / STRIP_MIN_LABEL_PX));
 }
 
-const warnedPeriodCounts = new WeakSet<object>();
-
 function warnMaxPeriods(instanceKey: object, total: number, max: number): void {
-  if (process.env.NODE_ENV === "production") return;
-  if (warnedPeriodCounts.has(instanceKey)) return;
-  warnedPeriodCounts.add(instanceKey);
-  console.warn(
+  warnChartOnceFor(
+    instanceKey,
+    "bump-max-periods",
     `[BumpChart] ${total} periods exceeds maxPeriods (${max}) for variant="strip" — showing ` +
       `the most recent ${max} so every cell's printed rank stays legible. Widen the chart, or ` +
       "pre-filter the data, to plot the rest.",
@@ -1044,18 +1039,15 @@ function BumpBody({
     [formatValue, pointByIndex, shortDateFmt, tChart],
   );
 
-  if (!onDatapointClick && !copyValueOnActivate) {
-    return core;
-  }
   return (
-    <ChartDatapointProvider
+    <AutoChartDatapointProvider
       copyValueOnActivate={copyValueOnActivate}
       datapointLabel={datapointLabel ?? defaultLabel}
       maxInteractiveDatapoints={maxInteractiveDatapoints}
       onDatapointClick={onDatapointClick}
     >
       {core}
-    </ChartDatapointProvider>
+    </AutoChartDatapointProvider>
   );
 }
 
@@ -1105,15 +1097,7 @@ const BumpChartUnscoped = forwardRef<HTMLDivElement, BumpChartProps>(
       descId,
     } = useChartA11yContainerProps(accessibleLabel, accessibleDescription);
 
-    const setContainerRef = (node: HTMLDivElement | null) => {
-      containerRef.current = node;
-      measureRef(node);
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        forwardedRef.current = node;
-      }
-    };
+    const setContainerRef = mergeRefs(containerRef, measureRef, forwardedRef);
 
     const width = bounds.width ?? 0;
     const height = bounds.height ?? 0;

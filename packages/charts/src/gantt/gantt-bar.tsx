@@ -37,6 +37,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import { useSvgId } from "../charts/svg-id";
 import { createPortal } from "react-dom";
 import { cva } from "class-variance-authority";
 import { motion } from "motion/react";
@@ -373,7 +374,7 @@ export function GanttBar({
   // Stable, collision-free scope for this row's gap-band patterns (ADR 0011's
   // seriesPatternId scope convention) — mint once with useId(), unlike bar.tsx's
   // decoration-gated usage, so it's always available (no `high` gate here).
-  const gapPatternScope = useId().replace(/:/g, "");
+  const gapPatternScope = useSvgId();
 
   // A custom task type can force the milestone (diamond) shape (P2).
   const isMilestone =

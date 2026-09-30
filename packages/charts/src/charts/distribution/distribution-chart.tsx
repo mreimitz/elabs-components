@@ -56,7 +56,6 @@ import { ChartParentSize } from "../chart-parent-size";
 import {
   forwardRef,
   useCallback,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -64,13 +63,14 @@ import {
   type MutableRefObject,
   type ReactNode,
 } from "react";
-import { cn } from "@elabs-ai/components-ui";
+import { useSvgId } from "../svg-id";
+import { cn, mergeRefs } from "@elabs-ai/components-ui";
 import type { ChartAnalytic } from "../analytics/types"; // Analytics — RM-138
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import { resolvePalette, type ChartPalette } from "../chart-context";
 import type { ChartInteractionProps } from "../chart-datapoint";
 import { ChartSelectionMark, type ChartSelectionProps, resolveMarkPaint } from "../chart-selection";
-import { ChartDatapointLayer, ChartDatapointProvider } from "../chart-datapoint-layer";
+import { AutoChartDatapointProvider, ChartDatapointLayer } from "../chart-datapoint-layer";
 import { useChartValueFormatter, useChartValueSetFormatterFactory } from "../chart-formatters";
 import { isPaletteFill, makeSeriesPattern, seriesPatternId } from "../series-pattern";
 import { ChartTooltipBox } from "../tooltip/tooltip-box";
@@ -437,17 +437,7 @@ const DistributionChartUnscoped = forwardRef<HTMLDivElement, DistributionChartPr
 
     const a11y = useChartA11yContainerProps(accessibleLabel, description);
 
-    const mergedRef = useCallback(
-      (node: HTMLDivElement | null) => {
-        internalRef.current = node;
-        if (typeof forwardedRef === "function") {
-          forwardedRef(node);
-        } else if (forwardedRef) {
-          (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
-        }
-      },
-      [forwardedRef],
-    );
+    const mergedRef = useMemo(() => mergeRefs(internalRef, forwardedRef), [forwardedRef]);
 
     // RM-185: with no `plotHeight`, the chart fills whatever height its parent
     // gives it — exactly as before this prop existed — so the ready plot box
@@ -545,18 +535,18 @@ const DistributionChartUnscoped = forwardRef<HTMLDivElement, DistributionChartPr
       </ChartSelectionGestureScope>
     );
 
-    // The provider is mounted only when the caller asked for interaction, so an
-    // ordinary chart's DOM is byte-identical to a non-interactive one (#349).
-    if (!(onDatapointClick || copyValueOnActivate)) return containerSelection.wrap(scoped);
+    // The provider's own `disabled` default makes it a no-op without either
+    // prop, so an ordinary chart's DOM is byte-identical to a non-interactive
+    // one (#349).
     return containerSelection.wrap(
-      <ChartDatapointProvider
+      <AutoChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}
         datapointLabel={datapointLabel}
         maxInteractiveDatapoints={maxInteractiveDatapoints}
         onDatapointClick={onDatapointClick}
       >
         {scoped}
-      </ChartDatapointProvider>,
+      </AutoChartDatapointProvider>,
     );
   },
 );
@@ -643,7 +633,7 @@ function DistributionChartInner({
   // groups stay apart without hue. Strip dots and `unit` rungs are too small /
   // stroked to carry a texture and keep the solid colour.
   const high = useHighDecorationOf(containerRef);
-  const patternScope = useId().replace(/:/g, "");
+  const patternScope = useSvgId();
   const patternGroups = useMemo(() => {
     if (!high || kind === "strip") {
       return [];

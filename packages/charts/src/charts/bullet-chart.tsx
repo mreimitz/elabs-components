@@ -19,20 +19,14 @@
  */
 
 import { scaleLinear } from "@visx/scale";
-import {
-  forwardRef,
-  useId,
-  useMemo,
-  type CSSProperties,
-  type HTMLAttributes,
-  type MutableRefObject,
-} from "react";
+import { forwardRef, useId, useMemo, type CSSProperties, type HTMLAttributes } from "react";
 import { useLayoutMeasure } from "./layout-size";
-import { cn, Skeleton } from "@elabs-ai/components-ui";
+import { cn, mergeRefs, Skeleton } from "@elabs-ai/components-ui";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { HaloText } from "../marks";
 import { ChartA11yLabel, type ChartA11yProps } from "./chart-a11y";
 import { ChartMessagesScope, useChartTranslate } from "./chart-messages";
+import { findThresholdBand } from "./threshold-band";
 import { type ChartPalette, resolvePalette } from "./chart-context";
 import { useChartValueSetFormatter } from "./chart-formatters";
 import { marginPaddingStyle, resolveChartMargin, ZERO_MARGIN } from "./chart-margin";
@@ -224,11 +218,7 @@ function niceDomain(domain: [number, number]): [number, number] {
 /** The band `value` falls in — the first band whose `to` is `>= value`, or the last (open-ended,
  *  top) band once `value` exceeds every threshold. `undefined` when `bands` is empty. */
 export function findBulletBand(value: number, bands: BulletBand[]): BulletBand | undefined {
-  if (bands.length === 0) return undefined;
-  for (const band of bands) {
-    if (value <= band.to) return band;
-  }
-  return bands[bands.length - 1];
+  return findThresholdBand(value, bands, (band) => band.to);
 }
 
 export interface DescribeBulletChartInput {
@@ -620,13 +610,7 @@ export const BulletChartBase = forwardRef<HTMLDivElement, BulletChartProps>(func
   const trackThickness = size === "sm" ? SM_TRACK_THICKNESS : MD_TRACK_THICKNESS;
   const crossExtent = trackThickness + (showAxis ? MD_AXIS_EXTENT : 0);
 
-  const setContainerRef = (node: HTMLDivElement | null) => {
-    if (typeof forwardedRef === "function") {
-      forwardedRef(node);
-    } else if (forwardedRef) {
-      (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
-    }
-  };
+  const setContainerRef = mergeRefs(forwardedRef);
 
   const marginBox = resolveChartMargin(marginProp, ZERO_MARGIN);
   const marginStyle = marginPaddingStyle(marginBox);

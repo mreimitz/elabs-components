@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, useRef } from "react";
+import { useRef } from "react";
+import { useSvgId } from "../svg-id";
 import { cn } from "@elabs-ai/components-ui";
 import { makeSeriesPattern, seriesDashArray, seriesPatternId } from "../series-pattern";
 import { useHighDecorationOf } from "../use-high-decoration";
@@ -15,7 +16,7 @@ export function LegendMarker({ className = "h-2.5 w-2.5" }: LegendMarkerProps) {
   const { item } = useLegendItem();
   const ref = useRef<HTMLDivElement>(null);
   const high = useHighDecorationOf(ref);
-  const patternId = seriesPatternId(item.seriesIndex ?? 0, useId().replace(/:/g, ""));
+  const patternId = seriesPatternId(item.seriesIndex ?? 0, useSvgId());
   const size = 10;
 
   // Under high decoration with a seriesIndex, render a decoration pattern swatch

@@ -1,5 +1,6 @@
 "use client";
 
+import { getChartChildComponentName } from "./chart-defs";
 import { ChartParentSize } from "./chart-parent-size";
 import { motion, type Transition } from "motion/react";
 import { REDUCED_MOTION_ENTER_TRANSITION } from "./animation";
@@ -10,12 +11,13 @@ import {
   isValidElement,
   type ReactElement,
   type ReactNode,
-  useId,
   useMemo,
 } from "react";
+import { useSvgId } from "./svg-id";
 import { cn } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "./chart-a11y";
 import { type ChartStatFlowFormat, defaultChartStatFlowFormat } from "./chart-stat-flow";
+import { findThresholdBand } from "./threshold-band";
 import { CHART_HAIRLINE_WIDTH } from "../chart-hairline";
 import { HaloText } from "../marks/halo-text";
 import { PieCenterShell } from "./pie-center-shell";
@@ -31,10 +33,7 @@ import { useRenamedChartProps } from "./use-resolved-chart-props";
 const MILESTONE_LEADER_RESERVE = 18;
 
 function isDefsComponent(child: ReactElement): boolean {
-  const typeLabel =
-    (child.type as { displayName?: string })?.displayName ||
-    (child.type as { name?: string })?.name ||
-    "";
+  const typeLabel = getChartChildComponentName(child);
   return (
     typeLabel.includes("Gradient") ||
     typeLabel.includes("Pattern") ||
@@ -135,10 +134,8 @@ function resolveThresholdBand(
   value: number,
   thresholds: readonly GaugeThreshold[],
 ): string | undefined {
-  if (thresholds.length === 0) return undefined;
   const sorted = [...thresholds].sort((a, b) => a.value - b.value);
-  const hit = sorted.find((t) => value <= t.value);
-  return (hit ?? sorted[sorted.length - 1])?.label;
+  return findThresholdBand(value, sorted, (t) => t.value)?.label;
 }
 
 /**
@@ -344,7 +341,7 @@ function GaugeInner({
   const stillEntrance = useStillEntrance();
   const notchKeySuffix = stillEntrance ? "-still" : "";
   const notchInitial = stillEntrance ? false : { opacity: 0, scale: 0 };
-  const themeActiveGradientId = `gauge-theme-active-${useId().replace(/:/g, "")}`;
+  const themeActiveGradientId = `gauge-theme-active-${useSvgId()}`;
   // NOTE: not wrapped in `useStableValue` (`use-stable-value.ts`) — its output
   // is actual `ReactElement[]`, not JSON-serializable plain config, so a
   // content-signature comparison isn't safe here. `defsChildren` stays

@@ -5,6 +5,7 @@ import type { scaleBand } from "@visx/scale";
 import type { Transition } from "motion/react";
 import { motion } from "motion/react";
 import { memo, useId, useMemo } from "react";
+import { useSvgId } from "./svg-id";
 import { DEFAULT_ANIMATION_DURATION_MS } from "./animation";
 import {
   HaloText,
@@ -509,7 +510,7 @@ const BarInner = memo(function BarInner({
 
   // Decoration pattern fill: active only under high decoration AND for palette fills
   const high = useHighDecoration();
-  const patternRawScope = useId().replace(/:/g, "");
+  const patternRawScope = useSvgId();
 
   // Calculate stagger delay automatically if not provided
   // Total animation duration (default DEFAULT_ANIMATION_DURATION_MS, 1100ms):

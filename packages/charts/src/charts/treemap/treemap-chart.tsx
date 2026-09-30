@@ -6,15 +6,14 @@ import { useReducedMotion } from "@elabs-ai/components-tokens";
 import {
   type CSSProperties,
   forwardRef,
-  type MutableRefObject,
   useCallback,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { cn, Skeleton, StatePanel } from "@elabs-ai/components-ui";
+import { useSvgId } from "../svg-id";
+import { cn, mergeRefs, Skeleton, StatePanel } from "@elabs-ai/components-ui";
 import { ChartA11yLabel, type ChartA11yProps, useChartA11yContainerProps } from "../chart-a11y";
 import type { ChartLegendEntry } from "../chart-context";
 import type { ChartInteractionProps } from "../chart-datapoint";
@@ -26,7 +25,7 @@ import { isDataLabelsOn, type ChartDataLabelsConfig } from "../props/data-labels
 import { TREEMAP_CHART } from "../../definitions/treemap-chart.definition";
 import {
   ChartDatapointLayer,
-  ChartDatapointProvider,
+  AutoChartDatapointProvider,
   type ChartDatapointTarget,
   padDatapointRect,
   useActivateDatapoint,
@@ -270,16 +269,8 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
 
   const internalRef = useRef<HTMLDivElement | null>(null);
   const [measureRef, measuredBox] = useLayoutMeasure();
-  const ref = useCallback(
-    (node: HTMLDivElement | null) => {
-      internalRef.current = node;
-      measureRef(node);
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef) {
-        (forwardedRef as MutableRefObject<HTMLDivElement | null>).current = node;
-      }
-    },
+  const ref = useMemo(
+    () => mergeRefs(internalRef, measureRef, forwardedRef),
     [forwardedRef, measureRef],
   );
 
@@ -396,7 +387,7 @@ const TreemapChartBody = forwardRef<HTMLDivElement, TreemapChartProps>(function 
   // hue (categorical groups, sequential steps) also differ by texture. Only
   // LEAVES are patterned — a group's title band carries its label and stays flat.
   const high = useHighDecorationOf(internalRef);
-  const patternScope = useId().replace(/:/g, "");
+  const patternScope = useSvgId();
   const patternIndices = useMemo(
     () =>
       high ? indexPaletteFills(activeLayout.leaves.map((leaf) => leaf.color)) : NO_PATTERN_INDICES,
@@ -876,18 +867,15 @@ export const TreemapChartBase = forwardRef<HTMLDivElement, TreemapChartProps>(
   function TreemapChart(props, ref) {
     const { copyValueOnActivate, datapointLabel, maxInteractiveDatapoints, onDatapointClick } =
       props;
-    if (!onDatapointClick && !copyValueOnActivate) {
-      return <TreemapChartBody {...props} ref={ref} />;
-    }
     return (
-      <ChartDatapointProvider
+      <AutoChartDatapointProvider
         copyValueOnActivate={copyValueOnActivate}
         datapointLabel={datapointLabel}
         maxInteractiveDatapoints={maxInteractiveDatapoints}
         onDatapointClick={onDatapointClick}
       >
         <TreemapChartBody {...props} ref={ref} />
-      </ChartDatapointProvider>
+      </AutoChartDatapointProvider>
     );
   },
 );

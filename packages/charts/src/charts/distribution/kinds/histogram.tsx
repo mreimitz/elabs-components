@@ -18,6 +18,7 @@
  */
 import { memo } from "react";
 import { UnitStack } from "../../../marks";
+import { warnChartOnce } from "../../chart-breakpoint";
 import { chartCssVars } from "../../chart-context";
 import type { DistributionBin } from "../bins";
 import type { DistributionKindProps } from "../distribution-kind";
@@ -45,14 +46,8 @@ const MIN_RUNG_STEP = 1.6;
 const MIN_TALLEST_RUNGS = 3;
 const MAX_TALLEST_RUNGS = 60;
 
-/** Messages already warned about, so a re-rendering chart does not re-log every frame. */
-const warnedRungMessages = new Set<string>();
-
 function warnRungOnce(message: string): void {
-  if (process.env.NODE_ENV === "production") return;
-  if (warnedRungMessages.has(message)) return;
-  warnedRungMessages.add(message);
-  console.warn(message);
+  warnChartOnce(message, message);
 }
 
 /**
