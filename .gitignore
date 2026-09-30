@@ -94,3 +94,6 @@ scripts/.a11y-run.json
 # Benchmark runs (scripts/bench) — model output and throw-away apps; publish a
 # run by copying its scores.md into docs/review/.
 scripts/bench/out/
+
+# Qlabs Atlas lives in its own repository; retain any local migration leftovers here.
+apps/diagram/

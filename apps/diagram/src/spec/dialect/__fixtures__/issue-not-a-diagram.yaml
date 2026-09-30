@@ -1,3 +1,0 @@
-# yaml-language-server: $schema=../../../../schema/arch-diagram.v0.schema.json
-title: A title but no diagram key
-# expect: not-a-diagram @ 2:1

@@ -1,8 +1,0 @@
-# Atlas parts — sap. Hand-written; see catalog/README.md.
-datasphere:
-  name: SAP Datasphere
-  icon: sap/sap
-  kind: datastore
-  subtitle: Datasphere
-  description: SAP's cloud data service for modelling, integrating and sharing business data.
-  tags: [data-warehouse, integration]

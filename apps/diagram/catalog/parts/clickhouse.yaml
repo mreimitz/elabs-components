@@ -1,9 +1,0 @@
-# Atlas parts — clickhouse. Hand-written; see catalog/README.md.
-cloud:
-  name: ClickHouse Cloud
-  icon: clickhouse/clickhouse
-  kind: datastore
-  subtitle: Cloud
-  badges: [managed]
-  description: The managed ClickHouse service, a column-oriented database for real-time analytics.
-  tags: [database, analytics]

@@ -1,7 +1,0 @@
-diagram: "1"
-title: Inline leaf
-nodes:
-  - id: x
-  - id: y
-flows:
-  - x -> y

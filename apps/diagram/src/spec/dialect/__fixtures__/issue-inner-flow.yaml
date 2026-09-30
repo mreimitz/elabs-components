@@ -1,8 +1,0 @@
-# yaml-language-server: $schema=../../../../schema/arch-diagram.v1.schema.json
-diagram: "1"
-nodes:
-  - id: t
-    ref: ws/components/leaf
-flows:
-  - t.x -> t.y
-# expect: inner-flow @ 7:5

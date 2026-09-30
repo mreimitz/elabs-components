@@ -1,7 +1,0 @@
-# yaml-language-server: $schema=../../../../schema/arch-diagram.v1.schema.json
-diagram: "1"
-zones:
-  - id: t
-    owner: saas
-    ref: ws/components/x
-# expect: ambiguous-entry @ 4:5

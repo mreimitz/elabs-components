@@ -1,5 +1,0 @@
-# yaml-language-server: $schema=../../../../schema/arch-diagram.v1.schema.json
-diagram: "1"
-nodes:
-  - id: api
-# expect: none

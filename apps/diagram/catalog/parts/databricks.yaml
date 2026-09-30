@@ -1,8 +1,0 @@
-# Atlas parts — databricks. Hand-written; see catalog/README.md.
-jobs:
-  name: Databricks Jobs
-  icon: databricks/databricks
-  kind: service
-  subtitle: Jobs
-  description: Schedules and runs notebooks, pipelines and other tasks on Databricks compute.
-  tags: [orchestration, compute]
