@@ -320,7 +320,7 @@ const WORKSPACE_SHAPE: Record<string, readonly [nodes: number, edges: number]> =
 };
 /** Nodes whose `ref:` resolved to a catalog entry (`data.catalogEntry` set), per file (1b.12). */
 const WORKSPACE_CATALOG_ENTRIES: Record<string, number> = {
-  "components/qlik-cloud-tenant.yaml": 4,
+  "components/qlik-cloud-tenant.yaml": 3,
   "examples/clickhouse-cloud-stack.yaml": 5,
   "examples/lakehouse-aws.yaml": 12,
   "examples/qlik-cloud-data-gateway.yaml": 7,
