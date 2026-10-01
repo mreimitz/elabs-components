@@ -132,10 +132,6 @@ function buildThemeDataFor(theme: ThemeSlug) {
   return buildBrandThemeData(el);
 }
 
-// `comment`/`delimiter` are intentionally softer (3.2:1, "muted but legible");
-// every other rule with a foreground targets full AA (4.5:1).
-const SOFT_RATIO_TOKENS = new Set(["comment", "delimiter"]);
-
 describe.each<ThemeSlug>(["light", "dark"])("buildBrandThemeData (%s)", (theme) => {
   const data = buildThemeDataFor(theme);
   const colors = data.colors;
@@ -151,21 +147,32 @@ describe.each<ThemeSlug>(["light", "dark"])("buildBrandThemeData (%s)", (theme) 
     expect(lineHighlight).toBe(withAlpha(foreground, LINE_HIGHLIGHT_ALPHA));
   });
 
-  it("AA-clamps every syntax rule's foreground against the COMPOSITED line-highlight ground, not the bare background (#88)", () => {
-    // The real, on-screen ground for text painted on the cursor's line: Monaco
-    // renders `editor.lineHighlightBackground` UNDER the token text there.
-    const tokenGround = flattenOver(lineHighlight, background);
+  it("AA-clamps every syntax rule against the editor, cursor line and diff bands", () => {
+    // DiffEditor stacks the text band over the line band. The light insert
+    // stack exposed a comment at 4.21:1 in the release Storybook axe gate.
+    const grounds: Record<string, string> = { editor: background };
+    for (const kind of ["inserted", "removed"] as const) {
+      const line = colors[`diffEditor.${kind}LineBackground`]!;
+      const text = colors[`diffEditor.${kind}TextBackground`]!;
+      grounds[`${kind} line`] = flattenOver(line, background);
+      grounds[`${kind} text`] = flattenOver(text, background);
+      grounds[`${kind} stacked`] = flattenOver(text, grounds[`${kind} line`]!);
+    }
+    for (const [name, ground] of Object.entries({ ...grounds })) {
+      grounds[`${name} with cursor line`] = flattenOver(lineHighlight, ground);
+    }
 
     const failures: string[] = [];
     for (const rule of data.rules ?? []) {
       if (!rule.foreground) continue;
-      const minRatio = SOFT_RATIO_TOKENS.has(rule.token) ? 3.2 : 4.5;
-      const ratio = contrast(`#${rule.foreground}`, tokenGround);
-      if (ratio < minRatio) {
-        failures.push(
-          `token "${rule.token || "(base)"}" measures ${ratio.toFixed(2)}:1 against the ` +
-            `composited line-highlight ground, needs >= ${minRatio}:1`,
-        );
+      for (const [name, ground] of Object.entries(grounds)) {
+        const ratio = contrast(`#${rule.foreground}`, ground);
+        if (ratio < 4.5) {
+          failures.push(
+            `token "${rule.token || "(base)"}" measures ${ratio.toFixed(2)}:1 ` +
+              `against ${name}, needs >= 4.5:1`,
+          );
+        }
       }
     }
     expect(failures).toEqual([]);

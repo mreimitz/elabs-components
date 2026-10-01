@@ -73,6 +73,8 @@ export function withAlpha(hex: string, alpha: number): string {
  * into (`flattenOver`, below) can never drift apart (#88).
  */
 export const LINE_HIGHLIGHT_ALPHA = 0.05;
+const DIFF_TEXT_ALPHA = 0.16;
+const DIFF_LINE_ALPHA = 0.08;
 
 /** Strip `#` and any alpha — Monaco token rules want a bare 6-char hex. */
 function bare(hex: string): string {
@@ -140,6 +142,18 @@ function ensureReadable(hex: string, bg: string, minRatio: number): string {
   return out;
 }
 
+/** Keep one syntax color readable on every surface Monaco can paint behind it. */
+function ensureReadableOnGrounds(hex: string, grounds: string[], minRatio: number): string {
+  const base = hex.slice(0, 7);
+  if (grounds.every((ground) => contrast(base, ground) >= minRatio)) return base;
+  const target = luminance(grounds[0] ?? "#ffffff") > 0.5 ? "#000000" : "#ffffff";
+  for (let t = 0.1; t <= 1.0001; t += 0.1) {
+    const candidate = mixHex(base, target, t);
+    if (grounds.every((ground) => contrast(candidate, ground) >= minRatio)) return candidate;
+  }
+  return target;
+}
+
 /**
  * Map the theme active on `rootEl` to Monaco's nearest built-in base.
  *
@@ -199,6 +213,26 @@ export function buildBrandThemeData(
   // `colors` entry below and the AA-clamp ground, so the two can't drift apart.
   const lineHighlight = withAlpha(foreground, LINE_HIGHLIGHT_ALPHA);
   const tokenGround = flattenOver(lineHighlight, background);
+
+  // Monaco stacks the diff text band over the diff line band. A muted comment
+  // that clears AA on the plain editor can fail on that combined wash (the
+  // light insertion band measured 4.21:1 in the release Storybook axe gate).
+  const insertedDiffGround = flattenOver(
+    withAlpha(success, DIFF_TEXT_ALPHA),
+    flattenOver(withAlpha(success, DIFF_LINE_ALPHA), background),
+  );
+  const removedDiffGround = flattenOver(
+    withAlpha(destructive, DIFF_TEXT_ALPHA),
+    flattenOver(withAlpha(destructive, DIFF_LINE_ALPHA), background),
+  );
+  const syntaxGrounds = [
+    background,
+    tokenGround,
+    insertedDiffGround,
+    removedDiffGround,
+    flattenOver(lineHighlight, insertedDiffGround),
+    flattenOver(lineHighlight, removedDiffGround),
+  ];
 
   // Calc result-inlay color (#220): the computed answer shown after each ```calc
   // line. Themed here (not hardcoded) so it re-applies on theme change with the
@@ -302,10 +336,10 @@ export function buildBrandThemeData(
     "editorInlayHint.parameterForeground": calcResult,
     // Diff editor — brand the add/remove bands from success/destructive tokens
     // (instead of Monaco's default green/red) at low alpha so syntax reads on top.
-    "diffEditor.insertedTextBackground": withAlpha(success, 0.16),
-    "diffEditor.removedTextBackground": withAlpha(destructive, 0.16),
-    "diffEditor.insertedLineBackground": withAlpha(success, 0.08),
-    "diffEditor.removedLineBackground": withAlpha(destructive, 0.08),
+    "diffEditor.insertedTextBackground": withAlpha(success, DIFF_TEXT_ALPHA),
+    "diffEditor.removedTextBackground": withAlpha(destructive, DIFF_TEXT_ALPHA),
+    "diffEditor.insertedLineBackground": withAlpha(success, DIFF_LINE_ALPHA),
+    "diffEditor.removedLineBackground": withAlpha(destructive, DIFF_LINE_ALPHA),
     "diffEditorGutter.insertedLineBackground": withAlpha(success, 0.12),
     "diffEditorGutter.removedLineBackground": withAlpha(destructive, 0.12),
     "diffEditorOverview.insertedForeground": withAlpha(success, 0.6),
@@ -313,26 +347,21 @@ export function buildBrandThemeData(
     "diffEditor.border": border,
   };
 
-  // Syntax tokens: enforce AA (4.5:1) against the composited line-highlight
-  // ground (#88 — Monaco paints that translucent overlay UNDER every token on
-  // the cursor's line, so clamping against the bare `background` targets a
-  // ground that is never actually rendered); comments get a softer 3.2:1 so
-  // they stay intentionally muted but legible. Keyword/operator/tag stay on
-  // the brand primary (identity), readability-clamped too.
+  // Syntax tokens: enforce AA (4.5:1) against the editor, cursor-line and
+  // stacked diff-band grounds. Keyword/operator/tag stay on the brand primary
+  // (identity), readability-clamped too.
   //
   // `AA_MARGIN` adds headroom on top of the nominal ratio: `ensureReadable`
   // stops at the FIRST 10% mix step that clears the bar, so a zero-margin
   // clamp can land a hair below it once axe's own rounding is applied — #88
   // measured `string` short by 0.34:1 for exactly this reason. Modeling the
-  // OTHER transient overlays (selection, bracket-match, diff bands) is
-  // explicitly out of scope for #88; the margin is the accepted headroom for
-  // those too, not a claim they're individually composited in.
+  // OTHER transient overlays (selection and bracket-match) is out of scope;
+  // the margin is headroom for those, not a claim they're composited here.
   const AA_MARGIN = 0.15;
-  const ink = (hex: string, ratio = 4.5) =>
-    bare(ensureReadable(hex, tokenGround, ratio + AA_MARGIN));
+  const ink = (hex: string) => bare(ensureReadableOnGrounds(hex, syntaxGrounds, 4.5 + AA_MARGIN));
   const rules: Monaco.editor.ITokenThemeRule[] = [
-    { token: "", foreground: bare(foreground), background: bare(background) },
-    { token: "comment", foreground: ink(mutedFg, 3.2), fontStyle: "italic" },
+    { token: "", foreground: ink(foreground), background: bare(background) },
+    { token: "comment", foreground: ink(mutedFg), fontStyle: "italic" },
     { token: "keyword", foreground: ink(primary) },
     { token: "operator", foreground: ink(primary) },
     { token: "string", foreground: ink(chart2) },
@@ -342,10 +371,10 @@ export function buildBrandThemeData(
     { token: "type", foreground: ink(chart1) },
     { token: "type.identifier", foreground: ink(chart1) },
     { token: "function", foreground: ink(chart3) },
-    { token: "identifier", foreground: bare(foreground) },
-    { token: "variable", foreground: bare(foreground) },
+    { token: "identifier", foreground: ink(foreground) },
+    { token: "variable", foreground: ink(foreground) },
     { token: "variable.predefined", foreground: ink(chart3) },
-    { token: "delimiter", foreground: ink(mutedFg, 3.2) },
+    { token: "delimiter", foreground: ink(mutedFg) },
     { token: "tag", foreground: ink(primary) },
     { token: "attribute.name", foreground: ink(chart3) },
     { token: "attribute.value", foreground: ink(chart2) },
@@ -373,8 +402,8 @@ export function buildBrandThemeData(
     { token: "string.html", foreground: ink(chart2) },
     { token: "string.sql", foreground: ink(chart2) },
     { token: "string.yaml", foreground: ink(chart2) },
-    { token: "delimiter.html", foreground: ink(mutedFg, 3.2) },
-    { token: "delimiter.xml", foreground: ink(mutedFg, 3.2) },
+    { token: "delimiter.html", foreground: ink(mutedFg) },
+    { token: "delimiter.xml", foreground: ink(mutedFg) },
     { token: "attribute.value.html", foreground: ink(chart2) },
     { token: "attribute.value.xml", foreground: ink(chart2) },
     { token: "attribute.value.number", foreground: ink(chart4) },
@@ -402,7 +431,7 @@ export function buildBrandThemeData(
     // `IGNORED_BASE_SCOPES` below for the one scope that stays un-overridden.
     { token: "tag.id.pug", foreground: ink(primary) }, // pairs with `tag`
     { token: "tag.class.pug", foreground: ink(primary) },
-    { token: "variable.parameter", foreground: bare(foreground) }, // pairs with `variable`
+    { token: "variable.parameter", foreground: ink(foreground) }, // pairs with `variable`
   ];
 
   // `base` is a placeholder; `applyBrandTheme` overrides it per theme.
