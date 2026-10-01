@@ -281,7 +281,9 @@ jobs:
     needs: release
     if: ${{ !cancelled() && (needs.release.outputs.published == 'true' || inputs.deploy-docs) }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # 6.0.0 has 2,839 stories; the live crawl reached 2,500 at the old 30m
+    # job limit after the Vercel build. Leave room for the full crawl to finish.
+    timeout-minutes: 60
     env:
       VERCEL_ORG_ID: team_CREpBGwTjqJ21Rj1cpNRTPCv # elabs-ai (not a secret)
       VERCEL_PROJECT_ID: prj_D84K8BP6ySAwJHFmNEeaX2lbwpBj # elabs-storybook (not a secret)
