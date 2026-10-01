@@ -1,5 +1,59 @@
 # @elabs-ai/components-cli
 
+## 6.0.0
+
+### Minor Changes
+
+- 806d476: The A2UI catalog (`brand-ui a2ui catalog`, `<A2uiSurface>`) now describes every chart prop from the same source as the rest of the docs, instead of falling back to `any` for anything shaped `Responsive<T>` or an unresolvable enum alias. `AutoChart`'s `plotHeight` (and every other responsive chart prop the catalog covers) now carries a real schema — a number, `{ aspect }`, or the per-breakpoint `{ base, medium?, narrow? }` object — built from the same ADR 0042 definitions snapshot the docs read, not a hand-authored map. Props whose only enum values lived behind an alias (`BulletChart.palette`, `BulletChart.status`) now list them; a prop with a real default (`Sparkline.variant`, `Gauge.totalNotches`, `MetricGrid.columns`, …) carries it too.
+
+  Every `Responsive<T>` prop in the published schema (`@elabs-ai/components-ai/a2ui/schema.json`) is now a JSON Schema `anyOf` of closed alternatives — the plain value shape, or `{ base, medium?, narrow? }` with `properties`/`required`/`additionalProperties: false` — so an agent-emitted value that matches none of them (a bare string, an unrelated object) is rejected and a value that matches one is accepted, even when another alternative in the set is also an object.
+
+  `A2uiValidation` gains an optional `warnings?: A2uiError[]` field. `errors` keeps its original meaning exactly — blocking issues only, `errors.length === 0` ⇔ `ok: true` — so nothing that only ever checked `.ok`/`.errors` changes behavior. `validateA2uiSurface` itself always sets `warnings` (empty array when there are none); the field is typed optional only so code that constructs an `A2uiValidation` itself (a typed test double, a wrapper) doesn't break on the new key — read it directly off a real validation result, or with `?? []` elsewhere. A host asserting a full validation result with `toEqual({ ok, spec, errors })` will now see the extra `warnings` key too. A deprecated prop name (`AutoChart.height`, `Sparkline.label`, …) still validates and still renders; it now reports through `warnings` instead of being silently dropped from feedback. `brand-ui a2ui validate` prints warnings in their own section and still exits 0 for a surface that only has them.
+
+  `catalog.source.json`'s `AutoChart` prose now documents `geo`, `match` and `scale` — the fields a `type: "choropleth"` spec actually needs — alongside the chart-type list it was already in.
+
+- ad0b329: `brand-ui chart-for` and the `chart_for` MCP tool now print a `binds:` line under each
+  candidate — the prop each data role binds to, not just the role, e.g.
+  `binds: Column → xDataKey (dimension), Row → yDataKey (dimension), Value → valueKey
+(measure)` for `HeatmapChart`. The ranking itself still works the way it always has: a
+  container with a `ComponentDefinition` gets its `@dataShape`/`@avoidWhen` prose from the
+  committed definitions snapshot (`core.mjs`'s `collectChartDataShapes`, read at `pnpm gen`
+  time — never re-parsed at CLI runtime), and only a component with no definition yet falls
+  back to parsing its own docblock directly. This new `binds:` line (and the two doc-table
+  cells below) read that same snapshot, so no new file ships and the ranking itself gets no
+  slower.
+
+  The `skills/brand-ui/reference/chart-selection.md` and `components.md` reference docs are
+  now partly generated: the "Container → key props" / "Key props", Shape, and Avoid-when cells
+  in the two chart-selection tables are read from each chart's own definition instead of
+  hand-typed, so they can no longer claim a prop, a data shape or an avoid-when a container
+  doesn't actually have. Six rows in the shape tables now list the container's real props
+  (`RingChart`, `ChoroplethChart`, `Gauge`, `ParallelCoordinatesChart`, `NetworkChart`,
+  `Gantt`).
+
+  Separately, the chart-type count in `components.md` and the two-table split summary in
+  `chart-selection.md` are now their own generated line each, counted straight from the
+  registry instead of hand-typed — so a new or removed chart container can no longer leave a
+  stale count behind in either file.
+
+- cd937fe: The CLI package now ships the chart descriptions as plain JSON, in `lib/definitions.generated.json`. For every chart, chart part (axes, grid, series marks, reference line) and card-like surface in `@elabs-ai/components-charts`, the file lists every prop, the values it accepts, its default, and the data the chart binds to. It also carries the chart's own documentation: its summary, the kinds of data it suits and when to pick another chart instead. The file is keyed by package name, so other packages can add their components to the same file later. The CLI reads it as JSON and needs no TypeScript or bundler at run time.
+
+  The package also ships `lib/chart-codemod-map.generated.json`, the list of renamed chart props in the shape `brand-ui codemod <map.json>` reads. It is empty for now; it fills in as chart props are renamed ahead of 7.0.0.
+
+  No command's output changes yet.
+
+- e5fee4f: `brand-ui docs` now lists the props a component inherits, not only the ones it declares itself. When a component's props extend another brand-ui type, such as a chart's selection, navigator or accessibility props, those props appear under their own "props (inherited)" heading, each with the name of the type it comes from. Before, only the base type's name was shown, so props like `LineChart`'s `window`, `zoom` and `selectionToolbar` were missing from the docs. Props inherited from React or DOM types, and from other libraries, are still named in the `extends` line only.
+
+  Chart props now also show their default value and, when a prop is deprecated, the version it was deprecated in, what to use instead and the version that removes it. For example, `brand-ui docs WaterfallChart` marks `height` as deprecated in favour of `plotHeight`. The MCP `docs` tool shows the same, and the `brand-ui.manifest.json` shipped with the CLI carries these props and fields.
+
+  The short `--brief` card still lists only the props a component declares itself.
+
+- 382acd3: `brand-ui scaffold` and `brand-ui create` now put the app in one of the library's own app shells. A new `shell` field in the app-spec (`flagship` — the default — · `dashboard` · `mail` · `double-sided` · `minimal`) names one of the five Storybook `Layout/App Shell` entries; the CLI copies that registry block into `src/components/<block>/` (copy-own, as `npx shadcn add` would) and rewrites `src/App.tsx` so the archetype screen renders inside it, with the block's own dependencies added to `package.json`, the `@source` lines and the install handoff. Before, every scaffolded app shipped in the bare `SidebarProvider` + `Sidebar` + `SidebarInset` frame the archetype stories use as a stand-in — a plain rail and a one-word header — because nothing in the flow ever asked. `create` takes `--shell <id>`; `minimal` keeps the old bare frame as an explicit choice. The `brand-ui-new-app` and `brand-ui-migrate` skills now ask the app-shell question (catalog: `skills/brand-ui-new-app/reference/app-shells.md`), and the three demo shells (`sidebar-02`, `sidebar-04`, `sidebar-05`) gained a `children` slot so a real screen can replace their demo content.
+
+### Patch Changes
+
+- dbcc5a8: Agent-native data grids and export: `AutoGrid` renders a DataGrid (or table) from one serialisable `DataGridSpec` (rows, optional column specs inferred with `inferColumnSpecs`, a saved view, grouping, totals) and joins the A2UI catalog as its `@elabs-ai/components-data` half (`DATA_A2UI_BINDINGS`, `DATA_A2UI_CATALOG_SCHEMA`; the published surface schema now includes it). Saved views become versioned `GridState` documents (`serializeGridState`, `parseGridState` with migration and validation, `GRID_STATE_JSON_SCHEMA`). Real `.xlsx` export with no dependency (`toXlsx`, `tableToXlsx`; "Export to Excel" in the grid context menu, loaded on demand).
+
 ## 5.5.0
 
 ### Patch Changes

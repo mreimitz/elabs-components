@@ -1,5 +1,53 @@
 # @elabs-ai/components-ai
 
+## 6.0.0
+
+### Minor Changes
+
+- 806d476: The A2UI catalog (`brand-ui a2ui catalog`, `<A2uiSurface>`) now describes every chart prop from the same source as the rest of the docs, instead of falling back to `any` for anything shaped `Responsive<T>` or an unresolvable enum alias. `AutoChart`'s `plotHeight` (and every other responsive chart prop the catalog covers) now carries a real schema — a number, `{ aspect }`, or the per-breakpoint `{ base, medium?, narrow? }` object — built from the same ADR 0042 definitions snapshot the docs read, not a hand-authored map. Props whose only enum values lived behind an alias (`BulletChart.palette`, `BulletChart.status`) now list them; a prop with a real default (`Sparkline.variant`, `Gauge.totalNotches`, `MetricGrid.columns`, …) carries it too.
+
+  Every `Responsive<T>` prop in the published schema (`@elabs-ai/components-ai/a2ui/schema.json`) is now a JSON Schema `anyOf` of closed alternatives — the plain value shape, or `{ base, medium?, narrow? }` with `properties`/`required`/`additionalProperties: false` — so an agent-emitted value that matches none of them (a bare string, an unrelated object) is rejected and a value that matches one is accepted, even when another alternative in the set is also an object.
+
+  `A2uiValidation` gains an optional `warnings?: A2uiError[]` field. `errors` keeps its original meaning exactly — blocking issues only, `errors.length === 0` ⇔ `ok: true` — so nothing that only ever checked `.ok`/`.errors` changes behavior. `validateA2uiSurface` itself always sets `warnings` (empty array when there are none); the field is typed optional only so code that constructs an `A2uiValidation` itself (a typed test double, a wrapper) doesn't break on the new key — read it directly off a real validation result, or with `?? []` elsewhere. A host asserting a full validation result with `toEqual({ ok, spec, errors })` will now see the extra `warnings` key too. A deprecated prop name (`AutoChart.height`, `Sparkline.label`, …) still validates and still renders; it now reports through `warnings` instead of being silently dropped from feedback. `brand-ui a2ui validate` prints warnings in their own section and still exits 0 for a surface that only has them.
+
+  `catalog.source.json`'s `AutoChart` prose now documents `geo`, `match` and `scale` — the fields a `type: "choropleth"` spec actually needs — alongside the chart-type list it was already in.
+
+### Patch Changes
+
+- 961ee48: `Tool`'s `ToolInput` and `ToolOutput` now render their internal `CodeBlock` with `wrap` on by default, so a long tool parameter or result soft-wraps instead of scrolling horizontally inside a container a keyboard couldn't reach — fixing an axe `scrollable-region-focusable` violation for any long payload.
+- 8930045: - charts: `SeriesBar` takes `yAxisId` and `name`, so a `ComposedChart` column can sit on the right axis and show its display name in the legend and tooltip; `AutoChart` `type: "dual-axis"` now draws a right-axis column instead of the unsupported fallback (#610).
+  - charts: hovering a `ComposedChart` legend item now dims the other series' columns (#610).
+  - ai: the A2UI catalog documents `ChartSpec.legend`'s object form (`position`, `layout`, `interactive`, `values`, `title`) and that a dual-axis column may sit on either axis (#610).
+- dbcc5a8: Agent-native data grids and export: `AutoGrid` renders a DataGrid (or table) from one serialisable `DataGridSpec` (rows, optional column specs inferred with `inferColumnSpecs`, a saved view, grouping, totals) and joins the A2UI catalog as its `@elabs-ai/components-data` half (`DATA_A2UI_BINDINGS`, `DATA_A2UI_CATALOG_SCHEMA`; the published surface schema now includes it). Saved views become versioned `GridState` documents (`serializeGridState`, `parseGridState` with migration and validation, `GRID_STATE_JSON_SCHEMA`). Real `.xlsx` export with no dependency (`toXlsx`, `tableToXlsx`; "Export to Excel" in the grid context menu, loaded on demand).
+- Updated dependencies [879bca9]
+- Updated dependencies [8cdcd91]
+- Updated dependencies [26cef85]
+- Updated dependencies [67db2cd]
+- Updated dependencies [8f34fc8]
+- Updated dependencies [3ad62fe]
+- Updated dependencies [9a200ab]
+- Updated dependencies [6e54152]
+- Updated dependencies [fd51c5a]
+- Updated dependencies [dbcc5a8]
+- Updated dependencies [13161b8]
+- Updated dependencies [4e1790b]
+- Updated dependencies [382acd3]
+- Updated dependencies [fb6a14e]
+- Updated dependencies [d20ae5c]
+- Updated dependencies [c6811dc]
+- Updated dependencies [59c241f]
+- Updated dependencies [7737be6]
+- Updated dependencies [75bc975]
+- Updated dependencies [6f74a30]
+- Updated dependencies [fcb884f]
+- Updated dependencies [3dcc396]
+- Updated dependencies [12955fb]
+- Updated dependencies [5c8f488]
+- Updated dependencies [e667eb2]
+  - @elabs-ai/components-ui@6.0.0
+  - @elabs-ai/components-tokens@6.0.0
+  - @elabs-ai/components-icons@6.0.0
+
 ## 5.5.0
 
 ### Minor Changes
