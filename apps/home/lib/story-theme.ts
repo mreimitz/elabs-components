@@ -22,7 +22,9 @@ const THEMES = themesJson as { isDefault: boolean; modes: ThemeMode[] }[];
 const MODES = THEMES.flatMap((theme) => theme.modes);
 const DEFAULTS = THEMES.find((theme) => theme.isDefault)?.modes ?? [];
 
-const STORE_KEY = "brand-ui:storybook-missing-themes";
+// v2 drops false negatives cached by the old probe, which could run before Storybook's theme
+// effect and mistake its temporary default-light tokens for an absent theme.
+const STORE_KEY = "brand-ui:storybook-missing-themes:v2";
 const missing = new Set<string>();
 const listeners = new Set<() => void>();
 let hydrated = false;
@@ -66,13 +68,24 @@ export function useStoryTheme(theme: string): string {
   return isMissing ? fallbackFor(theme) : theme;
 }
 
+/** Storybook applies the requested global in an effect, after the story first mounts. */
+export function isStoryThemeApplied(theme: string, doc: Document | null | undefined): boolean {
+  return doc?.documentElement.getAttribute("data-theme") === theme;
+}
+
 /**
  * Call with a rendered story document: learns whether the live Storybook has `theme`.
  * Answers `true` when it does NOT — the frame is about to reload with the fallback, so the
  * caller should keep it hidden.
  */
 export function reportStoryTheme(theme: string, doc: Document | null | undefined): boolean {
-  if (!doc || missing.has(theme) || fallbackFor(theme) === theme) return false;
+  if (
+    !doc ||
+    !isStoryThemeApplied(theme, doc) ||
+    missing.has(theme) ||
+    fallbackFor(theme) === theme
+  )
+    return false;
   const expected = lightness(MODES.find((item) => item.value === theme)?.background ?? "");
   const view = doc.defaultView;
   if (expected === null || !view) return false;

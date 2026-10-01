@@ -27,7 +27,7 @@ export function isStorybookDocument(doc: Document | null | undefined): boolean {
 export function whenStoryRendered(
   frame: HTMLIFrameElement,
   done: (outcome: StoryOutcome) => void,
-  { interval = 120, tries = 80 }: { interval?: number; tries?: number } = {},
+  { interval = 120, tries = 80, theme }: { interval?: number; tries?: number; theme?: string } = {},
 ): () => void {
   let cancelled = false;
   let timer = 0;
@@ -47,9 +47,13 @@ export function whenStoryRendered(
     if (body && has(MISSING)) return done("missing");
     const rendered =
       (frame.contentDocument?.getElementById("storybook-root")?.childElementCount ?? 0) > 0;
-    if (body && rendered && !has(PREPARING)) return done("ready");
+    // Storybook's theme decorator writes data-theme in an effect AFTER the root first appears.
+    // Probing its tokens before that write can falsely cache the requested theme as missing.
+    const themed =
+      !theme || frame.contentDocument?.documentElement.getAttribute("data-theme") === theme;
+    if (body && rendered && !has(PREPARING) && themed) return done("ready");
     // Out of patience: show whatever is there rather than a skeleton forever.
-    if (count++ >= tries) return done("ready");
+    if (count++ >= tries) return done(themed ? "ready" : "unavailable");
     timer = window.setTimeout(check, interval);
   };
   check();

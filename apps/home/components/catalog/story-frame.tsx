@@ -17,7 +17,7 @@ import { useTheme } from "@elabs-ai/components-tokens";
 import { catalogCopy } from "../../content/copy";
 import { useFrameReload, useStoryId, useStorybookRebuilding } from "../../lib/story-alias";
 import { isStorybookDocument } from "../../lib/story-ready";
-import { reportStoryTheme, useStoryTheme } from "../../lib/story-theme";
+import { isStoryThemeApplied, reportStoryTheme, useStoryTheme } from "../../lib/story-theme";
 import { StoryExpand, type StoryExpandDetail } from "./story-expand";
 
 const copy = catalogCopy.frame;
@@ -130,6 +130,10 @@ export function StoryFrame({
       const rendered = (doc.getElementById("storybook-root")?.childElementCount ?? 0) > 0;
       if (missing) return setState("pending");
       if (!rendered && tries++ < 40) return void window.setTimeout(settle, 150);
+      if (!isStoryThemeApplied(storyTheme, doc)) {
+        if (tries++ < 40) return void window.setTimeout(settle, 150);
+        return setState("unavailable");
+      }
       if (reportStoryTheme(storyTheme, doc)) return;
       setState("ready");
       if (size !== "auto") return;

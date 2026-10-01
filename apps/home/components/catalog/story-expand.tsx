@@ -23,7 +23,7 @@ import {
 import { useTheme } from "@elabs-ai/components-tokens";
 import { catalogCopy, heroCopy } from "../../content/copy";
 import { useStoryId } from "../../lib/story-alias";
-import { reportStoryTheme, useStoryTheme } from "../../lib/story-theme";
+import { isStoryThemeApplied, reportStoryTheme, useStoryTheme } from "../../lib/story-theme";
 import { offsiteProps } from "../../lib/offsite";
 
 const copy = catalogCopy.frame;
@@ -264,7 +264,9 @@ export function StoryExpand({
                   if (!frame.isConnected) return;
                   const mounted =
                     (doc?.getElementById("storybook-root")?.childElementCount ?? 0) > 0;
-                  if (!mounted && tries++ < 40) return void window.setTimeout(settle, 120);
+                  const themed = isStoryThemeApplied(theme, doc);
+                  if ((!mounted || !themed) && tries++ < 40)
+                    return void window.setTimeout(settle, 120);
                   // One more beat so self-measuring content (charts) has taken its size.
                   window.setTimeout(() => {
                     if (reportStoryTheme(theme, frame.contentDocument)) return;

@@ -129,11 +129,16 @@ export function StoryThumb({
             if (!near) return;
             const frame = event.currentTarget;
             keepFocusInThePage(frame);
-            cancel.current = whenStoryRendered(frame, (result) => {
-              // A story rendered in the wrong theme is swapped before it is ever shown.
-              if (result === "ready" && reportStoryTheme(storyTheme, frame.contentDocument)) return;
-              setOutcome(result);
-            });
+            cancel.current = whenStoryRendered(
+              frame,
+              (result) => {
+                // A story rendered in the wrong theme is swapped before it is ever shown.
+                if (result === "ready" && reportStoryTheme(storyTheme, frame.contentDocument))
+                  return;
+                setOutcome(result);
+              },
+              { theme: storyTheme },
+            );
           }}
           className={`absolute start-0 top-0 origin-top-left border-0 ${outcome === "ready" ? "opacity-100" : "opacity-0"}`}
           style={{ width, height: width * ratio, transform }}
