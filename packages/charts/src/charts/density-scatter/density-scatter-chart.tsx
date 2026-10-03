@@ -226,6 +226,8 @@ export interface DensityFrameStats {
   /** Bin + upload time, ms. */
   ms: number;
   renderer: PointsRenderer["kind"];
+  /** Interaction level of detail this frame used (1 = every point). */
+  stride: number;
 }
 
 export interface DensityScatterChartProps
@@ -1062,12 +1064,34 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
     const onFrameRef = useRef(onFrame);
     onFrameRef.current = onFrame;
 
+    // ── Interaction level of detail ─────────────────────────────────────────
+    // While a gesture is live (wheel, pan, zoom buttons, minimap) a frame that
+    // overran its budget makes the next one visit every `stride`-th point only
+    // (bin pass, and the Canvas-2D raster); the stride halves again as frames
+    // get cheap. 180 ms after the last gesture a full-detail frame is drawn.
+    // Machines without a GPU (the Canvas-2D path) are where this matters: a
+    // million-point pan stays fluid instead of freezing per frame.
+    const lodRef = useRef({
+      stride: 1,
+      interactingUntil: 0,
+      refine: 0 as ReturnType<typeof setTimeout> | 0,
+    });
+    const drawRef = useRef<() => void>(() => undefined);
+    const markInteracting = useCallback(() => {
+      lodRef.current.interactingUntil = performance.now() + 160;
+    }, []);
+    const LOD_BUDGET_MS = 16;
+    const LOD_MAX_STRIDE = 32;
+
     // The frame. Everything it reads is a ref or a memoised value.
     const draw = useCallback(() => {
       const bg = bgRef.current;
       const r = rendererRef.current;
       if (!bg || !r || box.width <= 0 || box.height <= 0) return;
       const t0 = performance.now();
+      const lod = lodRef.current;
+      const interacting = t0 < lod.interactingUntil;
+      const stride = interacting ? lod.stride : 1;
       const grid = createBinGrid(box, cellSize, paint.classes.length, gridRef.current ?? undefined);
       gridRef.current = grid;
       const input = {
@@ -1080,6 +1104,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
         value: valueColumn,
         view,
         box,
+        stride,
       };
       binPoints(grid, input);
       smoothField(grid);
@@ -1172,13 +1197,34 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
           paint.tMin > 0 && densityFloor !== undefined
             ? Math.min(1, Math.max(0, densityFloor))
             : paint.tMin,
+        stride,
       });
+      const ms = performance.now() - t0;
+      // Adapt the stride for the NEXT interactive frame from this one's cost,
+      // and book a full-detail frame once the gesture has settled.
+      if (interacting) {
+        // Proportional: aim the next frame at the budget from this one's cost.
+        const maxStride =
+          typeof window !== "undefined" && Number.isFinite((window as any).__qhdsLodMax)
+            ? Math.max(1, Number((window as any).__qhdsLodMax))
+            : LOD_MAX_STRIDE;
+        lod.stride = Math.min(maxStride, Math.max(1, Math.round((stride * ms) / LOD_BUDGET_MS)));
+      }
+      if (stride > 1) {
+        if (lod.refine) clearTimeout(lod.refine);
+        lod.refine = setTimeout(() => {
+          lod.refine = 0;
+          if (performance.now() >= lod.interactingUntil)
+            requestAnimationFrame(() => drawRef.current());
+        }, 180);
+      }
       const stats: DensityFrameStats = {
         visible: grid.visible,
         selected: grid.selected,
         maxPerCell: grid.max,
-        ms: performance.now() - t0,
+        ms,
         renderer: r.kind,
+        stride,
       };
       onFrameRef.current?.(stats);
       setFrameStats((prev) =>
@@ -1209,6 +1255,8 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
       pointOpacity,
       densityFloor,
     ]);
+
+    drawRef.current = draw;
 
     // Size the backing stores, then draw (one rAF per change burst).
     const rafRef = useRef(0);
@@ -1360,6 +1408,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
       const d = dragRef.current;
       const { x, y } = local(e);
       if (d?.kind === "pan") {
+        markInteracting();
         viewApi.set(viewApi.panned(d.from, e.clientX - d.startX, e.clientY - d.startY, box));
         return;
       }
@@ -1447,6 +1496,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
       if (!zoomOn) return;
       e.preventDefault();
       const { x, y } = local(e);
+      markInteracting();
       viewApi.zoomAt(Math.exp(e.deltaY * 0.0018), x, y, box);
       setTip(null);
     };
@@ -2245,6 +2295,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
               onCenter={(cx, cy) => {
                 const w = view.x1 - view.x0;
                 const h = view.y1 - view.y0;
+                markInteracting();
                 viewApi.set({ x0: cx - w / 2, x1: cx + w / 2, y0: cy - h / 2, y1: cy + h / 2 });
               }}
               style={{

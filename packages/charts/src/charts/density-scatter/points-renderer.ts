@@ -50,6 +50,12 @@ export interface DrawParams {
    * (a value colouring); `0.32` keeps a lone dot visibly coloured (density).
    */
   tMin: number;
+  /**
+   * Interaction level of detail for the CPU path: rasterise every `stride`-th
+   * point only (default 1), each standing in for `stride` points in the pile
+   * alpha. The GPU path ignores it (it draws every point regardless).
+   */
+  stride?: number;
 }
 
 export interface PointsRenderer {
@@ -529,6 +535,7 @@ function splatPixels(
   clip: Clip,
   pixCount: Uint16Array,
   pixLast: Int32Array,
+  stride: number,
 ): void {
   const [cx0, cy0, cx1, cy1] = clip;
   for (let y = cy0; y < cy1; y++) pixCount.fill(0, y * W + cx0, y * W + cx1);
@@ -537,7 +544,7 @@ function splatPixels(
   const by0 = cy0 - 0.5;
   const by1 = cy1 - 0.5;
   const n = cls.length;
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < n; i += stride) {
     const px = pos[i * 2]!;
     const py = pos[i * 2 + 1]!;
     if (!(px >= x0 && px <= x1 && py >= y0 && py <= y1)) continue;
@@ -547,7 +554,7 @@ function splatPixels(
     if (!(fx >= bx0 && fx < bx1 && fy >= by0 && fy < by1)) continue;
     const pix = ((fy + 0.5) | 0) * W + ((fx + 0.5) | 0);
     const c = pixCount[pix]!;
-    if (c < 65535) pixCount[pix] = c + 1;
+    if (c < 65535 - stride) pixCount[pix] = c + stride;
     if (c === 0 || !hasSel || selected[i] || !selected[pixLast[pix]!]) pixLast[pix] = i;
   }
 }
@@ -803,6 +810,7 @@ class Canvas2DPoints implements PointsRenderer {
       clip,
       this.pixCount,
       this.pixLast,
+      Math.max(1, Math.floor(p.stride ?? 1)),
     );
     stampPixels(
       this.acc,
