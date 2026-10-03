@@ -10,6 +10,7 @@ import { makeSeriesPattern, seriesDashArray, seriesPatternId } from "./series-pa
 import { useHighDecorationOf } from "./use-high-decoration";
 import type { ChartValueFormat } from "./value-format";
 import type { LegendItemShape, LegendRowMarker } from "./legend/chart-legend-item";
+import { DensityShapeGlyph } from "./density-scatter/density-shape-glyph";
 
 /**
  * One row of `ChartLegend`: `label`, `value` and `color` always set;
@@ -17,7 +18,7 @@ import type { LegendItemShape, LegendRowMarker } from "./legend/chart-legend-ite
  */
 export interface LegendItem extends LegendItemShape<
   "label" | "value" | "color",
-  "maxValue" | "seriesIndex" | "key" | "markerDash"
+  "maxValue" | "seriesIndex" | "key" | "markerDash" | "shape"
 > {
   /**
    * Swatch shape. Unset: the filled dot. `"dashed"`: a short dashed rule — a
@@ -250,7 +251,14 @@ function ProgressItem({
     >
       {/* Color marker — decorative; see the matching note in `SimpleItem`. */}
       {showMarker &&
-        (high && item.seriesIndex !== undefined ? (
+        (item.shape && item.shape !== "circle" ? (
+          <DensityShapeGlyph
+            className={cn("shrink-0", faded && "opacity-40")}
+            color={item.color}
+            shape={item.shape}
+            size={10}
+          />
+        ) : high && item.seriesIndex !== undefined ? (
           <LegendPatternSwatch seriesIndex={item.seriesIndex} color={item.color} />
         ) : (
           <div
@@ -326,6 +334,15 @@ function SimpleItem({
       {showMarker &&
         (item.marker === "dashed" ? (
           <LegendDashedSwatch color={item.color} dash={item.markerDash} dimmed={hidden || faded} />
+        ) : item.shape && item.shape !== "circle" ? (
+          // A scatter / density-scatter `shapeBy` key: the row's glyph is the
+          // dot's glyph — the second channel beside colour (WCAG 1.4.1).
+          <DensityShapeGlyph
+            className={cn("shrink-0", (hidden || faded) && "opacity-40")}
+            color={item.color}
+            shape={item.shape}
+            size={10}
+          />
         ) : item.marker === "hollow" ? (
           // #610: a ring, not a fill — border in item.color, transparent
           // centre. item.color stays inline style (dynamic series data), same

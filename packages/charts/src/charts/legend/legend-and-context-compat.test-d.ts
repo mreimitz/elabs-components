@@ -86,6 +86,9 @@ interface OldChartLegendEntry {
   marker?: "bar" | "range" | "tick" | "dot" | "hollow";
   pattern?: "solid" | "stripes";
   value?: number;
+  // Added (optional, additive) with DensityScatterChart's `shapeBy`: a
+  // container legend row may carry the dot's glyph as its swatch.
+  shape?: SeriesMarkerShape | "triangle-down" | "minus";
 }
 
 interface OldChartHoverContextValue {
@@ -202,7 +205,9 @@ interface OldPieLegendItem {
 interface OldScatterEncodingLegendItem {
   label: string;
   color?: string;
-  shape?: SeriesMarkerShape;
+  // Widened (additive) with DensityScatterChart's `shapeBy`: the one legend
+  // row type carries its two extra glyphs for every legend surface.
+  shape?: SeriesMarkerShape | "triangle-down" | "minus";
 }
 
 interface OldPieHoverContextValue {

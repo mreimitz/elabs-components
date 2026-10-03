@@ -159,6 +159,7 @@ export const DENSITY_SCATTER_CHART =
       "zones",
       "outside",
       "statLines",
+      "shapeBy",
       "onLegendItemClick",
       "colorBy",
       "domain",

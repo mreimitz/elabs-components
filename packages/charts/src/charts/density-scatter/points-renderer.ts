@@ -59,11 +59,20 @@ export interface PointsRenderer {
   setSelected(selected: Uint8Array): void;
   /** Per-point size bytes (0 = `radius`, 255 = `radiusMax`); `null` = every dot at `radius`. */
   setSizes(sizes: Uint8Array | null): void;
+  /** Per-point glyph bytes (an index into `DENSITY_SHAPES`); `null` = every dot a circle. */
+  setShapes(shapes: Uint8Array | null): void;
   draw(params: DrawParams): void;
   dispose(): void;
 }
 
 const MAX_CLASSES = 16;
+
+/**
+ * Sprite extent beyond the dot radius when glyphs other than the circle are
+ * drawn: a star's or triangle's tips reach ~1.2 r, and the edge needs its
+ * antialiasing margin.
+ */
+const SHAPE_EXTENT = 1.35;
 
 const VERTEX_SHADER = `
 precision mediump float;
@@ -72,6 +81,8 @@ attribute float aCls;
 attribute float aLvl;
 attribute float aSel;
 attribute float aSz;
+attribute float aShp;
+uniform float uShapes;
 uniform vec4 uView;
 uniform vec4 uBox;
 uniform vec2 uSize;
@@ -86,6 +97,8 @@ uniform float uHasSel;
 uniform float uTMin;
 varying vec4 vColor;
 varying float vR;
+varying float vShp;
+varying float vSprite;
 void main() {
   int k = int(aCls + 0.5);
   if (uVis[k] < 0.5) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); gl_PointSize = 0.0; return; }
@@ -94,7 +107,10 @@ void main() {
   gl_Position = vec4(sx / uSize.x * 2.0 - 1.0, 1.0 - sy / uSize.y * 2.0, 0.0, 1.0);
   float r = mix(uR, uRMax, aSz);
   vR = r;
-  gl_PointSize = (r * 2.0 + 2.0) * uDpr;
+  vShp = uShapes > 0.5 ? aShp : 0.0;
+  // The sprite, in CSS px: the dot plus its edge margin; wider when glyphs may reach past r.
+  vSprite = r * 2.0 * (uShapes > 0.5 ? ${SHAPE_EXTENT} : 1.0) + 2.0;
+  gl_PointSize = vSprite * uDpr;
   float t = uTMin + (1.0 - uTMin) * aLvl;
   vec3 c = mix(uLo[k], uHi[k], t);
   float a = uAlpha;
@@ -102,27 +118,160 @@ void main() {
   vColor = vec4(c, a);
 }`;
 
+// Signed distances (CSS px, y down) — `densityShapeDistance` below is the same
+// arithmetic in JavaScript for the Canvas-2D stamps; keep the two in step.
 const FRAGMENT_SHADER = `
 precision mediump float;
 varying vec4 vColor;
 varying float vR;
+varying float vShp;
+varying float vSprite;
+float sdBox(vec2 p, vec2 b) { vec2 d = abs(p) - b; return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0); }
+float sdTri(vec2 p, float r) {
+  p.y = -p.y;
+  const float k = 1.7320508;
+  p.x = abs(p.x) - r; p.y = p.y + r / k;
+  if (p.x + k * p.y > 0.0) p = vec2(p.x - k * p.y, -k * p.x - p.y) / 2.0;
+  p.x -= clamp(p.x, -2.0 * r, 0.0);
+  return -length(p) * sign(p.y);
+}
+float sdStar(vec2 p, float r) {
+  p.y = -p.y;
+  const vec2 k1 = vec2(0.809016994, -0.587785252);
+  const vec2 k2 = vec2(-0.809016994, -0.587785252);
+  p.x = abs(p.x);
+  p -= 2.0 * max(dot(k1, p), 0.0) * k1;
+  p -= 2.0 * max(dot(k2, p), 0.0) * k2;
+  p.x = abs(p.x);
+  p.y -= r;
+  vec2 ba = 0.5 * vec2(-k1.y, k1.x) - vec2(0.0, 1.0);
+  float h = clamp(dot(p, ba) / dot(ba, ba), 0.0, r);
+  return length(p - ba * h) * sign(p.y * ba.x - p.x * ba.y);
+}
+float sdHex(vec2 p, float r) {
+  const vec3 k = vec3(-0.866025404, 0.5, 0.577350269);
+  p = abs(p);
+  p -= 2.0 * min(dot(k.xy, p), 0.0) * k.xy;
+  p -= vec2(clamp(p.x, -k.z * r, k.z * r), r);
+  return length(p) * sign(p.y);
+}
+float sdShape(vec2 p, float r, float s) {
+  float w = max(0.5, r * 0.32);
+  if (s < 0.5) return length(p) - r;
+  if (s < 1.5) return sdBox(p, vec2(r * 0.86));
+  if (s < 2.5) return (abs(p.x) + abs(p.y) - r * 1.15) * 0.7071;
+  if (s < 3.5) return sdTri(p, r * 0.95);
+  if (s < 4.5) return sdTri(vec2(p.x, -p.y), r * 0.95);
+  if (s < 5.5) return min(sdBox(p, vec2(r, w)), sdBox(p, vec2(w, r)));
+  if (s < 6.5) return sdBox(p, vec2(r, w));
+  if (s < 7.5) { vec2 q = vec2(p.x - p.y, p.x + p.y) * 0.7071; return min(sdBox(q, vec2(r * 1.1, w)), sdBox(q, vec2(w, r * 1.1))); }
+  if (s < 8.5) return sdStar(p, r * 1.15);
+  return sdHex(p, r * 0.95);
+}
 void main() {
-  vec2 d = gl_PointCoord - 0.5;
-  float dist = length(d) * (vR * 2.0 + 2.0);
-  float edge = 1.0 - smoothstep(vR - 0.7, vR + 0.3, dist);
+  vec2 p = (gl_PointCoord - 0.5) * vSprite;
+  float d = sdShape(p, vR, vShp);
+  float edge = 1.0 - smoothstep(-0.7, 0.3, d);
   float a = vColor.a * edge;
   if (a < 0.003) discard;
   gl_FragColor = vec4(vColor.rgb * a, a);
 }`;
 
+const SQRT3 = Math.sqrt(3);
+function sdBoxJs(x: number, y: number, bx: number, by: number): number {
+  const dx = Math.abs(x) - bx;
+  const dy = Math.abs(y) - by;
+  return Math.hypot(Math.max(dx, 0), Math.max(dy, 0)) + Math.min(Math.max(dx, dy), 0);
+}
+function sdTriJs(x: number, y: number, r: number): number {
+  let px = x;
+  let py = -y;
+  px = Math.abs(px) - r;
+  py = py + r / SQRT3;
+  if (px + SQRT3 * py > 0) {
+    const nx = (px - SQRT3 * py) / 2;
+    const ny = (-SQRT3 * px - py) / 2;
+    px = nx;
+    py = ny;
+  }
+  px -= Math.min(Math.max(px, -2 * r), 0);
+  return -Math.hypot(px, py) * Math.sign(py);
+}
+function sdStarJs(x: number, y: number, r: number): number {
+  const k1x = 0.809016994;
+  const k1y = -0.587785252;
+  let px = Math.abs(x);
+  let py = -y;
+  let d = Math.max(k1x * px + k1y * py, 0);
+  px -= 2 * d * k1x;
+  py -= 2 * d * k1y;
+  d = Math.max(-k1x * px + k1y * py, 0);
+  px -= 2 * d * -k1x;
+  py -= 2 * d * k1y;
+  px = Math.abs(px);
+  py -= r;
+  const bax = 0.5 * -k1y;
+  const bay = 0.5 * k1x - 1;
+  const h = Math.min(Math.max((px * bax + py * bay) / (bax * bax + bay * bay), 0), r);
+  return Math.hypot(px - bax * h, py - bay * h) * Math.sign(py * bax - px * bay);
+}
+function sdHexJs(x: number, y: number, r: number): number {
+  const kx = -0.866025404;
+  const ky = 0.5;
+  const kz = 0.577350269;
+  let px = Math.abs(x);
+  let py = Math.abs(y);
+  const d = Math.min(kx * px + ky * py, 0);
+  px -= 2 * d * kx;
+  py -= 2 * d * ky;
+  px -= Math.min(Math.max(px, -kz * r), kz * r);
+  py -= r;
+  return Math.hypot(px, py) * Math.sign(py);
+}
+
+/**
+ * Signed distance (CSS px, negative inside) from `(x, y)` — relative to the
+ * dot's centre, y down — to the edge of glyph `shape` (an index into
+ * `DENSITY_SHAPES`) of radius `r`. The fragment shader's `sdShape`, in JS.
+ */
+export function densityShapeDistance(shape: number, x: number, y: number, r: number): number {
+  const w = Math.max(0.5, r * 0.32);
+  switch (shape) {
+    case 1:
+      return sdBoxJs(x, y, r * 0.86, r * 0.86);
+    case 2:
+      return (Math.abs(x) + Math.abs(y) - r * 1.15) * Math.SQRT1_2;
+    case 3:
+      return sdTriJs(x, y, r * 0.95);
+    case 4:
+      return sdTriJs(x, -y, r * 0.95);
+    case 5:
+      return Math.min(sdBoxJs(x, y, r, w), sdBoxJs(x, y, w, r));
+    case 6:
+      return sdBoxJs(x, y, r, w);
+    case 7: {
+      const qx = (x - y) * Math.SQRT1_2;
+      const qy = (x + y) * Math.SQRT1_2;
+      return Math.min(sdBoxJs(qx, qy, r * 1.1, w), sdBoxJs(qx, qy, w, r * 1.1));
+    }
+    case 8:
+      return sdStarJs(x, y, r * 1.15);
+    case 9:
+      return sdHexJs(x, y, r * 0.95);
+    default:
+      return Math.hypot(x, y) - r;
+  }
+}
+
 class WebGLPoints implements PointsRenderer {
   readonly kind = "webgl" as const;
   private readonly gl: WebGLRenderingContext;
   private readonly program: WebGLProgram;
-  private readonly attribs: Record<"pos" | "cls" | "lvl" | "sel" | "sz", number>;
+  private readonly attribs: Record<"pos" | "cls" | "lvl" | "sel" | "sz" | "shp", number>;
   private readonly uniforms: Record<string, WebGLUniformLocation | null>;
-  private readonly buffers: Record<"pos" | "cls" | "lvl" | "sel" | "sz", WebGLBuffer>;
+  private readonly buffers: Record<"pos" | "cls" | "lvl" | "sel" | "sz" | "shp", WebGLBuffer>;
   private count = 0;
+  private hasShapes = false;
   private readonly lo = new Float32Array(MAX_CLASSES * 3);
   private readonly hi = new Float32Array(MAX_CLASSES * 3);
   private readonly vis = new Float32Array(MAX_CLASSES);
@@ -155,8 +304,20 @@ class WebGLPoints implements PointsRenderer {
       lvl: gl.getAttribLocation(program, "aLvl"),
       sel: gl.getAttribLocation(program, "aSel"),
       sz: gl.getAttribLocation(program, "aSz"),
+      shp: gl.getAttribLocation(program, "aShp"),
     };
-    const names = ["uView", "uBox", "uSize", "uR", "uRMax", "uDpr", "uAlpha", "uHasSel", "uTMin"];
+    const names = [
+      "uView",
+      "uBox",
+      "uSize",
+      "uR",
+      "uRMax",
+      "uDpr",
+      "uAlpha",
+      "uHasSel",
+      "uTMin",
+      "uShapes",
+    ];
     this.uniforms = Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(program, n)]));
     this.uniforms.uLo = gl.getUniformLocation(program, "uLo");
     this.uniforms.uHi = gl.getUniformLocation(program, "uHi");
@@ -166,7 +327,14 @@ class WebGLPoints implements PointsRenderer {
       if (!b) throw new Error("DensityScatterChart: could not create a buffer");
       return b;
     };
-    this.buffers = { pos: buffer(), cls: buffer(), lvl: buffer(), sel: buffer(), sz: buffer() };
+    this.buffers = {
+      pos: buffer(),
+      cls: buffer(),
+      lvl: buffer(),
+      sel: buffer(),
+      sz: buffer(),
+      shp: buffer(),
+    };
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.enable(gl.SCISSOR_TEST);
@@ -186,12 +354,23 @@ class WebGLPoints implements PointsRenderer {
     gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(this.count).fill(255), gl.DYNAMIC_DRAW);
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.sz);
     gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(this.count), gl.DYNAMIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.shp);
+    gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(this.count), gl.DYNAMIC_DRAW);
+    this.hasShapes = false;
   }
 
   setSizes(sizes: Uint8Array | null): void {
     const { gl } = this;
     gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.sz);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, sizes ?? new Uint8Array(this.count));
+  }
+
+  setShapes(shapes: Uint8Array | null): void {
+    const { gl } = this;
+    this.hasShapes = Boolean(shapes && shapes.length);
+    if (!this.hasShapes) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffers.shp);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, shapes!);
   }
 
   setLevels(levels: Uint8Array): void {
@@ -231,6 +410,7 @@ class WebGLPoints implements PointsRenderer {
     gl.uniform1f(u.uAlpha!, p.alpha);
     gl.uniform1f(u.uHasSel!, p.hasSelection ? 1 : 0);
     gl.uniform1f(u.uTMin!, p.tMin);
+    gl.uniform1f(u.uShapes!, this.hasShapes ? 1 : 0);
     for (let k = 0; k < MAX_CLASSES; k++) {
       const ramp = p.ramps[Math.min(k, p.ramps.length - 1)] ?? { lo: [0, 0, 0], hi: [0, 0, 0] };
       this.lo[k * 3] = ramp.lo[0] / 255;
@@ -259,6 +439,9 @@ class WebGLPoints implements PointsRenderer {
     gl.bindBuffer(gl.ARRAY_BUFFER, b.sz);
     gl.enableVertexAttribArray(a.sz);
     gl.vertexAttribPointer(a.sz, 1, gl.UNSIGNED_BYTE, true, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, b.shp);
+    gl.enableVertexAttribArray(a.shp);
+    gl.vertexAttribPointer(a.shp, 1, gl.UNSIGNED_BYTE, false, 0, 0);
     gl.drawArrays(gl.POINTS, 0, this.count);
   }
 
@@ -283,17 +466,16 @@ interface Stamp {
  * The dot the fragment shader draws, as a pixel mask: coverage
  * `1 - smoothstep(r - 0.7, r + 0.3, dist)` with `dist` in CSS px.
  */
-function makeStamp(r: number, dpr: number): Stamp {
-  const reach = Math.max(0, Math.ceil((r + 0.3) * dpr));
+function makeStamp(r: number, dpr: number, shape = 0): Stamp {
+  const reach = Math.max(0, Math.ceil((r * (shape ? SHAPE_EXTENT : 1) + 0.3) * dpr));
   const dx: number[] = [];
   const dy: number[] = [];
   const cov: number[] = [];
-  const e0 = r - 0.7;
-  const e1 = r + 0.3;
   for (let y = -reach; y <= reach; y++) {
     for (let x = -reach; x <= reach; x++) {
-      const dist = Math.hypot(x, y) / dpr;
-      const t = Math.min(1, Math.max(0, (dist - e0) / (e1 - e0)));
+      // Coverage `1 - smoothstep(-0.7, 0.3, d)`, `d` the signed distance in CSS px.
+      const d = densityShapeDistance(shape, x / dpr, y / dpr, r);
+      const t = Math.min(1, Math.max(0, (d + 0.7) / 1));
       const c = 1 - t * t * (3 - 2 * t);
       if (c < 0.02) continue;
       dx.push(x);
@@ -382,13 +564,15 @@ function stampPixels(
   selected: Uint8Array,
   hasSel: boolean,
   sizes: Uint8Array,
-  stamps: readonly Stamp[],
+  shapes: Uint8Array,
+  stampsByShape: ReadonlyArray<readonly Stamp[]>,
   lut: Float32Array,
   pileA: Float32Array,
 ): void {
   const [cx0, cy0, cx1, cy1] = clip;
-  const nSizes = stamps.length;
-  const first = stamps[0]!;
+  const nSizes = stampsByShape[0]!.length;
+  const first = stampsByShape[0]![0]!;
+  const hasShapes = shapes.length > 0;
   for (let iy = cy0; iy < cy1; iy++) {
     const row = iy * W;
     for (let ix = cx0; ix < cx1; ix++) {
@@ -401,8 +585,15 @@ function stampPixels(
       const cg = lut[lo + 1]!;
       const cb = lut[lo + 2]!;
       const ca = pileA[sel * 256 + (count > 255 ? 255 : count)]!;
+      const stamps = hasShapes
+        ? (stampsByShape[shapes[i]!] ?? stampsByShape[0]!)
+        : stampsByShape[0]!;
       const st =
-        nSizes > 1 ? stamps[Math.min(nSizes - 1, ((sizes[i]! * nSizes) / 256) | 0)]! : first;
+        nSizes > 1
+          ? stamps[Math.min(nSizes - 1, ((sizes[i]! * nSizes) / 256) | 0)]!
+          : hasShapes
+            ? stamps[0]!
+            : first;
       const dx = st.dx;
       const dy = st.dy;
       const cov = st.cov;
@@ -470,6 +661,7 @@ class Canvas2DPoints implements PointsRenderer {
   private levels: Uint8Array = new Uint8Array(0);
   private selected: Uint8Array = new Uint8Array(0);
   private sizes: Uint8Array | null = null;
+  private shapes: Uint8Array | null = null;
   private acc: Float32Array = new Float32Array(0);
   private image: ImageData | null = null;
   private stamps = new Map<string, Stamp>();
@@ -495,6 +687,9 @@ class Canvas2DPoints implements PointsRenderer {
   setSizes(sizes: Uint8Array | null): void {
     this.sizes = sizes;
   }
+  setShapes(shapes: Uint8Array | null): void {
+    this.shapes = shapes && shapes.length ? shapes : null;
+  }
 
   /** Alpha of `c` stacked dots, `[dimmed * 256 + min(c, 255)]`. */
   private pileAlpha(alpha: number): Float32Array {
@@ -508,12 +703,12 @@ class Canvas2DPoints implements PointsRenderer {
     return this.pile;
   }
 
-  private stamp(r: number, dpr: number): Stamp {
-    const key = `${r.toFixed(2)}|${dpr}`;
+  private stamp(r: number, dpr: number, shape = 0): Stamp {
+    const key = `${shape}|${r.toFixed(2)}|${dpr}`;
     let s = this.stamps.get(key);
     if (!s) {
-      if (this.stamps.size > 64) this.stamps.clear();
-      s = makeStamp(r, dpr);
+      if (this.stamps.size > 256) this.stamps.clear();
+      s = makeStamp(r, dpr, shape);
       this.stamps.set(key, s);
     }
     return s;
@@ -569,10 +764,16 @@ class Canvas2DPoints implements PointsRenderer {
     // Sizes quantise to a few stamp radii.
     const rMax = p.radiusMax ?? p.radius;
     const SIZES = this.sizes && rMax > p.radius ? 6 : 1;
-    const stamps: Stamp[] = [];
-    for (let s = 0; s < SIZES; s++) {
-      const r = SIZES > 1 ? p.radius + (rMax - p.radius) * ((s + 0.5) / SIZES) : p.radius;
-      stamps.push(this.stamp(r, dpr));
+    // One stamp row per glyph in use (just the circle without shapes).
+    const nShapes = this.shapes ? 10 : 1;
+    const stampsByShape: Stamp[][] = [];
+    for (let shape = 0; shape < nShapes; shape++) {
+      const row: Stamp[] = [];
+      for (let s = 0; s < SIZES; s++) {
+        const r = SIZES > 1 ? p.radius + (rMax - p.radius) * ((s + 0.5) / SIZES) : p.radius;
+        row.push(this.stamp(r, dpr, shape));
+      }
+      stampsByShape.push(row);
     }
 
     const { x0, x1, y0, y1 } = p.view;
@@ -614,7 +815,8 @@ class Canvas2DPoints implements PointsRenderer {
       this.selected,
       p.hasSelection,
       SIZES > 1 ? this.sizes! : EMPTY_U8,
-      stamps,
+      this.shapes ?? EMPTY_U8,
+      stampsByShape,
       lut,
       this.pileAlpha(p.alpha),
     );
@@ -645,6 +847,7 @@ class NoopPoints implements PointsRenderer {
   setLevels(): void {}
   setSelected(): void {}
   setSizes(): void {}
+  setShapes(): void {}
   draw(): void {}
   dispose(): void {}
 }

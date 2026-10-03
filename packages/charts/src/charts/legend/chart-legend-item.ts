@@ -55,8 +55,12 @@ export interface ChartLegendItem {
   markerDash?: string;
   /** Overlay / comparison fill: solid or striped. */
   pattern?: "solid" | "stripes";
-  /** A scatter `shapeBy` key's point shape. */
-  shape?: SeriesMarkerShape;
+  /**
+   * A scatter `shapeBy` key's point shape — the series marker vocabulary, plus
+   * `DensityScatterChart`'s down triangle and minus. A container legend row
+   * with a shape draws it as its swatch (the dot's own glyph, not a colour dot).
+   */
+  shape?: SeriesMarkerShape | "triangle-down" | "minus";
 }
 
 /**
