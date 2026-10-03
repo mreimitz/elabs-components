@@ -264,12 +264,11 @@ export interface DensityScatterChartProps
   /** What colours the dots. Default `{ kind: "zone" }` (or `"density"` without zones). */
   colorBy?: DensityColorBy;
   /**
-   * What shapes the dots: a categorical column, each value one glyph
-   * (`DENSITY_SHAPES`). Independent of `colorBy` — shape by one column,
-   * colour by zone or another column. Unset: every dot is a circle. When the
-   * legend colours by the SAME column, its swatches take the glyphs; a host
-   * that colours by something else draws its own shape key from
-   * `dealShapes(labels, shapeBy)`.
+   * Dot glyph per value of a category column (`DENSITY_SHAPES`).
+   * Independent of `colorBy` — shape by one column, colour by zone or another
+   * column. Unset: every dot is a circle. When the legend colours by the SAME
+   * column, its swatches take the glyphs; a host that colours by something
+   * else draws its own shape key from `dealShapes(labels, shapeBy)`.
    */
   shapeBy?: DensityShapeBy;
   /**
@@ -1204,10 +1203,13 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
       // and book a full-detail frame once the gesture has settled.
       if (interacting) {
         // Proportional: aim the next frame at the budget from this one's cost.
+        const w =
+          typeof window !== "undefined"
+            ? (window as Window & { __qhdsLodMax?: unknown })
+            : undefined;
+        const override = Number(w?.__qhdsLodMax);
         const maxStride =
-          typeof window !== "undefined" && Number.isFinite((window as any).__qhdsLodMax)
-            ? Math.max(1, Number((window as any).__qhdsLodMax))
-            : LOD_MAX_STRIDE;
+          Number.isFinite(override) && override >= 1 ? Math.floor(override) : LOD_MAX_STRIDE;
         lod.stride = Math.min(maxStride, Math.max(1, Math.round((stride * ms) / LOD_BUDGET_MS)));
       }
       if (stride > 1) {

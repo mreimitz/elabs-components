@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-03T19:35:23.407Z",
+  "generatedAt": "2026-10-03T22:41:34.065Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -25672,7 +25672,7 @@
               "name": "shapeBy",
               "optional": true,
               "type": "DensityShapeBy",
-              "description": "What shapes the dots: a categorical column, each value one glyph (`DENSITY_SHAPES`). Independent of `colorBy` — shape by one column, colour by zone or another column. Unset: every dot is a circle. When the legend colours by the SAME column, its swatches take the glyphs; a host that colours by something else draws its own shape key from `dealShapes(labels, shapeBy)`."
+              "description": "Dot glyph per value of a category column (`DENSITY_SHAPES`). Independent of `colorBy` — shape by one column, colour by zone or another column. Unset: every dot is a circle. When the legend colours by the SAME column, its swatches take the glyphs; a host that colours by something else draws its own shape key from `dealShapes(labels, shapeBy)`."
             },
             {
               "name": "valueKey",

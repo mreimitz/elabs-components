@@ -14534,7 +14534,7 @@
             "name": "shapeBy",
             "optional": true,
             "type": "DensityShapeBy",
-            "description": "What shapes the dots: a categorical column, each value one glyph (`DENSITY_SHAPES`). Independent of `colorBy` — shape by one column, colour by zone or another column. Unset: every dot is a circle. When the legend colours by the SAME column, its swatches take the glyphs; a host that colours by something else draws its own shape key from `dealShapes(labels, shapeBy)`."
+            "description": "Dot glyph per value of a category column (`DENSITY_SHAPES`). Independent of `colorBy` — shape by one column, colour by zone or another column. Unset: every dot is a circle. When the legend colours by the SAME column, its swatches take the glyphs; a host that colours by something else draws its own shape key from `dealShapes(labels, shapeBy)`."
           },
           {
             "name": "valueKey",
