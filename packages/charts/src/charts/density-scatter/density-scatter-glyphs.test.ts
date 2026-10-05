@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import { densityShapeDistance } from "./points-renderer";
-import { dealShapes, resolveShapeClasses, shapeIndex } from "./shapes";
+import { dealShapes, fixedColorCodes, resolveShapeClasses, shapeIndex } from "./shapes";
 import { densityShapePath } from "./density-shape-glyph";
 import { DENSITY_SHAPES, DENSITY_SHAPE_CYCLE, type DensityPoints } from "./types";
 
@@ -111,5 +111,30 @@ describe("densityShapePath", () => {
       expect(d.startsWith("M")).toBe(true);
       expect(d.endsWith("Z")).toBe(true);
     }
+  });
+});
+
+describe("fixed colours (`shapeBy.colors`)", () => {
+  it("dealShapes carries the fixed colour of a value and nothing for the rest", () => {
+    const entries = dealShapes(["A", "B"], { colors: { B: "#ff0000" } });
+    expect(entries[0]).toEqual({ label: "A", shape: DENSITY_SHAPE_CYCLE[0] });
+    expect(entries[1]).toEqual({ label: "B", shape: DENSITY_SHAPE_CYCLE[1], color: "#ff0000" });
+  });
+  it("fixedColorCodes maps the named values to their codes, in code order, ignoring blanks and strangers", () => {
+    const p = points([0, 1, 2, 1], ["A", "B", "C"]);
+    expect(
+      fixedColorCodes(p, {
+        kind: "category",
+        key: "airline",
+        colors: { C: "teal", A: "#123456", B: " ", Z: "red" },
+      }),
+    ).toEqual([
+      [0, "#123456"],
+      [2, "teal"],
+    ]);
+    expect(fixedColorCodes(p, { kind: "category", key: "missing", colors: { A: "red" } })).toEqual(
+      [],
+    );
+    expect(fixedColorCodes(p, undefined)).toEqual([]);
   });
 });

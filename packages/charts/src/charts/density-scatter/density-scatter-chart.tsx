@@ -127,6 +127,7 @@ import {
 } from "./points-renderer";
 import { countSelected, resolveSelection, toggleZoneConstraint, withConstraint } from "./selection";
 import {
+  DENSITY_MAX_CLASSES,
   DENSITY_OUTSIDE_ID,
   type DensityAxisOptions,
   type DensityOverlayContext,
@@ -141,7 +142,7 @@ import {
   type DensityView,
   type DensityZone,
 } from "./types";
-import { resolveShapeClasses } from "./shapes";
+import { fixedColorCodes, resolveShapeClasses } from "./shapes";
 import { useDensityView } from "./use-density-view";
 import { classifyZones, clipPolyline, countClasses, zoneOutline } from "./zones";
 import {
@@ -747,7 +748,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
     );
 
     // What the renderer paints by: the class array + the legend classes.
-    const paint = useMemo(() => {
+    const basePaint = useMemo(() => {
       if (resolvedColorBy.kind === "zone" && zones.length) {
         return {
           cls: zoneCls,
@@ -795,6 +796,36 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
         tMin: 0.32,
       };
     }, [resolvedColorBy, zones, zoneCls, points, outside, labels.outside, palette]);
+    // Fixed colours (`shapeBy.colors`) beat every colouring: a value of the shape
+    // column paints its own ink. Same column as a category colouring → recolour
+    // that class; otherwise each fixed colour is a class of its own, appended
+    // while the renderer has class slots left.
+    const paint = useMemo(() => {
+      const fixed = fixedColorCodes(points, resolvedShapeBy);
+      if (!fixed.length || !resolvedShapeBy) return basePaint;
+      const cat = points.categories[resolvedShapeBy.key]!;
+      if (resolvedColorBy.kind === "category" && resolvedColorBy.key === resolvedShapeBy.key) {
+        const classes = basePaint.classes.map((c, k) => {
+          const hit = fixed.find(([code]) => code === k && k < cat.labels.length);
+          return hit ? { ...c, color: hit[1] } : c;
+        });
+        return { ...basePaint, classes };
+      }
+      const classes = [...basePaint.classes];
+      const cls = new Uint8Array(basePaint.cls);
+      const byCode = new Map<number, number>();
+      for (const [code, color] of fixed) {
+        if (classes.length >= DENSITY_MAX_CLASSES) break;
+        byCode.set(code, classes.length);
+        classes.push({ key: `__fixed:${cat.labels[code]}`, label: cat.labels[code]!, color });
+      }
+      if (!byCode.size) return basePaint;
+      for (let i = 0; i < points.n; i++) {
+        const k = byCode.get(cat.codes[i]!);
+        if (k !== undefined) cls[i] = k;
+      }
+      return { ...basePaint, cls, classes };
+    }, [basePaint, points, resolvedShapeBy, resolvedColorBy]);
     const isValueMode = resolvedColorBy.kind === "value";
     const valueColumn = isValueMode
       ? points.values[resolvedColorBy.key]

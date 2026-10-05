@@ -207,12 +207,21 @@ export interface DensityShapeBy {
   shapes?: Readonly<Record<string, DensityPointShape>>;
   /** Glyphs dealt to values `shapes` does not name. */
   cycle?: readonly DensityPointShape[];
+  /**
+   * Per value: a fixed colour (any CSS colour) that overrides `colorBy` for the
+   * points of that value — a hard-set ink, whatever the zone, category or value
+   * colouring would paint. Each fixed colour is its own legend class (or recolours
+   * the category class when colour and shape share the column).
+   */
+  colors?: Readonly<Record<string, string>>;
 }
 
 /** One value of the shape column with its resolved glyph (for a shape key / legend). */
 export interface DensityShapeEntry {
   label: string;
   shape: DensityPointShape;
+  /** The fixed colour `shapeBy.colors` names for the value, if any. */
+  color?: string;
 }
 
 /** The data window shown — the zoom/pan state. */

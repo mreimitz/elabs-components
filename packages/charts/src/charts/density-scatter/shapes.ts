@@ -56,10 +56,11 @@ export function resolveShapeClasses(
  */
 export function dealShapes(
   labels: readonly string[],
-  shapeBy: Pick<DensityShapeBy, "shapes" | "cycle">,
+  shapeBy: Pick<DensityShapeBy, "shapes" | "cycle" | "colors">,
 ): DensityShapeEntry[] {
   const cycle = shapeBy.cycle?.length ? shapeBy.cycle : DENSITY_SHAPE_CYCLE;
   const named = shapeBy.shapes ?? {};
+  const colors = shapeBy.colors ?? {};
   let next = 0;
   return labels.map((label) => {
     let shape = named[label];
@@ -67,6 +68,27 @@ export function dealShapes(
       shape = cycle[next % cycle.length] ?? "circle";
       next++;
     }
-    return { label, shape };
+    const color = colors[label];
+    return color ? { label, shape, color } : { label, shape };
   });
+}
+
+/**
+ * The fixed colours of `shapeBy.colors` that name a value of the column, as
+ * `[code, color]` pairs in code order — empty when none applies.
+ */
+export function fixedColorCodes(
+  points: DensityPoints,
+  shapeBy: DensityShapeBy | undefined,
+): Array<[number, string]> {
+  const colors = shapeBy?.colors;
+  if (!colors) return [];
+  const cat = points.categories[shapeBy.key];
+  if (!cat) return [];
+  const out: Array<[number, string]> = [];
+  cat.labels.forEach((label, code) => {
+    const color = colors[label];
+    if (typeof color === "string" && color.trim()) out.push([code, color]);
+  });
+  return out;
 }
