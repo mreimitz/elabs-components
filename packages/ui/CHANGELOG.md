@@ -1,5 +1,11 @@
 # @elabs-ai/components-ui
 
+## 6.1.0
+
+### Patch Changes
+
+- @elabs-ai/components-tokens@6.1.0
+
 ## 6.0.0
 
 ### Minor Changes
