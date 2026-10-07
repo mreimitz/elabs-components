@@ -773,10 +773,14 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
           // the twelve series tokens.
           const paletteColors =
             palette === undefined ? null : resolvePalette(palette, n, { explicit: true });
+          // `colorBy.colors` pins a value to a colour: the class takes that ink
+          // instead of the ramp slot its first-seen position would give it, so a
+          // host can keep a value's colour across data changes.
+          const pinned = resolvedColorBy.colors;
           const classes = cat.labels.slice(0, n).map((label, k) => ({
             key: label,
             label,
-            color: paletteColors?.[k] ?? `var(${DEFAULT_ZONE_TOKENS[k % 12]})`,
+            color: pinned?.[label] ?? paletteColors?.[k] ?? `var(${DEFAULT_ZONE_TOKENS[k % 12]})`,
           }));
           if (cat.labels.length > n)
             classes.push({ key: "__other", label: "Other", color: `var(${OUTSIDE_TOKEN})` });

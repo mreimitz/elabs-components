@@ -145,8 +145,16 @@ export type DensityColorBy =
   | { kind: "density" }
   /** A continuous column on a sequential ramp; dense cells show the cell's mean. */
   | { kind: "value"; key: string; domain?: [number, number] }
-  /** A categorical column (≤ 12 distinct values) on the series ramp. */
-  | { kind: "category"; key: string };
+  /**
+   * A categorical column (≤ 12 distinct values) on the series ramp.
+   *
+   * `colors` pins values to colours: per value, any CSS colour (or a `var(--…)`
+   * reference), used for that class instead of the ramp slot its first-seen
+   * position would otherwise give it. Values it does not name keep the ramp.
+   * It is what a host needs for colours that survive a data change — the colour
+   * of a value then no longer depends on the order the values arrive in.
+   */
+  | { kind: "category"; key: string; colors?: Readonly<Record<string, string>> };
 
 /**
  * The glyph a dot is drawn as. `"circle"` is the default everywhere; the rest
