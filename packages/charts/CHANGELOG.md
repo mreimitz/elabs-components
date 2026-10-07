@@ -1,5 +1,16 @@
 # @elabs-ai/components-charts
 
+## 6.1.0
+
+### Minor Changes
+
+- 075db21: `DensityScatterChart`: `shapeBy.colors` hard-sets a colour per value of the shape column, overriding `colorBy` for those points — its own legend class, or a recoloured category class when colour and shape share the column. `dealShapes` entries carry the fixed `color`.
+
+### Patch Changes
+
+- @elabs-ai/components-tokens@6.1.0
+  - @elabs-ai/components-ui@6.1.0
+
 ## 6.0.0
 
 ### Major Changes

@@ -1,5 +1,16 @@
 # @elabs-ai/components-process
 
+## 6.1.0
+
+### Patch Changes
+
+- Updated dependencies [075db21]
+  - @elabs-ai/components-charts@6.1.0
+  - @elabs-ai/components-data@6.1.0
+  - @elabs-ai/components-flow@6.1.0
+  - @elabs-ai/components-tokens@6.1.0
+  - @elabs-ai/components-ui@6.1.0
+
 ## 6.0.0
 
 ### Patch Changes
