@@ -14,7 +14,7 @@ import { DensityScatterChart as DensityScatterChartDouble } from "../../test";
 import { DENSITY_SCATTER_CHART } from "../../definitions/density-scatter-chart.definition";
 import { installCanvasContextStub } from "../../test/primitives";
 import { DensityScatterChart } from "./density-scatter-chart";
-import { buildLateralTraffic, LATERAL_ZONES } from "./fixtures";
+import { buildLateralTraffic, buildWaferProbe, LATERAL_ZONES } from "./fixtures";
 import type { DensityScatterSelection } from "./types";
 import type { ChartSelectionIntent } from "../selection/types";
 
@@ -123,6 +123,41 @@ describe("DensityScatterChart", () => {
     );
     expect(screen.getByRole("slider", { name: "distance start" })).toBeTruthy();
     expect(screen.getByRole("slider", { name: "distance end" })).toBeTruthy();
+  });
+
+  it("a fixed colour (`shapeBy.colors`) is its own legend class beside the zones", () => {
+    const wafer = buildWaferProbe(2_000);
+    render(
+      <DensityScatterChart
+        accessibleLabel="Wafer"
+        data={wafer}
+        legend
+        shapeBy={{ kind: "category", key: "bin", colors: { fail: "rgb(200, 0, 0)" } }}
+        zones={LATERAL_ZONES}
+      />,
+    );
+    const fail = screen.getByRole("button", { name: /^fail/ });
+    expect(fail.querySelector("[style]")?.getAttribute("style")).toMatch(/rgb\(200, 0, 0\)/);
+    expect(screen.queryByRole("button", { name: /^pass/ })).toBeNull();
+  });
+
+  it("a fixed colour recolours the category class when colour and shape share the column", () => {
+    const wafer = buildWaferProbe(2_000);
+    render(
+      <DensityScatterChart
+        accessibleLabel="Wafer"
+        colorBy={{ kind: "category", key: "bin" }}
+        data={wafer}
+        legend
+        shapeBy={{ kind: "category", key: "bin", colors: { fail: "rgb(200, 0, 0)" } }}
+      />,
+    );
+    const fails = screen.getAllByRole("button", { name: /^fail/ });
+    expect(fails).toHaveLength(1);
+    expect(fails[0]!.querySelector("[data-slot='density-shape-glyph'] path")).toHaveAttribute(
+      "fill",
+      "rgb(200, 0, 0)",
+    );
   });
 
   it("legend toggles hide a class; a modifier-click selects it", () => {

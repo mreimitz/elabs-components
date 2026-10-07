@@ -107,6 +107,13 @@ export {
   type RampLegendScale,
 } from "../charts/legend/ramp-legend";
 export { SizeLegend, type SizeLegendProps } from "../charts/legend/size-legend";
+// `DensityShapeGlyph` is one SVG path from react + `density-scatter/types` —
+// no engine at runtime, so the real implementation is the double.
+export {
+  DensityShapeGlyph,
+  densityShapePath,
+  type DensityShapeGlyphProps,
+} from "../charts/density-scatter/density-shape-glyph";
 
 // ── The per-family contract specs (the flat, auditable list — RM-177: read off
 //    the registry, never hand-kept a second time) ───────────────────────────

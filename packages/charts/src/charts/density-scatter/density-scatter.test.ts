@@ -345,3 +345,38 @@ describe("selection", () => {
     expect(toggleZoneConstraint({ zones: ["a"] }, "a")).toEqual({});
   });
 });
+
+describe("binPoints stride (interaction level of detail)", () => {
+  it("visits every stride-th point and scales the totals back up", async () => {
+    const { binPoints, createBinGrid } = await import("./bin");
+    const n = 1000;
+    const x = new Float32Array(n);
+    const y = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      x[i] = (i % 100) / 100;
+      y[i] = Math.floor(i / 100) / 10;
+    }
+    const base = {
+      x,
+      y,
+      n,
+      cls: new Uint8Array(n),
+      hidden: [false],
+      selected: null,
+      view: { x0: 0, x1: 1, y0: 0, y1: 1 },
+      box: { left: 0, top: 0, width: 100, height: 100 },
+    };
+    const full = createBinGrid(base.box, 10, 1);
+    binPoints(full, base);
+    const lod = createBinGrid(base.box, 10, 1);
+    binPoints(lod, { ...base, stride: 4 });
+    expect(lod.visible).toBe(full.visible);
+    let sumFull = 0;
+    let sumLod = 0;
+    for (let c = 0; c < full.counts.length; c++) {
+      sumFull += full.counts[c]!;
+      sumLod += lod.counts[c]!;
+    }
+    expect(sumLod).toBe(sumFull);
+  });
+});

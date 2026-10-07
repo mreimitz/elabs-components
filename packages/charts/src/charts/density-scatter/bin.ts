@@ -109,11 +109,19 @@ export interface BinInput {
   value?: Float32Array;
   view: DensityView;
   box: DensityPlotBox;
+  /**
+   * Interaction level of detail: visit every `stride`-th point only (default 1,
+   * every point). Counts, sums and the visible / selected totals are scaled back
+   * up by `stride`, so the picture keeps its density; the cost drops by the same
+   * factor. Skipped points keep their previous cell (`pointCell` is left as is).
+   */
+  stride?: number;
 }
 
 /** Pass 1 — fills `grid` in place. */
 export function binPoints(grid: BinGrid, input: BinInput): void {
   const { x, y, n, cls, hidden, selected, value, view, box } = input;
+  const stride = Math.max(1, Math.floor(input.stride ?? 1));
   const { cell, cols, rows, counts, classCounts, sums, firstIndex, classCount } = grid;
   if (!grid.pointCell || grid.pointCell.length < n) grid.pointCell = new Int32Array(n);
   const pointCell = grid.pointCell;
@@ -124,7 +132,7 @@ export function binPoints(grid: BinGrid, input: BinInput): void {
   let max = 0;
   let visible = 0;
   let sel = 0;
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < n; i += stride) {
     const px = x[i]!;
     const py = y[i]!;
     // NaN fails every comparison → skipped like an off-window point.
@@ -149,6 +157,21 @@ export function binPoints(grid: BinGrid, input: BinInput): void {
     if (firstIndex[idx] === -1) firstIndex[idx] = i;
     visible++;
     if (!selected || selected[i]) sel++;
+  }
+  if (stride > 1) {
+    // Scale the sample back up to the whole: every downstream reader (underlay
+    // threshold, tooltip counts, the stats) sees population-sized numbers.
+    const cells = cols * rows;
+    for (let c = 0; c < cells; c++) {
+      if (!counts[c]) continue;
+      counts[c] = counts[c]! * stride;
+      sums[c] = sums[c]! * stride;
+      const base = c * classCount;
+      for (let k = 0; k < classCount; k++) classCounts[base + k] = classCounts[base + k]! * stride;
+    }
+    max *= stride;
+    visible *= stride;
+    sel *= stride;
   }
   grid.max = max;
   grid.visible = visible;

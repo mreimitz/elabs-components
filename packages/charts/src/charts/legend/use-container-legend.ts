@@ -242,6 +242,7 @@ export function useContainerLegend(options: UseContainerLegendOptions): Containe
         value: "value" in entry && entry.value !== undefined ? entry.value : Number.NaN,
         color: entry.color,
         key: entry.key,
+        ...("shape" in entry && entry.shape ? { shape: entry.shape } : {}),
         ...(dashedKeys.has(entry.key)
           ? { marker: "dashed" as const, markerDash: dashes.get(entry.key) }
           : // #610: a container's own entry can ask for the hollow-ring swatch

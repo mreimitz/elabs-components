@@ -279,6 +279,68 @@ export const ColorByCategory: Story = {
 };
 
 /**
+ * Shape by a categorical column — a second channel beside colour (WCAG 1.4.1).
+ * Here colour AND shape read the same bins, so the legend swatches are the
+ * glyphs themselves; a named `shapes` map pins a glyph to a value and the rest
+ * take the cycle. Works on the WebGL and the Canvas-2D path alike.
+ */
+export const ShapeByCategory: Story = {
+  args: { data: WAFER },
+  render: () => (
+    <DensityScatterChart
+      accessibleLabel="Wafer probe results, shaped by bin"
+      colorBy={WAFER_COLOR_BY}
+      data={WAFER}
+      legend
+      plotHeight={{ aspect: 1 }}
+      pointRadius={2.4}
+      shapeBy={{ kind: "category", key: "bin", shapes: { pass: "circle", fail: "cross" } }}
+      xLabel="Die x (mm)"
+      yLabel="Die y (mm)"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => {
+      // Every legend row whose bin is not a plain circle shows its glyph.
+      expect(
+        canvasElement.querySelectorAll('[data-slot="density-shape-glyph"]').length,
+      ).toBeGreaterThan(0);
+    });
+    await expect(canvas.getByRole("figure")).toBeInTheDocument();
+  },
+};
+
+/**
+ * Shape by one column while colour comes from the zones: the dots carry both
+ * channels; the legend keeps the zones (the host draws a shape key of its own
+ * from `dealShapes`).
+ */
+export const ShapeByCategoryColorByZone: Story = {
+  args: { data: WAFER },
+  render: () => (
+    <DensityScatterChart
+      accessibleLabel="Wafer probe results, zones and bin glyphs"
+      data={WAFER}
+      legend
+      plotHeight={{ aspect: 1 }}
+      pointRadius={2.4}
+      shapeBy={{ kind: "category", key: "bin" }}
+      xLabel="Die x (mm)"
+      yLabel="Die y (mm)"
+      zones={[
+        {
+          id: "centre",
+          label: "Centre",
+          color: "var(--chart-1)",
+          bounds: { x: [-40, 40], y: [-40, 40] },
+        },
+      ]}
+    />
+  ),
+};
+
+/**
  * Selection is an intersection. The play function drives the KEYBOARD path —
  * the x-range slider thumbs are `role="slider"` buttons in the axis gutter —
  * and asserts the intent that leaves the chart and the live-region announcement.

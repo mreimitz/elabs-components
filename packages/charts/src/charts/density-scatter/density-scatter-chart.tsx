@@ -127,6 +127,7 @@ import {
 } from "./points-renderer";
 import { countSelected, resolveSelection, toggleZoneConstraint, withConstraint } from "./selection";
 import {
+  DENSITY_MAX_CLASSES,
   DENSITY_OUTSIDE_ID,
   type DensityAxisOptions,
   type DensityOverlayContext,
@@ -137,9 +138,11 @@ import {
   type DensityPoints,
   type DensityScatterData,
   type DensityScatterSelection,
+  type DensityShapeBy,
   type DensityView,
   type DensityZone,
 } from "./types";
+import { fixedColorCodes, resolveShapeClasses } from "./shapes";
 import { useDensityView } from "./use-density-view";
 import { classifyZones, clipPolyline, countClasses, zoneOutline } from "./zones";
 import {
@@ -224,6 +227,8 @@ export interface DensityFrameStats {
   /** Bin + upload time, ms. */
   ms: number;
   renderer: PointsRenderer["kind"];
+  /** Interaction level of detail this frame used (1 = every point). */
+  stride: number;
 }
 
 export interface DensityScatterChartProps
@@ -259,6 +264,14 @@ export interface DensityScatterChartProps
   outside?: DensityOutsideZone;
   /** What colours the dots. Default `{ kind: "zone" }` (or `"density"` without zones). */
   colorBy?: DensityColorBy;
+  /**
+   * Dot glyph per value of a category column (`DENSITY_SHAPES`).
+   * Independent of `colorBy` — shape by one column, colour by zone or another
+   * column. Unset: every dot is a circle. When the legend colours by the SAME
+   * column, its swatches take the glyphs; a host that colours by something
+   * else draws its own shape key from `dealShapes(labels, shapeBy)`.
+   */
+  shapeBy?: DensityShapeBy;
   /**
    * The value column whose cell mean the tooltip reports (a `colorBy: value`
    * uses its own key). Unset: no mean row.
@@ -583,6 +596,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
       zones,
       outside,
       colorBy,
+      shapeBy,
       valueKey,
       cellSize,
       underlay,
@@ -681,6 +695,12 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
         (hasZones ? { kind: "zone" } : { kind: "density" }),
       [colorByKey, hasZones],
     );
+    // Keyed by value too: an inline `shapeBy={{ … }}` must not re-upload the glyph bytes.
+    const shapeByKey = JSON.stringify(shapeBy ?? null);
+    const resolvedShapeBy = useMemo<DensityShapeBy | undefined>(
+      () => (JSON.parse(shapeByKey) as DensityShapeBy | null) ?? undefined,
+      [shapeByKey],
+    );
 
     // ── Data → typed arrays (once per identity) ─────────────────────────────
     const warnedRef = useRef(false);
@@ -699,6 +719,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
           categoryKeys: [
             ...(categoryKeys ?? []),
             ...(resolvedColorBy.kind === "category" ? [resolvedColorBy.key] : []),
+            ...(resolvedShapeBy ? [resolvedShapeBy.key] : []),
           ],
           warn: (message) => {
             if (!warnedRef.current && process.env.NODE_ENV !== "production") {
@@ -727,7 +748,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
     );
 
     // What the renderer paints by: the class array + the legend classes.
-    const paint = useMemo(() => {
+    const basePaint = useMemo(() => {
       if (resolvedColorBy.kind === "zone" && zones.length) {
         return {
           cls: zoneCls,
@@ -775,6 +796,36 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
         tMin: 0.32,
       };
     }, [resolvedColorBy, zones, zoneCls, points, outside, labels.outside, palette]);
+    // Fixed colours (`shapeBy.colors`) beat every colouring: a value of the shape
+    // column paints its own ink. Same column as a category colouring → recolour
+    // that class; otherwise each fixed colour is a class of its own, appended
+    // while the renderer has class slots left.
+    const paint = useMemo(() => {
+      const fixed = fixedColorCodes(points, resolvedShapeBy);
+      if (!fixed.length || !resolvedShapeBy) return basePaint;
+      const cat = points.categories[resolvedShapeBy.key]!;
+      if (resolvedColorBy.kind === "category" && resolvedColorBy.key === resolvedShapeBy.key) {
+        const classes = basePaint.classes.map((c, k) => {
+          const hit = fixed.find(([code]) => code === k && k < cat.labels.length);
+          return hit ? { ...c, color: hit[1] } : c;
+        });
+        return { ...basePaint, classes };
+      }
+      const classes = [...basePaint.classes];
+      const cls = new Uint8Array(basePaint.cls);
+      const byCode = new Map<number, number>();
+      for (const [code, color] of fixed) {
+        if (classes.length >= DENSITY_MAX_CLASSES) break;
+        byCode.set(code, classes.length);
+        classes.push({ key: `__fixed:${cat.labels[code]}`, label: cat.labels[code]!, color });
+      }
+      if (!byCode.size) return basePaint;
+      for (let i = 0; i < points.n; i++) {
+        const k = byCode.get(cat.codes[i]!);
+        if (k !== undefined) cls[i] = k;
+      }
+      return { ...basePaint, cls, classes };
+    }, [basePaint, points, resolvedShapeBy, resolvedColorBy]);
     const isValueMode = resolvedColorBy.kind === "value";
     const valueColumn = isValueMode
       ? points.values[resolvedColorBy.key]
@@ -813,6 +864,12 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
       }
       return out;
     }, [sizeColumn, points.n]);
+
+    /** One glyph byte per point (`shapeBy`), `null` = circles. */
+    const shapeClasses = useMemo(
+      () => resolveShapeClasses(points, resolvedShapeBy),
+      [points, resolvedShapeBy],
+    );
 
     // ── Home window ─────────────────────────────────────────────────────────
     // Keyed by value: an inline `domain={{ … }}` must not rebuild the window each render.
@@ -1026,7 +1083,8 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
       levelsRef.current = new Uint8Array(points.n);
       if (valueLevels) rendererRef.current?.setLevels(valueLevels);
       rendererRef.current?.setSizes(sizeLevels);
-    }, [positions, paint.cls, points.n, valueLevels, sizeLevels, rendererGen]);
+      rendererRef.current?.setShapes(shapeClasses?.shapes ?? null);
+    }, [positions, paint.cls, points.n, valueLevels, sizeLevels, shapeClasses, rendererGen]);
 
     useEffect(() => {
       rendererRef.current?.setSelected(selectedBytes);
@@ -1036,12 +1094,34 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
     const onFrameRef = useRef(onFrame);
     onFrameRef.current = onFrame;
 
+    // ── Interaction level of detail ─────────────────────────────────────────
+    // While a gesture is live (wheel, pan, zoom buttons, minimap) a frame that
+    // overran its budget makes the next one visit every `stride`-th point only
+    // (bin pass, and the Canvas-2D raster); the stride halves again as frames
+    // get cheap. 180 ms after the last gesture a full-detail frame is drawn.
+    // Machines without a GPU (the Canvas-2D path) are where this matters: a
+    // million-point pan stays fluid instead of freezing per frame.
+    const lodRef = useRef({
+      stride: 1,
+      interactingUntil: 0,
+      refine: 0 as ReturnType<typeof setTimeout> | 0,
+    });
+    const drawRef = useRef<() => void>(() => undefined);
+    const markInteracting = useCallback(() => {
+      lodRef.current.interactingUntil = performance.now() + 160;
+    }, []);
+    const LOD_BUDGET_MS = 16;
+    const LOD_MAX_STRIDE = 32;
+
     // The frame. Everything it reads is a ref or a memoised value.
     const draw = useCallback(() => {
       const bg = bgRef.current;
       const r = rendererRef.current;
       if (!bg || !r || box.width <= 0 || box.height <= 0) return;
       const t0 = performance.now();
+      const lod = lodRef.current;
+      const interacting = t0 < lod.interactingUntil;
+      const stride = interacting ? lod.stride : 1;
       const grid = createBinGrid(box, cellSize, paint.classes.length, gridRef.current ?? undefined);
       gridRef.current = grid;
       const input = {
@@ -1054,6 +1134,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
         value: valueColumn,
         view,
         box,
+        stride,
       };
       binPoints(grid, input);
       smoothField(grid);
@@ -1146,13 +1227,37 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
           paint.tMin > 0 && densityFloor !== undefined
             ? Math.min(1, Math.max(0, densityFloor))
             : paint.tMin,
+        stride,
       });
+      const ms = performance.now() - t0;
+      // Adapt the stride for the NEXT interactive frame from this one's cost,
+      // and book a full-detail frame once the gesture has settled.
+      if (interacting) {
+        // Proportional: aim the next frame at the budget from this one's cost.
+        const w =
+          typeof window !== "undefined"
+            ? (window as Window & { __qhdsLodMax?: unknown })
+            : undefined;
+        const override = Number(w?.__qhdsLodMax);
+        const maxStride =
+          Number.isFinite(override) && override >= 1 ? Math.floor(override) : LOD_MAX_STRIDE;
+        lod.stride = Math.min(maxStride, Math.max(1, Math.round((stride * ms) / LOD_BUDGET_MS)));
+      }
+      if (stride > 1) {
+        if (lod.refine) clearTimeout(lod.refine);
+        lod.refine = setTimeout(() => {
+          lod.refine = 0;
+          if (performance.now() >= lod.interactingUntil)
+            requestAnimationFrame(() => drawRef.current());
+        }, 180);
+      }
       const stats: DensityFrameStats = {
         visible: grid.visible,
         selected: grid.selected,
         maxPerCell: grid.max,
-        ms: performance.now() - t0,
+        ms,
         renderer: r.kind,
+        stride,
       };
       onFrameRef.current?.(stats);
       setFrameStats((prev) =>
@@ -1183,6 +1288,8 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
       pointOpacity,
       densityFloor,
     ]);
+
+    drawRef.current = draw;
 
     // Size the backing stores, then draw (one rAF per change burst).
     const rafRef = useRef(0);
@@ -1300,7 +1407,10 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
     const hitPoint = (hx: number, hy: number): number => {
       const sx = box.width / (view.x1 - view.x0);
       const sy = box.height / (view.y1 - view.y0);
-      const reach = Math.max(6, (sizeLevels ? sizeMax : pointRadius) + 3);
+      const reach = Math.max(
+        6,
+        (sizeLevels ? sizeMax : pointRadius) * (shapeClasses ? 1.3 : 1) + 3,
+      );
       let best = -1;
       let bestD = reach * reach;
       for (let i = 0; i < points.n; i++) {
@@ -1331,6 +1441,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
       const d = dragRef.current;
       const { x, y } = local(e);
       if (d?.kind === "pan") {
+        markInteracting();
         viewApi.set(viewApi.panned(d.from, e.clientX - d.startX, e.clientY - d.startY, box));
         return;
       }
@@ -1418,6 +1529,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
       if (!zoomOn) return;
       e.preventDefault();
       const { x, y } = local(e);
+      markInteracting();
       viewApi.zoomAt(Math.exp(e.deltaY * 0.0018), x, y, box);
       setTip(null);
     };
@@ -1554,6 +1666,12 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
     // F09: `legend={{ values: true }}` prints each class's point count. It is
     // counted only then: one pass over every point.
     const legendValues = legendWantsValues(legend);
+    const legendShapes =
+      shapeClasses &&
+      resolvedColorBy.kind === "category" &&
+      resolvedColorBy.key === resolvedShapeBy?.key
+        ? shapeClasses.entries
+        : null;
     const legendItems = useMemo<ChartLegendEntry[]>(() => {
       const counts = legendValues ? countClasses(paint.cls, paint.classes.length) : null;
       const hideOutside = outside?.legend === false;
@@ -1567,10 +1685,11 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
                 color: c.color,
                 kind: "color" as const,
                 ...(counts ? { value: counts[k] } : {}),
+                ...(legendShapes?.[k] ? { shape: legendShapes[k]!.shape } : {}),
               },
             ],
       );
-    }, [paint.classes, paint.cls, legendValues, outside?.legend]);
+    }, [paint.classes, paint.cls, legendValues, outside?.legend, legendShapes]);
     const legendConfig: ContainerLegendProp | undefined =
       legend === true
         ? { interactive: "toggle" }
@@ -2209,6 +2328,7 @@ const DensityScatterChartBody = forwardRef<HTMLDivElement, ResolvedDensityScatte
               onCenter={(cx, cy) => {
                 const w = view.x1 - view.x0;
                 const h = view.y1 - view.y0;
+                markInteracting();
                 viewApi.set({ x0: cx - w / 2, x1: cx + w / 2, y0: cy - h / 2, y1: cy + h / 2 });
               }}
               style={{

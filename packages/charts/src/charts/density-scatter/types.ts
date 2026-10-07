@@ -148,6 +148,82 @@ export type DensityColorBy =
   /** A categorical column (≤ 12 distinct values) on the series ramp. */
   | { kind: "category"; key: string };
 
+/**
+ * The glyph a dot is drawn as. `"circle"` is the default everywhere; the rest
+ * give a categorical column a second, non-colour channel (WCAG 1.4.1) — the
+ * same vocabulary as `ScatterChart`'s `shapeBy`, plus a down triangle and a
+ * minus for the "up / down / neutral" readings high-density data often has.
+ */
+export type DensityPointShape =
+  | "circle"
+  | "square"
+  | "diamond"
+  | "triangle"
+  | "triangle-down"
+  | "plus"
+  | "minus"
+  | "cross"
+  | "star"
+  | "hexagon";
+
+/** Every shape, in its byte order (the renderer's `aShp` attribute / stamp index). */
+export const DENSITY_SHAPES: readonly DensityPointShape[] = [
+  "circle",
+  "square",
+  "diamond",
+  "triangle",
+  "triangle-down",
+  "plus",
+  "minus",
+  "cross",
+  "star",
+  "hexagon",
+];
+
+/** The order shapes are dealt out to a category's values when no `shapes` map names one. */
+export const DENSITY_SHAPE_CYCLE: readonly DensityPointShape[] = [
+  "circle",
+  "square",
+  "triangle",
+  "diamond",
+  "cross",
+  "star",
+  "plus",
+  "hexagon",
+  "triangle-down",
+  "minus",
+];
+
+/**
+ * Shape source for the dots: a categorical column (`data.categories[key]`).
+ * Each distinct value gets a glyph — the one `shapes` names for it, else the
+ * next of `cycle` (default `DENSITY_SHAPE_CYCLE`) in first-seen order.
+ * Independent of `colorBy`: shape by one column, colour by a zone or another.
+ */
+export interface DensityShapeBy {
+  kind: "category";
+  key: string;
+  /** Per value: its glyph. */
+  shapes?: Readonly<Record<string, DensityPointShape>>;
+  /** Glyphs dealt to values `shapes` does not name. */
+  cycle?: readonly DensityPointShape[];
+  /**
+   * Per value: a fixed colour (any CSS colour) that overrides `colorBy` for the
+   * points of that value — a hard-set ink, whatever the zone, category or value
+   * colouring would paint. Each fixed colour is its own legend class (or recolours
+   * the category class when colour and shape share the column).
+   */
+  colors?: Readonly<Record<string, string>>;
+}
+
+/** One value of the shape column with its resolved glyph (for a shape key / legend). */
+export interface DensityShapeEntry {
+  label: string;
+  shape: DensityPointShape;
+  /** The fixed colour `shapeBy.colors` names for the value, if any. */
+  color?: string;
+}
+
 /** The data window shown — the zoom/pan state. */
 export interface DensityView {
   x0: number;

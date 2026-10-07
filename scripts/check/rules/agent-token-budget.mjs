@@ -72,7 +72,17 @@ export const BRIEF_CEILING = 6656;
  * to find by name, and the card lists one line per prop. The grid roadmap adds filtering,
  * editing and grouping on the same component, so the ceiling is set once for that track.
  */
-export const BRIEF_CEILING_OVERRIDES = { DataTable: 16384, DataGrid: 16384 };
+/*
+ * DensityScatterChart (2026-10-03, PR #633): `shapeBy` joined a card that already lists
+ * ~60 props one line each (selection gestures, legend, minimap, LOD, stat lines); its
+ * one-sentence line tipped the card 49 bytes over. 6912 = BRIEF_CEILING + 256, room for
+ * the roadmap's remaining per-point encodings without another raise.
+ */
+export const BRIEF_CEILING_OVERRIDES = {
+  DataTable: 16384,
+  DataGrid: 16384,
+  DensityScatterChart: 6912,
+};
 
 const bytes = (text) => Buffer.byteLength(text, "utf8");
 

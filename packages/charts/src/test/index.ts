@@ -122,6 +122,8 @@ export {
   // Legend engine — RM-118
   RampLegend,
   SizeLegend,
+  // DensityScatterChart shape glyph (real: react + types only)
+  DensityShapeGlyph,
 } from "./doubles";
 
 // ── Composition primitives + providers (inert stand-ins — see primitives.tsx) ─

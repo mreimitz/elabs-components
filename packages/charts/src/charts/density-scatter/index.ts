@@ -28,7 +28,12 @@ export {
 export {
   DENSITY_OUTSIDE_ID,
   DENSITY_ROWS_WARN_AT,
+  DENSITY_SHAPES,
+  DENSITY_SHAPE_CYCLE,
   type DensityColorBy,
+  type DensityPointShape,
+  type DensityShapeBy,
+  type DensityShapeEntry,
   type DensityOutsideZone,
   type DensityAxisOptions,
   type DensityOverlayContext,
@@ -75,4 +80,10 @@ export {
   type UseDensityViewOptions,
   type UseDensityViewResult,
 } from "./use-density-view";
-export { createPointsRenderer, type PointsRenderer } from "./points-renderer";
+export { createPointsRenderer, type PointsRenderer, densityShapeDistance } from "./points-renderer";
+export { dealShapes, resolveShapeClasses, shapeIndex } from "./shapes";
+export {
+  DensityShapeGlyph,
+  densityShapePath,
+  type DensityShapeGlyphProps,
+} from "./density-shape-glyph";

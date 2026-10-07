@@ -14531,6 +14531,12 @@
             "description": "What colours the dots. Default `{ kind: \"zone\" }` (or `\"density\"` without zones)."
           },
           {
+            "name": "shapeBy",
+            "optional": true,
+            "type": "DensityShapeBy",
+            "description": "Dot glyph per value of a category column (`DENSITY_SHAPES`). Independent of `colorBy` — shape by one column, colour by zone or another column. Unset: every dot is a circle. When the legend colours by the SAME column, its swatches take the glyphs; a host that colours by something else draws its own shape key from `dealShapes(labels, shapeBy)`."
+          },
+          {
             "name": "valueKey",
             "optional": true,
             "type": "string",
@@ -14921,6 +14927,16 @@
         "id": "charts-densityscatterchart--color-by-category",
         "name": "Color By Category",
         "description": ""
+      },
+      {
+        "id": "charts-densityscatterchart--shape-by-category",
+        "name": "Shape By Category",
+        "description": "Shape by a categorical column — a second channel beside colour (WCAG 1.4.1). Here colour AND shape read the same bins, so the legend swatches are the glyphs themselves; a named `shapes` map pins a glyph to a value and the rest take the cycle. Works on the WebGL and the Canvas-2D path alike."
+      },
+      {
+        "id": "charts-densityscatterchart--shape-by-category-color-by-zone",
+        "name": "Shape By Category Color By Zone",
+        "description": "Shape by one column while colour comes from the zones: the dots carry both channels; the legend keeps the zones (the host draws a shape key of its own from `dealShapes`)."
       },
       {
         "id": "charts-densityscatterchart--keyboard-range-selection",

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-30T23:25:41.718Z",
+  "generatedAt": "2026-10-03T22:41:34.065Z",
   "name": "brand-ui",
   "themes": [
     "dark",
@@ -15499,9 +15499,24 @@
           "module": "packages/charts/src/charts/density-scatter/types.ts"
         },
         {
+          "name": "DENSITY_SHAPE_CYCLE",
+          "kind": "value",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DENSITY_SHAPES",
+          "kind": "value",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
           "name": "DensityScatterChart",
           "kind": "value",
           "module": "packages/charts/src/charts/density-scatter/density-scatter-chart.tsx"
+        },
+        {
+          "name": "DensityShapeGlyph",
+          "kind": "value",
+          "module": "packages/charts/src/charts/density-scatter/density-shape-glyph.tsx"
         },
         {
           "name": "DistributionChart",
@@ -17569,6 +17584,10 @@
           "module": "packages/charts/src/charts/density-scatter/types.ts"
         },
         {
+          "name": "DensityPointShape",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
           "name": "DensityScatterChartProps",
           "module": "packages/charts/src/charts/density-scatter/density-scatter-chart.tsx"
         },
@@ -17591,6 +17610,18 @@
         {
           "name": "DensityScatterSelection",
           "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityShapeBy",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityShapeEntry",
+          "module": "packages/charts/src/charts/density-scatter/types.ts"
+        },
+        {
+          "name": "DensityShapeGlyphProps",
+          "module": "packages/charts/src/charts/density-scatter/density-shape-glyph.tsx"
         },
         {
           "name": "DensityStatistic",
@@ -19427,6 +19458,10 @@
           "module": "packages/charts/src/charts/network/index.ts"
         },
         {
+          "name": "dealShapes",
+          "module": "packages/charts/src/charts/density-scatter/shapes.ts"
+        },
+        {
           "name": "defaultBinCount",
           "module": "packages/charts/src/charts/distribution/index.ts"
         },
@@ -19481,6 +19516,14 @@
         {
           "name": "densityPointInPolygon",
           "module": "packages/charts/src/charts/density-scatter/selection.ts"
+        },
+        {
+          "name": "densityShapeDistance",
+          "module": "packages/charts/src/charts/density-scatter/points-renderer.ts"
+        },
+        {
+          "name": "densityShapePath",
+          "module": "packages/charts/src/charts/density-scatter/density-shape-glyph.tsx"
         },
         {
           "name": "deriveAllSeries",
@@ -20175,6 +20218,10 @@
           "module": "packages/charts/src/charts/scatter-encodings.ts"
         },
         {
+          "name": "resolveShapeClasses",
+          "module": "packages/charts/src/charts/density-scatter/shapes.ts"
+        },
+        {
           "name": "resolveStatLines",
           "module": "packages/charts/src/charts/density-scatter/stat-lines.ts"
         },
@@ -20257,6 +20304,10 @@
         {
           "name": "shapeHitsRect",
           "module": "packages/charts/src/charts/selection/hit-test.ts"
+        },
+        {
+          "name": "shapeIndex",
+          "module": "packages/charts/src/charts/density-scatter/shapes.ts"
         },
         {
           "name": "sharedFacetScale",
@@ -25618,6 +25669,12 @@
               "description": "What colours the dots. Default `{ kind: \"zone\" }` (or `\"density\"` without zones)."
             },
             {
+              "name": "shapeBy",
+              "optional": true,
+              "type": "DensityShapeBy",
+              "description": "Dot glyph per value of a category column (`DENSITY_SHAPES`). Independent of `colorBy` — shape by one column, colour by zone or another column. Unset: every dot is a circle. When the legend colours by the SAME column, its swatches take the glyphs; a host that colours by something else draws its own shape key from `dealShapes(labels, shapeBy)`."
+            },
+            {
               "name": "valueKey",
               "optional": true,
               "type": "string",
@@ -25962,6 +26019,30 @@
               "type": "ChartPalette",
               "description": "Colour ramp for `colorBy={{ kind: \"category\" }}` classes (RM-186), through `resolvePalette`. Unset: the twelve series tokens, as before. Zones keep their own `color`.",
               "kind": "enum"
+            }
+          ]
+        },
+        "DensityShapeGlyph": {
+          "extends": [
+            "Omit<SVGAttributes<SVGSVGElement>, \"fill\">"
+          ],
+          "props": [
+            {
+              "name": "shape",
+              "optional": false,
+              "type": "DensityPointShape"
+            },
+            {
+              "name": "size",
+              "optional": true,
+              "type": "number",
+              "description": "Box size in CSS px. Default 10."
+            },
+            {
+              "name": "color",
+              "optional": true,
+              "type": "string",
+              "description": "Fill colour; default `currentColor`."
             }
           ]
         },

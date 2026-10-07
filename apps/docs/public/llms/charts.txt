@@ -155,11 +155,14 @@ Import from `@elabs-ai/components-charts`. Part of brand-ui — see the root `ll
 - DEFAULT_Y_DOMAIN_TWEEN_MS
 - DENSITY_OUTSIDE_ID
 - DENSITY_ROWS_WARN_AT
+- DENSITY_SHAPE_CYCLE
+- DENSITY_SHAPES
 - DensityScatterChart — A point plot for 10⁵–10⁶ rows: every point drawn, its colour the density around it, zones on the axes classifying it, and an intersection selection (x range × y range × lasso × zone). WebGL dots, screen-space bins, Canvas-2D fallback.
   - avoid: Under ~20k points — ScatterChart has labels, shapes, trends and per-point marks this canvas path cannot.
   - avoid: Handing 10⁵ rows as objects — pass columnar data ({ x, y, values }) or pay for the per-row objects before the first pixel.
   - avoid: A second hue for density — density is lightness on the class hue; a rainbow ramp misreads as categories.
   - avoid: Averaging once a size limit is hit — the chart's point is that it never does; bin size stays in screen pixels, not data units.
+- DensityShapeGlyph
 - DistributionChart — One numeric variable, optionally by group, read four ways on one shared scale — histogram, box, violin or strip.
   - avoid: kind="violin" on a handful of records — a density estimate from ~12 points draws the bandwidth, not the data; below roughly 50 per group use kind="strip", where every record is its own mark.
   - avoid: Leaving the Silverman default bandwidth on visibly bimodal data — the rule of thumb over-smooths two modes into one bulge and loses ~2% of the mass off the grid. Pass `bandwidth` when the shape is the point.

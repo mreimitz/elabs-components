@@ -525,7 +525,7 @@ export function applySeriesPalette(
  */
 export interface ChartLegendEntry extends LegendItemShape<
   "key" | "label" | "color" | "kind",
-  "value" | "pattern"
+  "value" | "pattern" | "shape"
 > {
   /**
    * Overlay / comparison glyph — how the legend swatch should be drawn.
